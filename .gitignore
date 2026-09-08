@@ -1,0 +1,8 @@
+﻿# 本地备份 / 导出
+ecobox_backup*.json
+*.backup.json
+backups/
+
+# 系统文件
+.DS_Store
+Thumbs.db
