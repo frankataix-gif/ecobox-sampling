@@ -237,10 +237,10 @@ progress{width:100%;height:10px;margin-top:8px}
     <div class="card">
       <h3>🔄 版本更新</h3>
       <button class="btn secondary block" id="btn_update">检查并强制更新到最新版</button>
-      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：b20260907-73</p>
+      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：b20260907-74</p>
     </div>
     <div class="card">
-      <p style="font-size:11px;color:var(--muted);text-align:center">b20260907-73</p>
+      <p style="font-size:11px;color:var(--muted);text-align:center">b20260907-74</p>
       <h3>🗑 危险操作</h3>
       <button class="btn danger block" id="btn_wipe">🔒 清空本机全部数据（需密码）</button>
     </div>
@@ -849,7 +849,7 @@ $("btn_update").onclick=async()=>{
   toast("正在清理缓存并更新…");
   try{const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)));
     const rs=await navigator.serviceWorker.getRegistrations();await Promise.all(rs.map(r=>r.unregister()));}catch(e){}
-  setTimeout(()=>location.reload(true),400);
+  setTimeout(()=>location.reload(true),700);
 };
 const WIPE_PWD="987963";
 $("btn_wipe").onclick=()=>{$("wipepwd").value="";$("wipemodal").classList.remove("hidden");setTimeout(()=>$("wipepwd").focus(),100)};
@@ -1432,7 +1432,7 @@ if(!isStandalone){
 
 /* ============ Service Worker：缓存页面本体，离线可打开 ============ */
 if("serviceWorker" in navigator&&location.protocol==="https:"){
-  navigator.serviceWorker.register("sampling_sw.js").catch(()=>{});
+  navigator.serviceWorker.register("sampling_sw.js",{updateViaCache:"none"}).catch(()=>{});
 }
 
 /* ============ 启动 ============ */
