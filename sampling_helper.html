@@ -246,10 +246,10 @@ progress{width:100%;height:10px;margin-top:8px}
     <div class="card">
       <h3>🔄 版本更新</h3>
       <button class="btn secondary block" id="btn_update">检查并强制更新到最新版</button>
-      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：b20260907-76</p>
+      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：b20260907-77</p>
     </div>
     <div class="card">
-      <p style="font-size:11px;color:var(--muted);text-align:center">b20260907-76</p>
+      <p style="font-size:11px;color:var(--muted);text-align:center">b20260907-77</p>
       <h3>🗑 危险操作</h3>
       <button class="btn danger block" id="btn_wipe">🔒 清空本机全部数据（需密码）</button>
     </div>
@@ -943,8 +943,12 @@ function initMap(){
   if(map){map.draw();return}
   const cv=$("map"),ctx=cv.getContext("2d");
   map={cv,ctx,z:12,cx:lon2x(28.2,12),cy:lat2y(-13.0,12),inited:false,marks:[],me:null};
-  // 初始中心：有坐标记录则用最近一条，否则等 GPS
-  S.all().then(all=>{const g=all.filter(s=>s.latitude!=null);if(g.length){const s=g[g.length-1];map.cx=lon2x(s.longitude,12);map.cy=lat2y(s.latitude,12)}map.draw()});
+  // 初始中心：优先当前 GPS，失败则用最近一条样品，否则默认赞比亚一带
+  const setCenter=(lat,lon)=>{map.cx=lon2x(lon,12);map.cy=lat2y(lat,12);map.draw()};
+  const centerLastSample=()=>S.all().then(all=>{const g=all.filter(s=>s.latitude!=null);if(g.length){const s=g[g.length-1];setCenter(s.latitude,s.longitude);}else map.draw()});
+  if("geolocation" in navigator){
+    navigator.geolocation.getCurrentPosition(p=>setCenter(p.coords.latitude,p.coords.longitude),()=>centerLastSample(),{enableHighAccuracy:true,timeout:15000});
+  }else centerLastSample();
   function resize(){const r=cv.parentElement.getBoundingClientRect();
     if(!r.width||!r.height){setTimeout(resize,200);return} // iOS 切换页瞬间容器可能为0
     cv.width=r.width*devicePixelRatio;cv.height=r.height*devicePixelRatio;cv.style.width=r.width+"px";cv.style.height=r.height+"px";ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);map.draw()}
