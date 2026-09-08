@@ -25,10 +25,10 @@ self.addEventListener("fetch", (e) => {
       fetch(e.request, isPage ? { cache: "no-store" } : {})
         .then((r) => {
           const copy = r.clone();
-          caches.open(CACHE).then((c) => c.put(e.request, copy));
+          caches.open(CACHE).then((c) => c.put(e.request.url, copy));
           return r;
         })
-        .catch(() => caches.match(e.request))
+        .catch(() => caches.match(e.request.url))
     );
   }
 });

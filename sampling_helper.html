@@ -246,10 +246,10 @@ progress{width:100%;height:10px;margin-top:8px}
     <div class="card">
       <h3>🔄 版本更新</h3>
       <button class="btn secondary block" id="btn_update">检查并强制更新到最新版</button>
-      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：b20260907-77</p>
+      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：b20260907-78</p>
     </div>
     <div class="card">
-      <p style="font-size:11px;color:var(--muted);text-align:center">b20260907-77</p>
+      <p style="font-size:11px;color:var(--muted);text-align:center">b20260907-78</p>
       <h3>🗑 危险操作</h3>
       <button class="btn danger block" id="btn_wipe">🔒 清空本机全部数据（需密码）</button>
     </div>
@@ -546,14 +546,16 @@ function updateElGrid(){
 }
 function addAssay(el="",val="",unit="%"){
   const d=document.createElement("div");d.className="assay-row";
-  d.innerHTML=`<input list="el_list" placeholder="元素 如 Cu/Co/Ta" value="${el}">
-    <input placeholder="数值" inputmode="decimal" value="${val}">
-    <select>${["%","ppm","g/t","ppb"].map(u=>`<option${u===unit?" selected":""}>${u}</option>`).join("")}</select>
+  d.innerHTML=`<input list="el_list" placeholder="元素 如 Cu/Co/Ta">
+    <input placeholder="数值" inputmode="decimal">
+    <select>${["%","ppm","g/t","ppb"].map(u=>`<option value="${u}">${u}</option>`).join("")}</select>
     <button type="button">✕</button>`;
+  const [elIn,valIn,uSel]=[...d.querySelectorAll("input"),d.querySelector("select")];
+  elIn.value=el; valIn.value=val; uSel.value=unit;
+  [elIn,valIn,uSel].forEach(x=>x.oninput=updateElGrid);
   d.querySelector("button").onclick=()=>{d.remove();updateElGrid()};
-  d.querySelector("input").oninput=updateElGrid;
   $("assays").appendChild(d);updateElGrid();
-  if(!val)d.querySelectorAll("input")[1].focus();
+  if(!val)valIn.focus();
 }
 $("btn_add_assay").onclick=()=>addAssay();
 // 元素方格：两行常用，钽铌系优先；点一下直接加一行
