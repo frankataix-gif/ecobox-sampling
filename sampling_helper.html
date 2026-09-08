@@ -126,6 +126,23 @@ progress{width:100%;height:10px;margin-top:8px}
       <button class="btn secondary block" id="btn_add_assay">＋ 添加其他元素</button>
     </div>
     <div class="card">
+      <h3>📍 取样位置 / 状态</h3>
+      <label>位置状态</label>
+      <select id="f_loc">
+        <option value="">— 请选择 —</option>
+        <option>废弃开采矿坑</option>
+        <option>正在开采作业面</option>
+        <option>勘探开挖（探槽/探坑）</option>
+        <option>民采点</option>
+        <option>自然露头</option>
+        <option>废石/尾矿堆</option>
+        <option>道路/堆场/转运点</option>
+        <option>新地 / 未开采区</option>
+        <option>钻探孔口/岩心箱</option>
+        <option>其他</option>
+      </select>
+    </div>
+    <div class="card">
       <h3>🪨 地质描述</h3>
       <label>描述（岩性、矿化、蚀变、构造等）</label>
       <textarea id="f_desc" placeholder="如：花岗岩，石英脉发育，可见黄铁矿化…"></textarea>
@@ -229,10 +246,10 @@ progress{width:100%;height:10px;margin-top:8px}
     <div class="card">
       <h3>🔄 版本更新</h3>
       <button class="btn secondary block" id="btn_update">检查并强制更新到最新版</button>
-      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：b20260907-75</p>
+      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：b20260907-76</p>
     </div>
     <div class="card">
-      <p style="font-size:11px;color:var(--muted);text-align:center">b20260907-75</p>
+      <p style="font-size:11px;color:var(--muted);text-align:center">b20260907-76</p>
       <h3>🗑 危险操作</h3>
       <button class="btn danger block" id="btn_wipe">🔒 清空本机全部数据（需密码）</button>
     </div>
@@ -632,6 +649,7 @@ async function resetForm(){
   exitEdit();
   $("f_sid").value=await nextSid();$("f_time").value=nowLocal();
   $("f_recorder").value=(await store.get("recorder"))||"";
+  $("f_loc").value="";
   const lt=await store.get("last_type");if(lt)$("f_type").value=lt; // 取样类型记住上次
 }
 $("btn_save").onclick=async()=>{
@@ -659,6 +677,7 @@ $("btn_save").onclick=async()=>{
     utm:lat!=null?toUTM(lat,lon):"",
     gps_accuracy:lastPos&&lastPos.coords.accuracy||null,
     assays,lithology:"",description:$("f_desc").value.trim(),
+    loc_status:$("f_loc").value,
     recorder:$("f_recorder").value.trim(),
     area_name:$("f_area").value.trim(),
     license_no:lic?lic.no:"",license_holder:lic?lic.holder:"",
@@ -680,7 +699,7 @@ $("btn_save").onclick=async()=>{
   toast(editingSample?`✅ 已更新 ${sid}`:`✅ 已保存样品 ${sid}`,4000);exitEdit();refreshPend();
   // 清空（地区名保留——同一区域连续取样不用重填）
   photos=[];renderThumbs();$("assays").innerHTML="";updateElGrid();
-  $("f_desc").value="";$("f_remark").value="";
+  $("f_desc").value="";$("f_remark").value="";$("f_loc").value="";
   $("f_lat").value="";$("f_lon").value="";$("f_alt").value="";lastPos=null;
   $("gps_text").textContent="尚未定位";$("gps_acc").textContent="";$("gps_utm").textContent="";
   await resetForm();
@@ -696,7 +715,7 @@ async function renderList(){
     const as=(s.assays||[]).map(a=>`${a.element} ${a.value}${a.unit}`).join(" · ");
     return`<div class="card samcard" data-id="${s.id}">
       <div class="info"><div><span class="sid">${xesc(s.sample_id)}</span>${b}</div>
-      <div class="meta">${xesc(s.sample_time||"")} · ${xesc(s.sample_type||"")}${s.area_name?" · 📍"+xesc(s.area_name):""}${s.license_no?" · 📜"+xesc(s.license_no):""}</div>
+      <div class="meta">${xesc(s.sample_time||"")} · ${xesc(s.sample_type||"")}${s.loc_status?" · ⛏"+xesc(s.loc_status):""}${s.area_name?" · 📍"+xesc(s.area_name):""}${s.license_no?" · 📜"+xesc(s.license_no):""}</div>
       ${as?`<div class="meta">🧪 ${xesc(as)}</div>`:""}
       ${s.description?`<div class="meta">🪨 ${xesc(s.description)}</div>`:""}
       <div class="meta">📷 ${(s.photos||[]).length} 张${s.erp_name?" · ERP:"+xesc(s.erp_name):""}</div>
@@ -732,7 +751,7 @@ $("samedit_edit").onclick=()=>{
   $("gps_text").textContent=s.latitude!=null?`${(+s.latitude).toFixed(6)}, ${(+s.longitude).toFixed(6)}`:"无坐标";
   $("gps_utm").textContent=s.utm?("UTM："+s.utm):"";
   $("gps_acc").textContent="🔒 编辑模式：编号/时间/地址锁定，经纬度可手动修正";
-  $("f_area").value=s.area_name||"";$("f_desc").value=s.description||"";
+  $("f_area").value=s.area_name||"";$("f_loc").value=s.loc_status||"";$("f_desc").value=s.description||"";
   $("f_recorder").value=s.recorder||"";$("f_remark").value=s.remark||"";
   photos=(s.photos||[]).map(p=>({name:p.name,kind:p.kind,blob:p.blob}));renderThumbs();
   $("assays").innerHTML="";(s.assays||[]).forEach(a=>addAssay(a.element,a.value,a.unit));updateElGrid();
@@ -759,6 +778,7 @@ function viewDetail(id,all){
     ${row("海拔",s.altitude!=null?`${s.altitude} m`:"")}
     ${row("地区",xesc(s.area_name))}
     ${row("矿证",s.license_no?`${xesc(s.license_no)} ${xesc(s.license_holder||"")}`:"")}
+    ${row("位置状态",xesc(s.loc_status))}
     ${row("含量",xesc((s.assays||[]).map(a=>`${a.element} ${a.value}${a.unit}`).join(" · ")))}
     ${row("描述",xesc(s.description))}
     ${row("记录人",xesc(s.recorder))}
@@ -858,8 +878,8 @@ $("wipeok").onclick=async()=>{
 $("btn_csv").onclick=async()=>{
   const all=await S.all();if(!all.length){toast("无记录");return}
   const esc=v=>`"${String(v??"").replace(/"/g,'""')}"`;
-  const head=["sample_id","sample_time","type","latitude","longitude","altitude","utm","gps_accuracy","lithology","description","assays","recorder","area_name","license_no","license_holder","remark","photos","status","erp_name"];
-  const rows=all.map(s=>[s.sample_id,s.sample_time,s.sample_type,s.latitude,s.longitude,s.altitude,s.utm||"",s.gps_accuracy,s.lithology,s.description,
+  const head=["sample_id","sample_time","type","latitude","longitude","altitude","utm","gps_accuracy","lithology","loc_status","description","assays","recorder","area_name","license_no","license_holder","remark","photos","status","erp_name"];
+  const rows=all.map(s=>[s.sample_id,s.sample_time,s.sample_type,s.latitude,s.longitude,s.altitude,s.utm||"",s.gps_accuracy,s.lithology,s.loc_status,s.description,
     (s.assays||[]).map(a=>`${a.element}:${a.value}${a.unit}`).join(";"),s.recorder,s.area_name,s.license_no,s.license_holder||"",s.remark,(s.photos||[]).length,s.status,s.erp_name||""]);
   const csv="﻿"+[head,...rows].map(r=>r.map(esc).join(",")).join("\r\n");
   await dl("samples_"+new Date().toISOString().slice(0,10)+".csv",csv,"text/csv");
