@@ -1,6 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <rect width="512" height="512" fill="#1668dc" rx="96"/>
-  <circle cx="256" cy="220" r="88" fill="#f59e0b"/>
-  <path fill="#fff" d="M256 340 L400 440 L256 380 L112 440 Z"/>
-  <path fill="#fff" d="M256 330 L340 300 L256 270 L172 300 Z"/>
+  <!-- rock -->
+  <ellipse cx="256" cy="395" rx="145" ry="52" fill="#334155"/>
+  <ellipse cx="256" cy="390" rx="140" ry="48" fill="#475569"/>
+  <!-- hammer group -->
+  <g transform="rotate(25 256 256)">
+    <rect x="236" y="128" width="40" height="246" rx="20" fill="#f59e0b"/>
+    <rect x="108" y="108" width="296" height="74" rx="14" fill="#fff"/>
+  </g>
+  <!-- mineral sparkle -->
+  <circle cx="175" cy="170" r="16" fill="#f59e0b"/>
+  <circle cx="205" cy="140" r="9" fill="#f59e0b"/>
 </svg>
