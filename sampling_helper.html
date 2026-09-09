@@ -92,9 +92,9 @@ progress{width:100%;height:10px;margin-top:8px}
   <section id="pg-form">
     <div class="card">
       <div class="row">
-        <div><label>样品编号（自动生成）</label><input id="f_sid" readonly style="background:#f1f5f9;color:var(--muted)"></div>
+        <div><label>编号（自动生成）</label><input id="f_sid" readonly style="background:#f1f5f9;color:var(--muted)"></div>
         <div><label>取样类型</label><select id="f_type">
-          <option selected>岩石</option><option>土壤</option><option>刻槽</option><option>岩心</option><option>其他</option>
+          <option selected>岩石</option><option>土壤</option><option>刻槽</option><option>岩心</option><option>矿点/民采点</option><option>其他</option>
         </select></div>
       </div>
       <label>取样时间（系统自动，精确到秒）</label><input type="datetime-local" id="f_time" step="1" readonly style="background:#f1f5f9;color:var(--muted)">
@@ -244,10 +244,10 @@ progress{width:100%;height:10px;margin-top:8px}
     <div class="card">
       <h3>🔄 版本更新</h3>
       <button class="btn secondary block" id="btn_update">检查并强制更新到最新版</button>
-      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：b20260909-81</p>
+      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：b20260909-82</p>
     </div>
     <div class="card">
-      <p style="font-size:11px;color:var(--muted);text-align:center">b20260909-81</p>
+      <p style="font-size:11px;color:var(--muted);text-align:center">b20260909-82</p>
       <h3>🗑 危险操作</h3>
       <button class="btn danger block" id="btn_wipe">🔒 清空本机全部数据（需密码）</button>
     </div>
@@ -696,7 +696,7 @@ $("btn_save").onclick=async()=>{
   await S.put(rec);await refreshSampleCache();
   await store.set("recorder",rec.recorder);
   await store.set("last_type",rec.sample_type);
-  toast(editingSample?`✅ 已更新 ${sid}`:`✅ 已保存样品 ${sid}`,4000);exitEdit();refreshPend();
+  toast(editingSample?`✅ 已更新 ${sid}`:`✅ 已保存记录 ${sid}`,4000);exitEdit();refreshPend();
   // 清空（地区名保留——同一区域连续取样不用重填）
   photos=[];renderThumbs();$("assays").innerHTML="";updateElGrid();
   $("f_desc").value="";$("f_remark").value="";$("f_loc").value="";
