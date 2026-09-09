@@ -246,10 +246,10 @@ progress{width:100%;height:10px;margin-top:8px}
     <div class="card">
       <h3>🔄 版本更新</h3>
       <button class="btn secondary block" id="btn_update">检查并强制更新到最新版</button>
-      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：b20260907-79</p>
+      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：b20260909-80</p>
     </div>
     <div class="card">
-      <p style="font-size:11px;color:var(--muted);text-align:center">b20260907-79</p>
+      <p style="font-size:11px;color:var(--muted);text-align:center">b20260909-80</p>
       <h3>🗑 危险操作</h3>
       <button class="btn danger block" id="btn_wipe">🔒 清空本机全部数据（需密码）</button>
     </div>
@@ -461,7 +461,7 @@ document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
 let watchId=null,lastPos=null;
 function showPos(p){
   lastPos=p;const c=p.coords;
-  $("gps_text").textContent="GPS 已定位";
+  $("gps_text").textContent=`纬度：${c.latitude.toFixed(6)}  经度：${c.longitude.toFixed(6)}`;
   $("gps_acc").textContent=(c.altitude!=null?`海拔 ${c.altitude.toFixed(0)} m · `:"")+new Date(p.timestamp).toLocaleTimeString();
   $("gps_utm").textContent="UTM："+toUTM(c.latitude,c.longitude);
   $("f_lat").value=c.latitude.toFixed(6);$("f_lon").value=c.longitude.toFixed(6);
@@ -515,7 +515,7 @@ $("btn_gps").onclick=()=>{toast("定位中…（无网络也可用）");navigato
 ["f_lat","f_lon"].forEach(id=>$(id).onchange=()=>{
   const la=+$("f_lat").value,lo=+$("f_lon").value;
   if(!la||!lo)return;
-  $("gps_text").textContent=`${la.toFixed(6)}, ${lo.toFixed(6)}`;
+  $("gps_text").textContent=`纬度：${la.toFixed(6)}  经度：${lo.toFixed(6)}`;
   $("gps_utm").textContent="UTM："+toUTM(la,lo);
   $("gps_acc").textContent="手动输入坐标";
   licAt(la,lo);
@@ -529,7 +529,7 @@ $("btn_pick").onclick=()=>{
 $("pickok").onclick=()=>{
   if(!pickPreview)return;
   $("f_lat").value=pickPreview.lat.toFixed(6);$("f_lon").value=pickPreview.lon.toFixed(6);
-  $("gps_text").textContent="地图选点（非GPS实测）";
+  $("gps_text").textContent=`纬度：${pickPreview.lat.toFixed(6)}  经度：${pickPreview.lon.toFixed(6)}（地图选点）`;
   $("gps_utm").textContent="UTM："+toUTM(pickPreview.lat,pickPreview.lon);
   $("gps_acc").textContent="";
   licAt(pickPreview.lat,pickPreview.lon);
@@ -750,7 +750,7 @@ $("samedit_edit").onclick=()=>{
   $("samedit").classList.add("hidden");
   $("f_sid").value=s.sample_id;$("f_time").value=s.sample_time||"";$("f_type").value=s.sample_type||"";
   $("f_lat").value=s.latitude??"";$("f_lon").value=s.longitude??"";$("f_alt").value=s.altitude??"";
-  $("gps_text").textContent=s.latitude!=null?"🗺 编辑模式：点击地图选点可修正坐标":"无坐标";
+  $("gps_text").textContent=s.latitude!=null?`纬度：${(+s.latitude).toFixed(6)}  经度：${(+s.longitude).toFixed(6)}`:("无坐标");
   $("gps_utm").textContent=s.utm?("UTM："+s.utm):"";
   $("gps_acc").textContent="";
   $("f_area").value=s.area_name||"";$("f_loc").value=s.loc_status||"";$("f_desc").value=s.description||"";
