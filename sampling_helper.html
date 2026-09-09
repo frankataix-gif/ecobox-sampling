@@ -15,6 +15,8 @@
 :root{--primary:#1668dc;--bg:#f4f6f9;--card:#fff;--text:#1e293b;--muted:#64748b;--border:#e2e8f0;--danger:#ef4444;--ok:#22c55e;--warn:#f59e0b}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);font-size:15px}
+#update_tip{position:relative;z-index:100;background:var(--warn);color:#fff;padding:9px 14px;text-align:center;font-size:14px;display:none;gap:10px;justify-content:center;align-items:center}
+#update_tip button{background:#fff;color:var(--warn);border:none;border-radius:6px;padding:4px 10px;font-size:13px;font-weight:600}
 header{position:sticky;top:0;z-index:50;background:#111;color:#fff;padding:10px 14px;display:flex;align-items:center;gap:10px}
 header h1{font-size:17px;flex:1}
 .netdot{width:10px;height:10px;border-radius:50%;background:var(--ok)}
@@ -77,6 +79,7 @@ progress{width:100%;height:10px;margin-top:8px}
 </style>
 </head>
 <body>
+<div id="update_tip">🔄 发现新版本 <button id="update_now">立即更新</button></div>
 <header>
   <span class="netdot" id="netdot" title="网络状态"></span>
   <h1>ECOBOX矿区考察记录本</h1>
@@ -244,10 +247,10 @@ progress{width:100%;height:10px;margin-top:8px}
     <div class="card">
       <h3>🔄 版本更新</h3>
       <button class="btn secondary block" id="btn_update">检查并强制更新到最新版</button>
-      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：b20260909-82</p>
+      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：b20260909-83</p>
     </div>
     <div class="card">
-      <p style="font-size:11px;color:var(--muted);text-align:center">b20260909-82</p>
+      <p style="font-size:11px;color:var(--muted);text-align:center">b20260909-83</p>
       <h3>🗑 危险操作</h3>
       <button class="btn danger block" id="btn_wipe">🔒 清空本机全部数据（需密码）</button>
     </div>
@@ -855,12 +858,13 @@ $("btn_synctest").onclick=async()=>{
   try{const r=await fetch(w.replace(/\/$/,"")+"/ping",{headers:{"X-App-Token":$("s_token").value.trim()}});
     toast(r.ok?"连接成功 ✔":"连接失败 "+r.status)}catch(e){toast("连接失败："+e.message)}
 };
-$("btn_update").onclick=async()=>{
+async function forceAppUpdate(){
   toast("正在清理缓存并更新…");
   try{const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)));
     const rs=await navigator.serviceWorker.getRegistrations();await Promise.all(rs.map(r=>r.unregister()));}catch(e){}
-  setTimeout(()=>location.reload(true),700);
-};
+  setTimeout(()=>location.replace("./sampling_helper.html?r="+Date.now()),700);
+}
+$("btn_update").onclick=forceAppUpdate;
 const WIPE_PWD="987963";
 $("btn_wipe").onclick=()=>{$("wipepwd").value="";$("wipemodal").classList.remove("hidden");setTimeout(()=>$("wipepwd").focus(),100)};
 $("wipecancel").onclick=()=>$("wipemodal").classList.add("hidden");
@@ -1447,7 +1451,20 @@ if(!isStandalone){
 
 /* ============ Service Worker：缓存页面本体，离线可打开 ============ */
 if("serviceWorker" in navigator&&location.protocol==="https:"){
-  navigator.serviceWorker.register("sampling_sw.js",{updateViaCache:"none"}).catch(()=>{});
+  navigator.serviceWorker.register("sampling_sw.js",{updateViaCache:"none"}).then(reg=>{
+    reg.addEventListener('updatefound',()=>{
+      const w=reg.installing;
+      if(!w)return;
+      w.addEventListener('statechange',()=>{
+        if(w.state==='installed'&&navigator.serviceWorker.controller){
+          const t=$('update_tip');
+          if(t){t.style.display='flex';$('update_now').onclick=forceAppUpdate;}
+        }
+      });
+    });
+    // 进入页面后主动检查一次更新
+    setTimeout(()=>reg.update(),2000);
+  }).catch(()=>{});
 }
 
 /* ============ 启动 ============ */
