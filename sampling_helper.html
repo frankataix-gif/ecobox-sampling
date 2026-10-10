@@ -230,7 +230,8 @@ progress{width:100%;height:10px;margin-top:8px}
   <section id="pg-set" class="hidden">
     <div class="card">
       <h3>☁️ 云端同步（Cloudflare Worker + D1）</h3>
-      <p style="font-size:12px;color:var(--muted);margin-bottom:8px">联网后自动/手动同步样品和矿点记录到 Cloudflare D1。需要 Worker 已部署并配置 APP_TOKEN。</p>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:8px">联网后自动/手动同步样品和矿点记录到 Cloudflare D1。<br>
+      <b>免填写方法</b>：让管理员发带令牌的链接（…/sampling_helper.html?t=令牌），打开一次即自动配置好。</p>
       <label>Worker 地址（已固定）</label><input id="s_worker" value="https://fancy-heart-7a80.frankataix.workers.dev" readonly style="background:#f1f5f9;color:var(--muted)">
       <label>访问令牌</label><input id="s_token" placeholder="Worker 里配置的 APP_TOKEN">
       <button class="btn primary block" id="btn_saveset">保存设置</button>
@@ -256,10 +257,10 @@ progress{width:100%;height:10px;margin-top:8px}
     <div class="card">
       <h3>🔄 版本更新</h3>
       <button class="btn secondary block" id="btn_update">检查并强制更新到最新版</button>
-      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：b20261010-90</p>
+      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：b20261010-91</p>
     </div>
     <div class="card">
-      <p style="font-size:11px;color:var(--muted);text-align:center">b20261010-90</p>
+      <p style="font-size:11px;color:var(--muted);text-align:center">b20261010-91</p>
       <h3>🗑 危险操作</h3>
       <button class="btn danger block" id="btn_wipe">🔒 清空本机全部数据（需密码）</button>
     </div>
@@ -894,8 +895,10 @@ async function loadSet(){
 $("btn_saveset").onclick=async()=>{await store.set("worker_url",$("s_worker").value.trim());await store.set("app_token",$("s_token").value.trim());toast("已保存")};
 $("btn_synctest").onclick=async()=>{
   const w=$("s_worker").value.trim();if(!w){toast("先填 Worker 地址");return}
-  try{const r=await fetch(w.replace(/\/$/,"")+"/ping",{headers:{"X-App-Token":$("s_token").value.trim()}});
-    toast(r.ok?"连接成功 ✔":"连接失败 "+r.status)}catch(e){toast("连接失败："+e.message)}
+  const tok=$("s_token").value.trim();
+  try{const r=await fetch(w.replace(/\/$/,"")+"/ping",{headers:{"X-App-Token":tok}});
+    if(r.ok){await store.set("worker_url",w);await store.set("app_token",tok);toast("连接成功 ✔ 已自动保存")}
+    else toast("连接失败 "+r.status)}catch(e){toast("连接失败："+e.message)}
 };
 async function forceAppUpdate(){
   toast("正在清理缓存并更新…");
@@ -1568,7 +1571,16 @@ if("serviceWorker" in navigator&&location.protocol==="https:"){
 }
 
 /* ============ 启动 ============ */
-(async()=>{await loadSet();resetForm();refreshPend();refreshSampleCache();TR.load();setTimeout(resumeTrack,800);})();
+(async()=>{
+  // 一键配置：链接带 ?t=令牌 自动保存同步设置，打开一次即可，以后不用再填
+  try{const u=new URL(location.href),t=u.searchParams.get("t")||u.searchParams.get("token");
+    if(t){await store.set("worker_url","https://fancy-heart-7a80.frankataix.workers.dev");
+      await store.set("app_token",t);
+      u.searchParams.delete("t");u.searchParams.delete("token");history.replaceState(null,"",u.toString());
+      toast("✅ 同步已自动配置好，以后保存记录会自动上传",5000);}
+  }catch(e){}
+  await loadSet();resetForm();refreshPend();refreshSampleCache();TR.load();setTimeout(resumeTrack,800);
+})();
 store.get("track_mode").then(m=>setTrackMode(m==="walk"?"walk":"car"));
 // 本机存储可用性检测（iOS 无痕/隐私模式会禁 IndexedDB）
 S.all().then(()=>{}).catch(()=>toast("⚠️ 本机存储不可用：请关闭无痕/隐私模式，用普通浏览器打开，否则记录无法保存",6000));
