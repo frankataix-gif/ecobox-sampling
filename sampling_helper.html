@@ -95,9 +95,15 @@ progress{width:100%;height:10px;margin-top:8px}
   <section id="pg-form">
     <div class="card">
       <div class="row">
+        <div><label>记录类型</label><select id="f_kind">
+          <option value="sample" selected>取样</option><option value="marker">标记点</option>
+        </select></div>
         <div><label>编号（自动生成）</label><input id="f_sid" readonly style="background:#f1f5f9;color:var(--muted)"></div>
-        <div><label>取样类型</label><select id="f_type">
+        <div id="w_type"><label>取样类型</label><select id="f_type">
           <option selected>岩石</option><option>土壤</option><option>刻槽</option><option>岩心</option><option>矿点/民采点</option><option>其他</option>
+        </select></div>
+        <div id="w_mark" class="hidden"><label>标记类型</label><select id="f_mark">
+          <option selected>桥</option><option>路口</option><option>岔路</option><option>过河点</option><option>营地</option><option>水井</option><option>村庄</option><option>矿部/办公室</option><option>停车点</option><option>其他标记</option>
         </select></div>
       </div>
       <label>取样时间（系统自动，精确到秒）</label><input type="datetime-local" id="f_time" step="1" readonly style="background:#f1f5f9;color:var(--muted)">
@@ -122,13 +128,13 @@ progress{width:100%;height:10px;margin-top:8px}
         <button class="btn secondary" id="btn_viewpos">👁 定位查看</button>
       </div>
     </div>
-    <div class="card">
+    <div class="card" id="card_assay">
       <h3>🧪 含量 / 品位测试（可后补）</h3>
       <div class="elgrid" id="elgrid"></div>
       <div id="assays"></div>
       <button class="btn secondary block" id="btn_add_assay">＋ 添加其他元素</button>
     </div>
-    <div class="card">
+    <div class="card" id="card_loc">
       <h3>📍 取样位置 / 状态</h3>
       <label>位置状态</label>
       <select id="f_loc">
@@ -250,10 +256,10 @@ progress{width:100%;height:10px;margin-top:8px}
     <div class="card">
       <h3>🔄 版本更新</h3>
       <button class="btn secondary block" id="btn_update">检查并强制更新到最新版</button>
-      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：b20261010-89</p>
+      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：b20261010-90</p>
     </div>
     <div class="card">
-      <p style="font-size:11px;color:var(--muted);text-align:center">b20261010-89</p>
+      <p style="font-size:11px;color:var(--muted);text-align:center">b20261010-90</p>
       <h3>🗑 危险操作</h3>
       <button class="btn danger block" id="btn_wipe">🔒 清空本机全部数据（需密码）</button>
     </div>
@@ -644,8 +650,18 @@ async function aiAssay(i){
 }
 
 /* ============ 保存记录 ============ */
+/* 记录类型切换：取样 vs 标记点 */
+function applyKind(){
+  const isMark=$("f_kind").value==="marker";
+  $("w_type").classList.toggle("hidden",isMark);
+  $("w_mark").classList.toggle("hidden",!isMark);
+  $("card_assay").classList.toggle("hidden",isMark);
+  $("card_loc").classList.toggle("hidden",isMark);
+}
+$("f_kind").onchange=async()=>{applyKind();$("f_sid").value=await nextSid();await store.set("last_kind",$("f_kind").value)};
+/* ============ 保存记录 ============ */
 async function nextSid(){
-  const d=new Date(),pre="S"+d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate())+"-";
+  const d=new Date(),pre=($("f_kind").value==="marker"?"M":"S")+d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate())+"-";
   let n=0;
   try{
     const all=await S.all();
@@ -657,6 +673,7 @@ async function nextSid(){
 }
 async function resetForm(){
   exitEdit();
+  const lk=await store.get("last_kind");if(lk){$("f_kind").value=lk;applyKind()}
   $("f_sid").value=await nextSid();$("f_time").value=nowLocal();
   $("f_recorder").value=(await store.get("recorder"))||"";
   $("f_loc").value="";
@@ -680,14 +697,16 @@ $("btn_save").onclick=async()=>{
   const sid=$("f_sid").value.trim();
   if(!sid){toast("请填写样品编号");$("f_sid").focus();return}
   const lic=licAt(lat,lon);
-  const assays=assays0;
+  const isMark=$("f_kind").value==="marker";
+  const assays=isMark?[]:assays0;
   const rec={
-    sample_id:sid,sample_type:$("f_type").value,sample_time:$("f_time").value,
+    sample_id:sid,sample_type:isMark?$("f_mark").value:$("f_type").value,sample_time:$("f_time").value,
+    kind:isMark?"marker":"sample",
     latitude:lat,longitude:lon,altitude:+$("f_alt").value||null,
     utm:lat!=null?toUTM(lat,lon):"",
     gps_accuracy:lastPos&&lastPos.coords.accuracy||null,
     assays,lithology:"",description:$("f_desc").value.trim(),
-    loc_status:$("f_loc").value,
+    loc_status:isMark?"":$("f_loc").value,
     recorder:$("f_recorder").value.trim(),
     area_name:$("f_area").value.trim(),
     license_no:lic?lic.no:"",license_holder:lic?lic.holder:"",
@@ -725,8 +744,8 @@ async function renderList(){
     const b=s.status==="synced"?'<span class="badge b-ok">已同步</span>':s.status==="failed"?'<span class="badge b-fail">同步失败</span>':'<span class="badge b-pend">待同步</span>';
     const as=(s.assays||[]).map(a=>`${a.element} ${a.value}${a.unit}`).join(" · ");
     return`<div class="card samcard" data-id="${s.id}">
-      <div class="info"><div><span class="sid">${xesc(s.sample_id)}</span>${b}</div>
-      <div class="meta">${xesc(s.sample_time||"")} · ${xesc(s.sample_type||"")}${s.loc_status?" · ⛏"+xesc(s.loc_status):""}${s.area_name?" · 📍"+xesc(s.area_name):""}${s.license_no?" · 📜"+xesc(s.license_no):""}</div>
+      <div class="info"><div><span class="sid">${xesc(s.sample_id)}</span>${b}${s.kind==="marker"?"<span class=\"badge\" style=\"background:#dbeafe;color:#1e40af\">标记点</span>":""}</div>
+      <div class="meta">${s.kind==="marker"?"🚩 ":""}${xesc(s.sample_time||"")} · ${xesc(s.sample_type||"")}${s.loc_status?" · ⛏"+xesc(s.loc_status):""}${s.area_name?" · 📍"+xesc(s.area_name):""}${s.license_no?" · 📜"+xesc(s.license_no):""}</div>
       ${as?`<div class="meta">🧪 ${xesc(as)}</div>`:""}
       ${s.description?`<div class="meta">🪨 ${xesc(s.description)}</div>`:""}
       <div class="meta">📷 ${(s.photos||[]).length} 张${s.erp_name?" · ERP:"+xesc(s.erp_name):""}</div>
@@ -757,7 +776,9 @@ $("samedit_del").onclick=async()=>{
 $("samedit_edit").onclick=()=>{
   const s=editingSample;if(!s)return;
   $("samedit").classList.add("hidden");
-  $("f_sid").value=s.sample_id;$("f_time").value=s.sample_time||"";$("f_type").value=s.sample_type||"";
+  $("f_sid").value=s.sample_id;$("f_time").value=s.sample_time||"";
+  $("f_kind").value=s.kind==="marker"?"marker":"sample";applyKind();
+  if(s.kind==="marker")$("f_mark").value=s.sample_type||"";else $("f_type").value=s.sample_type||"";
   $("f_lat").value=s.latitude??"";$("f_lon").value=s.longitude??"";$("f_alt").value=s.altitude??"";
   $("gps_text").textContent=s.latitude!=null?`纬度：${(+s.latitude).toFixed(6)}  经度：${(+s.longitude).toFixed(6)}`:("无坐标");
   $("gps_utm").textContent=s.utm?("UTM："+s.utm):"";
@@ -1063,10 +1084,15 @@ function initMap(){
       ctx.closePath();ctx.save();ctx.fillStyle="rgba(250,204,21,.3)";ctx.fill();ctx.restore();ctx.stroke();
       ctx.fillText(Z.no,lcx/Z.ring.length+4,lcy/Z.ring.length);
     }
-    // 取样点（内存缓存，同步画）
+    // 取样点（内存缓存，同步画）；标记点画蓝色三角
     for(const s of sampleCache){if(s.latitude==null)continue;const[px,py]=map.toPx(s.latitude,s.longitude);
       if(px<-20||py<-20||px>w+20||py>h+20)continue;
-      ctx.beginPath();ctx.arc(px,py,7,0,7);ctx.fillStyle=s.status==="synced"?"#22c55e":"#ef4444";ctx.fill();ctx.lineWidth=2;ctx.strokeStyle="#fff";ctx.stroke();
+      if(s.kind==="marker"){
+        ctx.beginPath();ctx.moveTo(px,py-8);ctx.lineTo(px+7,py+5);ctx.lineTo(px-7,py+5);ctx.closePath();
+        ctx.fillStyle="#0ea5e9";ctx.fill();ctx.lineWidth=2;ctx.strokeStyle="#fff";ctx.stroke();
+      }else{
+        ctx.beginPath();ctx.arc(px,py,7,0,7);ctx.fillStyle=s.status==="synced"?"#22c55e":"#ef4444";ctx.fill();ctx.lineWidth=2;ctx.strokeStyle="#fff";ctx.stroke();
+      }
       ctx.fillStyle="#0f172a";ctx.font="11px sans-serif";ctx.fillText(s.sample_id,px+9,py+4);}
     // 轨迹线：按记录模式分段上色（行车橙/步行蓝），切换点标黑圆点，间隔>30分钟断段
     const trkColor=m=>m==="walk"?"#0ea5e9":"#7c3aed";
