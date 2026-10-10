@@ -250,10 +250,10 @@ progress{width:100%;height:10px;margin-top:8px}
     <div class="card">
       <h3>🔄 版本更新</h3>
       <button class="btn secondary block" id="btn_update">检查并强制更新到最新版</button>
-      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：b20261010-88</p>
+      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：b20261010-89</p>
     </div>
     <div class="card">
-      <p style="font-size:11px;color:var(--muted);text-align:center">b20261010-88</p>
+      <p style="font-size:11px;color:var(--muted);text-align:center">b20261010-89</p>
       <h3>🗑 危险操作</h3>
       <button class="btn danger block" id="btn_wipe">🔒 清空本机全部数据（需密码）</button>
     </div>
@@ -1019,12 +1019,14 @@ function initMap(){
         ctx.strokeStyle=P.s==='Pegmatite'?'#d946ef':'rgba(60,60,60,.45)';ctx.lineWidth=P.s==='Pegmatite'?1.6:.6;ctx.stroke();
         if(P.b[2]-P.b[0]>0.03){let lcx=0,lcy=0;P.r.forEach(pt=>{const[qx,qy]=map.toPx(pt[0],pt[1]);lcx+=qx;lcy+=qy});
           ctx.fillStyle='rgba(51,51,51,.85)';ctx.font='10px sans-serif';ctx.fillText(P.s==='Pegmatite'?'Peg':P.s,lcx/P.r.length,lcy/P.r.length)}}
-      // A/B/C 联合分区：官方配色虚线描边
+      // A/B/C 联合分区：B=最优(橙色填充+粗边)，A=第二目标(红色浅填充)，C=灰虚线
       for(const P of GEO.abc){if(!inView(P.b))continue;
         plot(P.r);const c=P.no==='A'?'#e41a1c':P.no==='B'?'#ff7f00':'#999999';
-        ctx.strokeStyle=c;ctx.lineWidth=1.8;ctx.setLineDash([6,4]);ctx.stroke();ctx.setLineDash([]);
+        if(P.no==='B'){ctx.save();ctx.globalAlpha=.3;ctx.fillStyle=c;ctx.fill();ctx.restore()}
+        else if(P.no==='A'){ctx.save();ctx.globalAlpha=.16;ctx.fillStyle=c;ctx.fill();ctx.restore()}
+        ctx.strokeStyle=c;ctx.lineWidth=P.no==='C'?1.8:2.6;ctx.setLineDash([6,4]);ctx.stroke();ctx.setLineDash([]);
         if(P.r.length>=15){let lcx=0,lcy=0;P.r.forEach(pt=>{const[qx,qy]=map.toPx(pt[0],pt[1]);lcx+=qx;lcy+=qy});
-        ctx.fillStyle=c;ctx.font='bold 13px sans-serif';ctx.fillText(P.no+'区',lcx/P.r.length,lcy/P.r.length)}}
+        ctx.fillStyle=c;ctx.font='bold 13px sans-serif';ctx.fillText(P.no==='B'?'B区·最优潜力':P.no==='A'?'A区·第二目标':'C区',lcx/P.r.length,lcy/P.r.length)}}
       // 断层线
       ctx.strokeStyle='rgba(220,38,38,.75)';ctx.lineWidth=1.6;
       for(const L of GEO.faults){if(!inView(L.b))continue;ctx.beginPath();
