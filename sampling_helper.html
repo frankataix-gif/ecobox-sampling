@@ -230,8 +230,7 @@ progress{width:100%;height:10px;margin-top:8px}
   <section id="pg-set" class="hidden">
     <div class="card">
       <h3>☁️ 云端同步（Cloudflare Worker + D1）</h3>
-      <p style="font-size:12px;color:var(--muted);margin-bottom:8px">联网后自动/手动同步样品和矿点记录到 Cloudflare D1。<br>
-      <b>免填写方法</b>：让管理员发带令牌的链接（…/sampling_helper.html?t=令牌），打开一次即自动配置好。</p>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:8px">已开启<b>免配置模式</b>：联网即自动同步到云端，无需任何设置。下面的字段仅供高级用户改服务器用，一般不用动。</p>
       <label>Worker 地址（已固定）</label><input id="s_worker" value="https://fancy-heart-7a80.frankataix.workers.dev" readonly style="background:#f1f5f9;color:var(--muted)">
       <label>访问令牌</label><input id="s_token" placeholder="Worker 里配置的 APP_TOKEN">
       <button class="btn primary block" id="btn_saveset">保存设置</button>
@@ -257,10 +256,10 @@ progress{width:100%;height:10px;margin-top:8px}
     <div class="card">
       <h3>🔄 版本更新</h3>
       <button class="btn secondary block" id="btn_update">检查并强制更新到最新版</button>
-      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：b20261010-91</p>
+      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：b20261010-92</p>
     </div>
     <div class="card">
-      <p style="font-size:11px;color:var(--muted);text-align:center">b20261010-91</p>
+      <p style="font-size:11px;color:var(--muted);text-align:center">b20261010-92</p>
       <h3>🗑 危险操作</h3>
       <button class="btn danger block" id="btn_wipe">🔒 清空本机全部数据（需密码）</button>
     </div>
@@ -831,14 +830,15 @@ async function refreshPend(){
 }
 
 /* ============ 同步到 Cloudflare Worker/D1 ============ */
+const DEF_WORKER="https://fancy-heart-7a80.frankataix.workers.dev";
 async function uploadSample(s){
-  const wurl=await store.get("worker_url"),tok=await store.get("app_token");
-  if(!wurl||!tok)throw new Error("未配置 Worker 地址或 APP_TOKEN");
+  const wurl=(await store.get("worker_url"))||DEF_WORKER,tok=(await store.get("app_token"))||"";
   if(!navigator.onLine)throw new Error("当前无网络");
   const photos64=[];
   for(const p of s.photos||[]){const ab=await p.blob.arrayBuffer();photos64.push({name:p.name,kind:p.kind,data:b64(ab)})}
+  const headers={"Content-Type":"application/json"};if(tok)headers["X-App-Token"]=tok;
   const r=await fetch(wurl.replace(/\/$/,"")+"/sample",{method:"POST",
-    headers:{"Content-Type":"application/json","X-App-Token":tok},
+    headers,
     body:JSON.stringify({...s,photos:photos64,id:undefined})});
   const j=await r.json();
   if(r.ok&&j.ok){s.status="synced";s.erp_name=j.name;}
@@ -846,14 +846,11 @@ async function uploadSample(s){
   await S.put(s);
 }
 async function autoSync(s){
-  const wurl=await store.get("worker_url"),tok=await store.get("app_token");
-  if(!wurl||!tok||!navigator.onLine)return;
+  if(!navigator.onLine)return;
   try{await uploadSample(s);refreshPend();}catch(e){s.status="failed";s.sync_err=String(e).slice(0,300);await S.put(s);refreshPend();}
 }
 $("syncbtn").onclick=async()=>{
-  const wurl=await store.get("worker_url"),tok=await store.get("app_token");
-  if(!wurl){toast("请先在设置页填 Worker 地址");return}
-  if(!tok){toast("请先在设置页填 APP_TOKEN");return}
+  const wurl=(await store.get("worker_url"))||DEF_WORKER;
   if(!navigator.onLine){toast("当前无网络，记录已存本机");return}
   const pend=(await S.all()).filter(s=>s.status!=="synced");
   if(!pend.length){toast("没有待同步记录");return}
