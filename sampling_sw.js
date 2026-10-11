@@ -1,8 +1,8 @@
 // 野外取样工具 Service Worker — 缓存页面本体、manifest 和图标，离线可打开
-const CACHE = "sampling-v3";
+const CACHE = "sampling-v4";
 const BASE = new URL(self.registration.scope).pathname;
 const PAGES = [BASE + "sampling_helper.html", BASE + "index.html", BASE + "clear.html"];
-const STATIC = [BASE + "manifest.json", BASE + "icon.svg"];
+const STATIC = [BASE + "manifest.json", BASE + "icon.svg", BASE + "geo_1230se.jpg"];
 const ALL = [...PAGES, ...STATIC];
 
 self.addEventListener("install", (e) => {
