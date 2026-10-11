@@ -256,10 +256,10 @@ progress{width:100%;height:10px;margin-top:8px}
     <div class="card">
       <h3>🔄 版本更新</h3>
       <button class="btn secondary block" id="btn_update">检查并强制更新到最新版</button>
-      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：b20261010-92</p>
+      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：b20261010-93</p>
     </div>
     <div class="card">
-      <p style="font-size:11px;color:var(--muted);text-align:center">b20261010-92</p>
+      <p style="font-size:11px;color:var(--muted);text-align:center">b20261010-93</p>
       <h3>🗑 危险操作</h3>
       <button class="btn danger block" id="btn_wipe">🔒 清空本机全部数据（需密码）</button>
     </div>
@@ -849,19 +849,21 @@ async function autoSync(s){
   if(!navigator.onLine)return;
   try{await uploadSample(s);refreshPend();}catch(e){s.status="failed";s.sync_err=String(e).slice(0,300);await S.put(s);refreshPend();}
 }
-$("syncbtn").onclick=async()=>{
-  const wurl=(await store.get("worker_url"))||DEF_WORKER;
-  if(!navigator.onLine){toast("当前无网络，记录已存本机");return}
+$("syncbtn").onclick=async()=>{try{
+  if(!navigator.onLine){toast("当前无网络，记录已存本机",4000);return}
   const pend=(await S.all()).filter(s=>s.status!=="synced");
-  if(!pend.length){toast("没有待同步记录");return}
-  let ok=0;
-  for(const s of pend){
-    try{await uploadSample(s);ok++}catch(e){s.status="failed";s.sync_err=String(e).slice(0,300);await S.put(s)}
-  }
-  const firstErr=(await S.all()).find(s=>s.status==="failed"&&s.sync_err);
-  toast(`同步完成：成功 ${ok} / ${pend.length}`+(firstErr?`，错误：${firstErr.sync_err.slice(0,120)}`:""),6000);
+  if(!pend.length){toast("没有待同步记录",4000);return}
+  const btn=$("syncbtn");btn.disabled=true;btn.textContent="同步中…";
+  try{
+    let ok=0;
+    for(const s of pend){
+      try{await uploadSample(s);ok++}catch(e){s.status="failed";s.sync_err=String(e).slice(0,300);await S.put(s)}
+    }
+    const firstErr=(await S.all()).find(s=>s.status==="failed"&&s.sync_err);
+    toast(`同步完成：成功 ${ok} / ${pend.length}`+(firstErr?`，错误：${firstErr.sync_err.slice(0,120)}`:""),8000);
+  }finally{btn.disabled=false;btn.innerHTML='同步 <span id="pendcnt">0</span>';await refreshPend()}
   await refreshSampleCache();renderList();refreshPend();
-};
+}catch(e){toast("同步出错："+String(e&&e.message||e).slice(0,120),6000)}};
 
 /* ---- 一键备份：生成完整 JSON 文件，走系统分享存 Google Drive ---- */
 $("btn_backup").onclick=async()=>{
