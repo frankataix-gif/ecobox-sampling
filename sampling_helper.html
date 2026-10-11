@@ -256,10 +256,10 @@ progress{width:100%;height:10px;margin-top:8px}
     <div class="card">
       <h3>🔄 版本更新</h3>
       <button class="btn secondary block" id="btn_update">检查并强制更新到最新版</button>
-      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：b20261011-97</p>
+      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：b20261011-98</p>
     </div>
     <div class="card">
-      <p style="font-size:11px;color:var(--muted);text-align:center">b20261011-97</p>
+      <p style="font-size:11px;color:var(--muted);text-align:center">b20261011-98</p>
       <h3>🗑 危险操作</h3>
       <button class="btn danger block" id="btn_wipe">🔒 清空本机全部数据（需密码）</button>
     </div>
@@ -1593,6 +1593,12 @@ if("serviceWorker" in navigator&&location.protocol==="https:"){
     // 进入页面后主动检查一次更新
     setTimeout(()=>reg.update(),2000);
   }).catch(()=>{});
+  // 离线就绪自检：6 秒后 SW 还没激活，说明离线缓存没装上（离线打不开）
+  setTimeout(()=>{
+    navigator.serviceWorker.getRegistration().then(r=>{
+      if(!r||!r.active)toast("⚠️ 离线缓存还没装好：请联网保持本页打开约30秒，之后没网也能打开",9000);
+    }).catch(()=>{});
+  },6000);
 }
 
 /* ============ 启动 ============ */
