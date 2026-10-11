@@ -256,10 +256,10 @@ progress{width:100%;height:10px;margin-top:8px}
     <div class="card">
       <h3>🔄 版本更新</h3>
       <button class="btn secondary block" id="btn_update">检查并强制更新到最新版</button>
-      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：b20261011-96</p>
+      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：b20261011-97</p>
     </div>
     <div class="card">
-      <p style="font-size:11px;color:var(--muted);text-align:center">b20261011-96</p>
+      <p style="font-size:11px;color:var(--muted);text-align:center">b20261011-97</p>
       <h3>🗑 危险操作</h3>
       <button class="btn danger block" id="btn_wipe">🔒 清空本机全部数据（需密码）</button>
     </div>
@@ -1093,13 +1093,13 @@ function initMap(){
     }
     // 矿证边界（视野内的才画）
     const[vLa,vLo]=map.toLL(0,0),[vLb,vLo2]=map.toLL(w,h);
-    ctx.strokeStyle="rgba(220,38,38,.8)";ctx.lineWidth=1.5;ctx.fillStyle="rgba(220,38,38,.9)";ctx.font="10px sans-serif";
+    ctx.strokeStyle="rgba(0,0,0,.85)";ctx.lineWidth=1.5;ctx.fillStyle="rgba(0,0,0,.9)";ctx.font="10px sans-serif";
     for(const L of LICENSES){
       const[a1,o1,a2,o2]=L.bb;
       if(a2<Math.min(vLa,vLb)||a1>Math.max(vLa,vLb)||o2<Math.min(vLo,vLo2)||o1>Math.max(vLo,vLo2))continue;
       ctx.beginPath();let lcx=0,lcy=0;
       L.ring.forEach((p,i)=>{const[qx,qy]=map.toPx(p[0],p[1]);lcx+=qx;lcy+=qy;i?ctx.lineTo(qx,qy):ctx.moveTo(qx,qy)});
-      ctx.closePath();ctx.save();ctx.fillStyle="rgba(220,38,38,.08)";ctx.fill();ctx.restore();ctx.stroke();
+      ctx.closePath();ctx.save();ctx.fillStyle="rgba(0,0,0,.05)";ctx.fill();ctx.restore();ctx.stroke();
       ctx.fillText(L.no,lcx/L.ring.length+4,lcy/L.ring.length);
     }
     // 潜在验证区（黄色：东北块+南舌头，视野内的才画）
