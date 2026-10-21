@@ -261,10 +261,10 @@ progress{width:100%;height:10px;margin-top:8px}
     <div class="card">
       <h3>🔄 版本更新</h3>
       <button class="btn secondary block" id="btn_update">检查并强制更新到最新版</button>
-      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：b20261021-100</p>
+      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：b20261021-101</p>
     </div>
     <div class="card">
-      <p style="font-size:11px;color:var(--muted);text-align:center">b20261021-100</p>
+      <p style="font-size:11px;color:var(--muted);text-align:center">b20261021-101</p>
       <h3>🗑 危险操作</h3>
       <button class="btn danger block" id="btn_wipe">🔒 清空本机全部数据（需密码）</button>
     </div>
@@ -343,6 +343,11 @@ progress{width:100%;height:10px;margin-top:8px}
   <select id="dl_extra"></select>
   <div class="row" style="margin-top:10px">
     <button class="btn primary" id="dlgo">下载当前视野</button>
+  </div>
+  <hr style="margin:14px 0;border:none;border-top:1px solid var(--border)">
+  <p style="font-size:13px;color:var(--muted)"><b>矿区范围</b>：42881+43131 两个矿权及周边 z6–z13（约 200 张/~3MB），野外作业推荐。</p>
+  <div class="row" style="margin-top:10px">
+    <button class="btn secondary" id="dlmine">下载矿区范围底图</button>
   </div>
   <hr style="margin:14px 0;border:none;border-top:1px solid var(--border)">
   <p style="font-size:13px;color:var(--muted)"><b>全国底图</b>：赞比亚全境 z6–z10（约 1000 张/~15MB），只需下一次，永久有效。</p>
@@ -1211,12 +1216,13 @@ function initMap(){
     if(!navigator.onLine){ // 无任何瓦片：网格占位
       ctx.strokeStyle="rgba(100,116,139,.25)";ctx.strokeRect(px,py,sz,sz);
       ctx.fillStyle="rgba(100,116,139,.4)";ctx.font="10px sans-serif";ctx.fillText(k,px+4,py+14);return}
-    // 在线下载并缓存（标记请求中，完成后合并重绘一次）
+    // 在线下载并缓存（标记请求中，完成后合并重绘一次）；8秒超时防弱网卡死
     tilePending[k]=1;
-    fetch(`${OSM}/${k}.png`).then(r=>r.ok?r.blob():null).then(async b=>{
+    const ctrl=new AbortController();const tm=setTimeout(()=>ctrl.abort(),8000);
+    fetch(`${OSM}/${k}.png`,{signal:ctrl.signal}).then(r=>r.ok?r.blob():null).then(async b=>{
       if(b){await T.put(k,b);tileCache[k]=await mkBitmap(b)}
       tilePending[k]=0;scheduleDraw();
-    }).catch(()=>{tilePending[k]=0});
+    }).catch(()=>{tilePending[k]=0}).finally(()=>clearTimeout(tm));
     ctx.strokeStyle="rgba(100,116,139,.2)";ctx.strokeRect(px,py,sz,sz);
   }
   // 交互
@@ -1522,6 +1528,12 @@ async function openDl(){
   $("dl_extra").innerHTML=opts.map(([v,t],i)=>`<option value="${v}"${i===1?" selected":""}>${t}</option>`).join("");
   const zm=await T.byZoom(),tn=Object.values(zm).reduce((a,b)=>a+b,0);
   $("dl_have").textContent=tn>0?`✅ 已缓存 ${tn} 张（约 ${(tn*15/1024).toFixed(1)}MB）：${zoomSummary(zm)}`:"⚠️ 本机暂无离线地图，建议先下载";
+  // 覆盖检查：当前视野在这一级有多少已缓存（判断"为什么这里没图"）
+  const w=map.cv.width/devicePixelRatio,h=map.cv.height/devicePixelRatio;
+  const[laA,loA]=map.toLL(0,0),[laB,loB]=map.toLL(w,h);
+  const vj=bboxJobs(loA,laA,loB,laB,z0,z0);let vh=0;
+  for(const k of vj)if(await T.get(k))vh++;
+  $("dl_have").textContent+=`｜当前视野 z${z0}：${vh}/${vj.length} 已缓存`;
   await updZambiaBtn();
   $("dlmodal").classList.remove("hidden");$("dlstat").textContent="";
 }
@@ -1554,25 +1566,40 @@ function bboxJobs(lonA,latA,lonB,latB,zLo,zHi){
   }
   return jobs;
 }
+async function dlOne(k,timeoutMs){ // 单张下载（带超时）：成功 true 失败 false
+  const ctrl=new AbortController();const tm=setTimeout(()=>ctrl.abort(),timeoutMs||10000);
+  try{const r=await fetch(`${OSM}/${k}.png`,{signal:ctrl.signal});
+    if(r.ok){await T.put(k,await r.blob());return true}return false
+  }catch(e){return false}finally{clearTimeout(tm)}
+}
 async function runDl(jobs,label){
   if(jobs.length>5000&&!confirm(`共 ${jobs.length} 张瓦片（约 ${Math.round(jobs.length*15/1024)}MB+），较多，继续？`)){await store.set("dl_job",null);return}
   await store.set("dl_job",{jobs,label}); // 记录任务，中断可续
-  $("dlgo").disabled=true;$("dlzambia").disabled=true;
-  let done=0,skip=0;
+  $("dlgo").disabled=true;$("dlzambia").disabled=true;$("dlmine").disabled=true;
+  let done=0,skip=0,fail=0;const failed=[];
   for(const k of jobs){
     if(await T.get(k)){skip++;}
-    else{try{const r=await fetch(`${OSM}/${k}.png`);if(r.ok)await T.put(k,await r.blob());}catch(e){}
+    else{if(!await dlOne(k)){fail++;failed.push(k)}
       await new Promise(r=>setTimeout(r,120));} // 限速，尊重 OSM
     done++;
     if(done%25===0)await store.set("dl_job",{jobs:jobs.slice(done),label}); // 每25张存一次进度
     $("dlprog").value=done/jobs.length*100;
-    $("dlstat").textContent=`${label}：${done}/${jobs.length}（跳过已缓存 ${skip}）`;
+    $("dlstat").textContent=`${label}：${done}/${jobs.length}（跳过已缓存 ${skip}${fail?"，失败 "+fail:""}）`;
+  }
+  if(failed.length){ // 失败自动补一轮，慢速重试
+    $("dlstat").textContent=`补漏 ${failed.length} 张…`;
+    let fix=0;
+    for(const k of failed){if(await dlOne(k,15000))fix++;
+      await new Promise(r=>setTimeout(r,300))}
+    fail-=fix;
   }
   await store.set("dl_job",null); // 完成，清除任务
-  if(label.indexOf("赞比亚")===0)await store.set("zambia_done",true); // 全国底图完成打标
-  $("dlgo").disabled=false;$("dlzambia").disabled=false;
+  if(label.indexOf("赞比亚")===0&&fail===0)await store.set("zambia_done",true); // 全国底图完成打标
+  $("dlgo").disabled=false;$("dlzambia").disabled=false;$("dlmine").disabled=false;
   await updZambiaBtn();
-  toast("离线地图下载完成");map.draw();
+  if(fail)toast(`离线地图完成，但 ${fail} 张没下载成功：联网再点一次下载可补齐`,7000);
+  else toast("离线地图下载完成");
+  map.draw();
 }
 async function resumeDl(){ // 页面重开后自动续传未完成的下载
   const j=await store.get("dl_job");
@@ -1590,6 +1617,9 @@ $("dlgo").onclick=()=>{ // 当前视野：z0-extra 到 z0+2，上限 z12 建议
 };
 $("dlzambia").onclick=()=>{ // 赞比亚全境 z6–z10
   runDl(bboxJobs(21.5,-18.3,34.3,-7.8,6,10),"赞比亚底图");
+};
+$("dlmine").onclick=()=>{ // 矿区范围：42881+43131 两矿权及周边 z6–z13
+  runDl(bboxJobs(29.9,-13.5,30.9,-12.3,6,13),"矿区底图");
 };
 
 /* ============ PWA 安装提示 ============ */
