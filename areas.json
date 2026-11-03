@@ -1,0 +1,25 @@
+{
+ "version": 1,
+ "note": "矿区范围配置：只用于把取样记录按 GPS 坐标自动归到矿区，取样时不需要用户选择。bbox = [west, south, east, north]（WGS84）。新增矿区只改本文件，不必改代码。",
+ "areas": [
+  {
+   "id": "serenje_1330nw",
+   "code": "SER",
+   "name": "Serenje 1330NW",
+   "bbox": [
+    30.0,
+    -13.45,
+    30.5,
+    -12.95
+   ],
+   "center": [
+    30.25,
+    -13.2
+   ],
+   "licences": [
+    "42881-HQ-LEL"
+   ],
+   "map_pack": "serenje"
+  }
+ ]
+}

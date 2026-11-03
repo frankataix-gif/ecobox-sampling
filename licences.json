@@ -1,0 +1,101 @@
+{
+ "version": 1,
+ "updated": "2026-11-02",
+ "note": "矿证与地质资料。带「待核实」的字段是从现场取样数据里反推的，请按矿证原件/地质报告订正后直接改本文件。新增矿证只加一条，页面自动出现。",
+ "licences": [
+  {
+   "no": "42881-HQ-LEL",
+   "order": 1,
+   "name": "Serenje 1330NW 钽铌项目",
+   "area_id": "serenje_1330nw",
+   "holder": "（待核实）",
+   "type": "Large-scale Mining Licence",
+   "status": "Active",
+   "info": [
+    {
+     "k": "持有人",
+     "v": "MAMANGA MINING LIMITED (100%)"
+    },
+    {
+     "k": "许可证类型",
+     "v": "Large Scale Exploration Licence"
+    },
+    {
+     "k": "许可证状态",
+     "v": "Active"
+    },
+    {
+     "k": "申请时间",
+     "v": "2025-12-10 21:04:52"
+    },
+    {
+     "k": "批准时间",
+     "v": "2026-10-12"
+    },
+    {
+     "k": "到期时间",
+     "v": "2030-10-11"
+    },
+    {
+     "k": "地区",
+     "v": "Central, Serenje"
+    },
+    {
+     "k": "产区面积",
+     "v": "87.12 km²"
+    },
+    {
+     "k": "矿产",
+     "v": "Copper"
+    },
+    {
+     "k": "是否释放",
+     "v": ""
+    },
+    {
+     "k": "刷新时间",
+     "v": "11-02 14:20"
+    },
+    {
+     "k": "相关项目",
+     "v": "最终决定的矿权"
+    },
+    {
+     "k": "查看报告",
+     "v": "AI报告"
+    }
+   ],
+   "valid_from": "",
+   "valid_to": "",
+   "commodities": [
+    "Ta",
+    "Nb",
+    "Li"
+   ],
+   "center": [
+    30.25,
+    -13.2
+   ],
+   "geology": {
+    "terrane": "Irumide 带（待核实）",
+    "host": "花岗岩 + 伟晶岩脉，Ta-Nb 矿化",
+    "structure": "NE 向剪切/断裂控制脉体就位（待核实）",
+    "minerals": [
+     "钽铌铁矿",
+     "锡石",
+     "锂云母（待核实）"
+    ],
+    "alteration": "钠长石化、云母化",
+    "notes": "现场 7 个 Ta 点已入库到 QGIS 图层 field_samples。矿区图幅 1330NW。"
+   },
+   "sampling": {
+    "target": "伟晶岩露头、民采坑、废石堆",
+    "spacing": "沿脉追索，露头点间 20–50 m（待核实）",
+    "note": "每个点最多 6 张照片，其中 XRF 读数屏幕照标 🧪。"
+   },
+   "reference": [],
+   "intro": "Serenje 1330NW 区块内的 Ta-Nb 伟晶岩型矿化点。现场已采 7 个 Ta 点并入库 QGIS 图层 field_samples。矿化受 NE 向剪切带控制，含矿母岩为分异较好的花岗岩及其派生的伟晶岩脉。",
+   "reports": []
+  }
+ ]
+}

@@ -1,11 +1,13 @@
 // 野外取样工具 Service Worker — 页面本体+静态文件离线可用
-// v5：修复单文件下载失败导致整个安装失败的问题；任意同域导航离线回退到主页面
-const CACHE = "sampling-v5";
+// v30：矿权边界支持「粘贴坐标」直接生成（DMS/十进制/ArcGIS 表）
+const CACHE = "sampling-v31";
 const BASE = new URL(self.registration.scope).pathname; // /ecobox-sampling/
 const BASE_ROOT = BASE.endsWith("/") ? BASE.slice(0, -1) : BASE;
 const MAIN_PAGE = BASE + "sampling_helper.html";
-const PAGES = [MAIN_PAGE, BASE + "index.html", BASE + "clear.html"];
+const PAGES = [MAIN_PAGE, BASE + "licences.html", BASE + "index.html", BASE + "clear.html"];
 const STATIC = [BASE + "manifest.json", BASE + "icon.svg", BASE + "geo_1230se.jpg"];
+// 矿区配置：网络优先，离线回退缓存（改配置刷新即生效，不必等新版本）
+const CONFIG = [BASE + "areas.json", BASE + "licences.json"];
 
 async function tryCache(c, f) {
   try {
@@ -23,7 +25,7 @@ self.addEventListener("install", (e) => {
     // 页面逐个缓存：一个失败不影响其余，更不影响安装本身
     for (const f of PAGES) await tryCache(c, f);
     // 静态大文件后台补缓存，绝不阻塞安装完成
-    Promise.all(STATIC.map((f) => tryCache(c, f)));
+    Promise.all(STATIC.concat(CONFIG).map((f) => tryCache(c, f)));
     await self.skipWaiting();
   })());
 });
@@ -42,14 +44,45 @@ self.addEventListener("fetch", (e) => {
 
   const isPage = PAGES.includes(u.pathname);
   const isStatic = STATIC.includes(u.pathname);
+  const isCfg = CONFIG.includes(u.pathname);
+  const isGeo = u.pathname.startsWith(BASE + "geo/");
   // 任意同域导航请求都算页面（覆盖裸目录、奇怪参数等入口）
   const isNav = e.request.mode === "navigate" &&
     (u.pathname === BASE_ROOT || u.pathname.startsWith(BASE));
-  if (!isPage && !isNav && !isStatic) return;
+  if (isGeo) {
+    // 地质包（GeoJSON / 磁异常图）：缓存优先 + 后台更新，离线也能看图
+    e.respondWith((async () => {
+      const hit = await caches.match(u.pathname);
+      const net = fetch(e.request).then((r) => {
+        if (r.ok) caches.open(CACHE).then((c) => c.put(u.pathname, r.clone()));
+        return r;
+      }).catch(() => null);
+      if (hit) { net; return hit; }
+      const r = await net;
+      return r || new Response("{}", { status: 503, headers: { "Content-Type": "application/json" } });
+    })());
+    return;
+  }
+  if (!isPage && !isNav && !isStatic && !isCfg) return;
 
   e.respondWith((async () => {
     const cacheKey = isPage || isStatic ? u.pathname : MAIN_PAGE;
     const cachedHit = (await caches.match(cacheKey)) || (await caches.match(MAIN_PAGE));
+
+    // 矿区配置：网络优先，离线回退缓存
+    if (isCfg) {
+      try {
+        const r = await fetch(e.request, { cache: "no-store" });
+        if (r.ok) {
+          const copy = r.clone();
+          caches.open(CACHE).then((c) => c.put(u.pathname, copy));
+          return r;
+        }
+      } catch (err) { /* 离线 → 走缓存 */ }
+      const hit = await caches.match(u.pathname);
+      if (hit) return hit;
+      return new Response("{}", { status: 503, headers: { "Content-Type": "application/json" } });
+    }
 
     // 静态资源：缓存优先，联网成功顺手补缓存（懒修复安装期失败文件）
     if (isStatic && !isNav) {

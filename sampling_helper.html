@@ -238,6 +238,12 @@ progress{width:100%;height:10px;margin-top:8px}
   <!-- ===== 设置页 ===== -->
   <section id="pg-set" class="hidden">
     <div class="card">
+      <h3>🗂 矿证 / 地质资料</h3>
+      <p style="font-size:13px;color:var(--muted);line-height:1.7">取样时<b>不需要选矿区</b>：记录会按 GPS 坐标自动标注所属矿区（依据 <code>areas.json</code> 的 bbox），落在范围外记为「未归属」。<br>
+      矿证与地质资料在单独页面查看：</p>
+      <a class="btn secondary block" href="licences.html" style="display:block;text-decoration:none;text-align:center">📚 打开矿证与地质资料页</a>
+    </div>
+    <div class="card">
       <h3>☁️ 云端同步（Cloudflare Worker + D1）</h3>
       <p style="font-size:12px;color:var(--muted);margin-bottom:8px">已开启<b>免配置模式</b>：联网即自动同步到云端，无需任何设置。下面的字段仅供高级用户改服务器用，一般不用动。</p>
       <label>Worker 地址（已固定）</label><input id="s_worker" value="https://fancy-heart-7a80.frankataix.workers.dev" readonly style="background:#f1f5f9;color:var(--muted)">
@@ -265,10 +271,10 @@ progress{width:100%;height:10px;margin-top:8px}
     <div class="card">
       <h3>🔄 版本更新</h3>
       <button class="btn secondary block" id="btn_update">检查并强制更新到最新版</button>
-      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：b20261021-102</p>
+      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：b20261102-104</p>
     </div>
     <div class="card">
-      <p style="font-size:11px;color:var(--muted);text-align:center">b20261021-102</p>
+      <p style="font-size:11px;color:var(--muted);text-align:center">b20261102-104</p>
       <h3>🗑 危险操作</h3>
       <button class="btn danger block" id="btn_wipe">🔒 清空本机全部数据（需密码）</button>
     </div>
@@ -414,22 +420,67 @@ function licAt(lat,lon){
   return null;
 }
 
+/* ============ 矿区归属（只做自动标注，不参与操作流程） ============ */
+const UNASSIGNED_AREA={id:"",code:"",name:"未归属",bbox:null};
+const AREAS_FALLBACK={version:1,areas:[
+  {id:"serenje_1330nw",code:"SER",name:"Serenje 1330NW",bbox:[30.0,-13.45,30.5,-12.95],center:[30.25,-13.2],licences:["42881-HQ-LEL"],map_pack:"serenje"},
+  {id:"kalomo_south",code:"KLM",name:"Kalomo（南部）",bbox:[26.3,-17.5,26.9,-16.9],center:[26.6,-17.2],licences:["43004-HQ-LEL"]},
+  {id:"chitambo_1230se",code:"CHT",name:"Chitambo 1230SE",bbox:[30.4,-13.05,31.25,-12.35],center:[30.82,-12.7],licences:[],map_pack:"chitambo"}
+]};
+const AREA={doc:AREAS_FALLBACK,list:AREAS_FALLBACK.areas};
+const areaById=id=>AREA.list.find(a=>a.id===id)||null;
+const areaName=id=>{const a=areaById(id);return a?a.name:""};
+function areaAt(lat,lon){ // 按 GPS 坐标反推所在矿区：取样时自动标注，不需要用户先选
+  if(lat==null||lon==null)return null;
+  for(const a of AREA.list){
+    const b=a.bbox;if(!b||b.length<4)continue;
+    if(lat>=b[1]&&lat<=b[3]&&lon>=b[0]&&lon<=b[2])return a;
+  }
+  return null;
+}
+function applyAreaDoc(doc){
+  const src=doc&&Array.isArray(doc.areas)?doc:AREAS_FALLBACK;
+  let list=src.areas.filter(a=>a&&a.id&&a.name).map(a=>({...a,id:String(a.id),code:String(a.code||""),name:String(a.name)}));
+  if(!list.length)list=AREAS_FALLBACK.areas.slice();
+  AREA.doc={...src,areas:list};
+  AREA.list=list;
+}
+async function loadAreas(){ // 仅用于“这条记录落在哪个矿区/矿证”的自动标注
+  let doc=null;
+  try{
+    if(navigator.onLine){const r=await fetch("areas.json",{cache:"no-store"});if(r.ok)doc=await r.json()}
+  }catch(e){ /* 离线：用缓存或内置兜底 */ }
+  if(!doc)doc=await store.get("areas_doc");
+  applyAreaDoc(doc);
+  if(doc&&navigator.onLine)await store.set("areas_doc",doc);
+}
+
 /* ============ IndexedDB ============ */
-let db;
-const idb=()=>new Promise((res,rej)=>{
-  if(db)return res(db);
-  const r=indexedDB.open("field_sampling",3);
-  r.onupgradeneeded=e=>{
-    const d=e.target.result;
-    const mk=(n,o)=>{if(!d.objectStoreNames.contains(n))d.createObjectStore(n,o)};
-    mk("samples",{keyPath:"id",autoIncrement:true});
-    mk("tiles",{keyPath:"k"});
-    mk("kv",{keyPath:"k"});
-    mk("track",{keyPath:"id",autoIncrement:true});
-    mk("trips",{keyPath:"id",autoIncrement:true});
-  };
-  r.onsuccess=()=>{db=r.result;res(db)};r.onerror=()=>rej(r.error);
-});
+let db=null;
+function ensureBaseStores(d){
+  const mk=(n,o)=>{if(!d.objectStoreNames.contains(n))d.createObjectStore(n,o)};
+  mk("samples",{keyPath:"id",autoIncrement:true});
+  mk("tiles",{keyPath:"k"});
+  mk("kv",{keyPath:"k"});
+  mk("track",{keyPath:"id",autoIncrement:true});
+  mk("trips",{keyPath:"id",autoIncrement:true});
+}
+function openDb(ver){
+  return new Promise((res,rej)=>{
+    const r=ver?indexedDB.open("field_sampling",ver):indexedDB.open("field_sampling");
+    r.onupgradeneeded=e=>ensureBaseStores(e.target.result);
+    r.onsuccess=()=>{const d=r.result;d.addEventListener("versionchange",()=>{d.close();if(db===d)db=null});res(d)};
+    r.onerror=()=>rej(r.error);
+    r.onblocked=()=>rej(new Error("IndexedDB 被其它标签页占用"));
+  });
+}
+const idb=async()=>{
+  if(db)return db;
+  let d=await openDb();
+  if(!d.objectStoreNames.contains("kv")){const v=d.version+1;d.close();d=await openDb(v)}
+  db=d;return d;
+};
+
 const tx=(st,mode,fn)=>idb().then(d=>new Promise((res,rej)=>{
   const t=d.transaction(st,mode),o=t.objectStore(st);const out=fn(o);
   t.oncomplete=()=>res(out&&out._v!==undefined?out._v:out);t.onerror=()=>rej(t.error);
@@ -438,12 +489,38 @@ const store={ // kv helpers
   get:k=>idb().then(d=>new Promise(res=>{const r=d.transaction("kv").objectStore("kv").get(k);r.onsuccess=()=>res(r.result?r.result.v:null);r.onerror=()=>res(null)})),
   set:(k,v)=>idb().then(d=>new Promise(res=>{const t=d.transaction("kv","readwrite");t.objectStore("kv").put({k,v});t.oncomplete=res})),
 };
-const S={
-  all:()=>idb().then(d=>new Promise(res=>{const r=d.transaction("samples").objectStore("samples").getAll();r.onsuccess=()=>res(r.result||[])})),
+const getAllReq=st=>idb().then(d=>new Promise((res,rej)=>{const r=d.transaction(st).objectStore(st).getAll();r.onsuccess=()=>res(r.result||[]);r.onerror=()=>rej(r.error)}));
+const S={ // 全部样品同一个 store：矿区归属只是记录上的字段
+  all:()=>getAllReq("samples"),
   put:s=>idb().then(d=>new Promise(res=>{const t=d.transaction("samples","readwrite");t.objectStore("samples").put(s);t.oncomplete=res})),
   del:id=>idb().then(d=>new Promise(res=>{const t=d.transaction("samples","readwrite");t.objectStore("samples").delete(id);t.oncomplete=res})),
   clear:()=>idb().then(d=>new Promise(res=>{const t=d.transaction(["samples","tiles"],"readwrite");t.objectStore("samples").clear();t.objectStore("tiles").clear();t.oncomplete=res})),
+  wipeAll:async()=>{ // 兼容曾按矿区分 store 的试验版
+    const d=await idb();
+    const names=[...d.objectStoreNames].filter(n=>n==="samples"||n.startsWith("samples_"));
+    if(!names.length)return;
+    await new Promise(res=>{const t=d.transaction(names,"readwrite");names.forEach(n=>t.objectStore(n).clear());t.oncomplete=res});
+  },
 };
+async function mergeLegacyStores(){ // 试验版留下的 samples_* 并回单一 samples（首启一次）
+  if(await store.get("areas_merged_v2"))return;
+  const d=await idb();
+  const extra=[...d.objectStoreNames].filter(n=>n.startsWith("samples_"));
+  if(extra.length){
+    const seen=new Set((await getAllReq("samples")).map(s=>s.sample_id));
+    let moved=0;
+    for(const n of extra){
+      for(const s of await getAllReq(n)){
+        if(!s||s.sample_id==null||seen.has(s.sample_id))continue;
+        const rec={...s};delete rec.id;
+        if(!rec.area_id){const a=areaAt(rec.latitude,rec.longitude);rec.area_id=a?a.id:""}
+        await S.put(rec);seen.add(rec.sample_id);moved++;
+      }
+    }
+    if(moved)toast(`已合并 ${moved} 条记录到主库`,4000);
+  }
+  await store.set("areas_merged_v2",true);
+}
 const T={
   get:k=>idb().then(d=>new Promise(res=>{const r=d.transaction("tiles").objectStore("tiles").get(k);r.onsuccess=()=>res(r.result?r.result.b:null);r.onerror=()=>res(null)})),
   put:(k,b)=>idb().then(d=>new Promise(res=>{const t=d.transaction("tiles","readwrite");t.objectStore("tiles").put({k,b});t.oncomplete=res})),
@@ -743,6 +820,8 @@ $("btn_save").onclick=async()=>{
     loc_status:isMark?"":$("f_loc").value,
     recorder:$("f_recorder").value.trim(),
     area_name:$("f_area").value.trim(),
+    area_id:(areaAt(lat,lon)||UNASSIGNED_AREA).id,
+    licence:lic?lic.no:"",
     license_no:lic?lic.no:"",license_holder:lic?lic.holder:"",
     remark:$("f_remark").value.trim(),
     photos:photos.map(p=>({name:p.name,kind:p.kind,blob:p.blob})),
@@ -753,7 +832,8 @@ $("btn_save").onclick=async()=>{
     rec.sample_time=editingSample.sample_time;
     rec.latitude=lat;rec.longitude=lon;rec.altitude=+$("f_alt").value||editingSample.altitude;
     rec.utm=toUTM(lat,lon);rec.gps_accuracy=null;
-    const lic2=licAt(lat,lon);rec.license_no=lic2?lic2.no:null;rec.license_holder=lic2?lic2.holder:null;
+    const lic2=licAt(lat,lon);rec.licence=lic2?lic2.no:null;rec.license_no=lic2?lic2.no:null;rec.license_holder=lic2?lic2.holder:null;
+    rec.area_id=editingSample.area_id||(areaAt(lat,lon)||UNASSIGNED_AREA).id;
     rec.created_at=editingSample.created_at||rec.created_at;
   }
   await S.put(rec);await refreshSampleCache();
@@ -779,7 +859,7 @@ async function renderList(){
     const as=(s.assays||[]).map(a=>`${a.element} ${a.value}${a.unit}`).join(" · ");
     return`<div class="card samcard" data-id="${s.id}">
       <div class="info"><div><span class="sid">${xesc(s.sample_id)}</span>${b}${s.kind==="marker"?"<span class=\"badge\" style=\"background:#dbeafe;color:#1e40af\">标记点</span>":""}</div>
-      <div class="meta">${s.kind==="marker"?"🚩 ":""}${xesc(s.sample_time||"")} · ${xesc(s.sample_type||"")}${s.loc_status?" · ⛏"+xesc(s.loc_status):""}${s.area_name?" · 📍"+xesc(s.area_name):""}${s.license_no?" · 📜"+xesc(s.license_no):""}</div>
+      <div class="meta">${s.kind==="marker"?"🚩 ":""}${xesc(s.sample_time||"")} · ${xesc(s.sample_type||"")}${s.loc_status?" · ⛏"+xesc(s.loc_status):""}${s.area_name?" · 📍"+xesc(s.area_name):""}${(s.licence||s.license_no)?" · 📜"+xesc(s.licence||s.license_no):""}</div>
       ${as?`<div class="meta">🧪 ${xesc(as)}</div>`:""}
       ${s.description?`<div class="meta">🪨 ${xesc(s.description)}</div>`:""}
       <div class="meta">📷 ${(s.photos||[]).length} 张${s.erp_name?" · ERP:"+xesc(s.erp_name):""}</div>
@@ -807,7 +887,7 @@ $("samedit_del").onclick=async()=>{
   $("samedit").classList.add("hidden");
   await refreshSampleCache();renderList();refreshPend();
 };
-$("samedit_edit").onclick=()=>{
+$("samedit_edit").onclick=async()=>{
   const s=editingSample;if(!s)return;
   $("samedit").classList.add("hidden");
   $("f_sid").value=s.sample_id;$("f_time").value=s.sample_time||"";
@@ -843,7 +923,8 @@ function viewDetail(id,all){
     ${row("UTM",xesc(s.utm))}
     ${row("海拔",s.altitude!=null?`${s.altitude} m`:"")}
     ${row("地区",xesc(s.area_name))}
-    ${row("矿证",s.license_no?`${xesc(s.license_no)} ${xesc(s.license_holder||"")}`:"")}
+    ${row("矿区",xesc(areaName(s.area_id)||s.area_name||"未归属"))}
+    ${row("矿证",(s.licence||s.license_no)?`${xesc(s.licence||s.license_no)} ${xesc(s.license_holder||"")}`:"")}
     ${row("位置状态",xesc(s.loc_status))}
     ${row("含量",xesc((s.assays||[]).map(a=>`${a.element} ${a.value}${a.unit}`).join(" · ")))}
     ${row("描述",xesc(s.description))}
@@ -871,9 +952,8 @@ async function uploadSample(s){
   const photos64=[];
   for(const p of s.photos||[]){const ab=await p.blob.arrayBuffer();photos64.push({name:p.name,kind:p.kind,data:b64(ab)})}
   const headers={"Content-Type":"application/json"};if(tok)headers["X-App-Token"]=tok;
-  const r=await fetch(wurl.replace(/\/$/,"")+"/sample",{method:"POST",
-    headers,
-    body:JSON.stringify({...s,photos:photos64,id:undefined})});
+  const payload={...s,area_id:s.area_id||"",licence:s.licence||s.license_no||"",photos:photos64,id:undefined};
+  const r=await fetch(wurl.replace(/\/$/,"")+"/sample",{method:"POST",headers,body:JSON.stringify(payload)});
   const j=await r.json();
   if(r.ok&&j.ok){s.status="synced";s.erp_name=j.name;}
   else{s.status="failed";s.sync_err=JSON.stringify(j).slice(0,300)}
@@ -909,7 +989,7 @@ $("btn_backup").onclick=async()=>{
     for(const p of s.photos||[]){if(p.blob)ps.push({name:p.name,kind:p.kind,data:b64(await p.blob.arrayBuffer())})}
     data.push({...s,photos:ps});
   }
-  const payload={app:"ecobox-sampling",exported_at:new Date().toISOString(),samples:data,trips};
+  const payload={app:"ecobox-sampling",exported_at:new Date().toISOString(),areas:AREA.doc.areas,samples:data,trips};
   const f=new File([JSON.stringify(payload)],`ecobox_backup_${new Date().toISOString().slice(0,10)}.json`,{type:"application/json"});
   if(navigator.canShare&&navigator.canShare({files:[f]})){
     try{await navigator.share({files:[f],title:"ECOBOX 取样备份"});return}catch(e){if(e.name==="AbortError")return}
@@ -923,7 +1003,8 @@ $("btn_backup").onclick=async()=>{
 async function loadSet(){
   let w=await store.get("worker_url");
   if(!w&&location.host.endsWith(".workers.dev")){w=location.origin;await store.set("worker_url",w)} // 同源托管时自动用本域名
-  $("s_worker").value=w||$("s_worker").value; // 默认已填 Worker 地址$("s_token").value=(await store.get("app_token"))||"";
+  $("s_worker").value=w||$("s_worker").value; // 默认已填 Worker 地址
+  $("s_token").value=(await store.get("app_token"))||"";
 }
 $("btn_saveset").onclick=async()=>{await store.set("worker_url",$("s_worker").value.trim());await store.set("app_token",$("s_token").value.trim());toast("已保存")};
 $("btn_synctest").onclick=async()=>{
@@ -949,7 +1030,7 @@ $("wipeok").onclick=async()=>{
   $("wipemodal").classList.add("hidden");
   if(trackWatch!=null){navigator.geolocation.clearWatch(trackWatch);trackWatch=null;}
   releaseWake();
-  await S.clear();await refreshSampleCache();await TR.clear();
+  await S.clear();await S.wipeAll();await refreshSampleCache();await TR.clear();
   await idb().then(d=>new Promise(res=>{const t=d.transaction("trips","readwrite");t.objectStore("trips").clear();t.oncomplete=res}));
   await store.set("zambia_done",false);await store.set("dl_job",null);
   toast("已清空全部数据",4000);renderList();refreshPend();
@@ -959,9 +1040,9 @@ $("wipeok").onclick=async()=>{
 $("btn_csv").onclick=async()=>{
   const all=await S.all();if(!all.length){toast("无记录");return}
   const esc=v=>`"${String(v??"").replace(/"/g,'""')}"`;
-  const head=["sample_id","sample_time","type","latitude","longitude","altitude","utm","gps_accuracy","lithology","loc_status","description","assays","recorder","area_name","license_no","license_holder","remark","photos","status","erp_name"];
-  const rows=all.map(s=>[s.sample_id,s.sample_time,s.sample_type,s.latitude,s.longitude,s.altitude,s.utm||"",s.gps_accuracy,s.lithology,s.loc_status,s.description,
-    (s.assays||[]).map(a=>`${a.element}:${a.value}${a.unit}`).join(";"),s.recorder,s.area_name,s.license_no,s.license_holder||"",s.remark,(s.photos||[]).length,s.status,s.erp_name||""]);
+  const head=["sample_id","area_id","sample_time","type","latitude","longitude","altitude","utm","gps_accuracy","lithology","loc_status","description","assays","recorder","area_name","licence","license_no","license_holder","remark","photos","status","erp_name"];
+  const rows=all.map(s=>[s.sample_id,s.area_id||"",s.sample_time,s.sample_type,s.latitude,s.longitude,s.altitude,s.utm||"",s.gps_accuracy,s.lithology,s.loc_status,s.description,
+    (s.assays||[]).map(a=>`${a.element}:${a.value}${a.unit}`).join(";"),s.recorder,s.area_name,s.licence||"",s.license_no,s.license_holder||"",s.remark,(s.photos||[]).length,s.status,s.erp_name||""]);
   const csv="﻿"+[head,...rows].map(r=>r.map(esc).join(",")).join("\r\n");
   await dl("samples_"+new Date().toISOString().slice(0,10)+".csv",csv,"text/csv");
 };
@@ -1735,11 +1816,12 @@ if("serviceWorker" in navigator&&location.protocol==="https:"){
       u.searchParams.delete("t");u.searchParams.delete("token");history.replaceState(null,"",u.toString());
       toast("✅ 同步已自动配置好，以后保存记录会自动上传",5000);}
   }catch(e){}
+  try{await loadAreas();await mergeLegacyStores()}catch(e){toast("矿区配置读取失败："+String(e&&e.message||e).slice(0,60),6000)}
   await loadSet();resetForm();refreshPend();refreshSampleCache();TR.load();setTimeout(resumeTrack,800);
 })();
 store.get("track_mode").then(m=>setTrackMode(m==="walk"?"walk":"car"));
 // 本机存储可用性检测（iOS 无痕/隐私模式会禁 IndexedDB）
-S.all().then(()=>{}).catch(()=>toast("⚠️ 本机存储不可用：请关闭无痕/隐私模式，用普通浏览器打开，否则记录无法保存",6000));
+idb().then(()=>{}).catch(()=>toast("⚠️ 本机存储不可用：请关闭无痕/隐私模式，用普通浏览器打开，否则记录无法保存",6000));
 // 刷新后回到上次停留的页面
 store.get("cur_page").then(pg=>{
   if(pg&&pg!=="pg-form"){const b=document.querySelector(`nav button[data-pg="${pg}"]`);if(b)b.click()}

@@ -1,0 +1,1830 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>赞比亚矿权介绍 · ECOBOX</title>
+<style>
+:root{
+  --nav:#0d5c55; --nav2:#177a6f;
+  --bg:#f4f6f8; --card:#fff; --text:#1f2937; --muted:#6b7280; --line:#e4e8ec;
+  --accent:#0f766e;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.6}
+button,input,select,textarea{font:inherit;color:inherit}
+[hidden]{display:none!important}
+a{color:var(--accent)}
+
+/* ---------- 侧栏：就是矿证项目列表 ---------- */
+.app{display:grid;grid-template-columns:248px minmax(0,1fr);min-height:100vh}
+.sb{background:var(--nav);color:#dbeae8;display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.brand{display:flex;align-items:center;gap:9px;padding:15px 14px;border-bottom:1px solid rgba(255,255,255,.12)}
+.logo{width:26px;height:26px;border-radius:7px;background:#fff;color:var(--nav);display:grid;place-items:center;font-size:15px;font-weight:700}
+.brand b{color:#fff;font-size:14.5px;letter-spacing:.4px;display:block;line-height:1.2}
+.brand small{font-size:11px;color:#a9c8c3}
+
+.plist{flex:1;overflow-y:auto;padding:8px}
+.plist .item{display:block;width:100%;text-align:left;background:none;border:none;color:#cfe3e0;padding:9px 10px;border-radius:8px;cursor:pointer;margin-bottom:2px}
+.plist .item:hover{background:rgba(255,255,255,.08);color:#fff}
+.plist .item.on{background:var(--nav2);color:#fff}
+.plist .no{display:block;font-family:ui-monospace,SFMono-Regular,monospace;font-size:13px;font-weight:700;line-height:1.35}
+.plist .ar{display:block;font-size:11.5px;opacity:.72;margin-top:1px}
+.plist .st{display:flex;gap:4px;flex-wrap:wrap;margin-top:5px}
+
+.pill{display:inline-block;font-size:10.5px;font-weight:600;border-radius:9px;padding:0 7px;background:rgba(255,255,255,.16);color:#e6f2f0;white-space:nowrap}
+.pill.ok{background:#dcf5e3;color:#15803d}
+.pill.warn{background:#fde7c8;color:#a16207}
+
+.navrow{padding:8px 8px 0;display:flex;flex-direction:column;gap:6px}
+.navrow button{width:100%;display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);color:#cfe3e0;border-radius:8px;padding:8px 10px;font-size:13px;cursor:pointer}
+.navrow button:hover{background:rgba(255,255,255,.13);color:#fff}
+.navrow button.on{background:var(--nav2);color:#fff;border-color:transparent}
+
+.sb-foot{padding:10px 12px;border-top:1px solid rgba(255,255,255,.12);font-size:11.5px;color:#a9c8c3}
+.sb-foot input{width:100%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);color:#fff;border-radius:7px;padding:5px 8px;font-size:12px}
+.sb-foot button{width:100%;margin-top:7px;background:rgba(255,255,255,.12);border:none;color:#fff;border-radius:7px;padding:6px;font-size:12px;cursor:pointer}
+
+/* ---------- 主区 ---------- */
+.main{min-width:0;display:flex;flex-direction:column}
+.top{background:#fff;border-bottom:1px solid var(--line);padding:0;display:flex;flex-direction:column;position:sticky;top:0;z-index:10}
+.tline{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;padding:12px 20px 9px}
+.top h1{font-size:15.5px;font-weight:600}
+.top .sub{font-size:12px;color:var(--muted)}
+#tabs{padding:0 20px;background:#fff;border-top:1px solid var(--line);border-bottom:none}
+#tabs:empty{display:none}
+.body{padding:16px 20px 40px;max-width:1080px;width:100%}
+
+.detail{background:none;border:0;border-radius:0;overflow:visible}
+.tabs{display:flex;gap:2px;padding:0 12px;border-bottom:1px solid var(--line);background:#fbfcfd;overflow-x:auto}
+.tabs button{border:none;background:none;padding:10px 12px;font-size:13px;color:var(--muted);border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap}
+.tabs button.on{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
+.pane{padding:14px 0 26px}
+.pane h4{font-size:12.5px;color:var(--accent);margin:16px 0 6px;font-weight:700;letter-spacing:.3px}
+.pane h4:first-child{margin-top:0}
+.lead{font-size:14px;line-height:1.75;color:#374151}
+dl{display:grid;grid-template-columns:92px 1fr;gap:5px 10px;font-size:13.5px}
+dt{color:var(--muted);font-size:12.5px}
+dd{word-break:break-word}
+.links{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.links a,.links button{flex:1;min-width:120px;text-align:center;text-decoration:none;border-radius:9px;padding:9px;font-size:13.5px;font-weight:600;border:1px solid var(--line);background:#fff;cursor:pointer}
+.links a.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.mapbox{position:relative;border:1px solid var(--line);border-radius:10px;overflow:hidden;height:340px;background:#eef2f4}
+.mapbox iframe{width:100%;height:100%;border:0;display:block}
+.gmap{position:relative;height:440px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#0e1a20;cursor:grab;touch-action:none;user-select:none}
+.gmap:active{cursor:grabbing}
+.gtiles,.gvec{position:absolute;inset:0}
+.gtiles img{position:absolute;width:256px;height:256px;pointer-events:none;-webkit-user-drag:none}
+.gvec{pointer-events:none}
+.gpoly{fill:rgba(20,184,166,.20);stroke:#14b8a6;stroke-width:2.2;vector-effect:non-scaling-stroke}
+.gv{fill:#fff;stroke:#0f766e;stroke-width:1.3}
+.glabel{font:600 13px/1 system-ui,sans-serif;fill:#fff;stroke:#0b3b36;stroke-width:3.4;paint-order:stroke;text-anchor:middle;dominant-baseline:middle}
+.gctrl{position:absolute;right:10px;top:10px;display:flex;flex-direction:column;gap:6px}
+.gctrl button{width:30px;height:30px;border-radius:8px;border:1px solid rgba(0,0,0,.14);background:rgba(255,255,255,.94);color:#0f172a;font-size:15px;font-weight:600;line-height:1;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.gctrl button:hover{background:#fff}
+.glayerpick{position:absolute;left:10px;top:10px;display:flex;border-radius:8px;overflow:hidden;border:1px solid rgba(0,0,0,.12);background:rgba(255,255,255,.94);box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.glayerpick button{border:0;background:none;padding:5px 11px;font-size:12px;color:#334155;cursor:pointer}
+.glayerpick button.on{background:#0f766e;color:#fff;font-weight:600}
+.kpbox{padding:12px 14px 14px;border-top:1px solid #e6eef0;background:#fbfdfd}
+.kpbox textarea{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:8px;padding:9px 10px;
+  font:12.5px/1.7 ui-monospace,Consolas,monospace;color:#0f172a;background:#fff;resize:vertical}
+.kpbox textarea:focus{outline:0;border-color:#0f766e;box-shadow:0 0 0 3px rgba(15,118,110,.12)}
+.kprow{display:flex;align-items:center;gap:8px;margin-top:8px}
+.kprow .khint{color:#64748b;font-size:12px}
+.gpanel{position:absolute;left:10px;top:10px;z-index:6;width:186px;max-height:calc(100% - 20px);
+  display:flex;flex-direction:column;background:rgba(255,255,255,.94);border:1px solid #dbe4e8;border-radius:10px;
+  box-shadow:0 6px 18px rgba(15,23,42,.14);font-size:12.5px;overflow:hidden;backdrop-filter:blur(3px)}
+.gpanel.min .gpbody,.gpanel.min .gpfoot{display:none}
+.gphead{display:flex;align-items:center;gap:6px;padding:7px 8px 7px 10px;border-bottom:1px solid #eef2f5;color:#0f172a}
+.gphead b{font-weight:600;font-size:12.5px}
+.gpmin{margin-left:auto;border:0;background:#eef2f5;color:#334155;width:20px;height:20px;border-radius:5px;cursor:pointer;line-height:1}
+.gpbody{padding:6px 8px 8px;overflow:auto}
+.gpsub2{color:#64748b;font-size:11.5px;margin:8px 2px 4px;display:flex;gap:5px;align-items:center}
+.gpsz{color:#94a3b8}
+.gprow{display:flex;align-items:center;gap:6px;padding:2.5px 2px;cursor:pointer;border-radius:5px}
+.gprow:hover{background:#f1f7f8}
+.gprow input{accent-color:#0f766e;margin:0}
+.gpn{flex:1;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gpc{color:#94a3b8;font-variant-numeric:tabular-nums;font-size:11px}
+.gpfoot{padding:5px 9px 6px;border-top:1px solid #eef2f5;color:#94a3b8;font-size:11px}
+.gpwait,.gperr{color:#64748b;padding:6px 2px}
+.gperr{color:#b91c1c}
+.gpbody .btn{margin-top:8px;width:100%}
+.gpop{position:absolute;right:10px;bottom:10px;z-index:7;width:246px;max-height:56%;overflow:auto;
+  background:rgba(255,255,255,.97);border:1px solid #dbe4e8;border-radius:10px;box-shadow:0 8px 22px rgba(15,23,42,.18);font-size:12.5px}
+.gpopt{display:flex;align-items:center;gap:6px;padding:7px 8px 7px 10px;border-bottom:1px solid #eef2f5}
+.gpopt b{font-size:12.5px;color:#0f172a}
+.gpx{margin-left:auto;border:0;background:#eef2f5;color:#334155;width:20px;height:20px;border-radius:5px;cursor:pointer;line-height:1}
+.gpopb{padding:6px 10px 8px}
+.gpr{display:flex;gap:8px;padding:2.5px 0;border-bottom:1px dashed #f1f5f9}
+.gpr span{color:#64748b;flex:0 0 62px}
+.gpr b{color:#0f172a;font-weight:500;word-break:break-word}
+.gpopn{padding:0 10px 8px;color:#94a3b8;font-size:11.5px}
+.glayer path,.glayer circle{pointer-events:visiblePainted;cursor:pointer}
+.gattr,.gzoomnow{position:absolute;bottom:6px;font-size:10.5px;color:#fff;background:rgba(0,0,0,.38);padding:1px 6px;border-radius:4px;pointer-events:none}
+.gattr{right:8px}.gzoomnow{left:10px}
+.mapmeta{font-size:12.5px;color:var(--muted);margin-top:8px}
+.kmlpanel.drag{outline:2px dashed var(--accent);outline-offset:-3px;background:#f4fbfa}
+.khead{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:11px 14px;background:#fbfcfd;border-bottom:1px solid var(--line)}
+.khead .kt{font-size:13px;font-weight:600;color:var(--text)}
+.ktag{font-size:10.5px;letter-spacing:.3px;font-weight:600;color:#0b5f57;background:#eef7f5;border:1px solid #cfe6e1;border-radius:5px;padding:1px 6px}
+.khead .khint{font-size:11.5px;color:var(--muted)}
+.khead .sp{flex:1}
+.kbody{display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap;padding:14px}
+.kthumb{width:108px;height:80px;flex:0 0 auto;display:grid;place-items:center;border:1px solid var(--line);border-radius:9px;background:#f7faf9}
+.kthumb .kmlsvg{width:98px;height:72px;border:0;border-radius:0;background:none}
+.kmlinfo{flex:1;min-width:230px;display:flex;flex-direction:column;gap:4px;font-size:12.5px;line-height:1.5;color:var(--muted)}
+.kmlinfo .kname{font-size:13.5px;font-weight:600;color:var(--text);word-break:break-all}
+.kmlinfo b{color:#0f766e;font-weight:600}
+.kmlinfo .knote,.kmlinfo .kscope{font-size:11.5px;color:#9aa3ad}
+.kmlinfo .kscope{font-family:ui-monospace,SFMono-Regular,monospace}
+.kmlpanel .kempty{width:100%;padding:18px 14px;text-align:center;color:var(--muted);font-size:12.5px;border:1px dashed var(--line);border-radius:9px;background:#fcfdfd;line-height:1.7}
+.kempty b{color:var(--text)}
+.kmlsvg{width:86px;height:62px;flex:0 0 auto;background:#f7faf9;border:1px solid var(--line);border-radius:8px}
+.kmlcard{display:flex;gap:14px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:12px}
+.kmlcard .kmlsvg{width:132px;height:96px}
+.kmlmeta{display:flex;flex-direction:column;gap:3px;font-size:12.5px;color:var(--muted)}
+.kmlmeta b{color:var(--text);font-size:13px;word-break:break-all}
+.empty{padding:26px 14px;text-align:center;color:var(--muted);font-size:13.5px}
+.hint{font-size:12px;color:var(--muted);margin-top:10px}
+
+/* ---------- 项目信息（矿证动态） ---------- */
+.feed{display:flex;flex-direction:column;gap:12px;max-width:760px}
+.composer{background:#fafbfc;border:1px solid var(--line);border-radius:11px;padding:12px}
+.composer .crow{display:flex;gap:10px}
+textarea#ptext{flex:1;min-height:58px;border:1px solid var(--line);border-radius:9px;padding:9px 10px;font-size:13.5px;resize:vertical;background:#fff}
+.cbar{display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap}
+.cbar select{border:1px solid var(--line);border-radius:8px;padding:6px 8px;font-size:12.5px;background:#fff}
+.cbar button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 11px;font-size:12.5px;cursor:pointer}
+.cbar button.primary{background:var(--accent);color:#fff;border-color:var(--accent);margin-left:auto;font-weight:600}
+.prev{position:relative;display:inline-block;margin-top:10px}
+.prev img{max-height:170px;border-radius:9px;border:1px solid var(--line);display:block}
+.prev button{position:absolute;top:6px;right:6px;border:none;background:rgba(0,0,0,.55);color:#fff;border-radius:7px;font-size:12px;padding:3px 7px;cursor:pointer}
+.av{width:32px;height:32px;border-radius:50%;background:var(--nav2);color:#fff;display:grid;place-items:center;font-size:13px;font-weight:700;flex:0 0 auto}
+.post{background:#fff;border:1px solid var(--line);border-radius:11px;padding:13px 14px}
+.ph{display:flex;gap:9px;align-items:center}
+.ph .who b{font-size:13.5px}
+.ph .who time{font-size:11.5px;color:var(--muted);margin-left:6px}
+.ph .sp{margin-left:auto;display:flex;gap:6px;align-items:center}
+.ph .x{border:none;background:none;color:#9aa3ad;cursor:pointer;font-size:15px;line-height:1}
+.pt{margin:9px 0 0;white-space:pre-wrap;word-break:break-word;font-size:13.8px}
+.pimg{max-width:100%;border-radius:10px;border:1px solid var(--line);margin-top:9px;display:block}
+.cmts{margin-top:10px;border-top:1px dashed var(--line);padding-top:8px;display:flex;flex-direction:column;gap:5px}
+.cmt{font-size:12.8px;background:#f8fafb;border-radius:7px;padding:5px 8px}
+.cmt b{color:#0b5f57;margin-right:4px}
+.cmt time{color:var(--muted);font-size:11px;margin-left:6px}
+.cform{display:flex;gap:6px;margin-top:6px}
+.cform input{flex:1;border:1px solid var(--line);border-radius:8px;padding:6px 9px;font-size:12.5px;background:#fff}
+.cform button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 10px;font-size:12.5px;cursor:pointer}
+
+/* ---------- 项目管理 ---------- */
+.mcard{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.mrow{display:grid;grid-template-columns:1.6fr 1.2fr 1.2fr .9fr .7fr 66px;gap:8px;padding:9px 12px;border-bottom:1px solid var(--line);align-items:center}
+.mrow.head{background:#fbfcfd;font-size:11.5px;color:var(--muted);font-weight:600}
+.mrow input,.mrow select{width:100%;border:1px solid var(--line);border-radius:7px;padding:6px 8px;font-size:12.5px;background:#fff;min-width:0}
+.mrow input.no{font-family:ui-monospace,SFMono-Regular,monospace;font-size:12px}
+.mrow .ro{font-size:12.5px;padding:6px 8px;border:1px dashed #e3e8eb;border-radius:7px;background:#fafbfc;color:#374151;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mrow .del{border:none;background:none;color:#9aa3ad;cursor:pointer;font-size:15px}
+.mrow .att{display:inline-flex;align-items:center;justify-content:center;border:1px solid transparent;border-radius:7px;padding:5px 6px;font-size:12px;white-space:nowrap;color:#9aa3ad}
+.mrow .att.has{background:#eef7f5;border-color:#b9dcd6;color:#0b5f57;font-weight:600}
+.mrow .cfg{border:1px solid var(--line);background:#fff;border-radius:7px;padding:5px 6px;font-size:12px;cursor:pointer;white-space:nowrap}
+.mrow .cfg:hover{background:#eef7f5;border-color:#b9dcd6;color:#0b5f57}
+.backbar{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.backbar button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 11px;font-size:12.5px;cursor:pointer;color:#374151}
+.backbar button:hover{background:#f3f6f8;border-color:#b9dcd6}
+.backbar .who{font-size:12.5px;color:var(--muted)}
+.props{display:grid;grid-template-columns:1.5fr 1.1fr 1fr .6fr;gap:10px;padding:12px}
+.props label{display:flex;flex-direction:column;gap:5px;font-size:11.5px;color:var(--muted);font-weight:600}
+.props input,.props select{border:1px solid var(--line);border-radius:8px;padding:7px 9px;font-size:13px;background:#fff;color:var(--text);font-weight:400}
+.props input:focus,.props select:focus{outline:none;border-color:#9dc9c2;box-shadow:0 0 0 3px rgba(15,92,85,.08)}
+.props input.no{font-family:ui-monospace,SFMono-Regular,monospace;font-size:12.5px}
+.propsfoot{display:flex;align-items:center;gap:8px;padding:0 12px 12px;font-size:12px;color:var(--muted)}
+.propsfoot .sp{flex:1}
+.mrow .ro.no{font-family:ui-monospace,SFMono-Regular,monospace;font-size:12px}
+.btn.danger{color:#b91c1c;border-color:#f0c7c7}
+.btn.danger:hover{background:#fdf1f1;border-color:#e5a8a8}
+.paste{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:12px}
+.paste textarea{width:100%;min-height:92px;border:1px solid var(--line);border-radius:9px;padding:9px 10px;font-size:12.5px;line-height:1.7;font-family:inherit;resize:vertical}
+.paste textarea:focus{outline:none;border-color:#9dc9c2;box-shadow:0 0 0 3px rgba(15,92,85,.08)}
+.pbar{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:12px;color:var(--muted)}
+.pbar .sp{flex:1}
+.irow.hit input{border-color:#b9dcd6;background:#f4fbf9}
+
+.mfiles{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:12px}
+.mfhead{display:flex;align-items:center;gap:9px;flex-wrap:wrap;font-size:13px;font-weight:600;margin-bottom:4px}
+.mfhead .sp{margin-left:auto}
+.mfhead .hint{font-weight:400}
+.ntext{margin:8px 0 10px}
+.ntext textarea{width:100%;min-height:104px;border:1px solid var(--line);border-radius:9px;padding:9px 10px;font-size:13px;line-height:1.65;font-family:inherit;resize:vertical;background:#fff}
+.ntext textarea:focus{outline:none;border-color:#9dc9c2;box-shadow:0 0 0 3px rgba(15,92,85,.08)}
+.nbar{display:flex;align-items:center;gap:8px;margin-top:6px;font-size:11.5px;color:var(--muted)}
+.nbar .sp{flex:1}
+.nbar button{border:1px solid var(--line);background:#fff;border-radius:7px;padding:4px 9px;font-size:12px;cursor:pointer}
+.fitem{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line);font-size:12.5px}
+.fitem:first-of-type{border-top:none}
+.fitem .thumb{width:40px;height:40px;object-fit:cover;border-radius:6px;border:1px solid var(--line);flex:0 0 auto;background:#f2f5f6}
+.fitem .ic{width:40px;height:40px;border-radius:6px;background:#f2f5f6;display:grid;place-items:center;font-size:15px;flex:0 0 auto}
+.fitem .fi{flex:1;min-width:0}
+.fitem .fn{display:block;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fitem .fs{color:var(--muted);font-size:11.5px}
+.fitem button{border:1px solid var(--line);background:#fff;border-radius:7px;padding:4px 9px;font-size:12px;cursor:pointer}
+label.btn{display:inline-block;cursor:pointer}
+
+/* ---------- 设置 · 矿证信息 ---------- */
+.setcard{background:#fff;border:1px solid var(--line);border-radius:12px;padding:22px;max-width:420px}
+.setcard h3{font-size:15px;margin-bottom:6px}
+.setcard p{font-size:12.5px;color:var(--muted);margin-bottom:12px;line-height:1.7}
+.setcard input{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:13px}
+.setcard .err{color:#b91c1c;font-size:12.5px;margin-top:9px;min-height:16px}
+.sproj{display:flex;gap:9px;align-items:center;margin-bottom:10px;font-size:13px;flex-wrap:wrap}
+.sproj select{border:1px solid var(--line);border-radius:8px;padding:6px 8px;font-size:13px;background:#fff}
+.irow{display:grid;grid-template-columns:190px 1fr 34px;gap:8px;padding:8px 12px;border-bottom:1px solid var(--line);align-items:center}
+.irow.head{background:#fbfcfd;font-size:11.5px;color:var(--muted);font-weight:600}
+.irow input{width:100%;border:1px solid var(--line);border-radius:7px;padding:7px 9px;font-size:12.8px;background:#fff;min-width:0}
+.irow input:focus{outline:none;border-color:#9dc9c2;box-shadow:0 0 0 3px rgba(15,92,85,.08)}
+.irow .del{border:none;background:none;color:#9aa3ad;cursor:pointer;font-size:15px}
+.mfoot{display:flex;gap:8px;padding:12px;align-items:center;flex-wrap:wrap;background:#fbfcfd}
+.mfoot .grow{flex:1}
+.btn{border:1px solid var(--line);background:#fff;border-radius:9px;padding:8px 13px;font-size:13px;cursor:pointer;font-weight:600}
+.btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.mnote{font-size:12.5px;color:var(--muted);line-height:1.7;margin-top:12px}
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:rgba(17,24,39,.92);color:#fff;padding:9px 16px;border-radius:9px;font-size:13px;z-index:120}
+
+/* ---------- 登录闸门 ---------- */
+#gate{position:fixed;inset:0;z-index:100;background:linear-gradient(160deg,#0b4a45,#0d5c55);display:flex;align-items:center;justify-content:center;padding:20px}
+#gate .box{background:#fff;border-radius:14px;padding:26px 22px;width:min(100%,360px);box-shadow:0 18px 50px rgba(0,0,0,.35)}
+#gate h2{font-size:18px;margin-bottom:4px}
+#gate .tip{font-size:12.5px;color:var(--muted);margin-bottom:16px}
+#gate label{font-size:12.5px;color:var(--muted);display:block;margin:10px 0 4px}
+#gate input[type=text],#gate input[type=password]{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:9px;font-size:15px}
+#gate .row2{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:12.5px;color:var(--muted)}
+#gate button[type=submit]{width:100%;margin-top:16px;padding:11px;border-radius:9px;border:none;background:var(--accent);color:#fff;font-size:15px;font-weight:600;cursor:pointer}
+#gate button[type=submit]:disabled{opacity:.6}
+#gate .err{color:#b91c1c;font-size:12.5px;margin-top:8px;min-height:18px}
+#gate.shake .box{animation:sh .3s}
+@keyframes sh{0%,100%{transform:translateX(0)}25%{transform:translateX(-7px)}75%{transform:translateX(7px)}}
+
+@media(max-width:900px){
+  .app{grid-template-columns:1fr}
+  .sb{position:static;height:auto;flex-direction:column}
+  .brand{padding:10px 12px}
+  .plist{display:flex;overflow-x:auto;overflow-y:hidden;padding:6px 8px;gap:4px}
+  .plist .item{min-width:200px;margin:0}
+  .sb-foot{display:flex;gap:6px;align-items:center;padding:8px 12px;border-top:none}
+  .sb-foot input{width:110px}
+  .sb-foot button{width:auto;margin:0;padding:6px 10px}
+  .top{position:static;padding:10px 14px}
+  .body{padding:12px}
+}
+@media print{.sb,.top,.tabs,.links,.composer,.cform{display:none}.app{display:block}.pane{display:block!important}}
+</style>
+</head>
+<body>
+
+<div id="gate">
+  <form class="box" id="gateform" autocomplete="on">
+    <h2>赞比亚矿权介绍</h2>
+    <div class="tip">ECOBOX 内部资料，输入账号后查看</div>
+    <label for="g_user">用户名</label>
+    <input id="g_user" type="text" autocomplete="username" autocapitalize="off" spellcheck="false" required>
+    <label for="g_pass">密码</label>
+    <input id="g_pass" type="password" autocomplete="current-password" required>
+    <div class="row2"><input type="checkbox" id="g_keep" checked><label for="g_keep" style="margin:0">记住本机 30 天</label></div>
+    <button type="submit" id="g_btn">进入</button>
+    <div class="err" id="g_err"></div>
+  </form>
+</div>
+
+<div class="app" id="app" hidden>
+  <aside class="sb">
+    <div class="brand">
+      <span class="logo">赞</span>
+      <div><b>赞比亚矿权介绍</b></div>
+    </div>
+    <div class="navrow"><button id="navSet"><span>⚙</span>设置</button></div>
+    <div class="plist" id="plist"></div>
+    <div class="sb-foot">
+      <input id="who" maxlength="12" placeholder="昵称（留言署名）">
+      <button id="logout">退出登录</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="top">
+      <div class="tline">
+        <h1 id="ttl">赞比亚矿权介绍</h1>
+        <span id="tpill"></span>
+        <div class="sub" id="sub"></div>
+      </div>
+      <div class="tabs" id="tabs"></div>
+    </div>
+    <div class="body" id="view"></div>
+  </main>
+</div>
+
+<script>
+const $=s=>document.querySelector(s);
+window.addEventListener("error",e=>{
+  try{
+    let bar=document.getElementById("crash");
+    if(!bar){
+      bar=document.createElement("div");bar.id="crash";
+      bar.style.cssText="position:fixed;left:0;right:0;bottom:0;z-index:9999;background:#b91c1c;color:#fff;font:12.5px/1.6 system-ui;padding:8px 12px;white-space:pre-wrap";
+      document.body.appendChild(bar);
+    }
+    bar.textContent="脚本出错："+(e.message||"未知错误")+"（其它部分仍可用；刷新可重试）";
+  }catch(_){}
+});
+const esc=s=>String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+
+let AREAS=[],LICS=[],BASE=[],SEL=null,TAB="intro",PIMG="",VIEW="lic",MROWS=[];
+const FS_KEY="lic_feed_v1",AU_KEY="lic_author",CACHE_KEY="lic_cache_v1",EDIT_KEY="lic_edit_v1",NOTE_KEY="lic_notes_v1",INFO_KEY="lic_info_v1",SET_KEY="lic_setok";
+let EDITS={},ADDED=[],DELETED=[],NOTES={};
+
+/* ---------- 数据 ---------- */
+async function jget(u){
+  const r=await fetch(u,{cache:"no-store"});
+  if(!r.ok)throw new Error(u+" "+r.status);
+  return r.json();
+}
+async function loadData(){
+  try{
+    const [a,l]=await Promise.all([jget("areas.json"),jget("licences.json")]);
+    AREAS=(a.areas||[]).filter(x=>x&&x.id);
+    LICS=(l.licences||[]).filter(x=>x&&x.no);
+    BASE=LICS.slice();
+    try{localStorage.setItem(CACHE_KEY,JSON.stringify({areas:AREAS,licences:LICS,ts:Date.now()}))}catch(e){}
+  }catch(e){
+    let c=null;
+    try{c=JSON.parse(localStorage.getItem(CACHE_KEY)||"null")}catch(_){}
+    if(c&&c.licences&&c.licences.length){AREAS=c.areas||[];LICS=c.licences;BASE=LICS.slice()}
+    else throw new Error("配置读取失败："+(e.message||e));
+  }
+  applyEdits();
+}
+const areaById=id=>AREAS.find(a=>a.id===id)||null;
+const areaName=id=>{const a=areaById(id);return a?a.name:""};
+const areaOptions=v=>`<option value="">（未归属）</option>`+
+  AREAS.map(a=>`<option value="${esc(a.id)}"${a.id===v?" selected":""}>${esc(a.name)}</option>`).join("");
+const licByNo=no=>LICS.find(l=>l.no===no)||null;
+const infoVal=(l,k)=>{const r=((l&&l.info)||[]).find(x=>(x.k||"").trim()===k);return r?(r.v||""):""};
+const holderOf=l=>infoVal(l,"公司持有")||infoVal(l,"持有人")||(l&&l.holder)||"";
+const sortedLics=()=>LICS.slice().sort((a,b)=>
+  (a.order??999)-(b.order??999)
+  ||(a.area_id||"").localeCompare(b.area_id||"")
+  ||String(a.no).localeCompare(String(b.no),"zh"));
+
+/* ---------- 项目管理（本机覆盖，可导出回 json） ---------- */
+function editsLoad(){
+  try{const e=JSON.parse(localStorage.getItem(EDIT_KEY)||"{}");EDITS=e.edits||{};ADDED=e.added||[];DELETED=e.deleted||[]}
+  catch(e){EDITS={};ADDED=[]}
+}
+function persistEdits(){
+  try{localStorage.setItem(EDIT_KEY,JSON.stringify({edits:EDITS,added:ADDED,deleted:DELETED}))}catch(e){}
+}
+function applyEdits(){
+  LICS=BASE.filter(l=>!DELETED.includes(l.no)).map(l=>({...l,...(EDITS[l.no]||{})}));
+  ADDED.forEach(a=>{if(!LICS.some(l=>l.no===a.no))LICS.push({...a,...(EDITS[a.no]||{})})});
+  applyInfo();
+}
+function toast(msg){
+  const d=document.createElement("div");
+  d.className="toast";d.textContent=msg;document.body.appendChild(d);
+  setTimeout(()=>d.remove(),1700);
+}
+
+/* ---------- 项目文字记录（localStorage） ---------- */
+function notesLoad(){try{NOTES=JSON.parse(localStorage.getItem(NOTE_KEY)||"{}")||{}}catch(e){NOTES={}}}
+const noteGet=no=>(NOTES[no]||{}).text||"";
+function noteSet(no,t){
+  if(t.trim())NOTES[no]={text:t,ts:Date.now()};else delete NOTES[no];
+  try{localStorage.setItem(NOTE_KEY,JSON.stringify(NOTES))}catch(e){}
+  return (NOTES[no]||{}).ts||Date.now();
+}
+
+/* ---------- 矿证信息字段（设置里可改/删/加） ---------- */
+const INFO_LABELS=["公司持有","许可证类型","许可证状态","批准时间","到期时间","地区","产区面积","矿产","开发目标"];
+let INFO={},SET_NO=null,SROWS=[],SET_VIEW="list",HIT=new Set();
+
+/* 粘贴文本 → 字段：先精确匹配，再模糊匹配；认不出的原样保留 */
+const INFO_ALIAS={
+  "矿证号":["矿证号","证号","许可证号","许可证编号","licence no","license no","licence","license"],
+  "公司持有":["公司持有","持有人","持证人","矿权人","持证公司","公司名称","许可证持有人","所有人","licence holder","holder"],
+  "许可证类型":["许可证类型","矿权类型","证类型","许可证类别","类型","licence type"],
+  "许可证状态":["许可证状态","当前状态","状态","status"],
+  "申请时间":["申请时间","申请日期","提交时间","受理时间","申请日"],
+  "开发目标":["开发目标","开发计划","开发目的","规划","目标"],
+  "批准时间":["批准时间","批准日期","发证时间","签发时间","批准日"],
+  "到期时间":["到期时间","到期日期","有效期至","截止时间","有效期","失效时间"],
+  "地区":["地区","区域","省份","省","地址","位置","坐标","所在地区","location"],
+  "产区面积":["产区面积","矿区面积","面积","面积(km²)","area"],
+  "矿产":["矿产","矿种","矿物","矿产品","主要矿产","commodity"],
+  "是否释放":["是否释放"],
+  "刷新时间":["刷新时间","更新时间","数据更新时间"],
+  "相关项目":["相关项目","关联项目"],
+  "查看报告":["查看报告","报告链接","报告"]
+};
+function canonKey(raw){
+  const k=raw.replace(/[\s＊*·•]/g,"").replace(/[（(][^（()）]*[)）]$/,"");
+  if(!k)return null;
+  for(const [c,al] of Object.entries(INFO_ALIAS))if(al.some(a=>k===a))return c;
+  for(const [c,al] of Object.entries(INFO_ALIAS))if(al.some(a=>k.includes(a)))return c;
+  return null;
+}
+function parsePaste(txt){
+  const pairs=[],loose=[];
+  txt.split(/\r?\n/).forEach(line=>{
+    const s=line.replace(/[\u200b\ufeff]/g,"").trim();
+    if(!s)return;
+    const m=s.match(/^([^：:]{1,24})\s*[：:]\s*(.*)$/);
+    if(!m){loose.push(s);return}
+    const rawK=m[1].replace(/^[\s＊*·•\-]+/,"").trim();
+    const v=m[2].replace(/^[\s＊*·•]+/,"").trim();
+    if(v)pairs.push({k:canonKey(rawK)||rawK,v});
+  });
+  loose.forEach(s=>{
+    if(/LIMITED|LTD|MINING|COMPANY|CORP/i.test(s)&&!/^[\d\s.,]+$/.test(s))pairs.push({k:"公司持有",v:s});
+  });
+  return {pairs,loose};
+}
+function applyPaste(){
+  const txt=($("#pText").value||"").trim();
+  if(!txt){$("#pHint").textContent="先把矿证文字粘到上面的框里";return}
+  const {pairs,loose}=parsePaste(txt);
+  if(!pairs.length){$("#pHint").textContent="没认出「字段：内容」的格式，试试一行写一条";return}
+  let add=0,upd=0,noFromPaste="";
+  HIT=new Set();
+  pairs.forEach(p=>{
+    if(p.k==="矿证号"){noFromPaste=p.v;return}   /* 证号是项目主键，填到上面去，不再单独建字段 */
+    const row=SROWS.find(r=>(r.k||"").trim()===p.k);
+    if(row){
+      if((row.v||"").trim()!==p.v){row.v=p.v;upd++}
+      HIT.add(p.k);
+    }else{
+      SROWS.push({k:p.k,v:p.v});add++;HIT.add(p.k);
+    }
+  });
+  if(noFromPaste){const el=$("#setNo");if(el)el.value=noFromPaste;upd++}
+  stashProps();
+  drawSetBody();
+  const bits=[add+upd?`已填 ${add+upd} 处${add?`（新增 ${add} 个字段）`:""}`:"内容没有变化"];
+  if(noFromPaste)bits.push(`证号按文本改成 ${noFromPaste}（保存后生效）`);
+  if(loose.length)bits.push(`另有 ${loose.length} 行没认出：${loose.slice(0,3).join(" / ")}${loose.length>3?" …":""}`);
+  if(noFromPaste&&SET_NO&&noFromPaste!==SET_NO)bits.push(`和当前项目 ${SET_NO} 不一致，确认一下`);
+  $("#pHint").textContent=bits.join("；")+"。检查后点保存";
+}
+function infoLoad(){try{INFO=JSON.parse(localStorage.getItem(INFO_KEY)||"{}")||{}}catch(e){INFO={}}}
+
+/* ---------- 矿权边界 KML ---------- */
+const KML_KEY="lic_kml_v1";
+let KMLS={};
+function kmlLoad(){try{KMLS=JSON.parse(localStorage.getItem(KML_KEY)||"{}")||{}}catch(e){KMLS={}}}
+function kmlSave(){try{localStorage.setItem(KML_KEY,JSON.stringify(KMLS))}catch(e){}}
+const kmlFor=no=>KMLS[no]||null;
+function ringAreaKm2(r){
+  const R=6371.0088,D=Math.PI/180;let a=0;
+  for(let i=0;i<r.length;i++){
+    const[p1,q1]=r[i],[p2,q2]=r[(i+1)%r.length];
+    a+=(p2-p1)*D*(2+Math.sin(q1*D)+Math.sin(q2*D));
+  }
+  return a*R*R/2;
+}
+const kmlN=el=>String(el.localName||el.nodeName||"").toLowerCase();
+function parseCoords(el){
+  const ring=el.textContent.trim().split(/\s+/)
+    .map(t=>{const q=t.split(",");return [parseFloat(q[0]),parseFloat(q[1])]})
+    .filter(q=>Number.isFinite(q[0])&&Number.isFinite(q[1]));
+  if(ring.length>1){
+    const a=ring[0],b=ring[ring.length-1];
+    if(a[0]===b[0]&&a[1]===b[1])ring.pop();
+  }
+  return ring;
+}
+function parseKml(txt){
+  const doc=new DOMParser().parseFromString(txt,"application/xml");
+  if(doc.getElementsByTagName("parsererror").length)throw new Error("不是有效的 KML 文件");
+  const nodes=[...doc.getElementsByTagName("*")].filter(e=>kmlN(e)==="coordinates");
+  if(!nodes.length)throw new Error("KML 里没有 <coordinates>");
+  const outer=[],inner=[],lines=[];
+  nodes.forEach(el=>{
+    const ring=parseCoords(el);
+    if(ring.length<3)return;
+    let p=el.parentElement,kind="";
+    while(p&&!kind){
+      const n=kmlN(p);
+      if(n==="outerboundaryis")kind="outer";
+      else if(n==="innerboundaryis")kind="inner";
+      else if(n==="polygon")kind="outer";
+      else if(n==="linestring")kind="line";
+      p=p.parentElement;
+    }
+    (kind==="inner"?inner:kind==="line"?lines:outer).push(ring);
+  });
+  const isPoly=outer.length>0;
+  const rings=isPoly?outer:lines;
+  if(!rings.length)throw new Error("KML 里没有面或线（需要 Polygon 或 LineString）");
+  const all=rings.concat(isPoly?inner:[]).flat();
+  const lons=all.map(q=>q[0]),lats=all.map(q=>q[1]);
+  const bbox=[Math.min(...lons),Math.min(...lats),Math.max(...lons),Math.max(...lats)];
+  const area=isPoly
+    ?Math.abs(Math.abs(outer.reduce((a,r)=>a+ringAreaKm2(r),0))-Math.abs(inner.reduce((a,r)=>a+ringAreaKm2(r),0)))
+    :0;
+  return {
+    rings,inner,kind:isPoly?"面":"线",pts:rings.reduce((a,r)=>a+r.length,0),
+    parts:rings.length,bbox,
+    center:[(bbox[0]+bbox[2])/2,(bbox[1]+bbox[3])/2],
+    area
+  };
+}
+async function kmlImport(no,file){
+  if(/\.kmz$/i.test(file.name||""))throw new Error("KMZ 是压缩包，暂不支持。请在 Google Earth 里「另存为 KML」后再上传");
+  if(file.size>2e6)throw new Error("文件太大（超过 2 MB）");
+  const txt=await file.text();
+  const g=parseKml(txt);
+  KMLS[no]={...g,name:file.name,ts:Date.now(),raw:txt};
+  kmlSave();
+  return KMLS[no];
+}
+function kmlSvg(k){
+  const [w,so,e,n]=k.bbox,dx=e-w||1e-6,dy=n-so||1e-6;
+  const main=k.rings.reduce((a,b)=>b.length>a.length?b:a);
+  const pts=main.map(([x,y])=>`${((x-w)/dx*100).toFixed(1)},${((n-y)/dy*70).toFixed(1)}`).join(" ");
+  return `<svg class="kmlsvg" viewBox="0 0 100 70" preserveAspectRatio="xMidYMid meet">
+    <polygon points="${pts}" fill="rgba(15,118,110,.12)" stroke="#0f766e" stroke-width="1.2" stroke-linejoin="round"/>
+  </svg>`;
+}
+function kmlSafe(k){
+  if(!k||!Array.isArray(k.bbox)||k.bbox.length!==4)return null;
+  const c=Array.isArray(k.center)&&k.center.length===2?k.center:[(k.bbox[0]+k.bbox[2])/2,(k.bbox[1]+k.bbox[3])/2];
+  return {...k,rings:Array.isArray(k.rings)?k.rings:[],inner:Array.isArray(k.inner)?k.inner:[],
+    kind:k.kind||"面",pts:Number(k.pts)||0,parts:Number(k.parts)||1,area:Number(k.area)||0,center:c};
+}
+function fmtArea(a){return a>=1000?a.toLocaleString("zh-CN",{maximumFractionDigits:0}):a.toFixed(2)}
+/* 矿业部/ArcGIS 坐标表 → 环。支持 DMS（13°08'48"S 30°04'18"E）、空格分度分秒、十进制 */
+function parseCoordText(txt){
+  const out=[];
+  String(txt||"").split(/[\r\n;]+/).forEach(raw=>{
+    let s=raw.trim();
+    if(!s||/^[#\/]/.test(s)||/^(lat|纬度|lat\.)/i.test(s))return;
+    s=s.replace(/^\s*\(?\d{1,2}\s*[.)、]\s+/,"")
+       .replace(/[°º]/g," ").replace(/[′’']/g," ").replace(/[″”"]/g," ").replace(/,/g," ");
+    const t=s.split(/\s+/).filter(Boolean);
+    const hemi=[],nums=[];
+    t.forEach(x=>{
+      if(/^[NSEWnsew]$/.test(x))hemi.push(x.toUpperCase());
+      else if(/^[-+]?\d+(\.\d+)?$/.test(x))nums.push(parseFloat(x));
+    });
+    let lat=null,lon=null;
+    if(nums.length>=6){
+      lat=nums[0]+nums[1]/60+(nums[2]||0)/3600;
+      lon=nums[3]+nums[4]/60+(nums[5]||0)/3600;
+      if(hemi[0]==="S")lat=-lat;
+      if(hemi[1]==="W")lon=-lon;
+      if(nums[0]<0)lat=-Math.abs(lat);
+      if(nums[3]<0)lon=-Math.abs(lon);
+    }else if(nums.length>=2){
+      let a=nums[0],b=nums[1];
+      if((Math.abs(a)>90&&Math.abs(b)<=90)||(a>0&&b<0)){const t2=a;a=b;b=t2}
+      lat=a;lon=b;
+    }
+    if(lat===null||lon===null)return;
+    if(Math.abs(lat)>90||Math.abs(lon)>180)return;
+    if(lat>0&&lat<35&&lon>20&&lon<45)lat=-lat; // 赞比亚一带没写 S 的按南纬
+    out.push([lon,lat]);
+  });
+  return out;
+}
+function kmlFromPts(ring,name,raw){
+  const pts=[];
+  ring.forEach(p=>{
+    const q=pts[pts.length-1];
+    if(!q||Math.abs(q[0]-p[0])>1e-9||Math.abs(q[1]-p[1])>1e-9)pts.push(p);
+  });
+  if(pts.length>2){
+    const a=pts[0],b=pts[pts.length-1];
+    if(Math.abs(a[0]-b[0])<1e-9&&Math.abs(a[1]-b[1])<1e-9)pts.pop();
+  }
+  if(pts.length<3)throw new Error("至少 3 个点，现在读到 "+pts.length+" 个");
+  const xs=pts.map(p=>p[0]),ys=pts.map(p=>p[1]);
+  const bbox=[Math.min(...xs),Math.min(...ys),Math.max(...xs),Math.max(...ys)];
+  return {name,ts:Date.now(),rings:[pts],inner:[],kind:"面",pts:pts.length,parts:1,
+    area:ringAreaKm2(pts),bbox,center:[(bbox[0]+bbox[2])/2,(bbox[1]+bbox[3])/2],raw:String(raw||"")};
+}
+function kmlPanel(){
+  const k=kmlSafe(kmlFor(SET_NO));
+  const body=k
+    ? `<div class="kthumb">${kmlSvg(k)}</div>
+       <div class="kmlinfo">
+         <div class="kname" title="${esc(k.name)}">${esc(k.name)}</div>
+         <div>${k.kind}状边界 · ${k.pts} 个顶点${k.parts>1?` · ${k.parts} 块`:""}</div>
+         <div>参考面积 <b>${fmtArea(k.area)} km²</b> <span class="knote">（KML 实测，以矿业部出具面积为准）</span></div>
+         <div class="kscope">范围 ${k.bbox.map(v=>v.toFixed(4)).join(" / ")}</div>
+       </div>`
+    : `<div class="kempty">还没有上传边界。把 <b>.kml</b> 拖到这里，或点右上「上传 KML」。上传后「项目地图」按矿权范围定位。</div>`;
+  return `<div class="mcard kmlpanel" id="kmlPanel" style="margin-bottom:14px">
+    <div class="khead">
+      <span class="kt">矿权边界</span><span class="ktag">KML</span>
+      <span class="khint">Google Earth / 矿权系统导出</span>
+      <span class="sp"></span>
+      <button class="btn" id="kmlPasteBtn">＋ 粘贴坐标</button>
+      ${k?`<button class="btn" id="kmlMap">看地图</button><button class="btn" id="kmlDl">下载</button><button class="btn danger" id="kmlDel">删除</button>`:""}
+      <label class="btn primary">${k?"替换":"＋ 上传 KML"}<input type="file" id="kmlUp" accept=".kml,.kmz,application/vnd.google-earth.kml+xml" hidden></label>
+    </div>
+    <div class="kbody">${body}</div>
+    <div class="kpbox" id="kmlPaste" hidden>
+      <textarea id="kmlPts" rows="7" spellcheck="false" placeholder="纬度在前、经度在后，一行一个点：&#10;13°08'48.00&quot;S 30°04'18.00&quot;E&#10;13 06 18.00 S 30 04 18.00 E&#10;-13.146667, 30.071667"></textarea>
+      <div class="kprow">
+        <button class="btn primary" id="kmlPtsOk">确认</button>
+        <button class="btn" id="kmlPtsX">取消</button>
+        <span class="khint">已识别 <b id="kmlPtsN">0</b> 个点</span>
+      </div>
+    </div>
+  </div>`;
+}
+function defaultInfo(l){
+  return [
+    {k:"公司持有",v:l.holder||""},
+    {k:"许可证类型",v:l.type||""},
+    {k:"许可证状态",v:l.status||""},
+    {k:"批准时间",v:""},
+    {k:"到期时间",v:l.valid_to||""},
+    {k:"地区",v:areaName(l.area_id)||""},
+    {k:"产区面积",v:""},
+    {k:"矿产",v:(l.commodities||[]).join("、")},
+    {k:"开发目标",v:""}
+  ];
+}
+/* 旧字段名归一：持有人 → 公司持有；展示时补齐默认 9 个字段，多余的旧字段丢掉 */
+const INFO_DROP=new Set(["申请时间","是否释放","刷新时间","相关项目","查看报告"]);
+function normInfo(rows){
+  const map=new Map();
+  (rows||[]).forEach(x=>{
+    let k=(x.k||"").trim();
+    if(!k)return;
+    if(k==="持有人")k="公司持有";
+    if(INFO_DROP.has(k))return;
+    if(!map.has(k))map.set(k,(x.v||""));
+  });
+  const out=INFO_LABELS.map(k=>({k,v:map.get(k)||""}));
+  for(const [k,v] of map)if(!INFO_LABELS.includes(k))out.push({k,v});
+  return out;
+}
+function applyInfo(){
+  const base=new Map(BASE.map(b=>[b.no,b]));
+  LICS.forEach(l=>{
+    const b=base.get(l.no);
+    if(INFO[l.no])l.info=normInfo(INFO[l.no]);
+    else if(b&&Array.isArray(b.info)&&b.info.length)l.info=normInfo(b.info);
+    else l.info=normInfo(defaultInfo(l));
+  });
+}
+let MFILE_NO=null,FILES=[];
+function idbOpen(){
+  return new Promise((res,rej)=>{
+    const r=indexedDB.open("lic_files_db",1);
+    r.onupgradeneeded=()=>{
+      const db=r.result;
+      if(!db.objectStoreNames.contains("files")){
+        const s=db.createObjectStore("files",{keyPath:"id"});
+        s.createIndex("no","no",{unique:false});
+      }
+    };
+    r.onsuccess=()=>res(r.result);
+    r.onerror=()=>rej(r.error);
+  });
+}
+async function filesOf(no){
+  const db=await idbOpen();
+  return new Promise((res,rej)=>{
+    const q=db.transaction("files").objectStore("files").index("no").getAll(no);
+    q.onsuccess=()=>res((q.result||[]).sort((a,b)=>b.ts-a.ts));
+    q.onerror=()=>rej(q.error);
+  });
+}
+async function allFiles(){
+  const db=await idbOpen();
+  return new Promise((res,rej)=>{
+    const q=db.transaction("files").objectStore("files").getAll();
+    q.onsuccess=()=>res(q.result||[]);
+    q.onerror=()=>rej(q.error);
+  });
+}
+async function putFile(rec){
+  const db=await idbOpen();
+  return new Promise((res,rej)=>{
+    const t=db.transaction("files","readwrite");
+    t.objectStore("files").put(rec);
+    t.oncomplete=()=>res(true);
+    t.onerror=()=>rej(t.error);
+  });
+}
+async function delFile(id){
+  const db=await idbOpen();
+  return new Promise((res,rej)=>{
+    const t=db.transaction("files","readwrite");
+    t.objectStore("files").delete(id);
+    t.oncomplete=()=>res(true);
+    t.onerror=()=>rej(t.error);
+  });
+}
+const humanSize=n=>n>1048576?(n/1048576).toFixed(1)+" MB":Math.max(1,Math.round(n/1024))+" KB";
+
+/* ---------- 动态（本机存储，P2 换云端） ---------- */
+let FEED={};
+function feedLoad(){try{FEED=JSON.parse(localStorage.getItem(FS_KEY)||"{}")||{}}catch(e){FEED={}}}
+function feedSave(){
+  try{localStorage.setItem(FS_KEY,JSON.stringify(FEED));return true}
+  catch(e){alert("本机存储已满：先删几条带图的旧动态再发。");return false}
+}
+const postsOf=no=>FEED[no]||[];
+function author(){try{return (localStorage.getItem(AU_KEY)||"").trim()||"ecobox"}catch(e){return "ecobox"}}
+function fmt(ts){
+  const d=new Date(ts),n=new Date();
+  const hm=String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");
+  return d.toDateString()===n.toDateString()?("今天 "+hm)
+    :(d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")+" "+hm);
+}
+const uid=()=>Date.now()+"-"+Math.random().toString(36).slice(2,7);
+
+/* ---------- 片段 ---------- */
+function row(k,v){return v?`<dt>${esc(k)}</dt><dd>${v}</dd>`:""}
+/* ---------- 英文取值的中文显示（只翻译，不改数据） ---------- */
+const ZH_STATUS={active:"有效",pending:"待审核",expired:"已过期",granted:"已授予",suspended:"已暂停",cancelled:"已注销",canceled:"已注销",defaulted:"已违约",application:"申请中",applied:"已申请",renewal:"续期中",relinquished:"已放弃"};
+const ZH_TYPE=[["large scale exploration","大规模勘探许可证"],["small scale exploration","小规模勘探许可证"],["large scale mining","大规模采矿许可证"],["small scale mining","小规模采矿许可证"],["artisanal","手工采矿许可证"],["prospecting","探矿许可证"],["exploration","勘探许可证"],["mining","采矿许可证"]];
+const ZH_MIN={copper:"铜",gold:"金",cobalt:"钴",nickel:"镍",manganese:"锰",iron:"铁",lead:"铅",zinc:"锌",lithium:"锂",tin:"锡",tantalum:"钽",niobium:"铌",beryllium:"铍",caesium:"铯",cesium:"铯",silver:"银",uranium:"铀",coal:"煤",graphite:"石墨",emerald:"祖母绿",aquamarine:"海蓝宝石",tourmaline:"电气石",mica:"云母",quartz:"石英",feldspar:"长石"};
+const ZH_PROV={central:"中央省",copperbelt:"铜带省",lusaka:"卢萨卡省",southern:"南部省",northern:"北部省",eastern:"东部省",western:"西部省","north-western":"西北省",northwestern:"西北省",luapula:"卢阿普拉省",muchinga:"穆钦加省"};
+const ZH_DIST={serenje:"塞伦杰",mkushi:"姆库希",chibombo:"奇邦博","kapiri mposhi":"卡皮里姆波希",ndola:"恩多拉",kitwe:"基特韦",solwezi:"索卢韦齐",mwinilunga:"姆维尼伦加",kalomo:"卡洛莫",choma:"乔马",lusaka:"卢萨卡",chipata:"奇帕塔",kasama:"卡萨马",mongu:"芒古",livingstone:"利文斯顿",kabwe:"卡布韦",mumbwa:"蒙布瓦",nyimba:"宁巴",petauke:"佩陶凯"};
+const zhStatus=v=>{const t=String(v??"").trim();if(!t)return t;if(/[一-龥]/.test(t))return t;return ZH_STATUS[t.toLowerCase()]||t};
+const zhType=v=>{const t=String(v??"").trim();if(!t)return t;if(/[一-龥]/.test(t))return t;
+  const n=t.toLowerCase().replace(/[-\u2010-\u2015]/g," ");
+  const hit=ZH_TYPE.find(([k])=>n.includes(k));return hit?hit[1]:t};
+const zhMineral=v=>{const t=String(v??"").trim();if(!t)return t;if(/[一-龥]/.test(t))return t;
+  return ZH_MIN[t.toLowerCase().replace(/\s*ore$/,"")]||t};
+const zhRegion=v=>{const t=String(v??"").trim();if(!t)return t;if(/[一-龥]/.test(t))return t;
+  return t.split(/[,，]/).map(x=>{const k=x.trim().toLowerCase();
+    return ZH_PROV[k]||ZH_DIST[k]||x.trim()}).filter(Boolean).join(" · ")};
+function zhVal(k,v){
+  const key=String(k??"").trim(),t=String(v??"").trim();
+  if(!t)return t;
+  if(key==="许可证状态"||key==="状态")return zhStatus(t);
+  if(key==="许可证类型"||key==="类型")return zhType(t);
+  if(key==="矿产"||key==="矿种")return t.split(/[,，、\/]/).map(x=>zhMineral(x)).join("、");
+  if(key==="地区"||key==="地址"||key==="省份")return zhRegion(t);
+  return t;
+}
+
+function statusPill(l){
+  const s=zhStatus(l.status||"状态未填");
+  return `<span class="pill ${/有效/.test(s)?"ok":/待核实/.test(s)?"warn":""}">${esc(s)}</span>`;
+}
+
+function plistHtml(activeNo){
+  return sortedLics().map(l=>`
+    <button class="item ${l.no===activeNo?"on":""}" data-no="${esc(l.no)}">
+      <span class="no">${esc(l.name||l.no)}</span>
+      <span class="ar">${esc(l.no)}${areaName(l.area_id)?" · "+esc(areaName(l.area_id)):""}</span>
+      <span class="st">${statusPill(l)}</span>
+    </button>`).join("");
+}
+
+/* ---------- 四个分类 ---------- */
+function tabIntro(l){
+  const g=l.geology||{},sm=l.sampling||{};
+  return `<div class="pane">
+    <p class="lead">${esc(l.intro||"暂无项目介绍。在 licences.json 的 intro 字段补充。")}</p>
+    <h4>矿证信息</h4>
+    <dl>
+      ${(l.info||[]).map(x=>row(x.k,esc(zhVal(x.k,x.v)))).join("")}
+    </dl>
+    <h4>地质背景</h4>
+    <dl>
+      ${row("构造单元",esc(g.terrane))}
+      ${row("赋矿岩性",esc(g.host))}
+      ${row("控矿构造",esc(g.structure))}
+      ${row("矿石矿物",(g.minerals||[]).map(esc).join("、"))}
+      ${row("蚀变",esc(g.alteration))}
+      ${row("备注",esc(g.notes))}
+    </dl>
+    <h4>取样要点</h4>
+    <dl>
+      ${row("取样对象",esc(sm.target))}
+      ${row("点位间距",esc(sm.spacing))}
+      ${row("提示",esc(sm.note))}
+    </dl>
+  </div>`;
+}
+
+/* ---------------- 项目地图：自绘瓦片地图（卫星/街道）+ 矿权边界 ---------------- */
+const MAP_TILES={
+  sat:{name:"卫星",max:19,attr:"影像 © Esri · Maxar · Earthstar",
+    url:(z,x,y)=>`https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${y}/${x}`},
+  street:{name:"街道",max:19,attr:"© OpenStreetMap contributors",
+    url:(z,x,y)=>`https://tile.openstreetmap.org/${z}/${x}/${y}.png`}
+};
+const MAPK="map_layer_v1";
+let MAP=null;
+const mercX=lon=>(lon+180)/360;
+const mercY=lat=>{const s=Math.sin(lat*Math.PI/180);return 0.5-Math.log((1+s)/(1-s))/(4*Math.PI)};
+const unmercX=x=>x*360-180;
+const unmercY=y=>{const n=Math.PI-2*Math.PI*y;return 180/Math.PI*Math.atan((Math.exp(n)-Math.exp(-n))/2)};
+function mapFitZoom(bbox,w,h,pad=0.84){
+  const dx=Math.abs(mercX(bbox[2])-mercX(bbox[0]))||1e-9;
+  const dy=Math.abs(mercY(bbox[1])-mercY(bbox[3]))||1e-9;
+  const z=Math.log2(Math.min(w*pad/(256*dx),h*pad/(256*dy)));
+  return Math.max(2,Math.min(17,Math.floor(z)));
+}
+function mapLayer(){
+  let v="";try{v=localStorage.getItem(MAPK)||""}catch(e){}
+  return MAP_TILES[v]?v:"sat";
+}
+/* ---------------- 地质图层（QGIS 导出包，见 devtools/export_qgis.py） ---------------- */
+const GEO_SLUGS={serenje_1330nw:"serenje-1330nw","42881":"serenje-1330nw"};
+function geoSlugFor(l){return (l&&(GEO_SLUGS[l.area_id]||GEO_SLUGS[String(l.no||"").split("-")[0]]))||""}
+const GEOK="geo_layers_v1";
+const GEOD={};
+function geoState(slug){if(!GEOD[slug])GEOD[slug]={m:null,lay:{},img:{},err:""};return GEOD[slug]}
+function geoOnList(slug){
+  let v={};try{v=JSON.parse(localStorage.getItem(GEOK)||"{}")||{}}catch(e){}
+  return Array.isArray(v[slug])?v[slug]:null;
+}
+function geoWrite(slug,key,on){
+  let v={};try{v=JSON.parse(localStorage.getItem(GEOK)||"{}")||{}}catch(e){}
+  const st=geoState(slug),cur=new Set(v[slug]||(st.m?st.m.layers.filter(x=>x.on&&x.pack==="lite").map(x=>x.key):[]));
+  on?cur.add(key):cur.delete(key);
+  v[slug]=[...cur];
+  try{localStorage.setItem(GEOK,JSON.stringify(v))}catch(e){}
+}
+function geoIsOn(slug,key,def){
+  const l=geoOnList(slug);
+  return l?l.includes(key):!!def;
+}
+function fmtKB(b){return b>=1048576?(b/1048576).toFixed(1)+" MB":Math.round(b/1024)+" KB"}
+async function geoEnsure(slug,keys){
+  const st=geoState(slug);
+  for(const k of keys){
+    const L=st.m&&st.m.layers.find(x=>x.key===k);
+    if(!L)continue;
+    if(L.geom==="raster"){st.img[k]=1;continue}
+    if(st.lay[k])continue;
+    const r=await fetch(`geo/${slug}/${L.file}`,{cache:"force-cache"});
+    if(!r.ok)throw new Error(L.file+" "+r.status);
+    st.lay[k]=(await r.json()).features||[];
+  }
+}
+async function geoInit(l){
+  const slug=geoSlugFor(l);if(!slug||!MAP)return;
+  MAP.geoSlug=slug;MAP.geoLic=l.no;
+  const st=geoState(slug);
+  geoPanelRefresh();
+  if(!st.m){
+    try{
+      const r=await fetch(`geo/${slug}/index.json`,{cache:"no-cache"});
+      if(!r.ok)throw new Error("index.json "+r.status);
+      st.m=await r.json();
+      st.err="";
+    }catch(e){st.err=e.message||String(e);geoPanelRefresh();return}
+  }
+  geoPanelRefresh();
+  const want=(st.m.layers||[]).filter(x=>geoIsOn(slug,x.key,x.pack==="lite"&&x.on)).map(x=>x.key);
+  try{await geoEnsure(slug,want);st.err=""}catch(e){st.err=e.message||String(e)}
+  geoPanelRefresh();mapDraw();
+}
+async function geoLoadAll(){
+  const slug=MAP&&MAP.geoSlug;if(!slug)return;
+  const st=geoState(slug);if(!st.m)return;
+  const keys=st.m.layers.filter(x=>x.pack==="full").map(x=>x.key);
+  const btn=$("#gpLoadAll");
+  if(btn){btn.textContent="加载中…";btn.disabled=true}
+  try{
+    await geoEnsure(slug,keys);
+    keys.forEach(k=>geoWrite(slug,k,true));
+    st.err="";
+  }catch(e){st.err=e.message||String(e)}
+  geoPanelRefresh();mapDraw();
+}
+function geoToggle(key,on){
+  const slug=MAP&&MAP.geoSlug;if(!slug)return;
+  geoWrite(slug,key,on);
+  if(on)geoEnsure(slug,[key]).then(()=>{geoPanelRefresh();mapDraw()}).catch(e=>{geoState(slug).err=e.message||String(e);geoPanelRefresh()});
+  else mapDraw();
+}
+function geoRingPath(ring,px){
+  return "M"+ring.map(q=>{const[a,b]=px(q[0],q[1]);return a.toFixed(1)+","+b.toFixed(1)}).join("L")+"Z";
+}
+function geoLinePath(line,px){
+  return "M"+line.map(q=>{const[a,b]=px(q[0],q[1]);return a.toFixed(1)+","+b.toFixed(1)}).join("L");
+}
+function geoFeat(f,L,i,px,slug){
+  const g=f.geometry;if(!g)return "";
+  const s=L.style||{},p=f.properties||{};
+  const col=(s.paletteField&&s.palette&&s.palette[p[s.paletteField]])||s.fill||"none";
+  const attrs=`data-lk="${L.key}" data-fidx="${i}"`;
+  const paint=`fill="${col}" fill-opacity="${s.fillOpacity==null?1:s.fillOpacity}" stroke="${s.stroke||"none"}" stroke-width="${s.strokeWidth||0}"${s.dash?` stroke-dasharray="${s.dash}"`:""} vector-effect="non-scaling-stroke"`;
+  const t=g.type,co=g.coordinates;
+  if(t==="Point"){const[a,b]=px(co[0],co[1]);return `<circle cx="${a.toFixed(1)}" cy="${b.toFixed(1)}" r="${s.radius||5}" ${paint} ${attrs}><title>${esc(p.Sample_ID||p.name||L.name)}</title></circle>`}
+  if(t==="MultiPoint")return co.map(c=>{const[a,b]=px(c[0],c[1]);return `<circle cx="${a.toFixed(1)}" cy="${b.toFixed(1)}" r="${s.radius||5}" ${paint} ${attrs}/>`}).join("");
+  if(t==="LineString")return `<path d="${geoLinePath(co,px)}" ${paint} ${attrs}/>`;
+  if(t==="MultiLineString")return co.map(l=>`<path d="${geoLinePath(l,px)}" ${paint} ${attrs}/>`).join("");
+  if(t==="Polygon")return `<path d="${co.map(r=>geoRingPath(r,px)).join(" ")}" fill-rule="evenodd" ${paint} ${attrs}/>`;
+  if(t==="MultiPolygon")return co.map(poly=>`<path d="${poly.map(r=>geoRingPath(r,px)).join(" ")}" fill-rule="evenodd" ${paint} ${attrs}/>`).join("");
+  return "";
+}
+function geoMarkup(px,w,h){
+  const slug=MAP&&MAP.geoSlug;if(!slug)return "";
+  const st=geoState(slug),m=st.m;if(!m)return "";
+  let out="";
+  for(const L of m.layers){
+    if(!geoIsOn(slug,L.key,L.pack==="lite"&&L.on))continue;
+    const s=L.style||{};
+    if(L.geom==="raster"){
+      if(!st.img[L.key]||!L.raster)continue;
+      const b=L.raster.bbox,[x0,y0]=px(b[0],b[3]),[x1,y1]=px(b[2],b[1]);
+      out+=`<image href="geo/${slug}/${L.raster.file}" x="${x0.toFixed(1)}" y="${y0.toFixed(1)}" width="${(x1-x0).toFixed(1)}" height="${(y1-y0).toFixed(1)}" opacity="${s.opacity||0.55}" preserveAspectRatio="none"/>`;
+      continue;
+    }
+    const fs=st.lay[L.key];
+    if(!fs||!fs.length)continue;
+    let body="";
+    for(let i=0;i<fs.length;i++)body+=geoFeat(fs[i],L,i,px,slug);
+    out+=`<g class="glayer" data-layer="${L.key}">${body}</g>`;
+  }
+  return out;
+}
+function geoPanel(){
+  const slug=MAP&&MAP.geoSlug;if(!slug)return "";
+  const st=geoState(slug),m=st.m;
+  let body="";
+  if(!m){
+    body=st.err
+      ? `<div class="gperr">地质数据没加载成功：${esc(st.err)}</div><button class="btn" id="gpRetry">重试</button>`
+      : `<div class="gpwait">正在加载地质图层…</div>`;
+  }else{
+    const rowOf=L=>`<label class="gprow"><input type="checkbox" data-gl="${L.key}" ${geoIsOn(slug,L.key,L.pack==="lite"&&L.on)?"checked":""}><span class="gpn" title="${esc(L.note||"")}">${esc(L.name)}</span><span class="gpc">${L.count}</span></label>`;
+    body=`<div class="gpsub2">基础图层</div>${m.layers.filter(x=>x.pack==="lite").map(rowOf).join("")}
+      <div class="gpsub2">完整地质包<span class="gpsz">${fmtKB((m.packs.full||{}).bytes||0)}</span></div>
+      ${m.layers.filter(x=>x.pack==="full").map(rowOf).join("")}
+      <button class="btn" id="gpLoadAll">全部加载（${fmtKB((m.packs.full||{}).bytes||0)}）</button>`;
+  }
+  return `<div class="gpanel${MAP.gpMin?" min":""}" id="gpanel">
+    <div class="gphead"><b>地质图层</b><button class="gpmin" id="gpMin">${MAP.gpMin?"+":"−"}</button></div>
+    <div class="gpbody">${body}</div>
+    <div class="gpfoot">${m?"导出 "+(m.generated_at||"").slice(0,10)+" · 简化 33 m":"—"}${st.err&&m?" · <span class=\"gperr\">"+esc(st.err)+"</span>":""}</div>
+  </div>`;
+}
+function wireGeoPanel(){
+  const p=$("#gpanel");if(!p)return;
+  const mn=$("#gpMin");
+  if(mn)mn.onclick=()=>{if(!MAP)return;MAP.gpMin=!MAP.gpMin;geoPanelRefresh()};
+  const la=$("#gpLoadAll");if(la)la.onclick=geoLoadAll;
+  const rt=$("#gpRetry");if(rt)rt.onclick=()=>{const st=geoState(MAP.geoSlug);st.err="";st.m=null;geoInit({no:MAP.geoLic})};
+}
+function geoPanelRefresh(){
+  const el=$("#gmap");if(!el)return;
+  const old=el.querySelector("#gpanel");if(!old)return;
+  const html=geoPanel();
+  if(!html)return;
+  const tmp=document.createElement("div");tmp.innerHTML=html;
+  old.replaceWith(tmp.firstElementChild);
+  wireGeoPanel();
+}
+function geoPick(lk,i){
+  if(MAP&&MAP.moved)return;
+  const slug=MAP&&MAP.geoSlug;if(!slug)return;
+  const st=geoState(slug),L=(st.m&&st.m.layers||[]).find(x=>x.key===lk),f=(st.lay[lk]||[])[i];
+  const box=$("#gmap #gpop");if(!L||!f||!box)return;
+  const p=f.properties||{};
+  const rows=(L.fields||[]).filter(x=>p[x.k]!=null&&p[x.k]!=="")
+    .map(x=>`<div class="gpr"><span>${esc(x.label)}</span><b>${esc(String(p[x.k]))}</b></div>`).join("");
+  box.innerHTML=`<div class="gpopt"><b>${esc(L.name)}</b><button class="gpx" title="关闭">×</button></div>
+    <div class="gpopb">${rows||"<i>这个要素没有属性</i>"}</div>
+    ${L.note?`<div class="gpopn">${esc(L.note)}</div>`:""}`;
+  box.hidden=false;
+  box.querySelector(".gpx").onclick=geoPopHide;
+}
+function geoPopHide(){const b=$("#gmap #gpop");if(b)b.hidden=true}
+function mapDraw(){
+  if(!MAP)return;
+  const{el,k,layer}=MAP;
+  const w=el.clientWidth||600,h=el.clientHeight||360;
+  const scale=256*Math.pow(2,MAP.zoom),n=Math.pow(2,MAP.zoom);
+  const cx=mercX(MAP.center[0])*scale,cy=mercY(MAP.center[1])*scale;
+  const left=cx-w/2,top=cy-h/2;
+  const T=MAP_TILES[layer];
+  const tx0=Math.floor(left/256),tx1=Math.floor((left+w)/256);
+  const ty0=Math.floor(top/256),ty1=Math.floor((top+h)/256);
+  let html="";
+  for(let ty=ty0;ty<=ty1;ty++){
+    if(ty<0||ty>=n)continue;
+    for(let tx=tx0;tx<=tx1;tx++){
+      const wx=((tx%n)+n)%n;
+      html+=`<img alt="" draggable="false" src="${T.url(MAP.zoom,wx,ty)}" style="left:${tx*256-left}px;top:${ty*256-top}px">`;
+    }
+  }
+  el.querySelector(".gtiles").innerHTML=html;
+  el.querySelector(".gattr").textContent=T.attr;
+  el.querySelector(".gzoomnow").textContent="z"+MAP.zoom;
+
+  const px=(lon,lat)=>[mercX(lon)*scale-left,mercY(lat)*scale-top];
+  const ringPath=r=>"M"+r.map(q=>{const[a,b]=px(q[0],q[1]);return a.toFixed(1)+","+b.toFixed(1)}).join("L")+"Z";
+  let path="";
+  if(k&&k.rings&&k.rings.length){
+    path=k.rings.map(ringPath).join(" ");
+    if(k.inner&&k.inner.length)path+=" "+k.inner.map(ringPath).join(" ");
+  }
+  const dots=(k&&k.rings?k.rings.flat():[]).slice(0,600)
+    .map(q=>{const[a,b]=px(q[0],q[1]);return `<circle class="gv" cx="${a.toFixed(1)}" cy="${b.toFixed(1)}" r="2.6"/>`}).join("");
+  let lab="";
+  if(k&&k.rings&&k.rings.length){
+    const r=k.rings[0];
+    const c=[r.reduce((t,q)=>t+q[0],0)/r.length,r.reduce((t,q)=>t+q[1],0)/r.length];
+    const[a,b]=px(c[0],c[1]);
+    lab=`<text class="glabel" x="${a.toFixed(1)}" y="${b.toFixed(1)}">${k.kind==="线"?"":"约 "}${fmtArea(k.area)} km²</text>`;
+  }
+  const svg=el.querySelector(".gvec");
+  svg.setAttribute("viewBox",`0 0 ${w} ${h}`);
+  svg.setAttribute("width",w);svg.setAttribute("height",h);
+  const gmk=geoMarkup(px,w,h);
+  svg.innerHTML=`${gmk}${path?`<path class="gpoly" d="${path}" fill-rule="evenodd"/>`:""}${dots}${lab}`;
+}
+function mapZoom(dir,ev){
+  if(!MAP)return;
+  const el=MAP.el,w=el.clientWidth||600,h=el.clientHeight||360;
+  const oldZ=MAP.zoom;
+  const nz=Math.max(2,Math.min(MAP_TILES[MAP.layer].max,oldZ+dir));
+  if(nz===oldZ)return;
+  const old=256*Math.pow(2,oldZ),scale=256*Math.pow(2,nz);
+  let mx=w/2,my=h/2;
+  if(ev){const r=el.getBoundingClientRect();mx=ev.clientX-r.left;my=ev.clientY-r.top}
+  const left=mercX(MAP.center[0])*old-w/2,top=mercY(MAP.center[1])*old-h/2;
+  const wx=(left+mx)/old,wy=(top+my)/old;
+  MAP.zoom=nz;
+  MAP.center=[unmercX((wx*scale-mx+w/2)/scale),unmercY(Math.max(0,Math.min(1,(wy*scale-my+h/2)/scale)))];
+  mapDraw();
+}
+function mapMount(l){
+  const el=$("#gmap");if(!el)return;
+  const kml=kmlSafe(kmlFor(l.no)),a=areaById(l.area_id)||{};
+  const bbox=(kml&&kml.bbox)||l.bbox||a.bbox||null;
+  const center=(kml&&kml.center)||l.center||a.center||(bbox?[(bbox[0]+bbox[2])/2,(bbox[1]+bbox[3])/2]:null);
+  if(!center)return;
+  MAP={el,k:kml,fit:bbox?bbox.slice():null,bbox,center:center.slice(),layer:mapLayer(),zoom:13};
+  MAP.zoom=bbox?mapFitZoom(bbox,el.clientWidth||600,el.clientHeight||360):13;
+  mapDraw();
+
+  el.addEventListener("pointerdown",e=>{
+    if(e.target.closest("button"))return;
+    try{el.setPointerCapture(e.pointerId)}catch(_){}
+    MAP.drag={x:e.clientX,y:e.clientY,c:MAP.center.slice()};MAP.moved=false;
+  });
+  el.addEventListener("pointermove",e=>{
+    if(!MAP.drag)return;
+    if(Math.abs(e.clientX-MAP.drag.x)+Math.abs(e.clientY-MAP.drag.y)>4)MAP.moved=true;
+    const w=el.clientWidth||600,h=el.clientHeight||360,scale=256*Math.pow(2,MAP.zoom);
+    const nx=mercX(MAP.drag.c[0])-(e.clientX-MAP.drag.x)/scale;
+    const ny=mercY(MAP.drag.c[1])-(e.clientY-MAP.drag.y)/scale;
+    MAP.center=[unmercX(nx),unmercY(Math.max(0,Math.min(1,ny)))];
+    mapDraw();
+  });
+  const drop=()=>{if(MAP)MAP.drag=null};
+  el.addEventListener("pointerup",drop);
+  el.addEventListener("pointercancel",drop);
+  el.addEventListener("wheel",e=>{e.preventDefault();mapZoom(e.deltaY<0?1:-1,e)},{passive:false});
+  el.addEventListener("dblclick",e=>mapZoom(1,e));
+  el.querySelectorAll("[data-gz]").forEach(b=>b.onclick=()=>mapZoom(+b.dataset.gz));
+  const fit=el.querySelector("[data-gfit]");
+  if(fit)fit.onclick=()=>{
+    if(!MAP.fit)return;
+    MAP.zoom=mapFitZoom(MAP.fit,el.clientWidth||600,el.clientHeight||360);
+    MAP.center=[(MAP.fit[0]+MAP.fit[2])/2,(MAP.fit[1]+MAP.fit[3])/2];
+    mapDraw();
+  };
+  el.querySelectorAll("[data-glayer]").forEach(b=>b.onclick=()=>{
+    MAP.layer=b.dataset.glayer;
+    try{localStorage.setItem(MAPK,MAP.layer)}catch(e){}
+    el.querySelectorAll("[data-glayer]").forEach(x=>x.classList.toggle("on",x.dataset.glayer===MAP.layer));
+    mapDraw();
+  });
+  el.addEventListener("click",e=>{
+    const t=e.target.closest("[data-fidx]");
+    if(t){geoPick(t.getAttribute("data-lk"),+t.getAttribute("data-fidx"));return}
+    if(!e.target.closest("#gpop"))geoPopHide();
+  });
+  el.addEventListener("change",e=>{
+    const c=e.target.closest("[data-gl]");
+    if(c)geoToggle(c.getAttribute("data-gl"),c.checked);
+  });
+  wireGeoPanel();
+  if(geoSlugFor(l))geoInit(l);
+  if(window.ResizeObserver)new ResizeObserver(()=>mapDraw()).observe(el);
+}
+
+function tabMap(l){
+  const kml=kmlSafe(kmlFor(l.no)),a=areaById(l.area_id)||{};
+  const bbox=(kml&&kml.bbox)||l.bbox||a.bbox||null;
+  const c=(kml&&kml.center)||l.center||a.center||(bbox?[(bbox[0]+bbox[2])/2,(bbox[1]+bbox[3])/2]:null);
+  if(!c)return `<div class="pane"><div class="empty">该矿证还没有坐标。到「设置」里上传矿权边界 KML，或在 licences.json 补 center。</div></div>`;
+  const [lon,lat]=c;
+  const kmlBits=kml?` · 边界 ${kml.pts} 个顶点 · 参考面积 ${fmtArea(kml.area)} km²`:"";
+  return `<div class="pane">
+    <div class="gmap" id="gmap">
+      <div class="gtiles"></div>
+      <svg class="gvec" xmlns="http://www.w3.org/2000/svg"></svg>
+      <div class="glayerpick">
+        <button data-glayer="sat" class="${mapLayer()==="sat"?"on":""}">卫星</button>
+        <button data-glayer="street" class="${mapLayer()==="street"?"on":""}">街道</button>
+      </div>
+      ${geoSlugFor(l)?`<div class="gpanel" id="gpanel"><div class="gphead"><b>地质图层</b><button class="gpmin" id="gpMin">−</button></div><div class="gpbody"><div class="gpwait">正在加载地质图层…</div></div></div>`:""}
+      <div class="gpop" id="gpop" hidden></div>
+      <div class="gctrl">
+        <button data-gz="1" title="放大">+</button>
+        <button data-gz="-1" title="缩小">−</button>
+        <button data-gfit="1" title="回到矿区范围">⤢</button>
+      </div>
+      <span class="gzoomnow">z--</span>
+      <span class="gattr"></span>
+    </div>
+    <div class="mapmeta">中心 ${lat.toFixed(5)}, ${lon.toFixed(5)}${bbox?` · 范围 ${bbox.map(v=>v.toFixed(3)).join(" / ")}`:""}${kmlBits}
+      ${kml?"":` · 上传 KML 后这里会画出矿权范围`}</div>
+    ${kml?`<div class="kmlcard">${kmlSvg(kml)}<div class="kmlmeta"><b>${esc(kml.name)}</b><span>${kml.kind}状边界 · ${kml.pts} 个顶点 · 参考面积 ${fmtArea(kml.area)} km²</span><span>边界范围 ${kml.bbox.map(v=>v.toFixed(4)).join(" / ")}</span></div></div>`:""}
+    <div class="links">
+      <a href="https://www.google.com/maps?q=${lat},${lon}" target="_blank" rel="noopener">外部地图打开</a>
+      <button data-copy="${lat},${lon}">复制中心坐标</button>
+      ${kml?`<button data-kmlcopy="1">复制边界坐标</button>`:""}
+      <a href="sampling_helper.html">去取样</a>
+    </div>
+    <p class="hint">拖动平移、滚轮或双击缩放、⤢ 回到矿区范围；右上角切卫星/街道。左上「地质图层」可开关岩性、构造、靶区等，点图元看属性。没有网络时瓦片不显示，边界、地质轮廓和面积仍画得出来。</p>
+  </div>`;
+}
+
+function tabReports(l){
+  const rs=l.reports||[];
+  if(!rs.length){
+    return `<div class="pane"><div class="empty">还没有登记地质报告。<br>把 PDF 放进 <code>reports/</code>，再在 <code>licences.json</code> 的 <code>reports</code> 里加一条：<br><code>{ "title": "…", "date": "2026-10-30", "url": "reports/xxx.pdf", "summary": "…" }</code></div></div>`;
+  }
+  return `<div class="pane">${rs.map(r=>`
+    <h4>${esc(r.title)}</h4>
+    <dl>
+      ${row("日期",esc(r.date))}
+      ${row("摘要",esc(r.summary))}
+      ${row("文件",r.url?`<a href="${esc(r.url)}" target="_blank" rel="noopener">打开报告</a>`:"")}
+    </dl>`).join("")}</div>`;
+}
+
+function postHtml(p){
+  const cm=(p.comments||[]).map(c=>`<div class="cmt"><b>${esc(c.author)}</b>${esc(c.text)}<time>${fmt(c.ts)}</time></div>`).join("");
+  return `<article class="post" data-post="${esc(p.id)}">
+    <div class="ph">
+      <span class="av">${esc((p.author||"?").slice(0,1).toUpperCase())}</span>
+      <div class="who"><b>${esc(p.author)}</b><time>${fmt(p.ts)}</time></div>
+      <div class="sp">${p.tag?`<span class="pill" style="background:#eef2f5;color:#475569">${esc(p.tag)}</span>`:""}<button class="x" data-del="1" title="删除">×</button></div>
+    </div>
+    ${p.text?`<p class="pt">${esc(p.text)}</p>`:""}
+    ${p.img?`<img class="pimg" src="${p.img}" alt="">`:""}
+    <div class="cmts">
+      ${cm}
+      <form class="cform"><input placeholder="留言…" maxlength="300" autocomplete="off"><button>发送</button></form>
+    </div>
+  </article>`;
+}
+
+function tabFeed(l){
+  const posts=postsOf(l.no);
+  return `<div class="pane"><div class="feed">
+    <div class="composer">
+      <div class="crow">
+        <span class="av">${esc(author().slice(0,1).toUpperCase())}</span>
+        <textarea id="ptext" placeholder="发布这个项目的更新：现场取样照片、化验含量（Ta2O5/Nb2O5）、矿证状态变化…"></textarea>
+      </div>
+      <div class="cbar">
+        <select id="ptag"><option>现场</option><option>化验</option><option>进度</option><option>状态</option></select>
+        <button id="pimg">📷 图片</button>
+        <button class="primary" id="ppost">发布</button>
+      </div>
+      <div id="ppreview">${PIMG?`<div class="prev"><img src="${PIMG}"><button id="pdel">移除</button></div>`:""}</div>
+    </div>
+    ${posts.length?posts.map(postHtml).join(""):`<div class="empty">这个矿证还没有动态。上面发第一条。</div>`}
+  </div></div>`;
+}
+
+/* ---------- 渲染 ---------- */
+function render(){
+  if(!SEL||!licByNo(SEL))SEL=sortedLics()[0]?sortedLics()[0].no:null;
+  const l=licByNo(SEL);
+  $("#navSet").classList.toggle("on",VIEW==="set");
+  if(VIEW!=="lic"){$("#tabs").innerHTML="";$("#tpill").innerHTML=""}
+  $("#plist").innerHTML=sortedLics().length?plistHtml(VIEW==="set"?null:SEL):`<div class="empty" style="color:#a9c8c3">没有项目</div>`;
+  $("#plist").querySelectorAll(".item").forEach(b=>b.onclick=()=>{
+    if(VIEW==="set"&&SET_VIEW==="proj"&&!leaveOK())return;
+    DRAFT=null;VIEW="lic";SEL=b.dataset.no;TAB="intro";location.hash="lic/"+SEL;render();
+    if(window.innerWidth<=900)$(".detail").scrollIntoView({behavior:"smooth",block:"start"});
+  });
+
+  if(VIEW==="mgr")VIEW="set";
+  if(VIEW==="set"){renderSettings();return}
+
+  if(!l){$("#tabs").innerHTML="";$("#tpill").innerHTML="";$("#ttl").textContent="赞比亚矿权介绍";$("#sub").textContent="";$("#view").innerHTML=`<div class="empty">没有项目数据</div>`;return}
+  $("#ttl").textContent=l.name||l.no;
+  $("#tpill").innerHTML=statusPill(l);
+  $("#sub").textContent=`${l.no}${areaName(l.area_id)?" · "+areaName(l.area_id):""}${l.holder&&l.holder!=="（待核实）"?" · "+l.holder:""}`;
+
+  const pane=TAB==="intro"?tabIntro(l):TAB==="map"?tabMap(l):TAB==="report"?tabReports(l):tabFeed(l);
+  $("#tabs").innerHTML=`
+      <button data-tab="intro" class="${TAB==="intro"?"on":""}">项目介绍</button>
+      <button data-tab="map" class="${TAB==="map"?"on":""}">项目地图</button>
+      <button data-tab="report" class="${TAB==="report"?"on":""}">项目地质报告</button>
+      <button data-tab="feed" class="${TAB==="feed"?"on":""}">项目信息</button>`;
+  $("#view").innerHTML=`<section class="detail"><div id="pane">${pane}</div></section>`;
+
+  $("#tabs").querySelectorAll("button").forEach(b=>b.onclick=()=>{TAB=b.dataset.tab;render()});
+  const cp=$("[data-copy]");
+  if(cp)cp.onclick=async()=>{try{await navigator.clipboard.writeText(cp.dataset.copy);cp.textContent="已复制"}catch(e){cp.textContent="复制失败"}};
+  const kcp=$("[data-kmlcopy]");
+  if(kcp)kcp.onclick=async()=>{
+    const k=kmlSafe(kmlFor(l.no));if(!k)return;
+    const txt=k.rings.map((r,i)=>`# ring ${i+1}\n`+r.map(q=>q.join(",")).join("\n")).join("\n");
+    try{await navigator.clipboard.writeText(txt);kcp.textContent="已复制"}catch(e){kcp.textContent="复制失败"}
+  };
+  if(TAB==="map")mapMount(l);
+  if(TAB==="feed")wireFeed(l.no);
+}
+
+function wireFeed(no){
+  const ta=$("#ptext");if(!ta)return;
+  $("#pimg").onclick=pickImage;
+  const del=$("#pdel");if(del)del.onclick=()=>{PIMG="";$("#ppreview").innerHTML=""};
+  $("#ppost").onclick=()=>{
+    const text=ta.value.trim(),tag=$("#ptag").value;
+    if(!text&&!PIMG){ta.focus();return}
+    const list=FEED[no]||(FEED[no]=[]);
+    list.unshift({id:uid(),ts:Date.now(),author:author(),text,img:PIMG,tag,comments:[]});
+    if(!feedSave()){list.shift();return}
+    PIMG="";render();
+  };
+  $("#pane").querySelectorAll(".post").forEach(el=>{
+    const id=el.dataset.post;
+    el.querySelector("[data-del]").onclick=()=>{
+      if(!confirm("删除这条动态？"))return;
+      FEED[no]=(FEED[no]||[]).filter(p=>p.id!==id);feedSave();render();
+    };
+    el.querySelector(".cform").onsubmit=ev=>{
+      ev.preventDefault();
+      const inp=ev.target.querySelector("input"),t=inp.value.trim();if(!t)return;
+      const p=(FEED[no]||[]).find(x=>x.id===id);if(!p)return;
+      p.comments=p.comments||[];
+      p.comments.push({ts:Date.now(),author:author(),text:t});
+      if(!feedSave()){p.comments.pop();return}
+      render();
+    };
+  });
+}
+
+/* ---------- 设置：项目列表 + 矿证信息 ---------- */
+function manageRows(){
+  return sortedLics().map(l=>({
+    no:l.no,name:l.name||"",area_id:l.area_id||"",
+    holder:holderOf(l),
+    status:infoVal(l,"许可证状态")||l.status||"",
+    order:l.order??""
+  }));
+}
+
+async function loadFiles(no){
+  try{FILES=(await filesOf(no)).map(f=>({...f,url:f.blob&&/^image\//.test(f.type||"")?URL.createObjectURL(f.blob):""}))}
+  catch(e){FILES=[]}
+  if(VIEW==="set"&&SET_VIEW==="proj"&&MFILE_NO===no)drawSetBody();
+}
+
+function drawManage(){
+  $("#view").innerHTML=`<div class="mcard">
+    <div class="mrow head"><span>项目名称</span><span>证号</span><span>持有人</span><span>状态</span><span>排序</span><span>设置</span></div>
+    ${MROWS.map((r,i)=>`<div class="mrow" data-i="${i}">
+      <span class="ro" title="点右侧「设置」修改">${esc(r.name)||"—"}</span>
+      <span class="ro no" title="点右侧「设置」修改">${esc(r.no)||"—"}</span>
+      <span class="ro">${esc(r.holder)||"—"}</span>
+      <span class="ro">${esc(zhStatus(r.status))||"—"}</span>
+      <span class="ro">${r.order==null||r.order===""?"—":esc(r.order)}</span>
+      <button class="cfg" data-cfg="1">设置</button>
+    </div>`).join("")}
+    <div class="mfoot">
+      <button class="btn" id="mAdd">+ 新增项目</button>
+      <span class="grow"></span>
+      <button class="btn" id="mReset">还原 json</button>
+      <button class="btn" id="mExport">导出 licences.json</button>
+    </div>
+  </div>
+  <p class="mnote">列表只做展示。点某行「设置」，名称、证号、持有人、状态、矿区、排序和矿证资料都在里面改、在里面保存。</p>`;
+  wireManage();
+}
+
+function filesPanel(){
+  const l=LICS.find(x=>x.no===MFILE_NO)||{no:MFILE_NO};
+  const shown=FILES.filter(f=>!/\.(kml|kmz)$/i.test(f.name||""));
+  const items=shown.length?shown.map(f=>`<div class="fitem" data-fid="${esc(f.id)}">
+      ${f.url?`<img class="thumb" src="${f.url}" alt="">`:`<span class="ic">📄</span>`}
+      <div class="fi"><span class="fn">${esc(f.name)}</span><span class="fs">${humanSize(f.size||0)} · ${fmt(f.ts)}</span></div>
+      <button data-open="1">打开</button>
+      <button data-del="1">删除</button>
+    </div>`).join(""):`<div class="empty" style="padding:16px">还没有上传。矿证扫描件、批复文件、PDF 报告都可以放这里。<br>KML 边界传在上面的「矿权边界」里，不占这里。</div>`;
+  return `<div class="mfiles">
+    <div class="mfhead">矿证资料 · ${esc(l.name||l.no)}
+      <span class="hint">${esc(l.no)} · 存本机</span>
+      <span class="sp"></span>
+      <label class="btn primary">＋ 上传<input type="file" id="mUp" multiple hidden accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"></label>
+    </div>
+    <div class="ntext">
+      <textarea id="mNote" placeholder="文字记录：矿证号 / 持有人 / 有效期 / 面积 / 批复要点…（输入即自动保存）">${esc(noteGet(MFILE_NO))}</textarea>
+      <div class="nbar"><span id="mNoteHint">只存本机</span><span class="sp"></span><button id="mNoteTxt">存为 txt 资料</button></div>
+    </div>
+    ${items}
+  </div>`;
+}
+function wireManage(){
+  $("#view").querySelectorAll(".mrow:not(.head)").forEach(el=>{
+    const i=+el.dataset.i;
+    el.querySelector("[data-cfg]").onclick=()=>{
+      const no=(MROWS[i].no||"").trim();
+      if(!no)return;
+      SET_NO=no;SET_VIEW="proj";HIT.clear();
+      location.hash="set/"+encodeURIComponent(no);render();
+      window.scrollTo({top:0,behavior:"smooth"});
+    };
+  });
+  $("#mAdd").onclick=()=>{
+    let n=ADDED.length+1,no;
+    do{no="未命名-"+String(n++).padStart(2,"0")}while(licByNo(no));
+    ADDED.push({no,name:"未命名项目",status:"已申请",area_id:"",order:sortedLics().length+1,
+      type:"",commodities:[],center:null,geology:{},sampling:{},intro:"",reports:[]});
+    persistEdits();applyEdits();
+    SET_NO=no;SET_VIEW="proj";HIT.clear();
+    location.hash="set/"+encodeURIComponent(no);render();
+    setTimeout(()=>{const el=$("#setName");if(el){el.focus();el.select()}},80);
+  };
+  $("#mReset").onclick=()=>{
+    if(!confirm("放弃本机的修改，回到 licences.json 的内容？"))return;
+    try{localStorage.removeItem(EDIT_KEY)}catch(e){}
+    EDITS={};ADDED=[];DELETED=[];applyEdits();render();toast("已还原");
+  };
+  $("#mExport").onclick=exportJson;
+}
+
+function wireFiles(){
+  const up=$("#mUp");
+  if(up)up.onchange=async()=>{
+    const list=[...(up.files||[])];
+    if(!list.length)return;
+    for(const f of list){
+      try{await putFile({id:uid(),no:MFILE_NO,name:f.name,type:f.type||"",size:f.size,ts:Date.now(),blob:f})}
+      catch(e){alert("保存失败："+(e.message||e));break}
+    }
+    await loadFiles(MFILE_NO);
+    toast("已上传 "+list.length+" 个文件");
+  };
+
+  const ta=$("#mNote");
+  if(ta){
+    let timer=null;
+    ta.addEventListener("input",()=>{
+      clearTimeout(timer);
+      timer=setTimeout(()=>{
+        const ts=noteSet(MFILE_NO,ta.value);
+        const d=new Date(ts);
+        $("#mNoteHint").textContent="已保存 "+d.toTimeString().slice(0,5);
+      },500);
+    });
+    $("#mNoteTxt").onclick=async()=>{
+      const txt=ta.value.trim();
+      if(!txt){alert("先输入文字再存为资料");return}
+      const t=new Date(),p=n=>String(n).padStart(2,"0");
+      const name=`${MFILE_NO}-笔记-${t.getFullYear()}${p(t.getMonth()+1)}${p(t.getDate())}-${p(t.getHours())}${p(t.getMinutes())}.txt`;
+      try{await putFile({id:uid(),no:MFILE_NO,name,type:"text/plain",size:txt.length,ts:Date.now(),blob:new Blob([txt],{type:"text/plain"})})}
+      catch(e){alert("保存失败："+(e.message||e));return}
+      await loadFiles(MFILE_NO);
+        toast("已存为资料");
+    };
+  }
+  $("#view").querySelectorAll(".fitem").forEach(el=>{
+    const id=el.dataset.fid;
+    el.querySelector("[data-open]").onclick=()=>{
+      const f=FILES.find(x=>x.id===id);
+      if(!f||!f.blob){alert("文件已丢失");return}
+      const u=URL.createObjectURL(f.blob);
+      const w=window.open(u,"_blank");
+      if(!w)alert("浏览器拦截了新窗口，请允许弹窗后重试");
+      setTimeout(()=>URL.revokeObjectURL(u),60000);
+    };
+    el.querySelector("[data-del]").onclick=async()=>{
+      if(!confirm("删除这个文件？"))return;
+      try{await delFile(id)}catch(e){}
+      await loadFiles(MFILE_NO);
+        toast("已删除");
+    };
+  });
+}
+
+/* 矿证信息 → 项目属性：列表的「持有人 / 许可证状态」列只读，值来自信息表 */
+const SYNC_PAIRS=[[["公司持有","持有人"],"holder"],[["许可证状态"],"status"]];
+/* 存储键：基础项目按 json 里的原始证号存 patch，改名后靠 patch.no 找回 */
+function keyOf(no){
+  if(EDITS[no])return no;
+  if(ADDED.some(a=>a.no===no))return no;
+  if(BASE.some(b=>b.no===no))return no;
+  return Object.keys(EDITS).find(k=>EDITS[k]&&EDITS[k].no===no)||no;
+}
+function setProjectPatch(no,patch){
+  if(!no||!Object.keys(patch).length)return;
+  const k=keyOf(no),added=ADDED.find(a=>a.no===no);
+  if(EDITS[k])Object.assign(EDITS[k],patch);
+  else if(added)Object.assign(added,patch);
+  else EDITS[k]={...patch};
+  persistEdits();
+  applyEdits();
+}
+function syncProjectFromInfo(no,rows){
+  const get=ks=>{for(const k of ks){const r=rows.find(x=>(x.k||"").trim()===k);if(r)return (r.v||"").trim()}return null};
+  const lic=licByNo(no);if(!lic)return;
+  const patch={};
+  SYNC_PAIRS.forEach(([ks,f])=>{
+    const v=get(ks);
+    if(v!=null&&v!==(lic[f]||""))patch[f]=v;
+  });
+  setProjectPatch(no,patch);
+}
+async function deleteProject(no){
+  if(!no)return;
+  if(!confirm(`删除项目 ${no}？\n本机保存的矿证信息、资料和文字记录会一起删掉；licences.json 文件本身不动。`))return;
+  const k=keyOf(no);
+  delete EDITS[k];
+  ADDED=ADDED.filter(a=>a.no!==no);
+  if(BASE.some(b=>b.no===k)&&!DELETED.includes(k))DELETED.push(k);
+  delete INFO[no];
+  persistEdits();
+  try{localStorage.setItem(INFO_KEY,JSON.stringify(INFO))}catch(e){}
+  try{for(const f of await filesOf(no))await delFile(f.id)}catch(e){}
+  if(SEL===no)SEL=null;
+  SET_NO=null;SET_VIEW="list";location.hash="set";
+  applyEdits();render();toast("已删除 "+no);
+}
+
+function exportJson(){
+  const out={note:"矿证与地质资料",licences:sortedLics().map(l=>{
+    const {order,...rest}=l;return order==null?rest:{order,...rest};
+  })};
+  const blob=new Blob([JSON.stringify(out,null,2)+"\n"],{type:"application/json"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);a.download="licences.json";
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+  toast("已下载 licences.json");
+}
+
+/* ---------- 设置（密码 123）：矿证信息字段 ---------- */
+const SET_PW="123";
+const setOK=()=>{try{return sessionStorage.getItem(SET_KEY)==="1"}catch(e){return false}};
+
+function renderSettings(){
+  $("#ttl").textContent="设置";
+  if(!setOK()){$("#sub").textContent="需要密码";drawSetGate();return}
+  if(SET_VIEW==="proj"&&(!SET_NO||!licByNo(SET_NO)))SET_VIEW="list";
+  if(SET_VIEW==="proj"){renderProjSettings();return}
+  $("#sub").textContent="项目列表 · 点每行右侧「设置」编辑该项目的矿证信息与资料";
+  MROWS=manageRows();
+  drawManage();
+}
+
+/* 单个项目的设置页：矿证信息 + 矿证资料，进去就是这一个项目的全部内容 */
+function renderProjSettings(){
+  const l=licByNo(SET_NO)||{};
+  $("#sub").textContent=`${l.name||l.no||""}${l.no?" · "+l.no:""}`;
+  SROWS=(l.info||[]).map(x=>({...x}));
+  MFILE_NO=SET_NO;
+  drawSetBody();
+  if(SET_NO)loadFiles(SET_NO);
+}
+
+function drawSetGate(){
+  $("#view").innerHTML=`<div class="setcard">
+    <h3>🔒 设置已加锁</h3>
+    <p>输入密码进入，本次会话有效。</p>
+    <input id="setPw" type="password" placeholder="密码" autocomplete="off">
+    <div class="err" id="setErr"></div>
+    <button class="btn primary" id="setGo" style="width:100%;margin-top:10px">进入</button>
+  </div>`;
+  const go=()=>{
+    if($("#setPw").value.trim()===SET_PW){
+      try{sessionStorage.setItem(SET_KEY,"1")}catch(e){}
+      renderSettings();
+    }else{
+      $("#setErr").textContent="密码不对";
+      $("#setPw").value="";
+      $("#setPw").focus();
+    }
+  };
+  $("#setGo").onclick=go;
+  $("#setPw").addEventListener("keydown",e=>{if(e.key==="Enter")go()});
+  setTimeout(()=>{const el=$("#setPw");if(el)el.focus()},60);
+}
+
+let DRAFT=null;
+function readPropsDom(){
+  const g=id=>{const el=$("#"+id);return el?el.value:null};
+  return {name:g("setName"),no:g("setNo"),area_id:g("setArea"),order:g("setOrder")};
+}
+function stashProps(){
+  const p=readPropsDom();
+  if(p.name===null&&p.no===null)return;
+  DRAFT=p;
+}
+const rowKey=rs=>rs.filter(r=>(r.k||"").trim()).map(r=>r.k.trim()+"\u0000"+(r.v||"").trim()).join("\u0001");
+/* 和已存下来的状态比，而不是和上一次重绘比：传 KML 后重绘不会把「还没保存的改名」洗掉 */
+function isDirty(){
+  const p=readPropsDom();
+  if(p.no===null)return false;
+  const l=licByNo(SET_NO)||{};
+  const same=String(p.name||"")===(l.name||"")
+    &&String(p.no||"")===(l.no||"")
+    &&String(p.area_id||"")===(l.area_id||"")
+    &&String(p.order??"")===(l.order==null?"":String(l.order));
+  return !same||rowKey(SROWS)!==rowKey(l.info||[]);
+}
+function leaveOK(){
+  if(!isDirty())return true;
+  if(!confirm("这个项目有改动还没保存，确定离开？"))return false;
+  DRAFT=null;return true;
+}
+
+function drawSetBody(){
+  const l=licByNo(SET_NO)||{};
+  const p=DRAFT||{name:l.name||"",no:l.no||"",area_id:l.area_id||"",order:l.order==null?"":String(l.order)};
+  const sy=window.scrollY;
+  $("#view").innerHTML=`
+    <div class="backbar"><button id="setBack">← 项目列表</button>
+      <span class="who">${esc(l.name||l.no||"")} ${esc(l.no?`· ${l.no}`:"")}</span></div>
+    <div class="mcard" style="margin-bottom:12px">
+      <div class="props">
+        <label>项目名称<input id="setName" value="${esc(p.name??"")}" placeholder="例：Serenje 1330NW 钽铌项目"></label>
+        <label>证号<input id="setNo" class="no" value="${esc(p.no??"")}" placeholder="42881-HQ-LEL"></label>
+        <label>矿区<select id="setArea">${areaOptions(p.area_id)}</select></label>
+        <label>排序<input id="setOrder" type="number" min="0" value="${esc(p.order??"")}" placeholder="1"></label>
+      </div>
+      <div class="propsfoot">
+        <span>改完点最下面的「保存」一次性写入（立刻在本机生效）</span>
+        <span class="sp"></span>
+        <button class="btn danger" id="setDel">删除这个项目</button>
+      </div>
+    </div>
+    ${kmlPanel()}
+    <div class="paste">
+      <textarea id="pText" placeholder="把矿证页面上看到的文字整段粘进来，一行一条即可，例如：&#10;许可证号：42881-HQ-LEL&#10;许可证类型：Large Scale Exploration Licence&#10;持有人：MAMANGA MINING LIMITED (100%)&#10;地区：Central, Serenje&#10;产区面积：87.12 km²"></textarea>
+      <div class="pbar"><span id="pHint">粘好后点右边按钮，自动对上字段（证号会填到上面）；认不出的行会单独告诉你</span><span class="sp"></span>
+        <button class="btn primary" id="pParse">解析并填充</button></div>
+    </div>
+    <div class="mcard">
+      <div class="irow head"><span>字段</span><span>内容</span><span></span></div>
+      ${SROWS.map((r,i)=>`<div class="irow${HIT.has((r.k||"").trim())?" hit":""}" data-i="${i}">
+        <input data-k="k" value="${esc(r.k)}" placeholder="字段名">
+        <input data-k="v" value="${esc(r.v)}" placeholder="内容">
+        <button class="del" data-del="1" title="删除这个字段">×</button>
+      </div>`).join("")}
+      <div class="mfoot">
+        <button class="btn" id="setAdd">+ 添加字段</button>
+        <span class="grow"></span>
+        <button class="btn" id="setReset">还原 json</button>
+        <button class="btn" id="setExport">导出 licences.json</button>
+        <button class="btn primary" id="setSave">保存</button>
+      </div>
+    </div>
+    <p class="mnote">共 ${SROWS.length} 个字段 · 保存只改本机；要让别人看到，点「导出 licences.json」覆盖仓库文件后发布。资料与边界也都只在本机。</p>
+    ${filesPanel()}`;
+  wireSettings();
+  wireFiles();
+  if(sy)window.scrollTo(0,sy);
+}
+
+async function handleKmlFile(file){
+  const old=kmlFor(SET_NO);
+  if(old&&!confirm(`已有边界 ${old.name}，用 ${file.name} 替换？`))return;
+  try{
+    const k=await kmlImport(SET_NO,file);
+    stashProps();drawSetBody();
+    toast(`已导入 ${k.kind}状边界：${k.pts} 个顶点，约 ${fmtArea(k.area)} km²`);
+  }catch(e){
+    alert("导入失败："+(e.message||e));
+  }
+}
+
+function wireSettings(){
+  $("#setBack").onclick=()=>{
+    if(!leaveOK())return;
+    SET_VIEW="list";DRAFT=null;location.hash="set";render();
+  };
+  $("#setDel").onclick=()=>deleteProject(SET_NO);
+  $("#view").querySelectorAll(".irow:not(.head)").forEach(el=>{
+    const i=+el.dataset.i;
+    el.querySelectorAll("[data-k]").forEach(f=>{
+      f.addEventListener("input",()=>{SROWS[i][f.dataset.k]=f.value});
+    });
+    el.querySelector("[data-del]").onclick=()=>{
+      SROWS.splice(i,1);
+      stashProps();drawSetBody();
+    };
+  });
+  $("#setAdd").onclick=()=>{stashProps();SROWS.push({k:"",v:""});drawSetBody()};
+  const kUp=$("#kmlUp");
+  if(kUp)kUp.onchange=async()=>{
+    const file=(kUp.files||[])[0];if(!file)return;
+    await handleKmlFile(file);
+    kUp.value="";
+  };
+  const kPanel=$("#kmlPanel");
+  if(kPanel){
+    ["dragenter","dragover"].forEach(ev=>kPanel.addEventListener(ev,e=>{e.preventDefault();kPanel.classList.add("drag")}));
+    ["dragleave","dragend"].forEach(ev=>kPanel.addEventListener(ev,()=>kPanel.classList.remove("drag")));
+    kPanel.addEventListener("drop",async e=>{
+      e.preventDefault();kPanel.classList.remove("drag");
+      const file=(e.dataTransfer.files||[])[0];
+      if(file)await handleKmlFile(file);
+    });
+  }
+  const kpBtn=$("#kmlPasteBtn"),kpBox=$("#kmlPaste"),kpTa=$("#kmlPts");
+  if(kpBtn&&kpBox&&kpTa){
+    kpBtn.onclick=()=>{kpBox.hidden=!kpBox.hidden;if(!kpBox.hidden)kpTa.focus()};
+    const kpCount=()=>{const n=parseCoordText(kpTa.value).length,el=$("#kmlPtsN");if(el)el.textContent=n;return n};
+    kpTa.addEventListener("input",kpCount);
+    $("#kmlPtsX").onclick=()=>{kpBox.hidden=true};
+    $("#kmlPtsOk").onclick=()=>{
+      const ring=parseCoordText(kpTa.value);
+      if(ring.length<3){alert(`至少要 3 个点，现在只读到 ${ring.length} 个。\n每行一个点，纬度在前：13°08'48.00" S 30°04'18.00" E`);return}
+      const old=kmlFor(SET_NO);
+      if(old&&!confirm(`已有边界 ${old.name}，用这 ${ring.length} 个坐标替换？`))return;
+      try{
+        const k=kmlFromPts(ring,`手工坐标（${ring.length} 点）`,kpTa.value.trim());
+        KMLS[SET_NO]=k;kmlSave();stashProps();drawSetBody();
+        toast(`已按坐标生成边界：${k.pts} 个顶点，约 ${fmtArea(k.area)} km²`);
+      }catch(e){alert("坐标处理失败："+(e.message||e))}
+    };
+  }
+  const kMap=$("#kmlMap");
+  if(kMap)kMap.onclick=()=>{if(isDirty()&&!confirm("有改动还没保存，仍要离开？"))return;TAB="map";render()};
+  const kDl=$("#kmlDl");
+  if(kDl)kDl.onclick=()=>{
+    const k=kmlSafe(kmlFor(SET_NO));if(!k||!k.raw){alert("原文件不在本机了");return}
+    const a=document.createElement("a");
+    a.href=URL.createObjectURL(new Blob([k.raw],{type:"application/vnd.google-earth.kml+xml"}));
+    a.download=k.name||"boundary.kml";document.body.appendChild(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+  };
+  const kDel=$("#kmlDel");
+  if(kDel)kDel.onclick=()=>{
+    if(!confirm("删除这个项目的矿权边界？"))return;
+    stashProps();delete KMLS[SET_NO];kmlSave();drawSetBody();toast("已删除边界");
+  };
+  $("#pParse").onclick=applyPaste;
+  $("#setSave").onclick=saveSettings;
+  $("#setReset").onclick=()=>{
+    if(!confirm("放弃这个项目的矿证信息修改，回到 licences.json？"))return;
+    delete INFO[SET_NO];
+    try{localStorage.setItem(INFO_KEY,JSON.stringify(INFO))}catch(e){}
+    applyInfo();render();toast("已还原");
+  };
+  $("#setExport").onclick=exportJson;
+}
+
+async function renameProject(oldNo,newNo){
+  if(INFO[oldNo]){INFO[newNo]=INFO[oldNo];delete INFO[oldNo];
+    try{localStorage.setItem(INFO_KEY,JSON.stringify(INFO))}catch(e){}}
+  const k=keyOf(oldNo);
+  EDITS[k]={...(EDITS[k]||{}),no:newNo};
+  const a=ADDED.find(x=>x.no===oldNo);if(a)a.no=newNo;
+  if(KMLS[oldNo]){KMLS[newNo]=KMLS[oldNo];delete KMLS[oldNo];kmlSave()}
+  if(NOTES[oldNo]){NOTES[newNo]=NOTES[oldNo];delete NOTES[oldNo];
+    try{localStorage.setItem(NOTE_KEY,JSON.stringify(NOTES))}catch(e){}}
+  persistEdits();
+  try{for(const f of await filesOf(oldNo))await putFile({...f,no:newNo})}catch(e){}
+  if(SEL===oldNo)SEL=newNo;
+}
+
+function saveSettings(){
+  const rows=SROWS.filter(r=>(r.k||"").trim());
+  const seen=new Set();
+  for(const r of rows){
+    const k=r.k.trim();
+    if(seen.has(k)){alert("字段重复："+k);return}
+    seen.add(k);
+  }
+  const newNo=($("#setNo").value||"").trim();
+  const name=($("#setName").value||"").trim();
+  const area_id=$("#setArea").value;
+  const ordRaw=($("#setOrder").value||"").trim();
+  const order=ordRaw===""?null:Number(ordRaw);
+  if(!newNo){alert("证号不能为空");$("#setNo").focus();return}
+  if(LICS.some(l=>l.no===newNo&&l.no!==SET_NO)){alert("证号已被别的项目占用："+newNo);$("#setNo").focus();return}
+  if(ordRaw!==""&&!Number.isFinite(order)){alert("排序要填数字");$("#setOrder").focus();return}
+
+  const oldNo=SET_NO;
+  if(newNo!==oldNo)renameProject(oldNo,newNo);
+  SET_NO=newNo;
+  INFO[newNo]=rows.map(r=>({k:r.k.trim(),v:(r.v||"").trim()}));
+  try{localStorage.setItem(INFO_KEY,JSON.stringify(INFO))}
+  catch(e){alert("保存失败：本机存储不可用");return}
+  setProjectPatch(newNo,{no:newNo,name,area_id,order});
+  syncProjectFromInfo(newNo,rows);
+  applyEdits();
+  if(location.hash!=="#set/"+encodeURIComponent(newNo))location.hash="set/"+encodeURIComponent(newNo);
+  DRAFT=null;HIT.clear();render();toast("已保存");
+}
+
+/* ---------- 图片 ---------- */
+async function pickImage(){
+  const inp=document.createElement("input");
+  inp.type="file";inp.accept="image/*";
+  inp.onchange=async()=>{
+    const f=inp.files&&inp.files[0];if(!f)return;
+    try{
+      PIMG=await compress(f);
+      $("#ppreview").innerHTML=`<div class="prev"><img src="${PIMG}"><button id="pdel">移除</button></div>`;
+      $("#pdel").onclick=()=>{PIMG="";$("#ppreview").innerHTML=""};
+    }catch(e){alert("图片处理失败："+e.message)}
+  };
+  inp.click();
+}
+function compress(file){
+  return new Promise((res,rej)=>{
+    const fr=new FileReader();
+    fr.onerror=()=>rej(new Error("读取失败"));
+    fr.onload=()=>{
+      const img=new Image();
+      img.onerror=()=>rej(new Error("无法解码图片"));
+      img.onload=()=>{
+        const max=1200,sc=Math.min(1,max/Math.max(img.width,img.height));
+        const c=document.createElement("canvas");
+        c.width=Math.max(1,Math.round(img.width*sc));
+        c.height=Math.max(1,Math.round(img.height*sc));
+        c.getContext("2d").drawImage(img,0,0,c.width,c.height);
+        res(c.toDataURL("image/jpeg",0.72));
+      };
+      img.src=fr.result;
+    };
+    fr.readAsDataURL(file);
+  });
+}
+
+/* ---------- 登录 ---------- */
+const SALT="ecobox-lic-2026", CRED="fe46abfec5ffc6da", KEY="lic_auth_until";
+function h64(s){
+  let x=0xcbf29ce484222325n;
+  for(const b of new TextEncoder().encode(s)){x^=BigInt(b);x=(x*0x100000001b3n)&0xffffffffffffffffn}
+  return x.toString(16).padStart(16,"0");
+}
+const authed=()=>{try{return (+localStorage.getItem(KEY)||0)>Date.now()}catch(e){return false}};
+function setAuth(keep){try{localStorage.setItem(KEY,String(Date.now()+(keep?30*864e5:12*36e5)))}catch(e){}}
+
+$("#gateform").addEventListener("submit",ev=>{
+  ev.preventDefault();
+  const err=$("#g_err"),btn=$("#g_btn");
+  const u=$("#g_user").value.trim(),p=$("#g_pass").value;
+  if(h64(u+":"+p+":"+SALT)!==CRED){
+    err.textContent="用户名或密码不对";
+    const g=$("#gate");g.classList.remove("shake");void g.offsetWidth;g.classList.add("shake");
+    btn.disabled=true;setTimeout(()=>btn.disabled=false,600);
+    return;
+  }
+  err.textContent="";setAuth($("#g_keep").checked);$("#g_pass").value="";
+  start();
+});
+$("#logout").onclick=()=>{try{localStorage.removeItem(KEY)}catch(e){};location.reload()};
+$("#navSet").onclick=()=>{VIEW="set";SET_VIEW="list";location.hash="set";render()};
+$("#who").addEventListener("change",e=>{try{localStorage.setItem(AU_KEY,e.target.value.trim())}catch(_){}});
+window.addEventListener("hashchange",()=>{
+  const h=location.hash;
+  const pm=h.match(/^#\/?(?:set|mgr)\/(.+)$/);
+  if(pm){VIEW="set";SET_VIEW="proj";SET_NO=decodeURIComponent(pm[1]);MFILE_NO=SET_NO;HIT.clear()}
+  else if(/^#\/?(set|mgr)$/.test(h)){VIEW="set";SET_VIEW="list"}
+  else{const m=h.match(/^#\/?lic\/(.+)$/);if(m){VIEW="lic";SEL=decodeURIComponent(m[1]);TAB="intro"}}
+  if(!$("#app").hidden)render();
+});
+
+async function start(){
+  $("#app").hidden=false;$("#gate").hidden=true;
+  editsLoad();
+  notesLoad();
+  infoLoad();
+  kmlLoad();
+  try{await loadData()}catch(e){
+    $("#view").innerHTML=`<div class="empty">${esc(e.message)}<br>请确认 areas.json / licences.json 与页面在同一目录。</div>`;
+    return;
+  }
+  feedLoad();
+  $("#who").value=author()==="ecobox"?"":author();
+  const pm=location.hash.match(/^#\/?(?:set|mgr)\/(.+)$/);
+  if(pm){VIEW="set";SET_VIEW="proj";SET_NO=decodeURIComponent(pm[1]);MFILE_NO=SET_NO}
+  else if(/^#\/?(set|mgr)$/.test(location.hash)){VIEW="set";SET_VIEW="list"}
+  const m=location.hash.match(/^#\/?lic\/(.+)$/);
+  if(m){VIEW="lic";SEL=decodeURIComponent(m[1])}
+  render();
+}
+
+if(authed())start();
+else setTimeout(()=>$("#g_user").focus(),150);
+</script>
+</body>
+</html>
