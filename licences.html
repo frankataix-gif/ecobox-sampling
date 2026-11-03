@@ -216,7 +216,10 @@ textarea#ptext{flex:1;min-height:58px;border:1px solid var(--line);border-radius
 .backbar button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 11px;font-size:12.5px;cursor:pointer;color:#374151}
 .backbar button:hover{background:#f3f6f8;border-color:#b9dcd6}
 .backbar .who{font-size:12.5px;color:var(--muted)}
-.props{display:grid;grid-template-columns:1.5fr 1.1fr 1fr .6fr;gap:10px;padding:12px}
+.props{display:grid;grid-template-columns:1.2fr 1.2fr 1.2fr .8fr 1fr;gap:10px;padding:12px}
+.props.two{grid-template-columns:1fr 90px}
+.kbadge{font-size:11px;border-radius:20px;padding:1px 8px;background:#eef7f5;color:#0f766e;border:1px solid #d6ece8}
+.kbadge.off{background:#fdf6e7;color:#a16207;border-color:#f3e3bd}
 .props label{display:flex;flex-direction:column;gap:5px;font-size:11.5px;color:var(--muted);font-weight:600}
 .props input,.props select{border:1px solid var(--line);border-radius:8px;padding:7px 9px;font-size:13px;background:#fff;color:var(--text);font-weight:400}
 .props input:focus,.props select:focus{outline:none;border-color:#9dc9c2;box-shadow:0 0 0 3px rgba(15,92,85,.08)}
@@ -298,6 +301,7 @@ label.btn{display:inline-block;cursor:pointer}
   .sb-foot button{width:auto;margin:0;padding:6px 10px}
   .top{position:static;padding:10px 14px}
   .body{padding:12px}
+  .props,.props.two{grid-template-columns:1fr 1fr}
 }
 @media print{.sb,.top,.tabs,.links,.composer,.cform{display:none}.app{display:block}.pane{display:block!important}}
 </style>
@@ -454,7 +458,7 @@ function noteSet(no,t){
 
 /* ---------- 矿证信息字段（设置里可改/删/加） ---------- */
 const INFO_LABELS=["公司持有","许可证类型","许可证状态","批准时间","到期时间","地区","产区面积","矿产","开发目标"];
-let INFO={},SET_NO=null,SROWS=[],SET_VIEW="list",HIT=new Set();
+let INFO={},SET_NO=null,SET_AREA=null,SROWS=[],SET_VIEW="list",HIT=new Set();
 
 /* 粘贴文本 → 字段：先精确匹配，再模糊匹配；认不出的原样保留 */
 const INFO_ALIAS={
@@ -1336,7 +1340,7 @@ function render(){
   if(VIEW!=="lic"){$("#tabs").innerHTML="";$("#tpill").innerHTML=""}
   $("#plist").innerHTML=sortedLics().length?plistHtml(VIEW==="set"?null:SEL):`<div class="empty" style="color:#a9c8c3">没有项目</div>`;
   $("#plist").querySelectorAll(".item").forEach(b=>b.onclick=()=>{
-    if(VIEW==="set"&&SET_VIEW==="proj"&&!leaveOK())return;
+    if(VIEW==="set"&&SET_VIEW==="lic"&&!leaveOK())return;
     DRAFT=null;VIEW="lic";SEL=b.dataset.no;TAB="intro";location.hash="lic/"+SEL;render();
     if(window.innerWidth<=900)$(".detail").scrollIntoView({behavior:"smooth",block:"start"});
   });
@@ -1413,7 +1417,7 @@ function manageRows(){
 async function loadFiles(no){
   try{FILES=(await filesOf(no)).map(f=>({...f,url:f.blob&&/^image\//.test(f.type||"")?URL.createObjectURL(f.blob):""}))}
   catch(e){FILES=[]}
-  if(VIEW==="set"&&SET_VIEW==="proj"&&MFILE_NO===no)drawSetBody();
+  if(VIEW==="set"&&SET_VIEW==="lic"&&MFILE_NO===no)drawSetBody();
 }
 
 function drawManage(){
@@ -1473,10 +1477,7 @@ function wireManage(){
       inp.addEventListener("keydown",e=>{if(e.key==="Enter")inp.blur()});
     });
     el.querySelector("[data-cfg]").onclick=()=>{
-      const no=(r.lics[0]||"").trim();
-      if(!no){addLicenceDialog(r.id);return}
-      SET_NO=no;SET_VIEW="proj";HIT.clear();
-      location.hash="set/"+encodeURIComponent(no);render();
+      goProj(r.id);
       window.scrollTo({top:0,behavior:"smooth"});
     };
   });
@@ -1579,7 +1580,8 @@ function syncProjectFromInfo(no,rows){
 }
 async function deleteProject(no){
   if(!no)return;
-  if(!confirm(`删除项目 ${no}？\n本机保存的矿证信息、资料和文字记录会一起删掉；licences.json 文件本身不动。`))return;
+  const areaId=(licByNo(no)||{}).area_id||SET_AREA||"";
+  if(!confirm(`删除矿证 ${no}？\n本机保存的矿证信息、资料和文字记录会一起删掉；licences.json 文件本身不动。`))return;
   const k=keyOf(no);
   delete EDITS[k];
   ADDED=ADDED.filter(a=>a.no!==no);
@@ -1589,7 +1591,9 @@ async function deleteProject(no){
   try{localStorage.setItem(INFO_KEY,JSON.stringify(INFO))}catch(e){}
   try{for(const f of await filesOf(no))await delFile(f.id)}catch(e){}
   if(SEL===no)SEL=null;
-  SET_NO=null;SET_VIEW="list";location.hash="set";
+  SET_NO=null;
+  if(areaId&&areaById(areaId)){SET_VIEW="proj";SET_AREA=areaId;location.hash="setp/"+encodeURIComponent(areaId)}
+  else{SET_VIEW="list";SET_AREA=null;location.hash="set"}
   applyEdits();render();toast("已删除 "+no);
 }
 
@@ -1605,26 +1609,38 @@ function exportJson(){
   toast("已下载 licences.json");
 }
 
-/* ---------- 设置（密码 123）：矿证信息字段 ---------- */
+/* ---------- 设置（密码 123）：项目 → 矿证 → 该矿证自己的数据 ---------- */
 const SET_PW="123";
 const setOK=()=>{try{return sessionStorage.getItem(SET_KEY)==="1"}catch(e){return false}};
+const licsOf=areaId=>sortedLics().filter(l=>l.area_id===areaId);
+function goList(){SET_VIEW="list";SET_NO=null;SET_AREA=null;DRAFT=null;HIT.clear();location.hash="set";render()}
+function goProj(id){SET_VIEW="proj";SET_AREA=id;SET_NO=null;DRAFT=null;HIT.clear();location.hash="setp/"+encodeURIComponent(id);render()}
+function goLic(no){SET_VIEW="lic";SET_NO=no;MFILE_NO=no;DRAFT=null;HIT.clear();location.hash="set/"+encodeURIComponent(no);render()}
 
 function renderSettings(){
   $("#ttl").textContent="设置";
   if(!setOK()){$("#sub").textContent="需要密码";drawSetGate();return}
-  if(SET_VIEW==="proj"&&(!SET_NO||!licByNo(SET_NO)))SET_VIEW="list";
+  if(SET_VIEW==="proj"&&(!SET_AREA||!areaById(SET_AREA)))SET_VIEW="list";
+  if(SET_VIEW==="lic"&&(!SET_NO||!licByNo(SET_NO)))SET_VIEW="list";
   if(SET_VIEW==="proj"){renderProjSettings();return}
-  $("#sub").textContent="项目列表 · 点每行右侧「设置」编辑该项目的矿证信息与资料";
+  if(SET_VIEW==="lic"){renderLicSettings();return}
+  $("#sub").textContent="项目列表 · 点「设置」进项目，再点具体矿证编辑它自己的资料";
   MROWS=manageRows();
   drawManage();
 }
 
-/* 单个项目的设置页：矿证信息 + 矿证资料，进去就是这一个项目的全部内容 */
 function renderProjSettings(){
+  const a=areaById(SET_AREA)||{};
+  $("#sub").textContent=`${a.name||SET_AREA} · ${licsOf(SET_AREA).length} 本矿证`;
+  drawProjBody();
+}
+
+function renderLicSettings(){
   const l=licByNo(SET_NO)||{};
-  $("#sub").textContent=`${l.name||l.no||""}${l.no?" · "+l.no:""}`;
+  $("#sub").textContent=`${areaName(l.area_id)||"未归属项目"} · ${l.no||""}`;
   SROWS=(l.info||[]).map(x=>({...x}));
   MFILE_NO=SET_NO;
+  DRAFT=null;
   drawSetBody();
   if(SET_NO)loadFiles(SET_NO);
 }
@@ -1652,58 +1668,95 @@ function drawSetGate(){
   setTimeout(()=>{const el=$("#setPw");if(el)el.focus()},60);
 }
 
+/* ---------- 项目页 ---------- */
+function kmlBadge(no){
+  const k=kmlSafe(kmlFor(no));
+  return k?`<span class="kbadge">区域 ${fmtArea(k.area)} km²</span>`:`<span class="kbadge off">未设区域</span>`;
+}
+
+function drawProjBody(){
+  const a=areaById(SET_AREA)||{},ls=licsOf(SET_AREA);
+  $("#view").innerHTML=`
+    <div class="backbar"><button id="setBack">← 项目列表</button>
+      <span class="who">${esc(a.name||SET_AREA)}</span></div>
+    <div class="mcard" style="margin-bottom:12px">
+      <div class="props two">
+        <label>项目名称<input id="setPName" value="${esc(a.name||"")}" placeholder="例：Serenje 1330NW 钽铌项目"></label>
+        <label>排序<input id="setPOrder" type="number" min="0" value="${esc(a.order??"")}" placeholder="1"></label>
+      </div>
+      <div class="propsfoot"><span>项目名称、排序属于项目本身，改完即时存本机</span><span class="sp"></span></div>
+    </div>
+    <div class="mcard">
+      <div class="mfhead" style="padding:12px 12px 6px"><b>本项目下的矿证</b>
+        <span class="hint">${ls.length} 本 · 每本证有自己的信息、区域和资料</span>
+        <span class="sp"></span>
+        <button class="btn primary" id="licAdd">＋ 手动添加</button></div>
+      <div style="padding:0 12px">
+        ${ls.length?ls.map(x=>`<div class="lrow">
+          <span class="lno">${esc(x.no)}</span>
+          <span class="lnm">${esc(x.holder||x.name||"")}</span>
+          ${statusPill(x)}${kmlBadge(x.no)}
+          <span class="sp"></span>
+          <button class="btn" data-open-lic="${esc(x.no)}">打开</button>
+          <button class="btn danger" data-del-lic="${esc(x.no)}">删除</button>
+        </div>`).join(""):`<div class="empty" style="padding:14px">这个项目下还没有矿证。用下面的粘贴框，或点「＋ 手动添加」。</div>`}
+        <div class="paste" style="margin:12px 0">
+          <textarea id="licPaste" placeholder="把矿证信息整段粘进来，一行一条，例如：&#10;许可证号：47123-HQ-LEL&#10;许可证类型：Large Scale Exploration Licence&#10;持有人：MAMANGA MINING LIMITED&#10;许可证状态：Active&#10;批准时间：2026-01-01&#10;到期时间：2030-01-01&#10;产区面积：42.5 km²"></textarea>
+          <div class="pbar"><span id="licPasteHint">认不出的行会跳过；证号必填</span><span class="sp"></span>
+            <button class="btn primary" id="licPasteGo">粘贴并添加</button></div>
+        </div>
+      </div>
+    </div>`;
+  wireProjBody();
+}
+
+function wireProjBody(){
+  $("#setBack").onclick=goList;
+  const nm=$("#setPName"),or=$("#setPOrder");
+  nm.addEventListener("change",()=>{
+    const v=nm.value.trim();
+    if(!v){nm.value=(areaById(SET_AREA)||{}).name||"";return}
+    areaSet(SET_AREA,{name:v});$("#sub").textContent=`${v} · ${licsOf(SET_AREA).length} 本矿证`;toast("已保存");
+  });
+  nm.addEventListener("keydown",e=>{if(e.key==="Enter")nm.blur()});
+  or.addEventListener("change",()=>{const v=or.value.trim();areaSet(SET_AREA,{order:v===""?null:+v});toast("已保存")});
+  $("#licAdd").onclick=()=>addLicenceDialog(SET_AREA);
+  $("#licPasteGo").onclick=()=>{
+    const spec=parseLicText($("#licPaste").value);
+    if(!spec.no){$("#licPasteHint").textContent="没认出证号：请写成「许可证号：47123-HQ-LEL」这种一行";return}
+    try{const rec=createLicence(SET_AREA,spec);toast("已添加 "+rec.no);goLic(rec.no)}
+    catch(e){$("#licPasteHint").textContent=e.message||String(e)}
+  };
+  $("#view").querySelectorAll("[data-open-lic]").forEach(b=>b.onclick=()=>goLic(b.dataset.openLic));
+  $("#view").querySelectorAll("[data-del-lic]").forEach(b=>b.onclick=()=>deleteProject(b.dataset.delLic));
+}
+
+/* ---------- 矿证页 ---------- */
 let DRAFT=null;
 function readPropsDom(){
   const g=id=>{const el=$("#"+id);return el?el.value:null};
-  return {name:g("setName"),no:g("setNo"),area_id:g("setArea"),order:g("setOrder")};
+  return {no:g("setNo"),holder:g("setHolder"),type:g("setType"),status:g("setStatus"),area_id:g("setArea")};
 }
 function stashProps(){
   const p=readPropsDom();
-  if(p.name===null&&p.no===null)return;
+  if(p.no===null)return;
   DRAFT=p;
 }
+const LIC_PROPS=["no","holder","type","status","area_id"];
 const rowKey=rs=>rs.filter(r=>(r.k||"").trim()).map(r=>r.k.trim()+"\u0000"+(r.v||"").trim()).join("\u0001");
-/* 和已存下来的状态比，而不是和上一次重绘比：传 KML 后重绘不会把「还没保存的改名」洗掉 */
 function isDirty(){
   const p=readPropsDom();
   if(p.no===null)return false;
   const l=licByNo(SET_NO)||{};
-  const same=String(p.name||"")===(l.name||"")
-    &&String(p.no||"")===(l.no||"")
-    &&String(p.area_id||"")===(l.area_id||"")
-    &&String(p.order??"")===(l.order==null?"":String(l.order));
+  const same=LIC_PROPS.every(f=>String(p[f]??"")===String(l[f]??""));
   return !same||rowKey(SROWS)!==rowKey(l.info||[]);
 }
 function leaveOK(){
   if(!isDirty())return true;
-  if(!confirm("这个项目有改动还没保存，确定离开？"))return false;
+  if(!confirm("这本矿证有改动还没保存，确定离开？"))return false;
   DRAFT=null;return true;
 }
 
-function projLicPanel(l){
-  const ls=sortedLics().filter(x=>x.area_id===l.area_id);
-  return `<div class="mcard" style="margin-bottom:12px">
-    <div class="mfhead" style="padding:12px 12px 6px"><b>本项目下的矿证</b>
-      <span class="hint">${esc(areaName(l.area_id)||"未归属项目")} · ${ls.length} 本</span>
-      <span class="sp"></span>
-      <button class="btn primary" id="licAdd">＋ 手动添加</button>
-    </div>
-    <div style="padding:0 12px">
-      ${ls.length?ls.map(x=>`<div class="lrow">
-        <span class="lno">${esc(x.no)}</span>
-        <span class="lnm">${esc(x.name||"")}</span>
-        ${statusPill(x)}
-        ${x.no===l.no?`<span class="lcur">当前</span>`:`<button class="btn" data-open-lic="${esc(x.no)}">打开</button>`}
-        ${ls.length>1?`<button class="btn danger" data-del-lic="${esc(x.no)}">删除</button>`:""}
-      </div>`).join(""):`<div class="empty" style="padding:14px">这个项目下还没有矿证。用下面的粘贴框，或点「＋ 手动添加」。</div>`}
-      <div class="paste" style="margin:12px 0">
-        <textarea id="licPaste" placeholder="把矿证信息整段粘进来，一行一条，例如：&#10;许可证号：47123-HQ-LEL&#10;许可证类型：Large Scale Exploration Licence&#10;持有人：MAMANGA MINING LIMITED&#10;许可证状态：Active&#10;批准时间：2026-01-01&#10;到期时间：2030-01-01&#10;产区面积：42.5 km²"></textarea>
-        <div class="pbar"><span id="licPasteHint">认不出的行会跳过；证号必填</span><span class="sp"></span>
-          <button class="btn primary" id="licPasteGo">粘贴并添加</button></div>
-      </div>
-    </div>
-  </div>`;
-}
 const LIC_FIELDS={"许可证号":"no","证号":"no","矿证号":"no","licence":"no","license":"no",
   "名称":"name","项目名称":"name",
   "许可证类型":"type","类型":"type",
@@ -1746,28 +1799,29 @@ function createLicence(areaId,spec){
   applyInfo();
   return rec;
 }
+
 function drawSetBody(){
   const l=licByNo(SET_NO)||{};
-  const p=DRAFT||{name:l.name||"",no:l.no||"",area_id:l.area_id||"",order:l.order==null?"":String(l.order)};
+  const p=DRAFT||{no:l.no||"",holder:l.holder||"",type:l.type||"",status:l.status||"",area_id:l.area_id||""};
   const sy=window.scrollY;
   $("#view").innerHTML=`
-    <div class="backbar"><button id="setBack">← 项目列表</button>
-      <span class="who">${esc(l.name||l.no||"")} ${esc(l.no?`· ${l.no}`:"")}</span></div>
+    <div class="backbar"><button id="setBack">← ${esc(areaName(l.area_id)||"项目列表")}</button>
+      <span class="who">${esc(areaName(l.area_id)||"未归属项目")} › ${esc(l.no||"")}</span></div>
     <div class="mcard" style="margin-bottom:12px">
       <div class="props">
-        <label>项目名称<input id="setName" value="${esc(p.name??"")}" placeholder="例：Serenje 1330NW 钽铌项目"></label>
         <label>证号<input id="setNo" class="no" value="${esc(p.no??"")}" placeholder="42881-HQ-LEL"></label>
-        <label>矿区<select id="setArea">${areaOptions(p.area_id)}</select></label>
-        <label>排序<input id="setOrder" type="number" min="0" value="${esc(p.order??"")}" placeholder="1"></label>
+        <label>持有人<input id="setHolder" value="${esc(p.holder??"")}" placeholder="MAMANGA MINING LIMITED"></label>
+        <label>类型<input id="setType" value="${esc(p.type??"")}" placeholder="Large Scale Exploration Licence"></label>
+        <label>状态<input id="setStatus" value="${esc(p.status??"")}" placeholder="Active"></label>
+        <label>所属项目<select id="setArea">${areaOptions(p.area_id)}</select></label>
       </div>
       <div class="propsfoot">
-        <span>改完点最下面的「保存」一次性写入（立刻在本机生效）</span>
+        <span>这本证的信息、区域、资料各自独立；改完点最下面的「保存」一次性写入</span>
         <span class="sp"></span>
-        <button class="btn danger" id="setDel">删除这个项目</button>
+        <button class="btn danger" id="setDel">删除这本矿证</button>
       </div>
     </div>
     ${kmlPanel()}
-    ${projLicPanel(l)}
     <div class="paste">
       <textarea id="pText" placeholder="把矿证页面上看到的文字整段粘进来，一行一条即可，例如：&#10;许可证号：42881-HQ-LEL&#10;许可证类型：Large Scale Exploration Licence&#10;持有人：MAMANGA MINING LIMITED (100%)&#10;地区：Central, Serenje&#10;产区面积：87.12 km²"></textarea>
       <div class="pbar"><span id="pHint">粘好后点右边按钮，自动对上字段（证号会填到上面）；认不出的行会单独告诉你</span><span class="sp"></span>
@@ -1810,7 +1864,7 @@ async function handleKmlFile(file){
 function wireSettings(){
   $("#setBack").onclick=()=>{
     if(!leaveOK())return;
-    SET_VIEW="list";DRAFT=null;location.hash="set";render();
+    goProj((licByNo(SET_NO)||{}).area_id||SET_AREA);
   };
   $("#setDel").onclick=()=>deleteProject(SET_NO);
   $("#view").querySelectorAll(".irow:not(.head)").forEach(el=>{
@@ -1870,33 +1924,13 @@ function wireSettings(){
   };
   const kDel=$("#kmlDel");
   if(kDel)kDel.onclick=()=>{
-    if(!confirm("删除这个项目的矿权边界？"))return;
+    if(!confirm("删除这本矿证的矿权边界？"))return;
     stashProps();delete KMLS[SET_NO];kmlSave();drawSetBody();toast("已删除边界");
   };
-  const cur=licByNo(SET_NO)||{};
-  const lAdd=$("#licAdd");
-  if(lAdd)lAdd.onclick=()=>addLicenceDialog(cur.area_id||"");
-  const lGo=$("#licPasteGo");
-  if(lGo)lGo.onclick=()=>{
-    const spec=parseLicText($("#licPaste").value);
-    if(!spec.no){$("#licPasteHint").textContent="没认出证号：请写成「许可证号：47123-HQ-LEL」这种一行";return}
-    try{
-      const rec=createLicence(cur.area_id||"",spec);
-      SET_NO=rec.no;DRAFT=null;HIT.clear();
-      location.hash="set/"+encodeURIComponent(rec.no);render();
-      toast("已添加 "+rec.no);
-    }catch(e){$("#licPasteHint").textContent=e.message||String(e)}
-  };
-  $("#view").querySelectorAll("[data-open-lic]").forEach(b=>b.onclick=()=>{
-    if(!leaveOK())return;
-    SET_NO=b.dataset.openLic;DRAFT=null;HIT.clear();
-    location.hash="set/"+encodeURIComponent(SET_NO);render();
-  });
-  $("#view").querySelectorAll("[data-del-lic]").forEach(b=>b.onclick=()=>deleteProject(b.dataset.delLic));
   $("#pParse").onclick=applyPaste;
   $("#setSave").onclick=saveSettings;
   $("#setReset").onclick=()=>{
-    if(!confirm("放弃这个项目的矿证信息修改，回到 licences.json？"))return;
+    if(!confirm("放弃这本矿证的信息修改，回到 licences.json？"))return;
     delete INFO[SET_NO];
     try{localStorage.setItem(INFO_KEY,JSON.stringify(INFO))}catch(e){}
     applyInfo();render();toast("已还原");
@@ -1927,21 +1961,20 @@ function saveSettings(){
     seen.add(k);
   }
   const newNo=($("#setNo").value||"").trim();
-  const name=($("#setName").value||"").trim();
+  const holder=($("#setHolder").value||"").trim();
+  const type=($("#setType").value||"").trim();
+  const status=($("#setStatus").value||"").trim();
   const area_id=$("#setArea").value;
-  const ordRaw=($("#setOrder").value||"").trim();
-  const order=ordRaw===""?null:Number(ordRaw);
   if(!newNo){alert("证号不能为空");$("#setNo").focus();return}
-  if(LICS.some(l=>l.no===newNo&&l.no!==SET_NO)){alert("证号已被别的项目占用："+newNo);$("#setNo").focus();return}
-  if(ordRaw!==""&&!Number.isFinite(order)){alert("排序要填数字");$("#setOrder").focus();return}
+  if(LICS.some(l=>l.no===newNo&&l.no!==SET_NO)){alert("证号已被别的矿证占用："+newNo);$("#setNo").focus();return}
 
   const oldNo=SET_NO;
   if(newNo!==oldNo)renameProject(oldNo,newNo);
-  SET_NO=newNo;
+  SET_NO=newNo;SET_AREA=area_id;
   INFO[newNo]=rows.map(r=>({k:r.k.trim(),v:(r.v||"").trim()}));
   try{localStorage.setItem(INFO_KEY,JSON.stringify(INFO))}
   catch(e){alert("保存失败：本机存储不可用");return}
-  setProjectPatch(newNo,{no:newNo,name,area_id,order});
+  setProjectPatch(newNo,{no:newNo,holder,type,status,area_id});
   syncProjectFromInfo(newNo,rows);
   applyEdits();
   if(location.hash!=="#set/"+encodeURIComponent(newNo))location.hash="set/"+encodeURIComponent(newNo);
@@ -2012,7 +2045,9 @@ $("#who").addEventListener("change",e=>{try{localStorage.setItem(AU_KEY,e.target
 window.addEventListener("hashchange",()=>{
   const h=location.hash;
   const pm=h.match(/^#\/?(?:set|mgr)\/(.+)$/);
-  if(pm){VIEW="set";SET_VIEW="proj";SET_NO=decodeURIComponent(pm[1]);MFILE_NO=SET_NO;HIT.clear()}
+  const pa=h.match(/^#\/?setp\/(.+)$/);
+  if(pm){VIEW="set";SET_VIEW="lic";SET_NO=decodeURIComponent(pm[1]);MFILE_NO=SET_NO;HIT.clear()}
+  else if(pa){VIEW="set";SET_VIEW="proj";SET_AREA=decodeURIComponent(pa[1]);SET_NO=null;HIT.clear()}
   else if(/^#\/?(set|mgr)$/.test(h)){VIEW="set";SET_VIEW="list"}
   else{const m=h.match(/^#\/?lic\/(.+)$/);if(m){VIEW="lic";SEL=decodeURIComponent(m[1]);TAB="intro"}}
   if(!$("#app").hidden)render();
@@ -2031,7 +2066,9 @@ async function start(){
   feedLoad();
   $("#who").value=author()==="ecobox"?"":author();
   const pm=location.hash.match(/^#\/?(?:set|mgr)\/(.+)$/);
-  if(pm){VIEW="set";SET_VIEW="proj";SET_NO=decodeURIComponent(pm[1]);MFILE_NO=SET_NO}
+  const pa=location.hash.match(/^#\/?setp\/(.+)$/);
+  if(pm){VIEW="set";SET_VIEW="lic";SET_NO=decodeURIComponent(pm[1]);MFILE_NO=SET_NO}
+  else if(pa){VIEW="set";SET_VIEW="proj";SET_AREA=decodeURIComponent(pa[1]);SET_NO=null}
   else if(/^#\/?(set|mgr)$/.test(location.hash)){VIEW="set";SET_VIEW="list"}
   const m=location.hash.match(/^#\/?lic\/(.+)$/);
   if(m){VIEW="lic";SEL=decodeURIComponent(m[1])}
