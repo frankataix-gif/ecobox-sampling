@@ -208,6 +208,9 @@ textarea#ptext{flex:1;min-height:58px;border:1px solid var(--line);border-radius
 .backbar button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 11px;font-size:12.5px;cursor:pointer;color:#374151}
 .backbar button:hover{background:#f3f6f8;border-color:#b9dcd6}
 .backbar .who{font-size:12.5px;color:var(--muted)}
+.setbar{position:sticky;top:var(--toph,0px);z-index:6;display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--bg);border-bottom:1px solid var(--line);padding:8px 2px;margin:0 0 10px}
+.setbar .sbhint{font-size:12px;color:var(--muted);flex:1;min-width:170px;line-height:1.45}
+.setbar .btn.primary{padding:7px 18px}
 .props{display:grid;grid-template-columns:1.2fr 1.2fr 1.2fr .8fr 1fr;gap:10px;padding:12px}
 .props.two{grid-template-columns:1fr 90px}
 .kbadge{font-size:11px;border-radius:20px;padding:1px 8px;background:#eef7f5;color:#0f766e;border:1px solid #d6ece8}
@@ -367,6 +370,7 @@ window.addEventListener("error",e=>{
 const esc=s=>String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 
 let AREAS=[],LICS=[],BASE=[],SEL=null,PROJ=null,TAB="intro",PIMG="",VIEW="lic",MROWS=[],MAP_PICK="",MAP_PICK_AREA=null;
+let HOLDER_TOUCHED=false;
 const FS_KEY="lic_feed_v1",AU_KEY="lic_author",CACHE_KEY="lic_cache_v1",EDIT_KEY="lic_edit_v1",NOTE_KEY="lic_notes_v1",INFO_KEY="lic_info_v1",SET_KEY="lic_setok";
 let EDITS={},ADDED=[],DELETED=[],NOTES={};
 
@@ -1449,6 +1453,8 @@ function render(){
     const txt=k.rings.map((r,i)=>`# ring ${i+1}\n`+r.map(q=>q.join(",")).join("\n")).join("\n");
     try{await navigator.clipboard.writeText(txt);kcp.textContent="已复制"}catch(e){kcp.textContent="复制失败"}
   };
+  const topEl=document.querySelector(".top");
+  document.documentElement.style.setProperty("--toph",(topEl?topEl.offsetHeight:0)+"px");
   const mpick=$("#pane .mpick");
   if(mpick)mpick.querySelectorAll("[data-mpick]").forEach(b=>b.onclick=()=>{MAP_PICK=b.dataset.mpick;render()});
   if(TAB==="map")mapMount(ls);
@@ -1773,12 +1779,16 @@ function drawProjBody(){
   $("#view").innerHTML=`
     <div class="backbar"><button id="setBack">← 项目列表</button>
       <span class="who">${esc(a.name||SET_AREA)}</span></div>
+    <div class="setbar">
+      <span class="sbhint">保存整页：项目名称、排序（本机）</span>
+      <button class="btn primary" id="setPSave">保存</button>
+    </div>
     <div class="mcard" style="margin-bottom:12px">
       <div class="props two">
         <label>项目名称<input id="setPName" value="${esc(a.name||"")}" placeholder="例：Serenje 1330NW 钽铌项目"></label>
         <label>排序<input id="setPOrder" type="number" min="0" value="${esc(a.order??"")}" placeholder="1"></label>
       </div>
-      <div class="propsfoot"><span>项目名称、排序属于项目本身，改完即时存本机</span><span class="sp"></span>
+      <div class="propsfoot"><span>项目名称、排序属于项目本身；改完点顶部「保存」，也会即时存本机</span><span class="sp"></span>
         <button class="btn danger" id="setPDel">删除这个项目</button></div>
     </div>
     <div class="mcard">
@@ -1805,6 +1815,17 @@ function drawProjBody(){
   wireProjBody();
 }
 
+function saveProjSettings(){
+  const nm=$("#setPName"),or=$("#setPOrder");
+  const name=nm.value.trim();
+  if(!name){alert("项目名称不能为空");nm.focus();return}
+  const order=or.value.trim()===""?null:+or.value;
+  areaSet(SET_AREA,{name,order});
+  $("#sub").textContent=`${name} · ${licsOf(SET_AREA).length} 本矿证`;
+  render();
+  toast("已保存");
+}
+
 function wireProjBody(){
   $("#setBack").onclick=goList;
   const nm=$("#setPName"),or=$("#setPOrder");
@@ -1815,6 +1836,7 @@ function wireProjBody(){
   });
   nm.addEventListener("keydown",e=>{if(e.key==="Enter")nm.blur()});
   or.addEventListener("change",()=>{const v=or.value.trim();areaSet(SET_AREA,{order:v===""?null:+v});toast("已保存")});
+  $("#setPSave").onclick=saveProjSettings;
   $("#setPDel").onclick=deleteProjectArea;
   $("#licAdd").onclick=()=>addLicenceDialog(SET_AREA);
   $("#licPasteGo").onclick=()=>{
@@ -1912,11 +1934,16 @@ function createLicence(areaId,spec){
 
 function drawSetBody(){
   const l=licByNo(SET_NO)||{};
+  HOLDER_TOUCHED=false;
   const p=DRAFT||{no:l.no||"",holder:l.holder||"",type:l.type||"",status:l.status||"",area_id:l.area_id||""};
   const sy=window.scrollY;
   $("#view").innerHTML=`
     <div class="backbar"><button id="setBack">← ${esc(areaName(l.area_id)||"项目列表")}</button>
       <span class="who">${esc(areaName(l.area_id)||"未归属项目")} › ${esc(l.no||"")}</span></div>
+    <div class="setbar">
+      <span class="sbhint">保存整页：证号、持有人、类型、状态、所属项目、字段表、文字记录、矿证边界，一次写入</span>
+      <button class="btn primary" id="setSave">保存</button>
+    </div>
     <div class="mcard" style="margin-bottom:12px">
       <div class="props">
         <label>证号<input id="setNo" class="no" value="${esc(p.no??"")}" placeholder="42881-HQ-LEL"></label>
@@ -1926,7 +1953,7 @@ function drawSetBody(){
         <label>所属项目<select id="setArea">${areaOptions(p.area_id)}</select></label>
       </div>
       <div class="propsfoot">
-        <span>这本证的信息、区域、资料各自独立；改完点最下面的「保存」一次性写入</span>
+        <span>这本证的信息、区域、资料各自独立；改完点顶部「保存」一次性写入</span>
         <span class="sp"></span>
         <button class="btn danger" id="setDel">删除这本矿证</button>
       </div>
@@ -1949,7 +1976,6 @@ function drawSetBody(){
         <span class="grow"></span>
         <button class="btn" id="setReset">还原 json</button>
         <button class="btn" id="setExport">导出 licences.json</button>
-        <button class="btn primary" id="setSave">保存</button>
       </div>
     </div>
     <p class="mnote">共 ${SROWS.length} 个字段 · 保存只改本机；要让别人看到，点「导出 licences.json」覆盖仓库文件后发布。资料与边界也都只在本机。</p>
@@ -1977,6 +2003,7 @@ function wireSettings(){
     goProj((licByNo(SET_NO)||{}).area_id||SET_AREA);
   };
   $("#setDel").onclick=()=>deleteProject(SET_NO);
+  $("#setHolder").addEventListener("input",()=>{HOLDER_TOUCHED=true});
   $("#view").querySelectorAll(".irow:not(.head)").forEach(el=>{
     const i=+el.dataset.i;
     el.querySelectorAll("[data-k]").forEach(f=>{
@@ -2071,10 +2098,21 @@ function saveSettings(){
     seen.add(k);
   }
   const newNo=($("#setNo").value||"").trim();
-  const holder=($("#setHolder").value||"").trim();
+  let holder=($("#setHolder").value||"").trim();
   const type=($("#setType").value||"").trim();
   const status=($("#setStatus").value||"").trim();
   const area_id=$("#setArea").value;
+  const noteEl=$("#mNote");
+  if(noteEl!==null&&noteEl!==undefined){try{noteSet(SET_NO,noteEl.value)}catch(e){}}
+  // 持有人输入框与字段表里的「公司持有」是同一个值：
+  // 用户改了输入框 → 以输入框为准写回字段表；没改 → 用字段表里的（粘贴解析进来的）
+  const rowH=rows.find(r=>["公司持有","持有人"].includes(r.k.trim()));
+  if(HOLDER_TOUCHED){
+    if(rowH)rowH.v=holder;
+    else if(holder)rows.push({k:"公司持有",v:holder});
+  }else if(rowH){
+    holder=(rowH.v||"").trim();
+  }
   if(!newNo){alert("证号不能为空");$("#setNo").focus();return}
   if(LICS.some(l=>l.no===newNo&&l.no!==SET_NO)){alert("证号已被别的矿证占用："+newNo);$("#setNo").focus();return}
 
