@@ -347,11 +347,15 @@ async function jget(u){
   if(!r.ok)throw new Error(u+" "+r.status);
   return r.json();
 }
+async function jgetOpt(u){try{return await jget(u)}catch(e){return null}}
+const mergeBy=(pub,loc,key)=>[...(loc||[]),...pub.filter(p=>!(loc||[]).some(o=>o[key]===p[key]))];
 async function loadData(){
   try{
-    const [a,l]=await Promise.all([jget("areas.json"),jget("licences.json")]);
-    AREAS=(a.areas||[]).filter(x=>x&&x.id);
-    LICS=(l.licences||[]).filter(x=>x&&x.no);
+    const [a,l,al,ll]=await Promise.all([
+      jget("areas.json"),jget("licences.json"),
+      jgetOpt("areas.local.json"),jgetOpt("licences.local.json")]);
+    AREAS=mergeBy(a.areas||[],al&&al.areas||[],"id").filter(x=>x&&x.id);
+    LICS=mergeBy(l.licences||[],ll&&ll.licences||[],"no").filter(x=>x&&x.no);
     BASE=LICS.slice();
     try{localStorage.setItem(CACHE_KEY,JSON.stringify({areas:AREAS,licences:LICS,ts:Date.now()}))}catch(e){}
   }catch(e){
