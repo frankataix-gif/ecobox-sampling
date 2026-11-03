@@ -212,6 +212,11 @@ textarea#ptext{flex:1;min-height:58px;border:1px solid var(--line);border-radius
 .props.two{grid-template-columns:1fr 90px}
 .kbadge{font-size:11px;border-radius:20px;padding:1px 8px;background:#eef7f5;color:#0f766e;border:1px solid #d6ece8}
 .kbadge.off{background:#fdf6e7;color:#a16207;border-color:#f3e3bd}
+.mpick{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
+.mpick button{background:#fff;border:1px solid var(--line);border-radius:20px;padding:4px 11px;font-size:12.5px;color:#334155;cursor:pointer;font-family:ui-monospace,SFMono-Regular,monospace}
+.mpick button:hover{background:#f2f8f7}
+.mpick button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.mpick button i{font-style:normal;opacity:.72;margin-left:4px;font-family:inherit}
 .liccards{display:flex;flex-direction:column;gap:10px;margin:2px 0 16px}
 .liccard{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px 14px}
 .liccard .lch{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;font-family:ui-monospace,SFMono-Regular,monospace;font-size:13px}
@@ -361,7 +366,7 @@ window.addEventListener("error",e=>{
 });
 const esc=s=>String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 
-let AREAS=[],LICS=[],BASE=[],SEL=null,PROJ=null,TAB="intro",PIMG="",VIEW="lic",MROWS=[];
+let AREAS=[],LICS=[],BASE=[],SEL=null,PROJ=null,TAB="intro",PIMG="",VIEW="lic",MROWS=[],MAP_PICK="",MAP_PICK_AREA=null;
 const FS_KEY="lic_feed_v1",AU_KEY="lic_author",CACHE_KEY="lic_cache_v1",EDIT_KEY="lic_edit_v1",NOTE_KEY="lic_notes_v1",INFO_KEY="lic_info_v1",SET_KEY="lic_setok";
 let EDITS={},ADDED=[],DELETED=[],NOTES={};
 
@@ -1214,9 +1219,11 @@ function mapZoom(dir,ev){
 }
 function mapMount(ls){
   const el=$("#gmap");if(!el)return;
-  const center=projCenter(ls),bbox=projBBox(ls);
+  const picked=ls.find(x=>x.no===MAP_PICK)||null;
+  const view=picked?[picked]:ls;
+  const center=projCenter(view),bbox=projBBox(view);
   if(!center)return;
-  const ks=ls.map(x=>({no:x.no,k:kmlSafe(kmlFor(x.no))})).filter(x=>x.k);
+  const ks=view.map(x=>({no:x.no,k:kmlSafe(kmlFor(x.no))})).filter(x=>x.k);
   MAP={el,ks,fit:bbox?bbox.slice():null,bbox,center:center.slice(),layer:mapLayer(),zoom:13};
   MAP.zoom=bbox?mapFitZoom(bbox,el.clientWidth||600,el.clientHeight||360):13;
   mapDraw();
@@ -1264,7 +1271,7 @@ function mapMount(ls){
     if(c)geoToggle(c.getAttribute("data-gl"),c.checked);
   });
   wireGeoPanel();
-  const geoL=ls.find(x=>geoSlugFor(x));
+  const geoL=view.find(x=>geoSlugFor(x));
   if(geoL)geoInit(geoL);
   if(window.ResizeObserver)new ResizeObserver(()=>mapDraw()).observe(el);
 }
@@ -1290,13 +1297,20 @@ function projCenter(ls){
   return null;
 }
 function tabMap(ls){
-  const c=projCenter(ls),bbox=projBBox(ls);
-  if(!c)return `<div class="pane"><div class="empty">这个项目还没有坐标。到「设置」里给矿证上传矿权边界 KML，或在 licences.json 补 center。</div></div>`;
+  if(MAP_PICK_AREA!==PROJ){MAP_PICK_AREA=PROJ;MAP_PICK=""}
+  const picked=ls.find(x=>x.no===MAP_PICK)||null;
+  if(!picked)MAP_PICK="";
+  const sel=picked?[picked]:ls;
+  const c=projCenter(sel),bbox=projBBox(sel);
+  if(!c)return `<div class="pane">
+    <div class="mpick">${pickChips(ls,picked)}</div>
+    <div class="empty">${picked?esc(picked.no)+" 还没有坐标。":"这个项目还没有坐标。"}到「设置」里给矿证上传矿权边界 KML，或在 licences.json 补 center。</div></div>`;
   const [lon,lat]=c;
-  const ks=ls.map(x=>({no:x.no,k:kmlSafe(kmlFor(x.no))})).filter(x=>x.k);
+  const ks=sel.map(x=>({no:x.no,k:kmlSafe(kmlFor(x.no))})).filter(x=>x.k);
   const areaSum=ks.reduce((t,x)=>t+(x.k.kind==="线"?0:(x.k.area||0)),0);
-  const geoL=ls.find(x=>geoSlugFor(x))||ls[0];
+  const geoL=sel.find(x=>geoSlugFor(x))||sel[0];
   return `<div class="pane">
+    <div class="mpick">${pickChips(ls,picked)}</div>
     <div class="gmap" id="gmap">
       <div class="gtiles"></div>
       <svg class="gvec" xmlns="http://www.w3.org/2000/svg"></svg>
@@ -1314,7 +1328,7 @@ function tabMap(ls){
       <span class="gzoomnow">z--</span>
       <span class="gattr"></span>
     </div>
-    <div class="mapmeta">中心 ${lat.toFixed(5)}, ${lon.toFixed(5)}${bbox?` · 范围 ${bbox.map(v=>v.toFixed(3)).join(" / ")}`:""}${ks.length?` · ${ks.length} 本矿证有边界 · 参考面积合计 ${fmtArea(areaSum)} km²`:""}
+    <div class="mapmeta">${picked?`只看 ${esc(picked.no)} · `:`${ls.length} 本矿证合并取景 · `}中心 ${lat.toFixed(5)}, ${lon.toFixed(5)}${bbox?` · 范围 ${bbox.map(v=>v.toFixed(3)).join(" / ")}`:""}${ks.length?` · ${ks.length} 本矿证有边界 · 参考面积合计 ${fmtArea(areaSum)} km²`:""}
       ${ks.length?"":` · 上传 KML 后可画出矿权范围`}</div>
     ${ks.map(x=>`<div class="kmlcard">${kmlSvg(x.k)}<div class="kmlmeta"><b>${esc(x.no)}</b><span>${x.k.kind}状边界 · ${x.k.pts} 个顶点 · 参考面积 ${fmtArea(x.k.area)} km²</span><span>边界范围 ${x.k.bbox.map(v=>v.toFixed(4)).join(" / ")}</span></div></div>`).join("")}
     <div class="links">
@@ -1323,8 +1337,12 @@ function tabMap(ls){
       ${ks.length?`<button data-kmlcopy="1">复制边界坐标</button>`:""}
       <a href="sampling_helper.html">去取样</a>
     </div>
-    <p class="hint">拖动平移 · 滚轮或双击缩放 · ⤢ 回到矿区范围 · 右上角切换卫星/街道 · 「地质图层」可开关岩性、构造等；图元点可点开看属性。没有网络时，底图不显示，边界、地质图层照常可用。</p>
+    <p class="hint">上面可切换「全部矿证」或单本矿证查看 · 拖动平移 · 滚轮或双击缩放 · ⤢ 回到当前视图范围 · 右上角切换卫星/街道 · 「地质图层」可开关岩性、构造等；图元点可点开看属性。没有网络时，底图不显示，边界、地质图层照常可用。</p>
   </div>`;
+}
+function pickChips(ls,picked){
+  return `<button data-mpick="" class="${picked?"":"on"}">全部矿证<i>${ls.length}</i></button>`+
+    ls.map(x=>`<button data-mpick="${esc(x.no)}" class="${picked&&picked.no===x.no?"on":""}">${esc(x.no)}</button>`).join("");
 }
 
 function tabReports(ls){
@@ -1425,11 +1443,14 @@ function render(){
   const kmlLic=ls.find(x=>kmlSafe(kmlFor(x.no)));
   const kcp=$("[data-kmlcopy]");
   if(kcp)kcp.onclick=async()=>{
-    if(!kmlLic)return;
-    const k=kmlSafe(kmlFor(kmlLic.no));
+    const use=(MAP_PICK&&ls.find(x=>x.no===MAP_PICK&&kmlSafe(kmlFor(x.no))))||kmlLic;
+    if(!use)return;
+    const k=kmlSafe(kmlFor(use.no));
     const txt=k.rings.map((r,i)=>`# ring ${i+1}\n`+r.map(q=>q.join(",")).join("\n")).join("\n");
     try{await navigator.clipboard.writeText(txt);kcp.textContent="已复制"}catch(e){kcp.textContent="复制失败"}
   };
+  const mpick=$("#pane .mpick");
+  if(mpick)mpick.querySelectorAll("[data-mpick]").forEach(b=>b.onclick=()=>{MAP_PICK=b.dataset.mpick;render()});
   if(TAB==="map")mapMount(ls);
   if(TAB==="feed")wireFeed(ls);
 }
