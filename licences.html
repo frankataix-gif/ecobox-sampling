@@ -46,7 +46,7 @@ a{color:var(--accent)}
 .modal2 .mrow2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .modal2 .merr{color:#b91c1c;font-size:12px;min-height:16px}
 .modal2 .mfoot2{display:flex;gap:8px;justify-content:flex-end;margin-top:6px}
-.mrow.p4{grid-template-columns:1fr 1.3fr 90px 86px}
+.mrow.p3{grid-template-columns:1fr 90px 86px}
 .mrow input.ed{width:100%;border:1px solid var(--line);border-radius:7px;padding:6px 9px;font-size:12.8px;background:#fff;font-family:inherit}
 .mrow input.ed:focus{outline:none;border-color:#9dc9c2;box-shadow:0 0 0 3px rgba(15,92,85,.08)}
 .lrow{display:flex;align-items:center;gap:9px;padding:9px 0;border-top:1px solid var(--line);font-size:12.8px;flex-wrap:wrap}
@@ -1418,10 +1418,9 @@ async function loadFiles(no){
 
 function drawManage(){
   $("#view").innerHTML=`<div class="mcard">
-    <div class="mrow p4 head"><span>项目名称</span><span>矿证</span><span>排序</span><span>设置</span></div>
-    ${MROWS.map((r,i)=>`<div class="mrow p4" data-i="${i}">
+    <div class="mrow p3 head"><span>项目名称</span><span>排序</span><span>设置</span></div>
+    ${MROWS.map((r,i)=>`<div class="mrow p3" data-i="${i}" data-codes="${esc(r.lics.join(" "))}">
       <input class="ed" data-f="name" value="${esc(r.name)}" placeholder="项目名称">
-      <span class="ro">${r.lics.length?r.lics.map(x=>esc(x)).join(" · "):"<span style='color:#b45309'>还没有矿证</span>"}</span>
       <input class="ed" data-f="order" type="number" min="0" value="${esc(r.order)}" placeholder="1">
       <button class="cfg" data-cfg="1">设置</button>
     </div>`).join("")}
