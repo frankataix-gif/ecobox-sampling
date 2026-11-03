@@ -52,10 +52,9 @@ a{color:var(--accent)}
 .pill.ok{background:#dcf5e3;color:#15803d}
 .pill.warn{background:#fde7c8;color:#a16207}
 
-.navrow{padding:8px 8px 0;display:flex;flex-direction:column;gap:6px}
-.navrow button{width:100%;display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);color:#cfe3e0;border-radius:8px;padding:8px 10px;font-size:13px;cursor:pointer}
-.navrow button:hover{background:rgba(255,255,255,.13);color:#fff}
-.navrow button.on{background:var(--nav2);color:#fff;border-color:transparent}
+.brand .sicon{margin-left:auto;flex:0 0 auto;width:28px;height:28px;padding:0;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);color:#cfe3e0;border-radius:8px;font-size:14px;line-height:1;cursor:pointer}
+.brand .sicon:hover{background:rgba(255,255,255,.16);color:#fff}
+.brand .sicon.on{background:var(--nav2);color:#fff;border-color:transparent}
 
 .sb-foot{padding:10px 12px;border-top:1px solid rgba(255,255,255,.12);font-size:11.5px;color:#a9c8c3}
 .sb-foot input{width:100%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);color:#fff;border-radius:7px;padding:5px 8px;font-size:12px}
@@ -325,8 +324,8 @@ label.btn{display:inline-block;cursor:pointer}
     <div class="brand">
       <span class="logo">赞</span>
       <div><b>赞比亚矿权介绍</b></div>
+      <button id="navSet" class="sicon" title="设置" aria-label="设置">⚙</button>
     </div>
-    <div class="navrow"><button id="navSet"><span>⚙</span>设置</button></div>
     <div class="plist" id="plist"></div>
     <div class="sb-foot">
       <input id="who" maxlength="12" placeholder="昵称（留言署名）">
