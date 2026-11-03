@@ -31,6 +31,23 @@ a{color:var(--accent)}
 .plist .no{display:block;font-family:ui-monospace,SFMono-Regular,monospace;font-size:13px;font-weight:700;line-height:1.35}
 .plist .ar{display:block;font-size:11.5px;opacity:.72;margin-top:1px}
 .plist .st{display:flex;gap:4px;flex-wrap:wrap;margin-top:5px}
+.plist .pgrp{margin-bottom:10px}
+.plist .phead{display:flex;align-items:center;gap:6px;padding:4px 10px 6px;font-size:11.5px;letter-spacing:.04em;color:#8fb5b0;text-transform:none}
+.plist .phead .pn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.plist .phead .pcnt{background:rgba(255,255,255,.12);border-radius:20px;padding:0 7px;font-size:10.5px;line-height:16px}
+.plist .addlic{display:block;width:100%;text-align:left;background:none;border:1px dashed rgba(255,255,255,.22);color:#9fc4bf;padding:6px 10px;border-radius:8px;font-size:12px;cursor:pointer}
+.plist .addlic:hover{background:rgba(255,255,255,.08);color:#fff;border-color:rgba(255,255,255,.4)}
+.sibs{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12.5px;color:var(--muted);margin:2px 0 14px}
+.sibs a{color:var(--accent);text-decoration:none;border:1px solid var(--line);border-radius:20px;padding:2px 10px;font-family:ui-monospace,SFMono-Regular,monospace;font-size:11.5px}
+.sibs a:hover{background:#f2f8f7}
+.modal2{position:fixed;inset:0;z-index:200;background:rgba(15,23,42,.5);display:flex;align-items:center;justify-content:center;padding:18px}
+.modal2 .mbox{background:#fff;border-radius:14px;padding:20px;width:min(100%,480px);box-shadow:0 20px 60px rgba(0,0,0,.3);max-height:92vh;overflow:auto}
+.modal2 h3{font-size:15px;margin-bottom:12px}
+.modal2 label{display:block;font-size:12px;color:var(--muted);margin-bottom:10px}
+.modal2 input{width:100%;margin-top:4px;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit}
+.modal2 .mrow2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.modal2 .merr{color:#b91c1c;font-size:12px;min-height:16px}
+.modal2 .mfoot2{display:flex;gap:8px;justify-content:flex-end;margin-top:6px}
 
 .pill{display:inline-block;font-size:10.5px;font-weight:600;border-radius:9px;padding:0 7px;background:rgba(255,255,255,.16);color:#e6f2f0;white-space:nowrap}
 .pill.ok{background:#dcf5e3;color:#15803d}
@@ -782,13 +799,80 @@ function statusPill(l){
   return `<span class="pill ${/有效/.test(s)?"ok":/待核实/.test(s)?"warn":""}">${esc(s)}</span>`;
 }
 
+const sibsOf=l=>sortedLics().filter(x=>x.area_id===l.area_id&&x.no!==l.no);
+function projects(){
+  const m=new Map();
+  sortedLics().forEach(l=>{const k=l.area_id||"";if(!m.has(k))m.set(k,[]);m.get(k).push(l)});
+  return [...m.entries()];
+}
 function plistHtml(activeNo){
-  return sortedLics().map(l=>`
-    <button class="item ${l.no===activeNo?"on":""}" data-no="${esc(l.no)}">
-      <span class="no">${esc(l.name||l.no)}</span>
-      <span class="ar">${esc(l.no)}${areaName(l.area_id)?" · "+esc(areaName(l.area_id)):""}</span>
-      <span class="st">${statusPill(l)}</span>
-    </button>`).join("");
+  return projects().map(([aid,ls])=>`
+    <div class="pgrp">
+      <div class="phead"><span class="pn">${esc(areaName(aid)||"未归属项目")}</span><span class="pcnt">${ls.length}</span></div>
+      ${ls.map(l=>`
+        <button class="item ${l.no===activeNo?"on":""}" data-no="${esc(l.no)}">
+          <span class="no">${esc(l.name||l.no)}</span>
+          <span class="ar">${esc(l.no)}${l.holder&&l.holder!=="（待核实）"?" · "+esc(l.holder):""}</span>
+          <span class="st">${statusPill(l)}</span>
+        </button>`).join("")}
+      <button class="addlic" data-area="${esc(aid)}">＋ 新增矿证</button>
+    </div>`).join("");
+}
+function addLicenceDialog(areaId){
+  const a=areaById(areaId)||{};
+  const sib=sortedLics().find(l=>l.area_id===areaId)||{};
+  const m=document.createElement("div");m.className="modal2";
+  const q=s=>m.querySelector(s);
+  m.innerHTML=`<div class="mbox"><h3>在「${esc(a.name||"未归属项目")}」下新增矿证</h3>
+    <label>证号 *<input id="nl_no" placeholder="例如 47123-HQ-LEL" autocomplete="off"></label>
+    <label>名称（可留空，默认用证号）<input id="nl_name" autocomplete="off"></label>
+    <div class="mrow2">
+      <label>类型<input id="nl_type" value="${esc(sib.type||"Large-scale Mining Licence")}"></label>
+      <label>状态<input id="nl_status" value="Active"></label>
+    </div>
+    <div class="mrow2">
+      <label>持有人<input id="nl_holder" value="${esc(sib.holder||"（待核实）")}"></label>
+      <label>面积 km²<input id="nl_area" placeholder="例如 87.12"></label>
+    </div>
+    <div class="mrow2">
+      <label>批准时间<input id="nl_from" placeholder="2026-01-01"></label>
+      <label>到期时间<input id="nl_to" placeholder="2030-01-01"></label>
+    </div>
+    <label>矿种<input id="nl_comm" value="${esc((sib.commodities||["Ta","Nb"]).join(","))}"></label>
+    <div class="merr" id="nl_err"></div>
+    <div class="mfoot2"><button class="btn" id="nl_cancel">取消</button><button class="btn primary" id="nl_ok">新增</button></div>
+  </div>`;
+  document.body.appendChild(m);
+  const close=()=>m.remove();
+  m.onclick=e=>{if(e.target===m)close()};
+  q("#nl_cancel").onclick=close;
+  q("#nl_no").focus();
+  q("#nl_ok").onclick=()=>{
+    const no=q("#nl_no").value.trim(),err=q("#nl_err");
+    if(!no){err.textContent="证号必填";return}
+    if(no.includes("/")||no.includes("#")){err.textContent="证号不能包含 / 或 #";return}
+    if(LICS.some(x=>x.no===no)){err.textContent="这个证号已经存在";return}
+    const info=[],push=(k,v)=>{if(v)info.push({k,v})};
+    push("公司持有",q("#nl_holder").value.trim());
+    push("许可证类型",q("#nl_type").value.trim());
+    push("许可证状态",q("#nl_status").value.trim());
+    push("批准时间",q("#nl_from").value.trim());
+    push("到期时间",q("#nl_to").value.trim());
+    const ar=q("#nl_area").value.trim();push("产区面积",ar?ar+" km²":"");
+    const rec={
+      no,name:q("#nl_name").value.trim()||no,area_id:areaId||"",
+      holder:q("#nl_holder").value.trim()||"（待核实）",
+      type:q("#nl_type").value.trim(),status:q("#nl_status").value.trim()||"Active",
+      info,commodities:q("#nl_comm").value.split(/[,，、\s]+/).filter(Boolean),
+      center:(a.center||sib.center||[]).slice(),
+      geology:sib.geology?JSON.parse(JSON.stringify(sib.geology)):{},
+      sampling:sib.sampling?JSON.parse(JSON.stringify(sib.sampling)):{},
+      intro:"",reference:[],reports:[],order:(sib.order||999)+1
+    };
+    ADDED.push(rec);persistEdits();applyEdits();
+    close();VIEW="lic";SEL=rec.no;TAB="intro";location.hash="lic/"+encodeURIComponent(rec.no);render();
+    toast("已新增 "+no+"（存本机；导出 licences.json 可固化）");
+  };
 }
 
 /* ---------- 四个分类 ---------- */
@@ -796,6 +880,7 @@ function tabIntro(l){
   const g=l.geology||{},sm=l.sampling||{};
   return `<div class="pane">
     <p class="lead">${esc(l.intro||"暂无项目介绍。在 licences.json 的 intro 字段补充。")}</p>
+    ${sibsOf(l).length?`<div class="sibs"><span>本项目下的其它矿证：</span>${sibsOf(l).map(x=>`<a href="#lic/${encodeURIComponent(x.no)}">${esc(x.no)}</a>`).join("")}</div>`:""}
     <h4>矿证信息</h4>
     <dl>
       ${(l.info||[]).map(x=>row(x.k,esc(zhVal(x.k,x.v)))).join("")}
@@ -1217,6 +1302,7 @@ function render(){
   $("#navSet").classList.toggle("on",VIEW==="set");
   if(VIEW!=="lic"){$("#tabs").innerHTML="";$("#tpill").innerHTML=""}
   $("#plist").innerHTML=sortedLics().length?plistHtml(VIEW==="set"?null:SEL):`<div class="empty" style="color:#a9c8c3">没有项目</div>`;
+  $("#plist").querySelectorAll(".addlic").forEach(b=>b.onclick=()=>addLicenceDialog(b.dataset.area));
   $("#plist").querySelectorAll(".item").forEach(b=>b.onclick=()=>{
     if(VIEW==="set"&&SET_VIEW==="proj"&&!leaveOK())return;
     DRAFT=null;VIEW="lic";SEL=b.dataset.no;TAB="intro";location.hash="lic/"+SEL;render();
@@ -1827,8 +1913,10 @@ async function start(){
   render();
 }
 
-if(authed())start();
-else setTimeout(()=>$("#g_user").focus(),150);
+/* 登录闸门暂时停用：先用起来，安全优化后续再做 */
+$("#gate").hidden=true;
+$("#logout").hidden=true;
+start();
 </script>
 </body>
 </html>
