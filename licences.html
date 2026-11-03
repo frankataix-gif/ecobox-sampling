@@ -48,6 +48,14 @@ a{color:var(--accent)}
 .modal2 .mrow2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .modal2 .merr{color:#b91c1c;font-size:12px;min-height:16px}
 .modal2 .mfoot2{display:flex;gap:8px;justify-content:flex-end;margin-top:6px}
+.mrow.p4{grid-template-columns:1fr 1.3fr 90px 86px}
+.mrow input.ed{width:100%;border:1px solid var(--line);border-radius:7px;padding:6px 9px;font-size:12.8px;background:#fff;font-family:inherit}
+.mrow input.ed:focus{outline:none;border-color:#9dc9c2;box-shadow:0 0 0 3px rgba(15,92,85,.08)}
+.lrow{display:flex;align-items:center;gap:9px;padding:9px 0;border-top:1px solid var(--line);font-size:12.8px;flex-wrap:wrap}
+.lrow:first-of-type{border-top:none}
+.lrow .lno{font-family:ui-monospace,SFMono-Regular,monospace;font-weight:700}
+.lrow .lnm{color:var(--muted);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lrow .lcur{font-size:11px;color:var(--accent);border:1px solid var(--line);border-radius:20px;padding:1px 8px}
 
 .pill{display:inline-block;font-size:10.5px;font-weight:600;border-radius:9px;padding:0 7px;background:rgba(255,255,255,.16);color:#e6f2f0;white-space:nowrap}
 .pill.ok{background:#dcf5e3;color:#15803d}
@@ -371,14 +379,15 @@ async function loadData(){
     const [a,l,al,ll]=await Promise.all([
       jget("areas.json"),jget("licences.json"),
       jgetOpt("areas.local.json"),jgetOpt("licences.local.json")]);
-    AREAS=mergeBy(a.areas||[],al&&al.areas||[],"id").filter(x=>x&&x.id);
+    AREAS_BASE=mergeBy(a.areas||[],al&&al.areas||[],"id").filter(x=>x&&x.id);
+    areaEditsLoad();applyAreaEdits();
     LICS=mergeBy(l.licences||[],ll&&ll.licences||[],"no").filter(x=>x&&x.no);
     BASE=LICS.slice();
     try{localStorage.setItem(CACHE_KEY,JSON.stringify({areas:AREAS,licences:LICS,ts:Date.now()}))}catch(e){}
   }catch(e){
     let c=null;
     try{c=JSON.parse(localStorage.getItem(CACHE_KEY)||"null")}catch(_){}
-    if(c&&c.licences&&c.licences.length){AREAS=c.areas||[];LICS=c.licences;BASE=LICS.slice()}
+    if(c&&c.licences&&c.licences.length){AREAS_BASE=c.areas||[];areaEditsLoad();applyAreaEdits();LICS=c.licences;BASE=LICS.slice()}
     else throw new Error("配置读取失败："+(e.message||e));
   }
   applyEdits();
@@ -395,7 +404,29 @@ const sortedLics=()=>LICS.slice().sort((a,b)=>
   ||(a.area_id||"").localeCompare(b.area_id||"")
   ||String(a.no).localeCompare(String(b.no),"zh"));
 
-/* ---------- 项目管理（本机覆盖，可导出回 json） ---------- */
+/* ---------- 项目实体（= 矿区）。名称/排序/新建 都存本机 ---------- */
+const AREA_KEY="lic_area_v1";
+let AREAS_BASE=[],AREA_EDIT={},AREA_ADD=[];
+function areaEditsLoad(){
+  try{const e=JSON.parse(localStorage.getItem(AREA_KEY)||"{}");AREA_EDIT=e.edits||{};AREA_ADD=e.added||[]}
+  catch(e){AREA_EDIT={};AREA_ADD=[]}
+}
+function areaEditsSave(){try{localStorage.setItem(AREA_KEY,JSON.stringify({edits:AREA_EDIT,added:AREA_ADD}))}catch(e){}}
+function applyAreaEdits(){
+  const out=AREAS_BASE.map(a=>({...a,...(AREA_EDIT[a.id]||{})}));
+  AREA_ADD.forEach(a=>{const i=out.findIndex(x=>x.id===a.id);const v={...a,...(AREA_EDIT[a.id]||{})};i<0?out.push(v):(out[i]=v)});
+  AREAS=out;
+}
+function areaSet(id,patch){AREA_EDIT[id]={...(AREA_EDIT[id]||{}),...patch};areaEditsSave();applyAreaEdits()}
+function areaAdd(name){
+  let id="p_"+Date.now().toString(36),i=2;
+  while(AREAS.some(a=>a.id===id))id="p_"+Date.now().toString(36)+"_"+(i++);
+  AREA_ADD.push({id,name,order:AREAS.length+1});
+  areaEditsSave();applyAreaEdits();
+  return id;
+}
+
+/* ---------- 矿证编辑（本机覆盖，可导出回 json） ---------- */
 function editsLoad(){
   try{const e=JSON.parse(localStorage.getItem(EDIT_KEY)||"{}");EDITS=e.edits||{};ADDED=e.added||[];DELETED=e.deleted||[]}
   catch(e){EDITS={};ADDED=[]}
@@ -815,8 +846,7 @@ function plistHtml(activeNo){
           <span class="ar">${esc(l.no)}${l.holder&&l.holder!=="（待核实）"?" · "+esc(l.holder):""}</span>
           <span class="st">${statusPill(l)}</span>
         </button>`).join("")}
-      <button class="addlic" data-area="${esc(aid)}">＋ 新增矿证</button>
-    </div>`).join("");
+      </div>`).join("");
 }
 function addLicenceDialog(areaId){
   const a=areaById(areaId)||{};
@@ -870,7 +900,12 @@ function addLicenceDialog(areaId){
       intro:"",reference:[],reports:[],order:(sib.order||999)+1
     };
     ADDED.push(rec);persistEdits();applyEdits();
-    close();VIEW="lic";SEL=rec.no;TAB="intro";location.hash="lic/"+encodeURIComponent(rec.no);render();
+    INFO[rec.no]=normInfo(info);
+    try{localStorage.setItem(INFO_KEY,JSON.stringify(INFO))}catch(e){}
+    applyInfo();
+    close();
+    if(VIEW==="set"){DRAFT=null;SET_NO=rec.no;HIT.clear();location.hash="set/"+encodeURIComponent(rec.no);render()}
+    else{VIEW="lic";SEL=rec.no;TAB="intro";location.hash="lic/"+encodeURIComponent(rec.no);render()}
     toast("已新增 "+no+"（存本机；导出 licences.json 可固化）");
   };
 }
@@ -1302,7 +1337,6 @@ function render(){
   $("#navSet").classList.toggle("on",VIEW==="set");
   if(VIEW!=="lic"){$("#tabs").innerHTML="";$("#tpill").innerHTML=""}
   $("#plist").innerHTML=sortedLics().length?plistHtml(VIEW==="set"?null:SEL):`<div class="empty" style="color:#a9c8c3">没有项目</div>`;
-  $("#plist").querySelectorAll(".addlic").forEach(b=>b.onclick=()=>addLicenceDialog(b.dataset.area));
   $("#plist").querySelectorAll(".item").forEach(b=>b.onclick=()=>{
     if(VIEW==="set"&&SET_VIEW==="proj"&&!leaveOK())return;
     DRAFT=null;VIEW="lic";SEL=b.dataset.no;TAB="intro";location.hash="lic/"+SEL;render();
@@ -1370,12 +1404,12 @@ function wireFeed(no){
 
 /* ---------- 设置：项目列表 + 矿证信息 ---------- */
 function manageRows(){
-  return sortedLics().map(l=>({
-    no:l.no,name:l.name||"",area_id:l.area_id||"",
-    holder:holderOf(l),
-    status:infoVal(l,"许可证状态")||l.status||"",
-    order:l.order??""
-  }));
+  return AREAS.slice()
+    .sort((a,b)=>(a.order??999)-(b.order??999)||String(a.name||"").localeCompare(String(b.name||""),"zh"))
+    .map(a=>({
+      id:a.id,name:a.name||a.id,order:a.order??"",
+      lics:sortedLics().filter(l=>l.area_id===a.id).map(l=>l.no)
+    }));
 }
 
 async function loadFiles(no){
@@ -1386,13 +1420,11 @@ async function loadFiles(no){
 
 function drawManage(){
   $("#view").innerHTML=`<div class="mcard">
-    <div class="mrow head"><span>项目名称</span><span>证号</span><span>持有人</span><span>状态</span><span>排序</span><span>设置</span></div>
-    ${MROWS.map((r,i)=>`<div class="mrow" data-i="${i}">
-      <span class="ro" title="点右侧「设置」修改">${esc(r.name)||"—"}</span>
-      <span class="ro no" title="点右侧「设置」修改">${esc(r.no)||"—"}</span>
-      <span class="ro">${esc(r.holder)||"—"}</span>
-      <span class="ro">${esc(zhStatus(r.status))||"—"}</span>
-      <span class="ro">${r.order==null||r.order===""?"—":esc(r.order)}</span>
+    <div class="mrow p4 head"><span>项目名称</span><span>矿证</span><span>排序</span><span>设置</span></div>
+    ${MROWS.map((r,i)=>`<div class="mrow p4" data-i="${i}">
+      <input class="ed" data-f="name" value="${esc(r.name)}" placeholder="项目名称">
+      <span class="ro">${r.lics.length?r.lics.map(x=>esc(x)).join(" · "):"<span style='color:#b45309'>还没有矿证</span>"}</span>
+      <input class="ed" data-f="order" type="number" min="0" value="${esc(r.order)}" placeholder="1">
       <button class="cfg" data-cfg="1">设置</button>
     </div>`).join("")}
     <div class="mfoot">
@@ -1402,7 +1434,7 @@ function drawManage(){
       <button class="btn" id="mExport">导出 licences.json</button>
     </div>
   </div>
-  <p class="mnote">列表只做展示。点某行「设置」，名称、证号、持有人、状态、矿区、排序和矿证资料都在里面改、在里面保存。</p>`;
+  <p class="mnote">首页只改「项目名称」和「排序」，改完即时存本机。矿证的增删改在「设置」里：一个项目可以挂 0 本或多本矿证。</p>`;
   wireManage();
 }
 
@@ -1430,24 +1462,33 @@ function filesPanel(){
 }
 function wireManage(){
   $("#view").querySelectorAll(".mrow:not(.head)").forEach(el=>{
-    const i=+el.dataset.i;
+    const i=+el.dataset.i,r=MROWS[i];
+    el.querySelectorAll("input[data-f]").forEach(inp=>{
+      const save=()=>{
+        const f=inp.dataset.f;
+        const v=f==="order"?(inp.value.trim()===""?null:+inp.value):inp.value.trim();
+        if(f==="name"&&!v){inp.value=r.name;return}
+        areaSet(r.id,{[f]:v});
+        if(f==="name")$("#sub").textContent="项目列表 · 点每行右侧「设置」管理该项目的矿证";
+        toast("已保存");
+      };
+      inp.addEventListener("change",save);
+      inp.addEventListener("keydown",e=>{if(e.key==="Enter")inp.blur()});
+    });
     el.querySelector("[data-cfg]").onclick=()=>{
-      const no=(MROWS[i].no||"").trim();
-      if(!no)return;
+      const no=(r.lics[0]||"").trim();
+      if(!no){addLicenceDialog(r.id);return}
       SET_NO=no;SET_VIEW="proj";HIT.clear();
       location.hash="set/"+encodeURIComponent(no);render();
       window.scrollTo({top:0,behavior:"smooth"});
     };
   });
   $("#mAdd").onclick=()=>{
-    let n=ADDED.length+1,no;
-    do{no="未命名-"+String(n++).padStart(2,"0")}while(licByNo(no));
-    ADDED.push({no,name:"未命名项目",status:"已申请",area_id:"",order:sortedLics().length+1,
-      type:"",commodities:[],center:null,geology:{},sampling:{},intro:"",reports:[]});
-    persistEdits();applyEdits();
-    SET_NO=no;SET_VIEW="proj";HIT.clear();
-    location.hash="set/"+encodeURIComponent(no);render();
-    setTimeout(()=>{const el=$("#setName");if(el){el.focus();el.select()}},80);
+    const name=prompt("新项目名称（例如：Serenje 北区 钽铌项目）","");
+    if(name===null)return;
+    const id=areaAdd(name.trim()||"未命名项目");
+    SET_VIEW="list";location.hash="set";render();
+    toast("已新增项目，点右侧「设置」在项目下添加矿证");
   };
   $("#mReset").onclick=()=>{
     if(!confirm("放弃本机的修改，回到 licences.json 的内容？"))return;
@@ -1642,6 +1683,72 @@ function leaveOK(){
   DRAFT=null;return true;
 }
 
+function projLicPanel(l){
+  const ls=sortedLics().filter(x=>x.area_id===l.area_id);
+  return `<div class="mcard" style="margin-bottom:12px">
+    <div class="mfhead" style="padding:12px 12px 6px"><b>本项目下的矿证</b>
+      <span class="hint">${esc(areaName(l.area_id)||"未归属项目")} · ${ls.length} 本</span>
+      <span class="sp"></span>
+      <button class="btn primary" id="licAdd">＋ 手动添加</button>
+    </div>
+    <div style="padding:0 12px">
+      ${ls.length?ls.map(x=>`<div class="lrow">
+        <span class="lno">${esc(x.no)}</span>
+        <span class="lnm">${esc(x.name||"")}</span>
+        ${statusPill(x)}
+        ${x.no===l.no?`<span class="lcur">当前</span>`:`<button class="btn" data-open-lic="${esc(x.no)}">打开</button>`}
+        ${ls.length>1?`<button class="btn danger" data-del-lic="${esc(x.no)}">删除</button>`:""}
+      </div>`).join(""):`<div class="empty" style="padding:14px">这个项目下还没有矿证。用下面的粘贴框，或点「＋ 手动添加」。</div>`}
+      <div class="paste" style="margin:12px 0">
+        <textarea id="licPaste" placeholder="把矿证信息整段粘进来，一行一条，例如：&#10;许可证号：47123-HQ-LEL&#10;许可证类型：Large Scale Exploration Licence&#10;持有人：MAMANGA MINING LIMITED&#10;许可证状态：Active&#10;批准时间：2026-01-01&#10;到期时间：2030-01-01&#10;产区面积：42.5 km²"></textarea>
+        <div class="pbar"><span id="licPasteHint">认不出的行会跳过；证号必填</span><span class="sp"></span>
+          <button class="btn primary" id="licPasteGo">粘贴并添加</button></div>
+      </div>
+    </div>
+  </div>`;
+}
+const LIC_FIELDS={"许可证号":"no","证号":"no","矿证号":"no","licence":"no","license":"no",
+  "名称":"name","项目名称":"name",
+  "许可证类型":"type","类型":"type",
+  "持有人":"holder","公司持有":"holder","公司":"holder",
+  "许可证状态":"status","状态":"status",
+  "批准时间":"valid_from","有效期起":"valid_from","开始时间":"valid_from",
+  "到期时间":"valid_to","有效期止":"valid_to","截止时间":"valid_to",
+  "产区面积":"area_km2","面积":"area_km2",
+  "地区":"region","省份":"region"};
+function parseLicText(txt){
+  const out={};
+  String(txt||"").split(/\r?\n/).forEach(line=>{
+    const m=line.match(/^\s*([^:：]{1,12})\s*[:：]\s*(.+?)\s*$/);
+    if(!m)return;
+    const k=LIC_FIELDS[m[1].replace(/\s/g,"")];
+    if(k&&!out[k])out[k]=m[2];
+  });
+  return out;
+}
+function createLicence(areaId,spec){
+  const a=areaById(areaId)||{},sib=sortedLics().find(l=>l.area_id===areaId)||{};
+  const no=String(spec.no||"").trim();
+  if(!no)throw new Error("缺少证号");
+  if(LICS.some(x=>x.no===no))throw new Error("证号已存在："+no);
+  const info=[],push=(k,v)=>{if(v)info.push({k,v})};
+  push("公司持有",spec.holder);push("许可证类型",spec.type);push("许可证状态",spec.status);
+  push("批准时间",spec.valid_from);push("到期时间",spec.valid_to);
+  push("产区面积",spec.area_km2);push("地区",spec.region);
+  const rec={no,name:String(spec.name||"").trim()||no,area_id:areaId||"",
+    holder:String(spec.holder||"").trim()||"（待核实）",
+    type:String(spec.type||"").trim(),status:String(spec.status||"").trim()||"Active",
+    info,commodities:(spec.commodities||sib.commodities||["Ta","Nb"]),
+    center:(a.center||sib.center||[]).slice(),
+    geology:sib.geology?JSON.parse(JSON.stringify(sib.geology)):{},
+    sampling:sib.sampling?JSON.parse(JSON.stringify(sib.sampling)):{},
+    intro:"",reference:[],reports:[],order:(sib.order||999)+1};
+  ADDED.push(rec);persistEdits();applyEdits();
+  INFO[rec.no]=normInfo(rec.info);
+  try{localStorage.setItem(INFO_KEY,JSON.stringify(INFO))}catch(e){}
+  applyInfo();
+  return rec;
+}
 function drawSetBody(){
   const l=licByNo(SET_NO)||{};
   const p=DRAFT||{name:l.name||"",no:l.no||"",area_id:l.area_id||"",order:l.order==null?"":String(l.order)};
@@ -1663,6 +1770,7 @@ function drawSetBody(){
       </div>
     </div>
     ${kmlPanel()}
+    ${projLicPanel(l)}
     <div class="paste">
       <textarea id="pText" placeholder="把矿证页面上看到的文字整段粘进来，一行一条即可，例如：&#10;许可证号：42881-HQ-LEL&#10;许可证类型：Large Scale Exploration Licence&#10;持有人：MAMANGA MINING LIMITED (100%)&#10;地区：Central, Serenje&#10;产区面积：87.12 km²"></textarea>
       <div class="pbar"><span id="pHint">粘好后点右边按钮，自动对上字段（证号会填到上面）；认不出的行会单独告诉你</span><span class="sp"></span>
@@ -1768,6 +1876,26 @@ function wireSettings(){
     if(!confirm("删除这个项目的矿权边界？"))return;
     stashProps();delete KMLS[SET_NO];kmlSave();drawSetBody();toast("已删除边界");
   };
+  const cur=licByNo(SET_NO)||{};
+  const lAdd=$("#licAdd");
+  if(lAdd)lAdd.onclick=()=>addLicenceDialog(cur.area_id||"");
+  const lGo=$("#licPasteGo");
+  if(lGo)lGo.onclick=()=>{
+    const spec=parseLicText($("#licPaste").value);
+    if(!spec.no){$("#licPasteHint").textContent="没认出证号：请写成「许可证号：47123-HQ-LEL」这种一行";return}
+    try{
+      const rec=createLicence(cur.area_id||"",spec);
+      SET_NO=rec.no;DRAFT=null;HIT.clear();
+      location.hash="set/"+encodeURIComponent(rec.no);render();
+      toast("已添加 "+rec.no);
+    }catch(e){$("#licPasteHint").textContent=e.message||String(e)}
+  };
+  $("#view").querySelectorAll("[data-open-lic]").forEach(b=>b.onclick=()=>{
+    if(!leaveOK())return;
+    SET_NO=b.dataset.openLic;DRAFT=null;HIT.clear();
+    location.hash="set/"+encodeURIComponent(SET_NO);render();
+  });
+  $("#view").querySelectorAll("[data-del-lic]").forEach(b=>b.onclick=()=>deleteProject(b.dataset.delLic));
   $("#pParse").onclick=applyPaste;
   $("#setSave").onclick=saveSettings;
   $("#setReset").onclick=()=>{
