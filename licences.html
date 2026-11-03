@@ -31,13 +31,6 @@ a{color:var(--accent)}
 .plist .no{display:block;font-family:ui-monospace,SFMono-Regular,monospace;font-size:13px;font-weight:700;line-height:1.35}
 .plist .ar{display:block;font-size:11.5px;opacity:.72;margin-top:1px}
 .plist .st{display:flex;gap:4px;flex-wrap:wrap;margin-top:5px}
-.plist .pgrp{margin-bottom:10px}
-.plist .phead{display:flex;align-items:center;gap:6px;padding:4px 10px 6px;font-size:11.5px;letter-spacing:.04em;color:#8fb5b0;text-transform:none}
-.plist .phead .pn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.plist .phead .pcnt{background:rgba(255,255,255,.12);border-radius:20px;padding:0 7px;font-size:10.5px;line-height:16px}
-.sibs{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12.5px;color:var(--muted);margin:2px 0 14px}
-.sibs a{color:var(--accent);text-decoration:none;border:1px solid var(--line);border-radius:20px;padding:2px 10px;font-family:ui-monospace,SFMono-Regular,monospace;font-size:11.5px}
-.sibs a:hover{background:#f2f8f7}
 .modal2{position:fixed;inset:0;z-index:200;background:rgba(15,23,42,.5);display:flex;align-items:center;justify-content:center;padding:18px}
 .modal2 .mbox{background:#fff;border-radius:14px;padding:20px;width:min(100%,480px);box-shadow:0 20px 60px rgba(0,0,0,.3);max-height:92vh;overflow:auto}
 .modal2 h3{font-size:15px;margin-bottom:12px}
@@ -220,6 +213,11 @@ textarea#ptext{flex:1;min-height:58px;border:1px solid var(--line);border-radius
 .props.two{grid-template-columns:1fr 90px}
 .kbadge{font-size:11px;border-radius:20px;padding:1px 8px;background:#eef7f5;color:#0f766e;border:1px solid #d6ece8}
 .kbadge.off{background:#fdf6e7;color:#a16207;border-color:#f3e3bd}
+.liccards{display:flex;flex-direction:column;gap:10px;margin:2px 0 16px}
+.liccard{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.liccard .lch{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;font-family:ui-monospace,SFMono-Regular,monospace;font-size:13px}
+.liccard dl{margin:0}
+.liccard .lcsub{margin-top:6px;font-size:12px;color:var(--muted)}
 .props label{display:flex;flex-direction:column;gap:5px;font-size:11.5px;color:var(--muted);font-weight:600}
 .props input,.props select{border:1px solid var(--line);border-radius:8px;padding:7px 9px;font-size:13px;background:#fff;color:var(--text);font-weight:400}
 .props input:focus,.props select:focus{outline:none;border-color:#9dc9c2;box-shadow:0 0 0 3px rgba(15,92,85,.08)}
@@ -364,7 +362,7 @@ window.addEventListener("error",e=>{
 });
 const esc=s=>String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 
-let AREAS=[],LICS=[],BASE=[],SEL=null,TAB="intro",PIMG="",VIEW="lic",MROWS=[];
+let AREAS=[],LICS=[],BASE=[],SEL=null,PROJ=null,TAB="intro",PIMG="",VIEW="lic",MROWS=[];
 const FS_KEY="lic_feed_v1",AU_KEY="lic_author",CACHE_KEY="lic_cache_v1",EDIT_KEY="lic_edit_v1",NOTE_KEY="lic_notes_v1",INFO_KEY="lic_info_v1",SET_KEY="lic_setok";
 let EDITS={},ADDED=[],DELETED=[],NOTES={};
 
@@ -842,24 +840,30 @@ function statusPill(l){
   return `<span class="pill ${/有效/.test(s)?"ok":/待核实/.test(s)?"warn":""}">${esc(s)}</span>`;
 }
 
-const sibsOf=l=>sortedLics().filter(x=>x.area_id===l.area_id&&x.no!==l.no);
-function projects(){
+const projLics=aid=>sortedLics().filter(l=>(l.area_id||"")===(aid||""));
+const projOf=no=>{const l=licByNo(no);return l?(l.area_id||""):""};
+const projName=aid=>areaName(aid)||(projLics(aid)[0]||{}).name||(aid?"项目 "+aid:"未归属项目");
+function projRows(){
   const m=new Map();
   sortedLics().forEach(l=>{const k=l.area_id||"";if(!m.has(k))m.set(k,[]);m.get(k).push(l)});
   return [...m.entries()];
 }
-function plistHtml(activeNo){
-  return projects().map(([aid,ls])=>`
-    <div class="pgrp">
-      <div class="phead"><span class="pn">${esc(areaName(aid)||"未归属项目")}</span><span class="pcnt">${ls.length}</span></div>
-      ${ls.map(l=>`
-        <button class="item ${l.no===activeNo?"on":""}" data-no="${esc(l.no)}">
-          <span class="no">${esc(l.name||l.no)}</span>
-          <span class="ar">${esc(l.no)}${l.holder&&l.holder!=="（待核实）"?" · "+esc(l.holder):""}</span>
-          <span class="st">${statusPill(l)}</span>
-        </button>`).join("")}
-      </div>`).join("");
+function projStatus(ls){
+  if(ls.some(x=>/有效|Active/i.test(x.status||"")))return "有效";
+  return (ls[0]&&ls[0].status)||"（待核实）";
 }
+function projHolders(ls){return [...new Set(ls.map(x=>x.holder).filter(h=>h&&h!=="（待核实）"))]}
+function plistHtml(activeArea){
+  return projRows().map(([aid,ls])=>{
+    const h=projHolders(ls);
+    return `<button class="item ${activeArea!=null&&aid===activeArea?"on":""}" data-area="${esc(aid)}">
+        <span class="no">${esc(projName(aid))}</span>
+        <span class="ar">${ls.length} 本矿证${h.length?" · "+esc(h.join(" / ")):""}</span>
+        <span class="st">${statusPill({status:projStatus(ls)})}</span>
+      </button>`;
+  }).join("");
+}
+
 function addLicenceDialog(areaId){
   const a=areaById(areaId)||{};
   const sib=sortedLics().find(l=>l.area_id===areaId)||{};
@@ -917,22 +921,30 @@ function addLicenceDialog(areaId){
     applyInfo();
     close();
     if(VIEW==="set"){DRAFT=null;SET_NO=rec.no;HIT.clear();location.hash="set/"+encodeURIComponent(rec.no);render()}
-    else{VIEW="lic";SEL=rec.no;TAB="intro";location.hash="lic/"+encodeURIComponent(rec.no);render()}
+    else{VIEW="lic";SEL=rec.no;PROJ=projOf(rec.no);TAB="intro";location.hash="lic/"+encodeURIComponent(rec.no);render()}
     toast("已新增 "+no+"（存本机；导出 licences.json 可固化）");
   };
 }
 
 /* ---------- 四个分类 ---------- */
-function tabIntro(l){
-  const g=l.geology||{},sm=l.sampling||{};
+function tabIntro(ls){
+  const l=ls[0]||{},g=l.geology||{},sm=l.sampling||{};
+  const intro=(ls.map(x=>(x.intro||"").trim()).filter(Boolean)[0])||"暂无项目介绍。在 licences.json 的 intro 字段补充。";
+  const cards=ls.map(x=>{
+    const k=kmlSafe(kmlFor(x.no));
+    const bb=(k&&k.bbox)||x.bbox||(areaById(x.area_id)||{}).bbox||null;
+    return `<div class="liccard">
+      <div class="lch"><b>${esc(x.no)}</b>${statusPill(x)}${k?`<span class="kbadge">${esc(k.kind||"面")}状边界 · ${fmtArea(k.area)} km²</span>`:`<span class="kbadge off">未设区域</span>`}</div>
+      <dl>${(x.info||[]).map(r=>row(r.k,esc(zhVal(r.k,r.v)))).join("")||row("持有人",esc(x.holder||""))}
+        ${bb?row("范围",esc(bb.map(v=>v.toFixed(4)).join(" / "))):""}</dl>
+      ${(x.reports||[]).length?`<div class="lcsub">地质报告 ${x.reports.length} 份，见「项目地质报告」</div>`:""}
+    </div>`;
+  }).join("");
   return `<div class="pane">
-    <p class="lead">${esc(l.intro||"暂无项目介绍。在 licences.json 的 intro 字段补充。")}</p>
-    ${sibsOf(l).length?`<div class="sibs"><span>本项目下的其它矿证：</span>${sibsOf(l).map(x=>`<a href="#lic/${encodeURIComponent(x.no)}">${esc(x.no)}</a>`).join("")}</div>`:""}
-    <h4>矿证信息</h4>
-    <dl>
-      ${(l.info||[]).map(x=>row(x.k,esc(zhVal(x.k,x.v)))).join("")}
-    </dl>
-    <h4>地质背景</h4>
+    <p class="lead">${esc(intro)}</p>
+    <h4>矿证（${ls.length}）</h4>
+    <div class="liccards">${cards}</div>
+    <h4>地质背景（全项目综合）</h4>
     <dl>
       ${row("构造单元",esc(g.terrane))}
       ${row("赋矿岩性",esc(g.host))}
@@ -1140,7 +1152,7 @@ function geoPick(lk,i){
 function geoPopHide(){const b=$("#gmap #gpop");if(b)b.hidden=true}
 function mapDraw(){
   if(!MAP)return;
-  const{el,k,layer}=MAP;
+  const{el,layer}=MAP;
   const w=el.clientWidth||600,h=el.clientHeight||360;
   const scale=256*Math.pow(2,MAP.zoom),n=Math.pow(2,MAP.zoom);
   const cx=mercX(MAP.center[0])*scale,cy=mercY(MAP.center[1])*scale;
@@ -1162,26 +1174,30 @@ function mapDraw(){
 
   const px=(lon,lat)=>[mercX(lon)*scale-left,mercY(lat)*scale-top];
   const ringPath=r=>"M"+r.map(q=>{const[a,b]=px(q[0],q[1]);return a.toFixed(1)+","+b.toFixed(1)}).join("L")+"Z";
-  let path="";
-  if(k&&k.rings&&k.rings.length){
-    path=k.rings.map(ringPath).join(" ");
-    if(k.inner&&k.inner.length)path+=" "+k.inner.map(ringPath).join(" ");
-  }
-  const dots=(k&&k.rings?k.rings.flat():[]).slice(0,600)
-    .map(q=>{const[a,b]=px(q[0],q[1]);return `<circle class="gv" cx="${a.toFixed(1)}" cy="${b.toFixed(1)}" r="2.6"/>`}).join("");
-  let lab="";
-  if(k&&k.rings&&k.rings.length){
+  const ks=MAP.ks||[];
+  const segs=[];
+  let pts=[],lab="";
+  ks.forEach(it=>{
+    const k=it.k;
+    if(!k||!k.rings||!k.rings.length)return;
+    segs.push(k.rings.map(ringPath).join(" "));
+    if(k.inner&&k.inner.length)segs.push(k.inner.map(ringPath).join(" "));
+    pts=pts.concat(k.rings.flat());
     const r=k.rings[0];
     const c=[r.reduce((t,q)=>t+q[0],0)/r.length,r.reduce((t,q)=>t+q[1],0)/r.length];
     const[a,b]=px(c[0],c[1]);
-    lab=`<text class="glabel" x="${a.toFixed(1)}" y="${b.toFixed(1)}">${k.kind==="线"?"":"约 "}${fmtArea(k.area)} km²</text>`;
-  }
+    lab+=`<text class="glabel" x="${a.toFixed(1)}" y="${b.toFixed(1)}">${ks.length>1?esc(it.no)+" · ":""}${k.kind==="线"?"":"约 "}${fmtArea(k.area)} km²</text>`;
+  });
+  const path=segs.join(" ");
+  const dots=pts.slice(0,600)
+    .map(q=>{const[a,b]=px(q[0],q[1]);return `<circle class="gv" cx="${a.toFixed(1)}" cy="${b.toFixed(1)}" r="2.6"/>`}).join("");
   const svg=el.querySelector(".gvec");
   svg.setAttribute("viewBox",`0 0 ${w} ${h}`);
   svg.setAttribute("width",w);svg.setAttribute("height",h);
   const gmk=geoMarkup(px,w,h);
   svg.innerHTML=`${gmk}${path?`<path class="gpoly" d="${path}" fill-rule="evenodd"/>`:""}${dots}${lab}`;
 }
+
 function mapZoom(dir,ev){
   if(!MAP)return;
   const el=MAP.el,w=el.clientWidth||600,h=el.clientHeight||360;
@@ -1197,13 +1213,12 @@ function mapZoom(dir,ev){
   MAP.center=[unmercX((wx*scale-mx+w/2)/scale),unmercY(Math.max(0,Math.min(1,(wy*scale-my+h/2)/scale)))];
   mapDraw();
 }
-function mapMount(l){
+function mapMount(ls){
   const el=$("#gmap");if(!el)return;
-  const kml=kmlSafe(kmlFor(l.no)),a=areaById(l.area_id)||{};
-  const bbox=(kml&&kml.bbox)||l.bbox||a.bbox||null;
-  const center=(kml&&kml.center)||l.center||a.center||(bbox?[(bbox[0]+bbox[2])/2,(bbox[1]+bbox[3])/2]:null);
+  const center=projCenter(ls),bbox=projBBox(ls);
   if(!center)return;
-  MAP={el,k:kml,fit:bbox?bbox.slice():null,bbox,center:center.slice(),layer:mapLayer(),zoom:13};
+  const ks=ls.map(x=>({no:x.no,k:kmlSafe(kmlFor(x.no))})).filter(x=>x.k);
+  MAP={el,ks,fit:bbox?bbox.slice():null,bbox,center:center.slice(),layer:mapLayer(),zoom:13};
   MAP.zoom=bbox?mapFitZoom(bbox,el.clientWidth||600,el.clientHeight||360):13;
   mapDraw();
 
@@ -1250,17 +1265,38 @@ function mapMount(l){
     if(c)geoToggle(c.getAttribute("data-gl"),c.checked);
   });
   wireGeoPanel();
-  if(geoSlugFor(l))geoInit(l);
+  const geoL=ls.find(x=>geoSlugFor(x));
+  if(geoL)geoInit(geoL);
   if(window.ResizeObserver)new ResizeObserver(()=>mapDraw()).observe(el);
 }
 
-function tabMap(l){
-  const kml=kmlSafe(kmlFor(l.no)),a=areaById(l.area_id)||{};
-  const bbox=(kml&&kml.bbox)||l.bbox||a.bbox||null;
-  const c=(kml&&kml.center)||l.center||a.center||(bbox?[(bbox[0]+bbox[2])/2,(bbox[1]+bbox[3])/2]:null);
-  if(!c)return `<div class="pane"><div class="empty">该矿证还没有坐标。到「设置」里上传矿权边界 KML，或在 licences.json 补 center。</div></div>`;
+function projBBox(ls){
+  let b=null;
+  ls.forEach(x=>{
+    const k=kmlSafe(kmlFor(x.no));
+    const bb=(k&&k.bbox)||x.bbox||(areaById(x.area_id)||{}).bbox;
+    if(!bb)return;
+    b=b?[Math.min(b[0],bb[0]),Math.min(b[1],bb[1]),Math.max(b[2],bb[2]),Math.max(b[3],bb[3])]:bb.slice();
+  });
+  return b;
+}
+function projCenter(ls){
+  const b=projBBox(ls);
+  if(b)return [(b[0]+b[2])/2,(b[1]+b[3])/2];
+  for(const x of ls){
+    const k=kmlSafe(kmlFor(x.no));
+    const c=(k&&k.center)||x.center||(areaById(x.area_id)||{}).center;
+    if(c)return c;
+  }
+  return null;
+}
+function tabMap(ls){
+  const c=projCenter(ls),bbox=projBBox(ls);
+  if(!c)return `<div class="pane"><div class="empty">这个项目还没有坐标。到「设置」里给矿证上传矿权边界 KML，或在 licences.json 补 center。</div></div>`;
   const [lon,lat]=c;
-  const kmlBits=kml?` · 边界 ${kml.pts} 个顶点 · 参考面积 ${fmtArea(kml.area)} km²`:"";
+  const ks=ls.map(x=>({no:x.no,k:kmlSafe(kmlFor(x.no))})).filter(x=>x.k);
+  const areaSum=ks.reduce((t,x)=>t+(x.k.kind==="线"?0:(x.k.area||0)),0);
+  const geoL=ls.find(x=>geoSlugFor(x))||ls[0];
   return `<div class="pane">
     <div class="gmap" id="gmap">
       <div class="gtiles"></div>
@@ -1269,7 +1305,7 @@ function tabMap(l){
         <button data-glayer="sat" class="${mapLayer()==="sat"?"on":""}">卫星</button>
         <button data-glayer="street" class="${mapLayer()==="street"?"on":""}">街道</button>
       </div>
-      ${geoSlugFor(l)?`<div class="gpanel" id="gpanel"><div class="gphead"><b>地质图层</b><button class="gpmin" id="gpMin">−</button></div><div class="gpbody"><div class="gpwait">正在加载地质图层…</div></div></div>`:""}
+      ${geoSlugFor(geoL)?`<div class="gpanel" id="gpanel"><div class="gphead"><b>地质图层</b><button class="gpmin" id="gpMin">−</button></div><div class="gpbody"><div class="gpwait">正在加载地质图层…</div></div></div>`:""}
       <div class="gpop" id="gpop" hidden></div>
       <div class="gctrl">
         <button data-gz="1" title="放大">+</button>
@@ -1279,40 +1315,42 @@ function tabMap(l){
       <span class="gzoomnow">z--</span>
       <span class="gattr"></span>
     </div>
-    <div class="mapmeta">中心 ${lat.toFixed(5)}, ${lon.toFixed(5)}${bbox?` · 范围 ${bbox.map(v=>v.toFixed(3)).join(" / ")}`:""}${kmlBits}
-      ${kml?"":` · 上传 KML 后这里会画出矿权范围`}</div>
-    ${kml?`<div class="kmlcard">${kmlSvg(kml)}<div class="kmlmeta"><b>${esc(kml.name)}</b><span>${kml.kind}状边界 · ${kml.pts} 个顶点 · 参考面积 ${fmtArea(kml.area)} km²</span><span>边界范围 ${kml.bbox.map(v=>v.toFixed(4)).join(" / ")}</span></div></div>`:""}
+    <div class="mapmeta">中心 ${lat.toFixed(5)}, ${lon.toFixed(5)}${bbox?` · 范围 ${bbox.map(v=>v.toFixed(3)).join(" / ")}`:""}${ks.length?` · ${ks.length} 本矿证有边界 · 参考面积合计 ${fmtArea(areaSum)} km²`:""}
+      ${ks.length?"":` · 上传 KML 后可画出矿权范围`}</div>
+    ${ks.map(x=>`<div class="kmlcard">${kmlSvg(x.k)}<div class="kmlmeta"><b>${esc(x.no)}</b><span>${x.k.kind}状边界 · ${x.k.pts} 个顶点 · 参考面积 ${fmtArea(x.k.area)} km²</span><span>边界范围 ${x.k.bbox.map(v=>v.toFixed(4)).join(" / ")}</span></div></div>`).join("")}
     <div class="links">
-      <a href="https://www.google.com/maps?q=${lat},${lon}" target="_blank" rel="noopener">外部地图打开</a>
+      <a href="https://www.google.com/maps?q=${lat},${lon}" target="_blank" rel="noopener">外部地图</a>
       <button data-copy="${lat},${lon}">复制中心坐标</button>
-      ${kml?`<button data-kmlcopy="1">复制边界坐标</button>`:""}
+      ${ks.length?`<button data-kmlcopy="1">复制边界坐标</button>`:""}
       <a href="sampling_helper.html">去取样</a>
     </div>
-    <p class="hint">拖动平移、滚轮或双击缩放、⤢ 回到矿区范围；右上角切卫星/街道。左上「地质图层」可开关岩性、构造、靶区等，点图元看属性。没有网络时瓦片不显示，边界、地质轮廓和面积仍画得出来。</p>
+    <p class="hint">拖动平移 · 滚轮或双击缩放 · ⤢ 回到矿区范围 · 右上角切换卫星/街道 · 「地质图层」可开关岩性、构造等；图元点可点开看属性。没有网络时，底图不显示，边界、地质图层照常可用。</p>
   </div>`;
 }
 
-function tabReports(l){
-  const rs=l.reports||[];
+function tabReports(ls){
+  const rs=[];
+  ls.forEach(x=>(x.reports||[]).forEach(r=>rs.push({...r,no:x.no})));
   if(!rs.length){
     return `<div class="pane"><div class="empty">还没有登记地质报告。<br>把 PDF 放进 <code>reports/</code>，再在 <code>licences.json</code> 的 <code>reports</code> 里加一条：<br><code>{ "title": "…", "date": "2026-10-30", "url": "reports/xxx.pdf", "summary": "…" }</code></div></div>`;
   }
   return `<div class="pane">${rs.map(r=>`
     <h4>${esc(r.title)}</h4>
     <dl>
+      ${row("矿证",esc(r.no))}
       ${row("日期",esc(r.date))}
       ${row("摘要",esc(r.summary))}
       ${row("文件",r.url?`<a href="${esc(r.url)}" target="_blank" rel="noopener">打开报告</a>`:"")}
     </dl>`).join("")}</div>`;
 }
 
-function postHtml(p){
+function postHtml(p,no){
   const cm=(p.comments||[]).map(c=>`<div class="cmt"><b>${esc(c.author)}</b>${esc(c.text)}<time>${fmt(c.ts)}</time></div>`).join("");
   return `<article class="post" data-post="${esc(p.id)}">
     <div class="ph">
       <span class="av">${esc((p.author||"?").slice(0,1).toUpperCase())}</span>
       <div class="who"><b>${esc(p.author)}</b><time>${fmt(p.ts)}</time></div>
-      <div class="sp">${p.tag?`<span class="pill" style="background:#eef2f5;color:#475569">${esc(p.tag)}</span>`:""}<button class="x" data-del="1" title="删除">×</button></div>
+      <div class="sp">${no?`<span class="pill" style="background:#eef2f5;color:#475569">${esc(no)}</span>`:""}${p.tag?`<span class="pill" style="background:#eef2f5;color:#475569">${esc(p.tag)}</span>`:""}<button class="x" data-del="1" title="删除">×</button></div>
     </div>
     ${p.text?`<p class="pt">${esc(p.text)}</p>`:""}
     ${p.img?`<img class="pimg" src="${p.img}" alt="">`:""}
@@ -1323,8 +1361,13 @@ function postHtml(p){
   </article>`;
 }
 
-function tabFeed(l){
-  const posts=postsOf(l.no);
+function projPosts(ls){
+  const out=[];
+  ls.forEach(x=>(postsOf(x.no)||[]).forEach(p=>out.push({p,no:x.no})));
+  return out.sort((a,b)=>b.p.ts-a.p.ts);
+}
+function tabFeed(ls){
+  const posts=projPosts(ls),multi=ls.length>1;
   return `<div class="pane"><div class="feed">
     <div class="composer">
       <div class="crow">
@@ -1338,20 +1381,25 @@ function tabFeed(l){
       </div>
       <div id="ppreview">${PIMG?`<div class="prev"><img src="${PIMG}"><button id="pdel">移除</button></div>`:""}</div>
     </div>
-    ${posts.length?posts.map(postHtml).join(""):`<div class="empty">这个矿证还没有动态。上面发第一条。</div>`}
+    ${posts.length?posts.map(x=>postHtml(x.p,multi&&x.no)).join(""):`<div class="empty">这个项目还没有动态。上面发第一条。</div>`}
   </div></div>`;
 }
 
 /* ---------- 渲染 ---------- */
 function render(){
   if(!SEL||!licByNo(SEL))SEL=sortedLics()[0]?sortedLics()[0].no:null;
-  const l=licByNo(SEL);
+  if(PROJ==null||!projLics(PROJ).length)PROJ=SEL?projOf(SEL):null;
+  const ls=PROJ==null?[]:projLics(PROJ);
+  const l=ls.find(x=>x.no===SEL)||ls[0]||null;
+  if(l)SEL=l.no;
   $("#navSet").classList.toggle("on",VIEW==="set");
   if(VIEW!=="lic"){$("#tabs").innerHTML="";$("#tpill").innerHTML=""}
-  $("#plist").innerHTML=sortedLics().length?plistHtml(VIEW==="set"?null:SEL):`<div class="empty" style="color:#a9c8c3">没有项目</div>`;
+  $("#plist").innerHTML=projRows().length?plistHtml(VIEW==="set"?null:PROJ):`<div class="empty" style="color:#a9c8c3">没有项目</div>`;
   $("#plist").querySelectorAll(".item").forEach(b=>b.onclick=()=>{
     if(VIEW==="set"&&SET_VIEW==="lic"&&!leaveOK())return;
-    DRAFT=null;VIEW="lic";SEL=b.dataset.no;TAB="intro";location.hash="lic/"+SEL;render();
+    DRAFT=null;VIEW="lic";PROJ=b.dataset.area;
+    SEL=(projLics(PROJ)[0]||{}).no||SEL;TAB="intro";
+    location.hash="proj/"+encodeURIComponent(PROJ);render();
     if(window.innerWidth<=900)$(".detail").scrollIntoView({behavior:"smooth",block:"start"});
   });
 
@@ -1359,11 +1407,12 @@ function render(){
   if(VIEW==="set"){renderSettings();return}
 
   if(!l){$("#tabs").innerHTML="";$("#tpill").innerHTML="";$("#ttl").textContent="赞比亚矿权介绍";$("#sub").textContent="";$("#view").innerHTML=`<div class="empty">没有项目数据</div>`;return}
-  $("#ttl").textContent=l.name||l.no;
-  $("#tpill").innerHTML=statusPill(l);
-  $("#sub").textContent=`${l.no}${areaName(l.area_id)?" · "+areaName(l.area_id):""}${l.holder&&l.holder!=="（待核实）"?" · "+l.holder:""}`;
+  const holders=projHolders(ls);
+  $("#ttl").textContent=projName(PROJ)||l.name||l.no;
+  $("#tpill").innerHTML=statusPill({status:projStatus(ls)});
+  $("#sub").textContent=`${ls.length} 本矿证 · ${ls.map(x=>x.no).join("、")}${holders.length?" · "+holders.join(" / "):""}`;
 
-  const pane=TAB==="intro"?tabIntro(l):TAB==="map"?tabMap(l):TAB==="report"?tabReports(l):tabFeed(l);
+  const pane=TAB==="intro"?tabIntro(ls):TAB==="map"?tabMap(ls):TAB==="report"?tabReports(ls):tabFeed(ls);
   $("#tabs").innerHTML=`
       <button data-tab="intro" class="${TAB==="intro"?"on":""}">项目介绍</button>
       <button data-tab="map" class="${TAB==="map"?"on":""}">项目地图</button>
@@ -1374,38 +1423,44 @@ function render(){
   $("#tabs").querySelectorAll("button").forEach(b=>b.onclick=()=>{TAB=b.dataset.tab;render()});
   const cp=$("[data-copy]");
   if(cp)cp.onclick=async()=>{try{await navigator.clipboard.writeText(cp.dataset.copy);cp.textContent="已复制"}catch(e){cp.textContent="复制失败"}};
+  const kmlLic=ls.find(x=>kmlSafe(kmlFor(x.no)));
   const kcp=$("[data-kmlcopy]");
   if(kcp)kcp.onclick=async()=>{
-    const k=kmlSafe(kmlFor(l.no));if(!k)return;
+    if(!kmlLic)return;
+    const k=kmlSafe(kmlFor(kmlLic.no));
     const txt=k.rings.map((r,i)=>`# ring ${i+1}\n`+r.map(q=>q.join(",")).join("\n")).join("\n");
     try{await navigator.clipboard.writeText(txt);kcp.textContent="已复制"}catch(e){kcp.textContent="复制失败"}
   };
-  if(TAB==="map")mapMount(l);
-  if(TAB==="feed")wireFeed(l.no);
+  if(TAB==="map")mapMount(ls);
+  if(TAB==="feed")wireFeed(ls);
 }
 
-function wireFeed(no){
+function wireFeed(ls){
   const ta=$("#ptext");if(!ta)return;
+  const lead=ls[0]||{};
   $("#pimg").onclick=pickImage;
   const del=$("#pdel");if(del)del.onclick=()=>{PIMG="";$("#ppreview").innerHTML=""};
   $("#ppost").onclick=()=>{
     const text=ta.value.trim(),tag=$("#ptag").value;
     if(!text&&!PIMG){ta.focus();return}
-    const list=FEED[no]||(FEED[no]=[]);
+    const list=FEED[lead.no]||(FEED[lead.no]=[]);
     list.unshift({id:uid(),ts:Date.now(),author:author(),text,img:PIMG,tag,comments:[]});
     if(!feedSave()){list.shift();return}
     PIMG="";render();
   };
+  const ownerOf=id=>ls.map(x=>x.no).find(n=>(FEED[n]||[]).some(p=>p.id===id));
   $("#pane").querySelectorAll(".post").forEach(el=>{
     const id=el.dataset.post;
     el.querySelector("[data-del]").onclick=()=>{
       if(!confirm("删除这条动态？"))return;
-      FEED[no]=(FEED[no]||[]).filter(p=>p.id!==id);feedSave();render();
+      const n=ownerOf(id);if(!n)return;
+      FEED[n]=(FEED[n]||[]).filter(p=>p.id!==id);feedSave();render();
     };
     el.querySelector(".cform").onsubmit=ev=>{
       ev.preventDefault();
       const inp=ev.target.querySelector("input"),t=inp.value.trim();if(!t)return;
-      const p=(FEED[no]||[]).find(x=>x.id===id);if(!p)return;
+      const n=ownerOf(id);if(!n)return;
+      const p=(FEED[n]||[]).find(x=>x.id===id);if(!p)return;
       p.comments=p.comments||[];
       p.comments.push({ts:Date.now(),author:author(),text:t});
       if(!feedSave()){p.comments.pop();return}
@@ -2084,7 +2139,11 @@ window.addEventListener("hashchange",()=>{
   if(pm){VIEW="set";SET_VIEW="lic";SET_NO=decodeURIComponent(pm[1]);MFILE_NO=SET_NO;HIT.clear()}
   else if(pa){VIEW="set";SET_VIEW="proj";SET_AREA=decodeURIComponent(pa[1]);SET_NO=null;HIT.clear()}
   else if(/^#\/?(set|mgr)$/.test(h)){VIEW="set";SET_VIEW="list"}
-  else{const m=h.match(/^#\/?lic\/(.+)$/);if(m){VIEW="lic";SEL=decodeURIComponent(m[1]);TAB="intro"}}
+  else{
+    const pj=h.match(/^#\/?proj\/(.*)$/),m=h.match(/^#\/?lic\/(.+)$/);
+    if(pj){VIEW="lic";PROJ=decodeURIComponent(pj[1]);SEL=(projLics(PROJ)[0]||{}).no||SEL;TAB="intro"}
+    else if(m){VIEW="lic";SEL=decodeURIComponent(m[1]);PROJ=projOf(SEL);TAB="intro"}
+  }
   if(!$("#app").hidden)render();
 });
 
@@ -2105,8 +2164,10 @@ async function start(){
   if(pm){VIEW="set";SET_VIEW="lic";SET_NO=decodeURIComponent(pm[1]);MFILE_NO=SET_NO}
   else if(pa){VIEW="set";SET_VIEW="proj";SET_AREA=decodeURIComponent(pa[1]);SET_NO=null}
   else if(/^#\/?(set|mgr)$/.test(location.hash)){VIEW="set";SET_VIEW="list"}
+  const pj=location.hash.match(/^#\/?proj\/(.*)$/);
   const m=location.hash.match(/^#\/?lic\/(.+)$/);
-  if(m){VIEW="lic";SEL=decodeURIComponent(m[1])}
+  if(pj){VIEW="lic";PROJ=decodeURIComponent(pj[1]);SEL=(projLics(PROJ)[0]||{}).no||SEL}
+  else if(m){VIEW="lic";SEL=decodeURIComponent(m[1]);PROJ=projOf(SEL)}
   render();
 }
 
