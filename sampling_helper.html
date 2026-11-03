@@ -821,8 +821,7 @@ $("btn_save").onclick=async()=>{
     recorder:$("f_recorder").value.trim(),
     area_name:$("f_area").value.trim(),
     area_id:(areaAt(lat,lon)||UNASSIGNED_AREA).id,
-    licence:lic?lic.no:"",
-    license_no:lic?lic.no:"",license_holder:lic?lic.holder:"",
+    captured_licence:lic?lic.no:"",
     remark:$("f_remark").value.trim(),
     photos:photos.map(p=>({name:p.name,kind:p.kind,blob:p.blob})),
     status:"pending",created_at:new Date().toISOString(),
@@ -832,7 +831,7 @@ $("btn_save").onclick=async()=>{
     rec.sample_time=editingSample.sample_time;
     rec.latitude=lat;rec.longitude=lon;rec.altitude=+$("f_alt").value||editingSample.altitude;
     rec.utm=toUTM(lat,lon);rec.gps_accuracy=null;
-    const lic2=licAt(lat,lon);rec.licence=lic2?lic2.no:null;rec.license_no=lic2?lic2.no:null;rec.license_holder=lic2?lic2.holder:null;
+    rec.captured_licence=licAt(lat,lon)?.no||rec.captured_licence||"";
     rec.area_id=editingSample.area_id||(areaAt(lat,lon)||UNASSIGNED_AREA).id;
     rec.created_at=editingSample.created_at||rec.created_at;
   }
@@ -859,7 +858,7 @@ async function renderList(){
     const as=(s.assays||[]).map(a=>`${a.element} ${a.value}${a.unit}`).join(" · ");
     return`<div class="card samcard" data-id="${s.id}">
       <div class="info"><div><span class="sid">${xesc(s.sample_id)}</span>${b}${s.kind==="marker"?"<span class=\"badge\" style=\"background:#dbeafe;color:#1e40af\">标记点</span>":""}</div>
-      <div class="meta">${s.kind==="marker"?"🚩 ":""}${xesc(s.sample_time||"")} · ${xesc(s.sample_type||"")}${s.loc_status?" · ⛏"+xesc(s.loc_status):""}${s.area_name?" · 📍"+xesc(s.area_name):""}${(s.licence||s.license_no)?" · 📜"+xesc(s.licence||s.license_no):""}</div>
+      <div class="meta">${s.kind==="marker"?"🚩 ":""}${xesc(s.sample_time||"")} · ${xesc(s.sample_type||"")}${s.loc_status?" · ⛏"+xesc(s.loc_status):""}${s.area_name?" · 📍"+xesc(s.area_name):""}</div>
       ${as?`<div class="meta">🧪 ${xesc(as)}</div>`:""}
       ${s.description?`<div class="meta">🪨 ${xesc(s.description)}</div>`:""}
       <div class="meta">📷 ${(s.photos||[]).length} 张${s.erp_name?" · ERP:"+xesc(s.erp_name):""}</div>
@@ -916,7 +915,7 @@ function viewDetail(id,all){
   const m=document.createElement("div");m.className="modal";
   const row=(k,v)=>v?`<div style="display:flex;gap:8px;font-size:14px;margin-bottom:5px"><span style="color:var(--muted);min-width:64px">${k}</span><span>${v}</span></div>`:"";
   m.innerHTML=`<div class="box"><h3>${xesc(s.sample_id)}</h3>
-    <div class="thumbs">${(s.photos||[]).map((p,i)=>p.blob?`<img src="${URL.createObjectURL(p.blob)}" data-i="${i}" style="max-width:100px;border-radius:8px;cursor:pointer">`:"").join("")||"<span style='color:var(--muted)'>无照片</span>"}</div>
+    <div class="thumbs">${(s.photos||[]).map((p,i)=>p.blob?`<img src="${URL.createObjectURL(p.blob)}" data-i="${i}" style="max-width:100px;border-radius:8px;cursor:pointer">`:(p.url?`<img src="${xesc(p.url)}" data-i="${i}" style="max-width:100px;border-radius:8px;cursor:pointer">`:"")).join("")||"<span style='color:var(--muted)'>无照片</span>"}</div>
     ${row("取样时间",xesc(s.sample_time))}
     ${row("类型",xesc(s.sample_type))}
     ${row("坐标",s.latitude!=null?`${(+s.latitude).toFixed(6)}, ${(+s.longitude).toFixed(6)}`:"")}
@@ -924,7 +923,7 @@ function viewDetail(id,all){
     ${row("海拔",s.altitude!=null?`${s.altitude} m`:"")}
     ${row("地区",xesc(s.area_name))}
     ${row("矿区",xesc(areaName(s.area_id)||s.area_name||"未归属"))}
-    ${row("矿证",(s.licence||s.license_no)?`${xesc(s.licence||s.license_no)} ${xesc(s.license_holder||"")}`:"")}
+    ${row("位置参考",(s.captured_licence||s.licence||s.license_no)?`${xesc(s.captured_licence||s.licence||s.license_no)} <span style="color:var(--muted)">（采集时所在地块，非归属）</span>`:"")}
     ${row("位置状态",xesc(s.loc_status))}
     ${row("含量",xesc((s.assays||[]).map(a=>`${a.element} ${a.value}${a.unit}`).join(" · ")))}
     ${row("描述",xesc(s.description))}
@@ -946,13 +945,28 @@ async function refreshPend(){
 
 /* ============ 同步到 Cloudflare Worker/D1 ============ */
 const DEF_WORKER="https://fancy-heart-7a80.frankataix.workers.dev";
+const DEF_MEDIA="https://ecobox-media.frankataix.workers.dev";
+const DEF_MEDIA_TOKEN="BNs1CoMILEsITqt3rUtD5mqh4c467Ihe";
+/* 照片直传 R2，D1 只留 key/url（否则单条记录几十 MB，列表拉不动） */
+async function uploadPhoto(sid,i,p){
+  const ab=await p.blob.arrayBuffer();
+  const key="photos/"+sid+"/"+String(i+1).padStart(2,"0")+".jpg";
+  const mtok=(await store.get("media_token"))||DEF_MEDIA_TOKEN;
+  const r=await fetch(DEF_MEDIA+"/put?key="+encodeURIComponent(key),{method:"POST",
+    headers:{"Content-Type":"application/json","X-Upload-Token":mtok},
+    body:JSON.stringify({data:b64(ab)})});
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok||!j.ok)throw new Error("照片上传失败："+(j.error||r.status));
+  return {name:p.name,kind:p.kind,key:j.key,url:j.url,size:j.size};
+}
 async function uploadSample(s){
   const wurl=(await store.get("worker_url"))||DEF_WORKER,tok=(await store.get("app_token"))||"";
   if(!navigator.onLine)throw new Error("当前无网络");
-  const photos64=[];
-  for(const p of s.photos||[]){const ab=await p.blob.arrayBuffer();photos64.push({name:p.name,kind:p.kind,data:b64(ab)})}
+  const photos=[];
+  for(let i=0;i<(s.photos||[]).length;i++)photos.push(await uploadPhoto(s.sample_id,i,s.photos[i]));
   const headers={"Content-Type":"application/json"};if(tok)headers["X-App-Token"]=tok;
-  const payload={...s,area_id:s.area_id||"",licence:s.licence||s.license_no||"",photos:photos64,id:undefined};
+  const payload={...s,area_id:s.area_id||"",captured_licence:s.licence||s.license_no||"",
+    licence:undefined,license_no:undefined,license_holder:undefined,photos,id:undefined};
   const r=await fetch(wurl.replace(/\/$/,"")+"/sample",{method:"POST",headers,body:JSON.stringify(payload)});
   const j=await r.json();
   if(r.ok&&j.ok){s.status="synced";s.erp_name=j.name;}
@@ -1040,9 +1054,9 @@ $("wipeok").onclick=async()=>{
 $("btn_csv").onclick=async()=>{
   const all=await S.all();if(!all.length){toast("无记录");return}
   const esc=v=>`"${String(v??"").replace(/"/g,'""')}"`;
-  const head=["sample_id","area_id","sample_time","type","latitude","longitude","altitude","utm","gps_accuracy","lithology","loc_status","description","assays","recorder","area_name","licence","license_no","license_holder","remark","photos","status","erp_name"];
+  const head=["sample_id","area_id","sample_time","type","latitude","longitude","altitude","utm","gps_accuracy","lithology","loc_status","description","assays","recorder","area_name","remark","photos","status","erp_name"];
   const rows=all.map(s=>[s.sample_id,s.area_id||"",s.sample_time,s.sample_type,s.latitude,s.longitude,s.altitude,s.utm||"",s.gps_accuracy,s.lithology,s.loc_status,s.description,
-    (s.assays||[]).map(a=>`${a.element}:${a.value}${a.unit}`).join(";"),s.recorder,s.area_name,s.licence||"",s.license_no,s.license_holder||"",s.remark,(s.photos||[]).length,s.status,s.erp_name||""]);
+    (s.assays||[]).map(a=>`${a.element}:${a.value}${a.unit}`).join(";"),s.recorder,s.area_name,s.remark,(s.photos||[]).length,s.status,s.erp_name||""]);
   const csv="﻿"+[head,...rows].map(r=>r.map(esc).join(",")).join("\r\n");
   await dl("samples_"+new Date().toISOString().slice(0,10)+".csv",csv,"text/csv");
 };
