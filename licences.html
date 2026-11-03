@@ -408,18 +408,28 @@ const sortedLics=()=>LICS.slice().sort((a,b)=>
 
 /* ---------- 项目实体（= 矿区）。名称/排序/新建 都存本机 ---------- */
 const AREA_KEY="lic_area_v1";
-let AREAS_BASE=[],AREA_EDIT={},AREA_ADD=[];
+let AREAS_BASE=[],AREA_EDIT={},AREA_ADD=[],AREA_DEL=[];
 function areaEditsLoad(){
-  try{const e=JSON.parse(localStorage.getItem(AREA_KEY)||"{}");AREA_EDIT=e.edits||{};AREA_ADD=e.added||[]}
-  catch(e){AREA_EDIT={};AREA_ADD=[]}
+  try{const e=JSON.parse(localStorage.getItem(AREA_KEY)||"{}");AREA_EDIT=e.edits||{};AREA_ADD=e.added||[];AREA_DEL=e.deleted||[]}
+  catch(e){AREA_EDIT={};AREA_ADD=[];AREA_DEL=[]}
 }
-function areaEditsSave(){try{localStorage.setItem(AREA_KEY,JSON.stringify({edits:AREA_EDIT,added:AREA_ADD}))}catch(e){}}
+function areaEditsSave(){try{localStorage.setItem(AREA_KEY,JSON.stringify({edits:AREA_EDIT,added:AREA_ADD,deleted:AREA_DEL}))}catch(e){}}
 function applyAreaEdits(){
-  const out=AREAS_BASE.map(a=>({...a,...(AREA_EDIT[a.id]||{})}));
-  AREA_ADD.forEach(a=>{const i=out.findIndex(x=>x.id===a.id);const v={...a,...(AREA_EDIT[a.id]||{})};i<0?out.push(v):(out[i]=v)});
+  const out=AREAS_BASE.filter(a=>!AREA_DEL.includes(a.id)).map(a=>({...a,...(AREA_EDIT[a.id]||{})}));
+  AREA_ADD.forEach(a=>{
+    if(AREA_DEL.includes(a.id))return;
+    const i=out.findIndex(x=>x.id===a.id);const v={...a,...(AREA_EDIT[a.id]||{})};i<0?out.push(v):(out[i]=v)
+  });
   AREAS=out;
 }
 function areaSet(id,patch){AREA_EDIT[id]={...(AREA_EDIT[id]||{}),...patch};areaEditsSave();applyAreaEdits()}
+function areaDel(id){
+  if(!id)return;
+  if(!AREA_DEL.includes(id))AREA_DEL.push(id);
+  delete AREA_EDIT[id];
+  AREA_ADD=AREA_ADD.filter(a=>a.id!==id);
+  areaEditsSave();applyAreaEdits();
+}
 function areaAdd(name){
   let id="p_"+Date.now().toString(36),i=2;
   while(AREAS.some(a=>a.id===id))id="p_"+Date.now().toString(36)+"_"+(i++);
@@ -1491,7 +1501,9 @@ function wireManage(){
   $("#mReset").onclick=()=>{
     if(!confirm("放弃本机的修改，回到 licences.json 的内容？"))return;
     try{localStorage.removeItem(EDIT_KEY)}catch(e){}
-    EDITS={};ADDED=[];DELETED=[];applyEdits();render();toast("已还原");
+    try{localStorage.removeItem(AREA_KEY)}catch(e){}
+    EDITS={};ADDED=[];DELETED=[];AREA_EDIT={};AREA_ADD=[];AREA_DEL=[];
+    applyEdits();applyAreaEdits();render();toast("已还原");
   };
   $("#mExport").onclick=exportJson;
 }
@@ -1578,19 +1590,26 @@ function syncProjectFromInfo(no,rows){
   });
   setProjectPatch(no,patch);
 }
-async function deleteProject(no){
+async function removeLicence(no){
   if(!no)return;
-  const areaId=(licByNo(no)||{}).area_id||SET_AREA||"";
-  if(!confirm(`删除矿证 ${no}？\n本机保存的矿证信息、资料和文字记录会一起删掉；licences.json 文件本身不动。`))return;
   const k=keyOf(no);
   delete EDITS[k];
   ADDED=ADDED.filter(a=>a.no!==no);
   if(BASE.some(b=>b.no===k)&&!DELETED.includes(k))DELETED.push(k);
   delete INFO[no];
+  if(KMLS[no]){delete KMLS[no];kmlSave()}
+  if(NOTES[no]){delete NOTES[no];try{localStorage.setItem(NOTE_KEY,JSON.stringify(NOTES))}catch(e){}}
   persistEdits();
   try{localStorage.setItem(INFO_KEY,JSON.stringify(INFO))}catch(e){}
   try{for(const f of await filesOf(no))await delFile(f.id)}catch(e){}
   if(SEL===no)SEL=null;
+}
+
+async function deleteProject(no){
+  if(!no)return;
+  const areaId=(licByNo(no)||{}).area_id||SET_AREA||"";
+  if(!confirm(`删除矿证 ${no}？\n本机保存的矿证信息、区域、资料和文字记录会一起删掉；licences.json 文件本身不动。`))return;
+  await removeLicence(no);
   SET_NO=null;
   if(areaId&&areaById(areaId)){SET_VIEW="proj";SET_AREA=areaId;location.hash="setp/"+encodeURIComponent(areaId)}
   else{SET_VIEW="list";SET_AREA=null;location.hash="set"}
@@ -1684,7 +1703,8 @@ function drawProjBody(){
         <label>项目名称<input id="setPName" value="${esc(a.name||"")}" placeholder="例：Serenje 1330NW 钽铌项目"></label>
         <label>排序<input id="setPOrder" type="number" min="0" value="${esc(a.order??"")}" placeholder="1"></label>
       </div>
-      <div class="propsfoot"><span>项目名称、排序属于项目本身，改完即时存本机</span><span class="sp"></span></div>
+      <div class="propsfoot"><span>项目名称、排序属于项目本身，改完即时存本机</span><span class="sp"></span>
+        <button class="btn danger" id="setPDel">删除这个项目</button></div>
     </div>
     <div class="mcard">
       <div class="mfhead" style="padding:12px 12px 6px"><b>本项目下的矿证</b>
@@ -1720,6 +1740,7 @@ function wireProjBody(){
   });
   nm.addEventListener("keydown",e=>{if(e.key==="Enter")nm.blur()});
   or.addEventListener("change",()=>{const v=or.value.trim();areaSet(SET_AREA,{order:v===""?null:+v});toast("已保存")});
+  $("#setPDel").onclick=deleteProjectArea;
   $("#licAdd").onclick=()=>addLicenceDialog(SET_AREA);
   $("#licPasteGo").onclick=()=>{
     const spec=parseLicText($("#licPaste").value);
@@ -1729,6 +1750,20 @@ function wireProjBody(){
   };
   $("#view").querySelectorAll("[data-open-lic]").forEach(b=>b.onclick=()=>goLic(b.dataset.openLic));
   $("#view").querySelectorAll("[data-del-lic]").forEach(b=>b.onclick=()=>deleteProject(b.dataset.delLic));
+}
+
+async function deleteProjectArea(){
+  const id=SET_AREA;
+  if(!id)return;
+  const ls=licsOf(id),nm=areaName(id)||id;
+  const msg=ls.length
+    ? `删除项目「${nm}」？\n这个项目下的 ${ls.length} 本矿证（${ls.map(l=>l.no).join("、")}）会一起删掉，各自的区域、信息、资料、文字记录都不保留。`
+    : `删除空项目「${nm}」？`;
+  if(!confirm(msg+"\n\nlicences.json / areas.json 文件本身不动，只清本机。"))return;
+  for(const l of ls)await removeLicence(l.no);
+  areaDel(id);applyEdits();
+  SET_AREA=null;SET_NO=null;SET_VIEW="list";DRAFT=null;HIT.clear();
+  location.hash="set";render();toast("已删除项目 "+nm);
 }
 
 /* ---------- 矿证页 ---------- */
