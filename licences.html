@@ -1011,7 +1011,7 @@ function mapDraw(){
     const r=k.rings[0];
     const c=[r.reduce((t,q)=>t+q[0],0)/r.length,r.reduce((t,q)=>t+q[1],0)/r.length];
     const[a,b]=px(c[0],c[1]);
-    vec+=`<text class="glabel" x="${a.toFixed(1)}" y="${b.toFixed(1)}">${ks.length>1?esc(it.no)+" · ":""}${k.kind==="线"?"":"约 "}${fmtArea(k.area)} km²</text>`;
+    if(MAP.showLabels)vec+=`<text class="glabel" x="${a.toFixed(1)}" y="${b.toFixed(1)}">${k.kind==="线"?"":"约 "}${fmtArea(k.area)} km²</text>`;
   });
   const svg=el.querySelector(".gvec");
   svg.setAttribute("viewBox",`0 0 ${w} ${h}`);
@@ -1041,7 +1041,7 @@ function mapMount(ls){
   const center=projCenter(view),bbox=projBBox(view);
   if(!center)return;
   const ks=ksFor(view,ls);
-  MAP={el,ks,fit:bbox?bbox.slice():null,bbox,center:center.slice(),layer:mapLayer(),zoom:13};
+  MAP={el,ks,fit:bbox?bbox.slice():null,bbox,center:center.slice(),layer:mapLayer(),zoom:13,showLabels:!!picked};
   MAP.zoom=bbox?mapFitZoom(bbox,el.clientWidth||600,el.clientHeight||360):13;
   mapDraw();
 
@@ -1121,21 +1121,20 @@ function tabMap(ls){
   const locSet=new Set();
   ls.forEach(x=>(x.info||[]).forEach(r=>{const k=(r.k||"").trim();if(/地区|省份|省|区域|district|province|region/i.test(k))locSet.add(String(r.v||"").trim())}));
   const locTxt=[...locSet].filter(Boolean).join("、");
-  let licCards="";
-  if(picked){
-    const x=picked;
+  const cardLs=picked?[picked]:ls;
+  const licCards=cardLs.map(x=>{
     const k=kmlSafe(kmlFor(x.no));
     const color=licColor(ls.findIndex(y=>y.no===x.no));
     const bb=(k&&k.bbox)||x.bbox||(areaById(x.area_id)||{}).bbox||null;
     const badge=k?`<span class="kbadge" style="border-color:${color};color:${color};background:${color}1a">${esc(k.kind||"面")}状边界 · ${fmtArea(k.area)} km²</span>`:`<span class="kbadge off">未设区域</span>`;
-    licCards=`<h4>矿证信息（1 / 共 ${ls.length}）</h4><div class="liccards"><div class="liccard" style="border-left:4px solid ${color}">
+    return `<div class="liccard" style="border-left:4px solid ${color}">
       <div class="lch"><b>${esc(x.no)}</b>${statusPill(x)}${badge}</div>
       <dl>${row("矿证编号",esc(x.no))}
         ${(x.info||[]).map(r=>row(r.k,esc(zhVal(r.k,r.v)))).join("")||row("持有人",esc(x.holder||""))}
         ${bb?row("范围",esc(bb.map(v=>v.toFixed(4)).join(" / "))):""}</dl>
       ${(x.reports||[]).length?`<div class="lcsub">地质报告 ${x.reports.length} 份，见「项目地质报告」</div>`:""}
-    </div></div>`;
-  }
+    </div>`;
+  }).join("");
   return `<div class="pane">
     <div class="mpick">${pickChips(ls,picked)}</div>
     <div class="gmap" id="gmap">
@@ -1156,7 +1155,8 @@ function tabMap(ls){
     </div>
     <div class="mapmeta">赞比亚${locTxt?" · "+esc(locTxt):""} · ${picked?`只看 ${esc(picked.no)} · `:`${ls.length} 本矿证合并取景 · `}中心 ${lat.toFixed(5)}, ${lon.toFixed(5)}${bbox?` · 范围 ${bbox.map(v=>v.toFixed(3)).join(" / ")}`:""}${ks.length?` · ${ks.length} 本矿证有边界 · 参考面积合计 ${fmtArea(areaSum)} km²`:""}
       ${ks.length?"":` · 上传 KML 后可画出矿权范围`}</div>
-    ${licCards}
+    <h4>矿证信息（${cardLs.length}${picked?` / 共 ${ls.length}`:""}）</h4>
+    <div class="liccards">${licCards}</div>
     <div class="links">
       <a href="https://www.google.com/maps?q=${lat},${lon}" target="_blank" rel="noopener">外部地图</a>
       <button data-copy="${lat},${lon}">复制中心坐标</button>
