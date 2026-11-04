@@ -1129,7 +1129,8 @@ function tabMap(ls){
     const badge=k?`<span class="kbadge" style="border-color:${color};color:${color};background:${color}1a">${esc(k.kind||"面")}状边界 · ${fmtArea(k.area)} km²</span>`:`<span class="kbadge off">未设区域</span>`;
     return `<div class="liccard" style="border-left:4px solid ${color}">
       <div class="lch"><b>${esc(x.no)}</b>${statusPill(x)}${badge}</div>
-      <dl>${(x.info||[]).map(r=>row(r.k,esc(zhVal(r.k,r.v)))).join("")||row("持有人",esc(x.holder||""))}
+      <dl>${row("矿证编号",esc(x.no))}
+        ${(x.info||[]).map(r=>row(r.k,esc(zhVal(r.k,r.v)))).join("")||row("持有人",esc(x.holder||""))}
         ${bb?row("范围",esc(bb.map(v=>v.toFixed(4)).join(" / "))):""}</dl>
       ${(x.reports||[]).length?`<div class="lcsub">地质报告 ${x.reports.length} 份，见「项目地质报告」</div>`:""}
     </div>`;
