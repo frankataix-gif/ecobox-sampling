@@ -927,20 +927,8 @@ function addLicenceDialog(areaId){
 function tabIntro(ls){
   const l=ls[0]||{},g=l.geology||{},sm=l.sampling||{};
   const intro=(ls.map(x=>(x.intro||"").trim()).filter(Boolean)[0])||"暂无项目介绍。在 licences.json 的 intro 字段补充。";
-  const cards=ls.map(x=>{
-    const k=kmlSafe(kmlFor(x.no));
-    const bb=(k&&k.bbox)||x.bbox||(areaById(x.area_id)||{}).bbox||null;
-    return `<div class="liccard">
-      <div class="lch"><b>${esc(x.no)}</b>${statusPill(x)}${k?`<span class="kbadge">${esc(k.kind||"面")}状边界 · ${fmtArea(k.area)} km²</span>`:`<span class="kbadge off">未设区域</span>`}</div>
-      <dl>${(x.info||[]).map(r=>row(r.k,esc(zhVal(r.k,r.v)))).join("")||row("持有人",esc(x.holder||""))}
-        ${bb?row("范围",esc(bb.map(v=>v.toFixed(4)).join(" / "))):""}</dl>
-      ${(x.reports||[]).length?`<div class="lcsub">地质报告 ${x.reports.length} 份，见「项目地质报告」</div>`:""}
-    </div>`;
-  }).join("");
   return `<div class="pane">
     <p class="lead">${esc(intro)}</p>
-    <h4>矿证（${ls.length}）</h4>
-    <div class="liccards">${cards}</div>
     <h4>地质背景（全项目综合）</h4>
     <dl>
       ${row("构造单元",esc(g.terrane))}
@@ -1133,6 +1121,19 @@ function tabMap(ls){
   const locSet=new Set();
   ls.forEach(x=>(x.info||[]).forEach(r=>{const k=(r.k||"").trim();if(/地区|省份|省|区域|district|province|region/i.test(k))locSet.add(String(r.v||"").trim())}));
   const locTxt=[...locSet].filter(Boolean).join("、");
+  const cardLs=picked?[picked]:ls;
+  const licCards=cardLs.map(x=>{
+    const k=kmlSafe(kmlFor(x.no));
+    const color=licColor(ls.findIndex(y=>y.no===x.no));
+    const bb=(k&&k.bbox)||x.bbox||(areaById(x.area_id)||{}).bbox||null;
+    const badge=k?`<span class="kbadge" style="border-color:${color};color:${color};background:${color}1a">${esc(k.kind||"面")}状边界 · ${fmtArea(k.area)} km²</span>`:`<span class="kbadge off">未设区域</span>`;
+    return `<div class="liccard" style="border-left:4px solid ${color}">
+      <div class="lch"><b>${esc(x.no)}</b>${statusPill(x)}${badge}</div>
+      <dl>${(x.info||[]).map(r=>row(r.k,esc(zhVal(r.k,r.v)))).join("")||row("持有人",esc(x.holder||""))}
+        ${bb?row("范围",esc(bb.map(v=>v.toFixed(4)).join(" / "))):""}</dl>
+      ${(x.reports||[]).length?`<div class="lcsub">地质报告 ${x.reports.length} 份，见「项目地质报告」</div>`:""}
+    </div>`;
+  }).join("");
   return `<div class="pane">
     <div class="mpick">${pickChips(ls,picked)}</div>
     <div class="gmap" id="gmap">
@@ -1153,7 +1154,8 @@ function tabMap(ls){
     </div>
     <div class="mapmeta">赞比亚${locTxt?" · "+esc(locTxt):""} · ${picked?`只看 ${esc(picked.no)} · `:`${ls.length} 本矿证合并取景 · `}中心 ${lat.toFixed(5)}, ${lon.toFixed(5)}${bbox?` · 范围 ${bbox.map(v=>v.toFixed(3)).join(" / ")}`:""}${ks.length?` · ${ks.length} 本矿证有边界 · 参考面积合计 ${fmtArea(areaSum)} km²`:""}
       ${ks.length?"":` · 上传 KML 后可画出矿权范围`}</div>
-    ${ks.map(x=>`<div class="kmlcard">${kmlSvg(x.k,x.color)}<div class="kmlmeta"><b>${esc(x.no)}</b><span>${x.k.kind}状边界 · ${x.k.pts} 个顶点 · 参考面积 ${fmtArea(x.k.area)} km²</span><span>边界范围 ${x.k.bbox.map(v=>v.toFixed(4)).join(" / ")}</span></div></div>`).join("")}
+    <h4>矿证信息（${cardLs.length}${picked?` / 共 ${ls.length}`:""}）</h4>
+    <div class="liccards">${licCards}</div>
     <div class="links">
       <a href="https://www.google.com/maps?q=${lat},${lon}" target="_blank" rel="noopener">外部地图</a>
       <button data-copy="${lat},${lon}">复制中心坐标</button>
