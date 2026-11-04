@@ -357,7 +357,7 @@ window.addEventListener("error",e=>{
 });
 const esc=s=>String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 
-let AREAS=[],LICS=[],BASE=[],SEL=null,PROJ=null,TAB="intro",PIMG="",VIEW="lic",MROWS=[],MAP_PICK="",MAP_PICK_AREA=null;
+let AREAS=[],LICS=[],BASE=[],SEL=null,PROJ=null,TAB="intro",PIMG="",VIEW="lic",MROWS=[],MAP_PICK="",MAP_PICK_AREA=null,SAMPLES=[],FACTORY={};
 let HOLDER_TOUCHED=false;
 const FS_KEY="lic_feed_v1",AU_KEY="lic_author",CACHE_KEY="lic_cache_v1",EDIT_KEY="lic_edit_v1",NOTE_KEY="lic_notes_v1",INFO_KEY="lic_info_v1",SET_KEY="lic_setok";
 let EDITS={},ADDED=[],DELETED=[],NOTES={};
@@ -372,12 +372,15 @@ async function jgetOpt(u){try{return await jget(u)}catch(e){return null}}
 const mergeBy=(pub,loc,key)=>[...(loc||[]),...pub.filter(p=>!(loc||[]).some(o=>o[key]===p[key]))];
 async function loadData(){
   try{
-    const [a,l,al,ll]=await Promise.all([
+    const [a,l,al,ll,sm,fc]=await Promise.all([
       jget("areas.json"),jget("licences.json"),
-      jgetOpt("areas.local.json"),jgetOpt("licences.local.json")]);
+      jgetOpt("areas.local.json"),jgetOpt("licences.local.json"),
+      jgetOpt("samples.json"),jgetOpt("factory.json")]);
     AREAS_BASE=mergeBy(a.areas||[],al&&al.areas||[],"id").filter(x=>x&&x.id);
     areaEditsLoad();applyAreaEdits();
     LICS=mergeBy(l.licences||[],ll&&ll.licences||[],"no").filter(x=>x&&x.no);
+    SAMPLES=(sm&&sm.samples)||[];
+    FACTORY=(fc&&fc.factory)||{};
     BASE=LICS.slice();
     try{localStorage.setItem(CACHE_KEY,JSON.stringify({areas:AREAS,licences:LICS,ts:Date.now()}))}catch(e){}
   }catch(e){
@@ -810,7 +813,7 @@ function row(k,v){return v?`<dt>${esc(k)}</dt><dd>${v}</dd>`:""}
 /* ---------- 英文取值的中文显示（只翻译，不改数据） ---------- */
 const ZH_STATUS={active:"有效",pending:"待审核",expired:"已过期",granted:"已授予",suspended:"已暂停",cancelled:"已注销",canceled:"已注销",defaulted:"已违约",application:"申请中",applied:"已申请",renewal:"续期中",relinquished:"已放弃"};
 const ZH_TYPE=[["large scale exploration","大规模勘探许可证"],["small scale exploration","小规模勘探许可证"],["large scale mining","大规模采矿许可证"],["small scale mining","小规模采矿许可证"],["artisanal","手工采矿许可证"],["prospecting","探矿许可证"],["exploration","勘探许可证"],["mining","采矿许可证"]];
-const ZH_MIN={copper:"铜",gold:"金",cobalt:"钴",nickel:"镍",manganese:"锰",iron:"铁",lead:"铅",zinc:"锌",lithium:"锂",tin:"锡",tantalum:"钽",niobium:"铌",beryllium:"铍",caesium:"铯",cesium:"铯",silver:"银",uranium:"铀",coal:"煤",graphite:"石墨",emerald:"祖母绿",aquamarine:"海蓝宝石",tourmaline:"电气石",mica:"云母",quartz:"石英",feldspar:"长石"};
+const ZH_MIN={copper:"铜",gold:"金",cobalt:"钴",nickel:"镍",manganese:"锰",iron:"铁",lead:"铅",zinc:"锌",lithium:"锂",tin:"锡",tantalum:"钽",niobium:"铌",beryllium:"铍",caesium:"铯",cesium:"铯",silver:"银",uranium:"铀",coal:"煤",graphite:"石墨",emerald:"祖母绿",aquamarine:"海蓝宝石",tourmaline:"电气石",mica:"云母",quartz:"石英",feldspar:"长石",cu:"铜",au:"金",ag:"银",co:"钴",ni:"镍",mn:"锰",fe:"铁",pb:"铅",zn:"锌",li:"锂",sn:"锡",ta:"钽",nb:"铌",be:"铍",cs:"铯",u:"铀"};
 const ZH_PROV={central:"中央省",copperbelt:"铜带省",lusaka:"卢萨卡省",southern:"南部省",northern:"北部省",eastern:"东部省",western:"西部省","north-western":"西北省",northwestern:"西北省",luapula:"卢阿普拉省",muchinga:"穆钦加省"};
 const ZH_DIST={serenje:"塞伦杰",mkushi:"姆库希",chibombo:"奇邦博","kapiri mposhi":"卡皮里姆波希",ndola:"恩多拉",kitwe:"基特韦",solwezi:"索卢韦齐",mwinilunga:"姆维尼伦加",kalomo:"卡洛莫",choma:"乔马",lusaka:"卢萨卡",chipata:"奇帕塔",kasama:"卡萨马",mongu:"芒古",livingstone:"利文斯顿",kabwe:"卡布韦",mumbwa:"蒙布瓦",nyimba:"宁巴",petauke:"佩陶凯"};
 const zhStatus=v=>{const t=String(v??"").trim();if(!t)return t;if(/[一-龥]/.test(t))return t;return ZH_STATUS[t.toLowerCase()]||t};
@@ -926,9 +929,11 @@ function addLicenceDialog(areaId){
 /* ---------- 四个分类 ---------- */
 function tabIntro(ls){
   const l=ls[0]||{},g=l.geology||{},sm=l.sampling||{};
-  const intro=(ls.map(x=>(x.intro||"").trim()).filter(Boolean)[0])||"暂无项目介绍。在 licences.json 的 intro 字段补充。";
+  let intro=(ls.map(x=>(x.intro||"").trim()).filter(Boolean)[0])||"暂无项目介绍。在 licences.json 的 intro 字段补充。";
+  try{const o=JSON.parse(localStorage.getItem("lic_intro_override")||"{}");if(o&&o[PROJ])intro=o[PROJ]}catch(e){}
   return `<div class="pane">
     <p class="lead">${esc(intro)}</p>
+    <p class="hint"><button class="primary" id="introUpd">更新</button> 汇总各板块（矿证/地质/取样/工厂）自动刷新本项目介绍；配置 Worker 后可用 AI 精炼。</p>
     <h4>地质背景（全项目综合）</h4>
     <dl>
       ${row("构造单元",esc(g.terrane))}
@@ -1227,6 +1232,103 @@ function tabFeed(ls){
   </div></div>`;
 }
 
+/* ---------- 现场取样结果 / 工厂信息 ---------- */
+function tabSamples(ls){
+  const aid=PROJ;
+  const rows=SAMPLES.filter(s=>!s.area_id||s.area_id===aid);
+  if(!rows.length){
+    return `<div class="pane"><div class="empty">还没有现场取样结果。<br>把取样点写进 <code>samples.json</code> 的 <code>samples[]</code>，字段对齐 QGIS <code>field_samples</code> 图层：<code>sample_id / symbol / mineral / ta2o5_pct / nb2o5_pct / photos[]</code>。</div></div>`;
+  }
+  return `<div class="pane">
+    <h4>现场取样结果（${rows.length} 个点）</h4>
+    ${rows.map(s=>`<div class="liccard">
+      <dl>
+        ${row("样号",esc(s.sample_id||s.Sample_ID||""))}
+        ${row("矿种",esc(s.symbol||s.Symbol||""))}
+        ${row("矿物",esc(s.mineral||s.Mineral||""))}
+        ${row("Ta₂O₅ %",esc(s.ta2o5_pct??""))}
+        ${row("Nb₂O₅ %",esc(s.nb2o5_pct??""))}
+        ${row("日期",esc(s.datetime||s.Sample_date||""))}
+        ${row("描述",esc(s.description||s.Description||""))}
+      </dl>
+    </div>`).join("")}
+  </div>`;
+}
+
+function tabFactory(ls){
+  const f=FACTORY||{};
+  const loc=f.location||{};
+  const has=(f.equipment&&f.equipment.length)||f.capacity||f.plan||loc.name;
+  if(!has){
+    return `<div class="pane"><div class="empty">还没有工厂信息。<br>把建厂位置、设备、产能、计划写进 <code>factory.json</code> 的 <code>factory</code> 字段。</div></div>`;
+  }
+  return `<div class="pane">
+    <h4>工厂信息</h4>
+    <dl>
+      ${row("建厂位置",esc(loc.name||""))}
+      ${row("坐标",(loc.lat&&loc.lon)?esc((+loc.lat).toFixed(5)+", "+(+loc.lon).toFixed(5)):"")}
+      ${row("位置备注",esc(loc.note||""))}
+      ${row("设备",(f.equipment||[]).map(esc).join("、"))}
+      ${row("产能",esc(f.capacity||""))}
+      ${row("计划",esc(f.plan||""))}
+    </dl>
+  </div>`;
+}
+
+/* ---------- 项目介绍「更新」聚合 ---------- */
+function introFacts(ls){
+  const g=(ls[0]&&ls[0].geology)||{};
+  const aid=PROJ;
+  const rows=SAMPLES.filter(s=>!s.area_id||s.area_id===aid);
+  const ta=rows.map(s=>+s.ta2o5_pct).filter(v=>!isNaN(v));
+  const nb=rows.map(s=>+s.nb2o5_pct).filter(v=>!isNaN(v));
+  return {
+    lics: ls.map(x=>`${x.no}（${x.holder}）`),
+    minerals:(g.minerals||[]).join("、"),
+    host:g.host||"",
+    structure:g.structure||"",
+    alteration:g.alteration||"",
+    samples:rows.length,
+    taMax:ta.length?Math.max(...ta):null,
+    nbMax:nb.length?Math.max(...nb):null,
+    capacity:FACTORY.capacity||"",
+    plan:FACTORY.plan||""
+  };
+}
+function buildIntroTemplate(f){
+  const parts=[
+    `本项目含 ${f.lics.length} 本矿证：${f.lics.join("；")}。`,
+    f.minerals?`主要矿产：${f.minerals}。`:"",
+    f.host?`赋矿岩性：${f.host}。`:"",
+    f.structure?`控矿构造：${f.structure}。`:"",
+    f.alteration?`蚀变：${f.alteration}。`:"",
+    f.samples?`现场已采 ${f.samples} 个样点。`:"现场尚未登记样点。",
+    (f.taMax!=null||f.nbMax!=null)?`化验：Ta₂O₅ 最高 ${f.taMax==null?"—":f.taMax}%、Nb₂O₅ 最高 ${f.nbMax==null?"—":f.nbMax}%。`:"",
+    f.capacity?`工厂产能：${f.capacity}。`:"",
+    f.plan?`建设计划：${f.plan}。`:""
+  ];
+  return parts.filter(Boolean).join("");
+}
+async function refreshIntro(btn,ls){
+  const f=introFacts(ls);
+  let txt="";
+  const w=(localStorage.getItem("worker_url")||"").trim();
+  if(w){
+    try{
+      const r=await fetch(w.replace(/\/$/,"")+"/summarize",{
+        method:"POST",
+        headers:{"Content-Type":"application/json","X-App-Token":localStorage.getItem("s_token")||""},
+        body:JSON.stringify({area_id:PROJ,facts:f})
+      });
+      if(r.ok){const j=await r.json();txt=(j&&j.summary)||""}
+    }catch(e){}
+  }
+  if(!txt)txt=buildIntroTemplate(f);
+  try{const o=JSON.parse(localStorage.getItem("lic_intro_override")||"{}");o[PROJ]=txt;localStorage.setItem("lic_intro_override",JSON.stringify(o))}catch(e){}
+  if(btn)btn.textContent="已更新";
+  render();
+}
+
 /* ---------- 渲染 ---------- */
 function render(){
   if(!SEL||!licByNo(SEL))SEL=sortedLics()[0]?sortedLics()[0].no:null;
@@ -1254,12 +1356,13 @@ function render(){
   $("#tpill").innerHTML=statusPill({status:projStatus(ls)});
   $("#sub").textContent=`${ls.length} 本矿证 · ${ls.map(x=>x.no).join("、")}${holders.length?" · "+holders.join(" / "):""}`;
 
-  const pane=TAB==="intro"?tabIntro(ls):TAB==="map"?tabMap(ls):TAB==="report"?tabReports(ls):tabFeed(ls);
+  const pane=TAB==="intro"?tabIntro(ls):TAB==="map"?tabMap(ls):TAB==="report"?tabReports(ls):TAB==="samples"?tabSamples(ls):TAB==="factory"?tabFactory(ls):tabIntro(ls);
   $("#tabs").innerHTML=`
       <button data-tab="intro" class="${TAB==="intro"?"on":""}">项目介绍</button>
       <button data-tab="map" class="${TAB==="map"?"on":""}">项目地图</button>
       <button data-tab="report" class="${TAB==="report"?"on":""}">项目地质报告</button>
-      <button data-tab="feed" class="${TAB==="feed"?"on":""}">项目信息</button>`;
+      <button data-tab="samples" class="${TAB==="samples"?"on":""}">现场取样结果</button>
+      <button data-tab="factory" class="${TAB==="factory"?"on":""}">工厂信息</button>`;
   $("#view").innerHTML=`<section class="detail"><div id="pane">${pane}</div></section>`;
 
   $("#tabs").querySelectorAll("button").forEach(b=>b.onclick=()=>{TAB=b.dataset.tab;render()});
@@ -1279,7 +1382,7 @@ function render(){
   const mpick=$("#pane .mpick");
   if(mpick)mpick.querySelectorAll("[data-mpick]").forEach(b=>b.onclick=()=>{MAP_PICK=b.dataset.mpick;render()});
   if(TAB==="map")mapMount(ls);
-  if(TAB==="feed")wireFeed(ls);
+  if(TAB==="intro"){const b=$("#introUpd");if(b)b.onclick=()=>refreshIntro(b,ls);}
 }
 
 function wireFeed(ls){

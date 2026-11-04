@@ -1,0 +1,4 @@
+{
+ "note": "现场取样结果。samples[] 每项对齐 QGIS field_samples 图层字段：sample_id/symbol/mineral/description/lat/lon/datetime/ta2o5_pct/nb2o5_pct/photos[]。照片实体放 photos/ 目录，逐步补充。",
+ "samples": []
+}

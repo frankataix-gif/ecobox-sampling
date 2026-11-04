@@ -1,0 +1,14 @@
+{
+ "note": "工厂信息。location=建厂地理位置，equipment=设备，capacity=产能，plan=建设/生产计划。逐步补充。",
+ "factory": {
+  "location": {
+   "name": "",
+   "lat": 0,
+   "lon": 0,
+   "note": ""
+  },
+  "equipment": [],
+  "capacity": "",
+  "plan": ""
+ }
+}
