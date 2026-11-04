@@ -115,28 +115,16 @@ dd{word-break:break-word}
 .gpmin{margin-left:auto;border:0;background:#eef2f5;color:#334155;width:20px;height:20px;border-radius:5px;cursor:pointer;line-height:1}
 .gpbody{padding:6px 8px 8px;overflow:auto}
 .gpsub2{color:#64748b;font-size:11.5px;margin:8px 2px 4px;display:flex;gap:5px;align-items:center}
-.gpsz{color:#94a3b8}
 .gprow{display:flex;align-items:center;gap:6px;padding:2.5px 2px;cursor:pointer;border-radius:5px}
 .gprow:hover{background:#f1f7f8}
 .gprow input{accent-color:#0f766e;margin:0}
 .gpn{flex:1;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .gpc{color:#94a3b8;font-variant-numeric:tabular-nums;font-size:11px}
 .gpfoot{padding:5px 9px 6px;border-top:1px solid #eef2f5;color:#94a3b8;font-size:11px}
-.gpwait,.gperr{color:#64748b;padding:6px 2px}
-.gperr{color:#b91c1c}
 .gpbody .btn{margin-top:8px;width:100%}
-.gpop{position:absolute;right:10px;bottom:10px;z-index:7;width:246px;max-height:56%;overflow:auto;
-  background:rgba(255,255,255,.97);border:1px solid #dbe4e8;border-radius:10px;box-shadow:0 8px 22px rgba(15,23,42,.18);font-size:12.5px}
-.gpopt{display:flex;align-items:center;gap:6px;padding:7px 8px 7px 10px;border-bottom:1px solid #eef2f5}
-.gpopt b{font-size:12.5px;color:#0f172a}
-.gpx{margin-left:auto;border:0;background:#eef2f5;color:#334155;width:20px;height:20px;border-radius:5px;cursor:pointer;line-height:1}
-.gpopb{padding:6px 10px 8px}
-.gpr{display:flex;gap:8px;padding:2.5px 0;border-bottom:1px dashed #f1f5f9}
-.gpr span{color:#64748b;flex:0 0 62px}
-.gpr b{color:#0f172a;font-weight:500;word-break:break-word}
-.gpopn{padding:0 10px 8px;color:#94a3b8;font-size:11.5px}
-.glayer path,.glayer circle{pointer-events:visiblePainted;cursor:pointer}
 .gattr,.gzoomnow{position:absolute;bottom:6px;font-size:10.5px;color:#fff;background:rgba(0,0,0,.38);padding:1px 6px;border-radius:4px;pointer-events:none}
+.gmap:fullscreen{width:100vw;height:100vh;border-radius:0;border:0;background:#0e1a20}
+.gmap:fullscreen .gpanel{left:16px;top:16px}
 .gattr{right:8px}.gzoomnow{left:10px}
 .mapmeta{font-size:12.5px;color:var(--muted);margin-top:8px}
 .kmlpanel.drag{outline:2px dashed var(--accent);outline-offset:-3px;background:#f4fbfa}
@@ -615,12 +603,13 @@ async function kmlImport(no,file){
   kmlSave();
   return KMLS[no];
 }
-function kmlSvg(k){
+function kmlSvg(k,color){
+  color=color||"#0f766e";
   const [w,so,e,n]=k.bbox,dx=e-w||1e-6,dy=n-so||1e-6;
   const main=k.rings.reduce((a,b)=>b.length>a.length?b:a);
   const pts=main.map(([x,y])=>`${((x-w)/dx*100).toFixed(1)},${((n-y)/dy*70).toFixed(1)}`).join(" ");
   return `<svg class="kmlsvg" viewBox="0 0 100 70" preserveAspectRatio="xMidYMid meet">
-    <polygon points="${pts}" fill="rgba(15,118,110,.12)" stroke="#0f766e" stroke-width="1.2" stroke-linejoin="round"/>
+    <polygon points="${pts}" fill="${color}" fill-opacity=".14" stroke="${color}" stroke-width="1.2" stroke-linejoin="round"/>
   </svg>`;
 }
 function kmlSafe(k){
@@ -993,171 +982,19 @@ function mapLayer(){
   let v="";try{v=localStorage.getItem(MAPK)||""}catch(e){}
   return MAP_TILES[v]?v:"sat";
 }
-/* ---------------- 地质图层（QGIS 导出包，见 devtools/export_qgis.py） ---------------- */
-const GEO_SLUGS={serenje_1330nw:"serenje-1330nw","42881":"serenje-1330nw"};
-function geoSlugFor(l){return (l&&(GEO_SLUGS[l.area_id]||GEO_SLUGS[String(l.no||"").split("-")[0]]))||""}
-const GEOK="geo_layers_v1";
-const GEOD={};
-function geoState(slug){if(!GEOD[slug])GEOD[slug]={m:null,lay:{},img:{},err:""};return GEOD[slug]}
-function geoOnList(slug){
-  let v={};try{v=JSON.parse(localStorage.getItem(GEOK)||"{}")||{}}catch(e){}
-  return Array.isArray(v[slug])?v[slug]:null;
-}
-function geoWrite(slug,key,on){
-  let v={};try{v=JSON.parse(localStorage.getItem(GEOK)||"{}")||{}}catch(e){}
-  const st=geoState(slug),cur=new Set(v[slug]||(st.m?st.m.layers.filter(x=>x.on&&x.pack==="lite").map(x=>x.key):[]));
-  on?cur.add(key):cur.delete(key);
-  v[slug]=[...cur];
-  try{localStorage.setItem(GEOK,JSON.stringify(v))}catch(e){}
-}
-function geoIsOn(slug,key,def){
-  const l=geoOnList(slug);
-  return l?l.includes(key):!!def;
-}
-function fmtKB(b){return b>=1048576?(b/1048576).toFixed(1)+" MB":Math.round(b/1024)+" KB"}
-async function geoEnsure(slug,keys){
-  const st=geoState(slug);
-  for(const k of keys){
-    const L=st.m&&st.m.layers.find(x=>x.key===k);
-    if(!L)continue;
-    if(L.geom==="raster"){st.img[k]=1;continue}
-    if(st.lay[k])continue;
-    const r=await fetch(`geo/${slug}/${L.file}`,{cache:"force-cache"});
-    if(!r.ok)throw new Error(L.file+" "+r.status);
-    st.lay[k]=(await r.json()).features||[];
-  }
-}
-async function geoInit(l){
-  const slug=geoSlugFor(l);if(!slug||!MAP)return;
-  MAP.geoSlug=slug;MAP.geoLic=l.no;
-  const st=geoState(slug);
-  geoPanelRefresh();
-  if(!st.m){
-    try{
-      const r=await fetch(`geo/${slug}/index.json`,{cache:"no-cache"});
-      if(!r.ok)throw new Error("index.json "+r.status);
-      st.m=await r.json();
-      st.err="";
-    }catch(e){st.err=e.message||String(e);geoPanelRefresh();return}
-  }
-  geoPanelRefresh();
-  const want=(st.m.layers||[]).filter(x=>geoIsOn(slug,x.key,x.pack==="lite"&&x.on)).map(x=>x.key);
-  try{await geoEnsure(slug,want);st.err=""}catch(e){st.err=e.message||String(e)}
-  geoPanelRefresh();mapDraw();
-}
-async function geoLoadAll(){
-  const slug=MAP&&MAP.geoSlug;if(!slug)return;
-  const st=geoState(slug);if(!st.m)return;
-  const keys=st.m.layers.filter(x=>x.pack==="full").map(x=>x.key);
-  const btn=$("#gpLoadAll");
-  if(btn){btn.textContent="加载中…";btn.disabled=true}
-  try{
-    await geoEnsure(slug,keys);
-    keys.forEach(k=>geoWrite(slug,k,true));
-    st.err="";
-  }catch(e){st.err=e.message||String(e)}
-  geoPanelRefresh();mapDraw();
-}
-function geoToggle(key,on){
-  const slug=MAP&&MAP.geoSlug;if(!slug)return;
-  geoWrite(slug,key,on);
-  if(on)geoEnsure(slug,[key]).then(()=>{geoPanelRefresh();mapDraw()}).catch(e=>{geoState(slug).err=e.message||String(e);geoPanelRefresh()});
-  else mapDraw();
-}
-function geoRingPath(ring,px){
-  return "M"+ring.map(q=>{const[a,b]=px(q[0],q[1]);return a.toFixed(1)+","+b.toFixed(1)}).join("L")+"Z";
-}
-function geoLinePath(line,px){
-  return "M"+line.map(q=>{const[a,b]=px(q[0],q[1]);return a.toFixed(1)+","+b.toFixed(1)}).join("L");
-}
-function geoFeat(f,L,i,px,slug){
-  const g=f.geometry;if(!g)return "";
-  const s=L.style||{},p=f.properties||{};
-  const col=(s.paletteField&&s.palette&&s.palette[p[s.paletteField]])||s.fill||"none";
-  const attrs=`data-lk="${L.key}" data-fidx="${i}"`;
-  const paint=`fill="${col}" fill-opacity="${s.fillOpacity==null?1:s.fillOpacity}" stroke="${s.stroke||"none"}" stroke-width="${s.strokeWidth||0}"${s.dash?` stroke-dasharray="${s.dash}"`:""} vector-effect="non-scaling-stroke"`;
-  const t=g.type,co=g.coordinates;
-  if(t==="Point"){const[a,b]=px(co[0],co[1]);return `<circle cx="${a.toFixed(1)}" cy="${b.toFixed(1)}" r="${s.radius||5}" ${paint} ${attrs}><title>${esc(p.Sample_ID||p.name||L.name)}</title></circle>`}
-  if(t==="MultiPoint")return co.map(c=>{const[a,b]=px(c[0],c[1]);return `<circle cx="${a.toFixed(1)}" cy="${b.toFixed(1)}" r="${s.radius||5}" ${paint} ${attrs}/>`}).join("");
-  if(t==="LineString")return `<path d="${geoLinePath(co,px)}" ${paint} ${attrs}/>`;
-  if(t==="MultiLineString")return co.map(l=>`<path d="${geoLinePath(l,px)}" ${paint} ${attrs}/>`).join("");
-  if(t==="Polygon")return `<path d="${co.map(r=>geoRingPath(r,px)).join(" ")}" fill-rule="evenodd" ${paint} ${attrs}/>`;
-  if(t==="MultiPolygon")return co.map(poly=>`<path d="${poly.map(r=>geoRingPath(r,px)).join(" ")}" fill-rule="evenodd" ${paint} ${attrs}/>`).join("");
-  return "";
-}
-function geoMarkup(px,w,h){
-  const slug=MAP&&MAP.geoSlug;if(!slug)return "";
-  const st=geoState(slug),m=st.m;if(!m)return "";
-  let out="";
-  for(const L of m.layers){
-    if(!geoIsOn(slug,L.key,L.pack==="lite"&&L.on))continue;
-    const s=L.style||{};
-    if(L.geom==="raster"){
-      if(!st.img[L.key]||!L.raster)continue;
-      const b=L.raster.bbox,[x0,y0]=px(b[0],b[3]),[x1,y1]=px(b[2],b[1]);
-      out+=`<image href="geo/${slug}/${L.raster.file}" x="${x0.toFixed(1)}" y="${y0.toFixed(1)}" width="${(x1-x0).toFixed(1)}" height="${(y1-y0).toFixed(1)}" opacity="${s.opacity||0.55}" preserveAspectRatio="none"/>`;
-      continue;
-    }
-    const fs=st.lay[L.key];
-    if(!fs||!fs.length)continue;
-    let body="";
-    for(let i=0;i<fs.length;i++)body+=geoFeat(fs[i],L,i,px,slug);
-    out+=`<g class="glayer" data-layer="${L.key}">${body}</g>`;
-  }
-  return out;
-}
-function geoPanel(){
-  const slug=MAP&&MAP.geoSlug;if(!slug)return "";
-  const st=geoState(slug),m=st.m;
-  let body="";
-  if(!m){
-    body=st.err
-      ? `<div class="gperr">地质数据没加载成功：${esc(st.err)}</div><button class="btn" id="gpRetry">重试</button>`
-      : `<div class="gpwait">正在加载地质图层…</div>`;
-  }else{
-    const rowOf=L=>`<label class="gprow"><input type="checkbox" data-gl="${L.key}" ${geoIsOn(slug,L.key,L.pack==="lite"&&L.on)?"checked":""}><span class="gpn" title="${esc(L.note||"")}">${esc(L.name)}</span><span class="gpc">${L.count}</span></label>`;
-    body=`<div class="gpsub2">基础图层</div>${m.layers.filter(x=>x.pack==="lite").map(rowOf).join("")}
-      <div class="gpsub2">完整地质包<span class="gpsz">${fmtKB((m.packs.full||{}).bytes||0)}</span></div>
-      ${m.layers.filter(x=>x.pack==="full").map(rowOf).join("")}
-      <button class="btn" id="gpLoadAll">全部加载（${fmtKB((m.packs.full||{}).bytes||0)}）</button>`;
-  }
-  return `<div class="gpanel${MAP.gpMin?" min":""}" id="gpanel">
-    <div class="gphead"><b>地质图层</b><button class="gpmin" id="gpMin">${MAP.gpMin?"+":"−"}</button></div>
-    <div class="gpbody">${body}</div>
-    <div class="gpfoot">${m?"导出 "+(m.generated_at||"").slice(0,10)+" · 简化 33 m":"—"}${st.err&&m?" · <span class=\"gperr\">"+esc(st.err)+"</span>":""}</div>
-  </div>`;
-}
-function wireGeoPanel(){
-  const p=$("#gpanel");if(!p)return;
-  const mn=$("#gpMin");
-  if(mn)mn.onclick=()=>{if(!MAP)return;MAP.gpMin=!MAP.gpMin;geoPanelRefresh()};
-  const la=$("#gpLoadAll");if(la)la.onclick=geoLoadAll;
-  const rt=$("#gpRetry");if(rt)rt.onclick=()=>{const st=geoState(MAP.geoSlug);st.err="";st.m=null;geoInit({no:MAP.geoLic})};
-}
-function geoPanelRefresh(){
-  const el=$("#gmap");if(!el)return;
-  const old=el.querySelector("#gpanel");if(!old)return;
-  const html=geoPanel();
-  if(!html)return;
-  const tmp=document.createElement("div");tmp.innerHTML=html;
-  old.replaceWith(tmp.firstElementChild);
-  wireGeoPanel();
-}
-function geoPick(lk,i){
-  if(MAP&&MAP.moved)return;
-  const slug=MAP&&MAP.geoSlug;if(!slug)return;
-  const st=geoState(slug),L=(st.m&&st.m.layers||[]).find(x=>x.key===lk),f=(st.lay[lk]||[])[i];
-  const box=$("#gmap #gpop");if(!L||!f||!box)return;
-  const p=f.properties||{};
-  const rows=(L.fields||[]).filter(x=>p[x.k]!=null&&p[x.k]!=="")
-    .map(x=>`<div class="gpr"><span>${esc(x.label)}</span><b>${esc(String(p[x.k]))}</b></div>`).join("");
-  box.innerHTML=`<div class="gpopt"><b>${esc(L.name)}</b><button class="gpx" title="关闭">×</button></div>
-    <div class="gpopb">${rows||"<i>这个要素没有属性</i>"}</div>
-    ${L.note?`<div class="gpopn">${esc(L.note)}</div>`:""}`;
-  box.hidden=false;
-  box.querySelector(".gpx").onclick=geoPopHide;
-}
-function geoPopHide(){const b=$("#gmap #gpop");if(b)b.hidden=true}
+const LIC_COLORS=["#e11d48","#2563eb","#16a34a","#d97706","#7c3aed","#0891b2","#db2777","#65a30d","#ea580c","#0d9488"];
+function licColor(i){return LIC_COLORS[((i%LIC_COLORS.length)+LIC_COLORS.length)%LIC_COLORS.length]}
+function ksFor(view,ls){return view.map(x=>{const i=ls.findIndex(y=>y.no===x.no);return {no:x.no,k:kmlSafe(kmlFor(x.no)),color:licColor(i)}}).filter(x=>x.k)}
+const MAP_OVERLAYS={
+  roads:{name:"道路",max:19,attr:"道路 © Esri · OSM",url:(z,x,y)=>`https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/${z}/${y}/${x}`},
+  places:{name:"地名（城市/边界）",max:19,attr:"地名/边界 © Esri",url:(z,x,y)=>`https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/${z}/${y}/${x}`},
+  power:{name:"电网",max:19,attr:"电网 © OpenInfraMap",url:(z,x,y)=>`https://tiles.openinframap.org/power/${z}/${x}/${y}.png`}
+};
+const OVK="map_overlays_v1";
+function overlayList(){let v=null;try{v=JSON.parse(localStorage.getItem(OVK)||"null")}catch(e){}return Array.isArray(v)?v:["roads","places"]}
+function overlayOn(k){return overlayList().includes(k)}
+function overlayWrite(k,on){const cur=new Set(overlayList());on?cur.add(k):cur.delete(k);try{localStorage.setItem(OVK,JSON.stringify([...cur]))}catch(e){}}
+/* 地质图层已移除：项目地图只突出地理位置 */
 function mapDraw(){
   if(!MAP)return;
   const{el,layer}=MAP;
@@ -1176,34 +1013,46 @@ function mapDraw(){
       html+=`<img alt="" draggable="false" src="${T.url(MAP.zoom,wx,ty)}" style="left:${tx*256-left}px;top:${ty*256-top}px">`;
     }
   }
+  let attrs=[T.attr];
+  for(const ovk of overlayList()){
+    const O=MAP_OVERLAYS[ovk];if(!O)continue;
+    const oz=Math.min(MAP.zoom,O.max),os=256*Math.pow(2,oz),on=Math.pow(2,oz);
+    const ox0=Math.floor(left/os),ox1=Math.floor((left+w)/os);
+    const oy0=Math.floor(top/os),oy1=Math.floor((top+h)/os);
+    attrs.push(O.attr);
+    for(let ty=oy0;ty<=oy1;ty++){
+      if(ty<0||ty>=on)continue;
+      for(let tx=ox0;tx<=ox1;tx++){
+        const wx=((tx%on)+on)%on;
+        html+=`<img class="ov" alt="" draggable="false" src="${O.url(oz,wx,ty)}" style="left:${tx*os-left}px;top:${ty*os-top}px">`;
+      }
+    }
+  }
   el.querySelector(".gtiles").innerHTML=html;
-  el.querySelector(".gattr").textContent=T.attr;
+  el.querySelector(".gattr").textContent=attrs.join(" · ");
   el.querySelector(".gzoomnow").textContent="z"+MAP.zoom;
 
   const px=(lon,lat)=>[mercX(lon)*scale-left,mercY(lat)*scale-top];
   const ringPath=r=>"M"+r.map(q=>{const[a,b]=px(q[0],q[1]);return a.toFixed(1)+","+b.toFixed(1)}).join("L")+"Z";
   const ks=MAP.ks||[];
-  const segs=[];
-  let pts=[],lab="";
+  let vec="";
   ks.forEach(it=>{
-    const k=it.k;
+    const k=it.k,col=it.color||"#0f766e";
     if(!k||!k.rings||!k.rings.length)return;
-    segs.push(k.rings.map(ringPath).join(" "));
-    if(k.inner&&k.inner.length)segs.push(k.inner.map(ringPath).join(" "));
-    pts=pts.concat(k.rings.flat());
+    const d=k.rings.map(ringPath).join(" ");
+    const di=(k.inner&&k.inner.length)?k.inner.map(ringPath).join(" "):"";
+    vec+=`<path class="gpoly" d="${d}${di?" "+di:""}" fill-rule="evenodd" stroke="${col}" fill="${col}" fill-opacity="0.16"/>`;
+    vec+=k.rings.flat().slice(0,400)
+      .map(q=>{const[a,b]=px(q[0],q[1]);return `<circle class="gv" cx="${a.toFixed(1)}" cy="${b.toFixed(1)}" r="2.6" style="stroke:${col}"/>`}).join("");
     const r=k.rings[0];
     const c=[r.reduce((t,q)=>t+q[0],0)/r.length,r.reduce((t,q)=>t+q[1],0)/r.length];
     const[a,b]=px(c[0],c[1]);
-    lab+=`<text class="glabel" x="${a.toFixed(1)}" y="${b.toFixed(1)}">${ks.length>1?esc(it.no)+" · ":""}${k.kind==="线"?"":"约 "}${fmtArea(k.area)} km²</text>`;
+    vec+=`<text class="glabel" x="${a.toFixed(1)}" y="${b.toFixed(1)}">${ks.length>1?esc(it.no)+" · ":""}${k.kind==="线"?"":"约 "}${fmtArea(k.area)} km²</text>`;
   });
-  const path=segs.join(" ");
-  const dots=pts.slice(0,600)
-    .map(q=>{const[a,b]=px(q[0],q[1]);return `<circle class="gv" cx="${a.toFixed(1)}" cy="${b.toFixed(1)}" r="2.6"/>`}).join("");
   const svg=el.querySelector(".gvec");
   svg.setAttribute("viewBox",`0 0 ${w} ${h}`);
   svg.setAttribute("width",w);svg.setAttribute("height",h);
-  const gmk=geoMarkup(px,w,h);
-  svg.innerHTML=`${gmk}${path?`<path class="gpoly" d="${path}" fill-rule="evenodd"/>`:""}${dots}${lab}`;
+  svg.innerHTML=vec;
 }
 
 function mapZoom(dir,ev){
@@ -1227,7 +1076,7 @@ function mapMount(ls){
   const view=picked?[picked]:ls;
   const center=projCenter(view),bbox=projBBox(view);
   if(!center)return;
-  const ks=view.map(x=>({no:x.no,k:kmlSafe(kmlFor(x.no))})).filter(x=>x.k);
+  const ks=ksFor(view,ls);
   MAP={el,ks,fit:bbox?bbox.slice():null,bbox,center:center.slice(),layer:mapLayer(),zoom:13};
   MAP.zoom=bbox?mapFitZoom(bbox,el.clientWidth||600,el.clientHeight||360):13;
   mapDraw();
@@ -1259,24 +1108,20 @@ function mapMount(ls){
     MAP.center=[(MAP.fit[0]+MAP.fit[2])/2,(MAP.fit[1]+MAP.fit[3])/2];
     mapDraw();
   };
+  const fs=el.querySelector("[data-gfull]");
+  if(fs)fs.onclick=()=>{
+    if(document.fullscreenElement){document.exitFullscreen&&document.exitFullscreen().catch(()=>{})}
+    else{el.requestFullscreen&&el.requestFullscreen().catch(()=>{})}
+  };
   el.querySelectorAll("[data-glayer]").forEach(b=>b.onclick=()=>{
     MAP.layer=b.dataset.glayer;
     try{localStorage.setItem(MAPK,MAP.layer)}catch(e){}
     el.querySelectorAll("[data-glayer]").forEach(x=>x.classList.toggle("on",x.dataset.glayer===MAP.layer));
     mapDraw();
   });
-  el.addEventListener("click",e=>{
-    const t=e.target.closest("[data-fidx]");
-    if(t){geoPick(t.getAttribute("data-lk"),+t.getAttribute("data-fidx"));return}
-    if(!e.target.closest("#gpop"))geoPopHide();
-  });
-  el.addEventListener("change",e=>{
-    const c=e.target.closest("[data-gl]");
-    if(c)geoToggle(c.getAttribute("data-gl"),c.checked);
-  });
-  wireGeoPanel();
-  const geoL=view.find(x=>geoSlugFor(x));
-  if(geoL)geoInit(geoL);
+  el.querySelectorAll("[data-ov]").forEach(c=>c.onchange=()=>{overlayWrite(c.dataset.ov,c.checked);mapDraw()});
+  const gpMin=el.querySelector("#gpMin");
+  if(gpMin)gpMin.onclick=()=>{const gp=el.querySelector("#gpanel");if(gp){gp.classList.toggle("min");gpMin.textContent=gp.classList.contains("min")?"+":"−"}};
   if(window.ResizeObserver)new ResizeObserver(()=>mapDraw()).observe(el);
 }
 
@@ -1310,9 +1155,11 @@ function tabMap(ls){
     <div class="mpick">${pickChips(ls,picked)}</div>
     <div class="empty">${picked?esc(picked.no)+" 还没有坐标。":"这个项目还没有坐标。"}到「设置」里给矿证上传矿权边界 KML，或在 licences.json 补 center。</div></div>`;
   const [lon,lat]=c;
-  const ks=sel.map(x=>({no:x.no,k:kmlSafe(kmlFor(x.no))})).filter(x=>x.k);
+  const ks=ksFor(sel,ls);
   const areaSum=ks.reduce((t,x)=>t+(x.k.kind==="线"?0:(x.k.area||0)),0);
-  const geoL=sel.find(x=>geoSlugFor(x))||sel[0];
+  const locSet=new Set();
+  ls.forEach(x=>(x.info||[]).forEach(r=>{const k=(r.k||"").trim();if(/地区|省份|省|区域|district|province|region/i.test(k))locSet.add(String(r.v||"").trim())}));
+  const locTxt=[...locSet].filter(Boolean).join("、");
   return `<div class="pane">
     <div class="mpick">${pickChips(ls,picked)}</div>
     <div class="gmap" id="gmap">
@@ -1320,28 +1167,34 @@ function tabMap(ls){
       <svg class="gvec" xmlns="http://www.w3.org/2000/svg"></svg>
       <div class="glayerpick">
         <button data-glayer="sat" class="${mapLayer()==="sat"?"on":""}">卫星</button>
-        <button data-glayer="street" class="${mapLayer()==="street"?"on":""}">街道</button>
+        <button data-glayer="street" class="${mapLayer()==="street"?"on":""}">道路</button>
       </div>
-      ${geoSlugFor(geoL)?`<div class="gpanel" id="gpanel"><div class="gphead"><b>地质图层</b><button class="gpmin" id="gpMin">−</button></div><div class="gpbody"><div class="gpwait">正在加载地质图层…</div></div></div>`:""}
-      <div class="gpop" id="gpop" hidden></div>
+      <div class="gpanel" id="gpanel">
+        <div class="gphead"><b>图层</b><button class="gpmin" id="gpMin">−</button></div>
+        <div class="gpbody">
+          ${Object.entries(MAP_OVERLAYS).map(([k,O])=>`<label class="gprow"><input type="checkbox" data-ov="${k}" ${overlayOn(k)?"checked":""}><span class="gpn">${esc(O.name)}</span></label>`).join("")}
+          <div class="gpsub2">底图在左上角切换：卫星 / 道路</div>
+        </div>
+        <div class="gpfoot">道路·地名 © Esri/OSM · 电网 © OpenInfraMap · 名称按当地语言</div>
+      </div>
       <div class="gctrl">
         <button data-gz="1" title="放大">+</button>
         <button data-gz="-1" title="缩小">−</button>
-        <button data-gfit="1" title="回到矿区范围">⤢</button>
+        <button data-gfit="1" title="回到矿区范围">⌖</button>
+        <button data-gfull="1" title="全屏地图">⤢</button>
       </div>
       <span class="gzoomnow">z--</span>
       <span class="gattr"></span>
     </div>
-    <div class="mapmeta">${picked?`只看 ${esc(picked.no)} · `:`${ls.length} 本矿证合并取景 · `}中心 ${lat.toFixed(5)}, ${lon.toFixed(5)}${bbox?` · 范围 ${bbox.map(v=>v.toFixed(3)).join(" / ")}`:""}${ks.length?` · ${ks.length} 本矿证有边界 · 参考面积合计 ${fmtArea(areaSum)} km²`:""}
+    <div class="mapmeta">赞比亚${locTxt?" · "+esc(locTxt):""} · ${picked?`只看 ${esc(picked.no)} · `:`${ls.length} 本矿证合并取景 · `}中心 ${lat.toFixed(5)}, ${lon.toFixed(5)}${bbox?` · 范围 ${bbox.map(v=>v.toFixed(3)).join(" / ")}`:""}${ks.length?` · ${ks.length} 本矿证有边界 · 参考面积合计 ${fmtArea(areaSum)} km²`:""}
       ${ks.length?"":` · 上传 KML 后可画出矿权范围`}</div>
-    ${ks.map(x=>`<div class="kmlcard">${kmlSvg(x.k)}<div class="kmlmeta"><b>${esc(x.no)}</b><span>${x.k.kind}状边界 · ${x.k.pts} 个顶点 · 参考面积 ${fmtArea(x.k.area)} km²</span><span>边界范围 ${x.k.bbox.map(v=>v.toFixed(4)).join(" / ")}</span></div></div>`).join("")}
+    ${ks.map(x=>`<div class="kmlcard">${kmlSvg(x.k,x.color)}<div class="kmlmeta"><b>${esc(x.no)}</b><span>${x.k.kind}状边界 · ${x.k.pts} 个顶点 · 参考面积 ${fmtArea(x.k.area)} km²</span><span>边界范围 ${x.k.bbox.map(v=>v.toFixed(4)).join(" / ")}</span></div></div>`).join("")}
     <div class="links">
       <a href="https://www.google.com/maps?q=${lat},${lon}" target="_blank" rel="noopener">外部地图</a>
       <button data-copy="${lat},${lon}">复制中心坐标</button>
       ${ks.length?`<button data-kmlcopy="1">复制边界坐标</button>`:""}
-      <a href="sampling_helper.html">去取样</a>
     </div>
-    <p class="hint">上面可切换「全部矿证」或单本矿证查看 · 拖动平移 · 滚轮或双击缩放 · ⤢ 回到当前视图范围 · 右上角切换卫星/街道 · 「地质图层」可开关岩性、构造等；图元点可点开看属性。没有网络时，底图不显示，边界、地质图层照常可用。</p>
+    <p class="hint">这张图只讲「项目在哪里」：赞比亚国家位置、每本矿证的范围（多本矿证各一种颜色）。可切换「全部矿证」或单本查看 · 拖动平移 · 滚轮/双击缩放 · ⌖ 回到矿区范围 · ⤢ 全屏 · 左上角切换卫星/道路底图 · 「图层」面板叠加道路、地名（城市/边界）、电网。无网络时底图不显示，边界仍可用。</p>
   </div>`;
 }
 function pickChips(ls,picked){
