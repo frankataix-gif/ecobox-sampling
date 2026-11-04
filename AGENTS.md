@@ -5,7 +5,7 @@
 ## 结构
 
 - `sampling_helper.html`：取样工具，全部前端（样式 + 一个内联 `<script>`）。改完必须跑 `node --check`。
-- `licences.html`：**赞比亚矿权介绍**（单页应用，只有矿证这一个主题）。侧栏是项目列表（`order` 排序；`name` 为显示名，`no` 为证号），右侧是选中项目的四个分类：项目介绍 / 项目地图 / 项目地质报告 / 项目信息（动态+留言）。
+- `licences.html`：**赞比亚矿权介绍**（单页应用，只有矿证这一个主题）。侧栏是项目列表（`order` 排序；`name` 为显示名，`no` 为证号），右侧是选中项目的五个分类：项目介绍 / 项目地图 / 项目地质报告 / 现场取样结果 / 工厂信息。
   侧栏顶部只有「⚙ 设置」（密码 `123`，`sessionStorage.lic_setok`，本次会话有效）。设置**只有一个入口**：先是项目列表，点某一行的「设置」就进**那个项目自己的**设置页（`#set/<证号>`），里面是这个项目的全部内容：
   · 矿证信息：字段表（改值、删字段、加字段），覆盖存 `localStorage.lic_info_v1`；未覆盖时用 `licences.json` 的 `info` 数组，再退化到由 holder/type/status/commodities 拼的默认字段。项目页「项目介绍」里展示的就是这张表。
     上方有粘贴框：把矿证网站上的文字整段粘进来，「解析并填充」按 `INFO_ALIAS` 把「许可证号 / 持有人 / 地址 / 面积 …」对到标准字段（先精确、再包含匹配，`*` 会洗掉），认出的字段高亮，认不出的行在提示里点名；改完点保存。
@@ -29,6 +29,8 @@
 - `sampling_sw.js`：离线缓存。**改任何缓存内容都要同时 bump `CACHE` 版本**，否则老客户端拿不到新文件。
 - `areas.json`：矿区范围（bbox），只用于把记录按坐标自动归到矿区。
 - `licences.json`：矿证 + 地质背景 + 取样要点（未知字段写「待核实」，不要编）。
+- `samples.json`：现场取样结果（框架已建，空 `samples[]`；字段对齐 QGIS `field_samples`：sample_id/symbol/mineral/ta2o5_pct/nb2o5_pct/photos[]，逐步补充）。
+- `factory.json`：工厂信息（框架已建；location/equipment/capacity/plan，逐步补充）。
 - `geo_packs/`：离线地图包，`index.json` 列出可用包 id。
 
 ## 数据层
@@ -145,10 +147,10 @@ go/no-go 由人拍板并记 decision log。取样点永不写入矿证归属（�
 
 - 侧栏 `#plist` 只列**项目**（一个 `area_id` 一行），显示 `项目名 / N 本矿证 / 综合状态`；矿证不再出现在侧栏，`plistHtml(activeArea)` + `projRows()`。
 - 页面标题 `#ttl` 是项目名，`#sub` 列该项目的矿证号与持有人；状态 = `projStatus()`（任一矿证有效则「有效」）。
-- 四个页签都按项目聚合，入参统一是 `ls = projLics(PROJ)`：
-  - `tabIntro(ls)`：项目介绍 + 每本矿证一张 `.liccard`（证号/状态/边界/信息）
+- 五个页签都按项目聚合，入参统一是 `ls = projLics(PROJ)`：
+  - `tabIntro(ls)`：项目介绍 + 地质背景 + 取样要点；带「更新」按钮（`#introUpd`）→ `refreshIntro(btn,ls)`：`introFacts()` 汇总矿证/地质/取样/工厂关键事实，无 worker 走 `buildIntroTemplate()` 模板聚合，有 `localStorage.worker_url` 则 POST `/summarize`（`X-App-Token: s_token`）让 Worker 用服务端 AI key 精炼；结果存 `localStorage.lic_intro_override[area_id]`（覆盖显示，不改 licences.json）
   - `tabMap(ls)` / `mapMount(ls)` / `mapDraw()`：`projBBox()`/`projCenter()` 合并所有矿证 KML 的 bbox，一图画多条边界，`MAP.ks=[{no,k}]`
-  - `tabReports(ls)`、`tabFeed(ls)`（配合 `projPosts(ls)`、`wireFeed(ls)`）：跨矿证合并，动态用矿证号 pill 区分归属
+  - `tabReports(ls)`、`tabSamples(ls)`（读 `SAMPLES`，过滤 `area_id===PROJ`）、`tabFactory(ls)`（读 `FACTORY`）；旧的 `tabFeed/wireFeed` 已不用（动态入口移除，数据 `lic_feed_v1` 仍保留）
 - 路由：`#proj/<area_id>` 进项目；`#lic/<no>` 仍可用（自动定位到该证所属项目）。
 - 新增/编辑/删除矿证仍在「设置」里（项目 → 矿证两层），改完侧栏只更新「N 本矿证」计数。
 - 测试：`t_multilic.html`（侧栏只列项目、加证后计数变 2、两张边界卡、地图画两条环）。
