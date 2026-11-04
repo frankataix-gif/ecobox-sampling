@@ -1279,10 +1279,13 @@ function tabFactory(ls){
 function introFacts(ls){
   const g=(ls[0]&&ls[0].geology)||{};
   const aid=PROJ;
+  const area=areaById(aid);
+  const c=(area&&area.center)||(ls[0]&&ls[0].center)||null;
   const rows=SAMPLES.filter(s=>!s.area_id||s.area_id===aid);
   const ta=rows.map(s=>+s.ta2o5_pct).filter(v=>!isNaN(v));
   const nb=rows.map(s=>+s.nb2o5_pct).filter(v=>!isNaN(v));
   return {
+    location:c?`${area?area.name:""}，中心约 ${(+c[0]).toFixed(2)}°E / ${Math.abs(+c[1]).toFixed(2)}°S`:"",
     lics: ls.map(x=>`${x.no}（${x.holder}）`),
     minerals:(g.minerals||[]).join("、"),
     host:g.host||"",
@@ -1297,6 +1300,7 @@ function introFacts(ls){
 }
 function buildIntroTemplate(f){
   const parts=[
+    f.location?`${f.location}。`:"",
     `本项目含 ${f.lics.length} 本矿证：${f.lics.join("；")}。`,
     f.minerals?`主要矿产：${f.minerals}。`:"",
     f.host?`赋矿岩性：${f.host}。`:"",
