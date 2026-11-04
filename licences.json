@@ -96,6 +96,100 @@
    "reference": [],
    "intro": "Serenje 1330NW 区块内的 Ta-Nb 伟晶岩型矿化点。现场已采 7 个 Ta 点并入库 QGIS 图层 field_samples。矿化受 NE 向剪切带控制，含矿母岩为分异较好的花岗岩及其派生的伟晶岩脉。",
    "reports": []
+  },
+  {
+   "no": "36413-HQ-SEL",
+   "order": 2,
+   "name": "Serenje 1330NW 小矿证",
+   "area_id": "serenje_1330nw",
+   "holder": "The Big Shofolo Enterprises Limited",
+   "type": "Small-scale Exploration Licence",
+   "status": "Active",
+   "info": [
+    {
+     "k": "持有人",
+     "v": "The Big Shofolo Enterprises Limited"
+    },
+    {
+     "k": "许可证类型",
+     "v": "Small Scale Exploration Licence"
+    },
+    {
+     "k": "许可证状态",
+     "v": "Active（待核实）"
+    },
+    {
+     "k": "申请时间",
+     "v": ""
+    },
+    {
+     "k": "批准时间",
+     "v": ""
+    },
+    {
+     "k": "到期时间",
+     "v": ""
+    },
+    {
+     "k": "地区",
+     "v": "Central, Serenje"
+    },
+    {
+     "k": "产区面积",
+     "v": "约 1–2 km²（待核实）"
+    },
+    {
+     "k": "矿产",
+     "v": "Ta, Nb"
+    },
+    {
+     "k": "是否释放",
+     "v": ""
+    },
+    {
+     "k": "刷新时间",
+     "v": ""
+    },
+    {
+     "k": "相关项目",
+     "v": "Serenje 1330NW"
+    },
+    {
+     "k": "查看报告",
+     "v": ""
+    }
+   ],
+   "valid_from": "",
+   "valid_to": "",
+   "commodities": [
+    "Ta",
+    "Nb"
+   ],
+   "center": [
+    30.161,
+    -13.125
+   ],
+   "bbox": [30.155109, -13.131433, 30.166740, -13.118100],
+   "geology": {
+    "terrane": "Irumide 带（待核实）",
+    "host": "花岗岩 + 伟晶岩脉，Ta-Nb 矿化",
+    "structure": "NE 向剪切/断裂控制脉体就位（待核实）",
+    "minerals": [
+     "钽铌铁矿",
+     "锡石",
+     "锂云母（待核实）"
+    ],
+    "alteration": "钠长石化、云母化",
+    "notes": "嵌套于 42881 大矿证范围内的小矿证，同一地质与靶区背景。"
+   },
+   "sampling": {
+    "target": "伟晶岩露头、民采坑、废石堆",
+    "spacing": "沿脉追索，露头点间 20–50 m（待核实）",
+    "note": ""
+   },
+   "reference": [],
+   "intro": "Serenje 1330NW 区块内的小型勘探证（SEL），位于 42881 大矿证范围内，同属 Ta-Nb 伟晶岩成矿系统。持有人 The Big Shofolo Enterprises Limited。",
+   "reports": []
   }
  ]
 }
