@@ -1121,20 +1121,21 @@ function tabMap(ls){
   const locSet=new Set();
   ls.forEach(x=>(x.info||[]).forEach(r=>{const k=(r.k||"").trim();if(/地区|省份|省|区域|district|province|region/i.test(k))locSet.add(String(r.v||"").trim())}));
   const locTxt=[...locSet].filter(Boolean).join("、");
-  const cardLs=picked?[picked]:ls;
-  const licCards=cardLs.map(x=>{
+  let licCards="";
+  if(picked){
+    const x=picked;
     const k=kmlSafe(kmlFor(x.no));
     const color=licColor(ls.findIndex(y=>y.no===x.no));
     const bb=(k&&k.bbox)||x.bbox||(areaById(x.area_id)||{}).bbox||null;
     const badge=k?`<span class="kbadge" style="border-color:${color};color:${color};background:${color}1a">${esc(k.kind||"面")}状边界 · ${fmtArea(k.area)} km²</span>`:`<span class="kbadge off">未设区域</span>`;
-    return `<div class="liccard" style="border-left:4px solid ${color}">
+    licCards=`<h4>矿证信息（1 / 共 ${ls.length}）</h4><div class="liccards"><div class="liccard" style="border-left:4px solid ${color}">
       <div class="lch"><b>${esc(x.no)}</b>${statusPill(x)}${badge}</div>
       <dl>${row("矿证编号",esc(x.no))}
         ${(x.info||[]).map(r=>row(r.k,esc(zhVal(r.k,r.v)))).join("")||row("持有人",esc(x.holder||""))}
         ${bb?row("范围",esc(bb.map(v=>v.toFixed(4)).join(" / "))):""}</dl>
       ${(x.reports||[]).length?`<div class="lcsub">地质报告 ${x.reports.length} 份，见「项目地质报告」</div>`:""}
-    </div>`;
-  }).join("");
+    </div></div>`;
+  }
   return `<div class="pane">
     <div class="mpick">${pickChips(ls,picked)}</div>
     <div class="gmap" id="gmap">
@@ -1155,8 +1156,7 @@ function tabMap(ls){
     </div>
     <div class="mapmeta">赞比亚${locTxt?" · "+esc(locTxt):""} · ${picked?`只看 ${esc(picked.no)} · `:`${ls.length} 本矿证合并取景 · `}中心 ${lat.toFixed(5)}, ${lon.toFixed(5)}${bbox?` · 范围 ${bbox.map(v=>v.toFixed(3)).join(" / ")}`:""}${ks.length?` · ${ks.length} 本矿证有边界 · 参考面积合计 ${fmtArea(areaSum)} km²`:""}
       ${ks.length?"":` · 上传 KML 后可画出矿权范围`}</div>
-    <h4>矿证信息（${cardLs.length}${picked?` / 共 ${ls.length}`:""}）</h4>
-    <div class="liccards">${licCards}</div>
+    ${licCards}
     <div class="links">
       <a href="https://www.google.com/maps?q=${lat},${lon}" target="_blank" rel="noopener">外部地图</a>
       <button data-copy="${lat},${lon}">复制中心坐标</button>
