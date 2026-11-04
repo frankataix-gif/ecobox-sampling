@@ -1082,7 +1082,7 @@ function mapMount(ls){
   mapDraw();
 
   el.addEventListener("pointerdown",e=>{
-    if(e.target.closest("button"))return;
+    if(e.target.closest("button,input,label,select,textarea,a"))return;
     try{el.setPointerCapture(e.pointerId)}catch(_){}
     MAP.drag={x:e.clientX,y:e.clientY,c:MAP.center.slice()};MAP.moved=false;
   });
