@@ -963,8 +963,8 @@ function tabIntro(ls){
 const MAP_TILES={
   sat:{name:"卫星",max:19,attr:"影像 © Esri · Maxar · Earthstar",
     url:(z,x,y)=>`https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${y}/${x}`},
-  street:{name:"街道",max:19,attr:"© OpenStreetMap contributors",
-    url:(z,x,y)=>`https://tile.openstreetmap.org/${z}/${x}/${y}.png`}
+  street:{name:"道路",max:19,attr:"道路/城市名 © Esri",
+    url:(z,x,y)=>`https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/${z}/${y}/${x}`}
 };
 const MAPK="map_layer_v1";
 let MAP=null;
@@ -985,16 +985,7 @@ function mapLayer(){
 const LIC_COLORS=["#e11d48","#2563eb","#16a34a","#d97706","#7c3aed","#0891b2","#db2777","#65a30d","#ea580c","#0d9488"];
 function licColor(i){return LIC_COLORS[((i%LIC_COLORS.length)+LIC_COLORS.length)%LIC_COLORS.length]}
 function ksFor(view,ls){return view.map(x=>{const i=ls.findIndex(y=>y.no===x.no);return {no:x.no,k:kmlSafe(kmlFor(x.no)),color:licColor(i)}}).filter(x=>x.k)}
-const MAP_OVERLAYS={
-  roads:{name:"道路",max:19,attr:"道路 © Esri · OSM",url:(z,x,y)=>`https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/${z}/${y}/${x}`},
-  places:{name:"地名（城市/边界）",max:19,attr:"地名/边界 © Esri",url:(z,x,y)=>`https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/${z}/${y}/${x}`},
-  power:{name:"电网",max:19,attr:"电网 © OpenInfraMap",url:(z,x,y)=>`https://tiles.openinframap.org/power/${z}/${x}/${y}.png`}
-};
-const OVK="map_overlays_v1";
-function overlayList(){let v=null;try{v=JSON.parse(localStorage.getItem(OVK)||"null")}catch(e){}return Array.isArray(v)?v:["roads","places"]}
-function overlayOn(k){return overlayList().includes(k)}
-function overlayWrite(k,on){const cur=new Set(overlayList());on?cur.add(k):cur.delete(k);try{localStorage.setItem(OVK,JSON.stringify([...cur]))}catch(e){}}
-/* 地质图层已移除：项目地图只突出地理位置 */
+/* 项目地图：突出地理位置；道路/城市名走「道路」底图（Esri 街道图，含电网线） */
 function mapDraw(){
   if(!MAP)return;
   const{el,layer}=MAP;
@@ -1013,23 +1004,8 @@ function mapDraw(){
       html+=`<img alt="" draggable="false" src="${T.url(MAP.zoom,wx,ty)}" style="left:${tx*256-left}px;top:${ty*256-top}px">`;
     }
   }
-  let attrs=[T.attr];
-  for(const ovk of overlayList()){
-    const O=MAP_OVERLAYS[ovk];if(!O)continue;
-    const oz=Math.min(MAP.zoom,O.max),os=256*Math.pow(2,oz),on=Math.pow(2,oz);
-    const ox0=Math.floor(left/os),ox1=Math.floor((left+w)/os);
-    const oy0=Math.floor(top/os),oy1=Math.floor((top+h)/os);
-    attrs.push(O.attr);
-    for(let ty=oy0;ty<=oy1;ty++){
-      if(ty<0||ty>=on)continue;
-      for(let tx=ox0;tx<=ox1;tx++){
-        const wx=((tx%on)+on)%on;
-        html+=`<img class="ov" alt="" draggable="false" src="${O.url(oz,wx,ty)}" style="left:${tx*os-left}px;top:${ty*os-top}px">`;
-      }
-    }
-  }
   el.querySelector(".gtiles").innerHTML=html;
-  el.querySelector(".gattr").textContent=attrs.join(" · ");
+  el.querySelector(".gattr").textContent=T.attr;
   el.querySelector(".gzoomnow").textContent="z"+MAP.zoom;
 
   const px=(lon,lat)=>[mercX(lon)*scale-left,mercY(lat)*scale-top];
@@ -1119,9 +1095,6 @@ function mapMount(ls){
     el.querySelectorAll("[data-glayer]").forEach(x=>x.classList.toggle("on",x.dataset.glayer===MAP.layer));
     mapDraw();
   });
-  el.querySelectorAll("[data-ov]").forEach(c=>c.onchange=()=>{overlayWrite(c.dataset.ov,c.checked);mapDraw()});
-  const gpMin=el.querySelector("#gpMin");
-  if(gpMin)gpMin.onclick=()=>{const gp=el.querySelector("#gpanel");if(gp){gp.classList.toggle("min");gpMin.textContent=gp.classList.contains("min")?"+":"−"}};
   if(window.ResizeObserver)new ResizeObserver(()=>mapDraw()).observe(el);
 }
 
@@ -1169,14 +1142,6 @@ function tabMap(ls){
         <button data-glayer="sat" class="${mapLayer()==="sat"?"on":""}">卫星</button>
         <button data-glayer="street" class="${mapLayer()==="street"?"on":""}">道路</button>
       </div>
-      <div class="gpanel" id="gpanel">
-        <div class="gphead"><b>图层</b><button class="gpmin" id="gpMin">−</button></div>
-        <div class="gpbody">
-          ${Object.entries(MAP_OVERLAYS).map(([k,O])=>`<label class="gprow"><input type="checkbox" data-ov="${k}" ${overlayOn(k)?"checked":""}><span class="gpn">${esc(O.name)}</span></label>`).join("")}
-          <div class="gpsub2">底图在左上角切换：卫星 / 道路</div>
-        </div>
-        <div class="gpfoot">道路·地名 © Esri/OSM · 电网 © OpenInfraMap · 名称按当地语言</div>
-      </div>
       <div class="gctrl">
         <button data-gz="1" title="放大">+</button>
         <button data-gz="-1" title="缩小">−</button>
@@ -1194,7 +1159,7 @@ function tabMap(ls){
       <button data-copy="${lat},${lon}">复制中心坐标</button>
       ${ks.length?`<button data-kmlcopy="1">复制边界坐标</button>`:""}
     </div>
-    <p class="hint">这张图只讲「项目在哪里」：赞比亚国家位置、每本矿证的范围（多本矿证各一种颜色）。可切换「全部矿证」或单本查看 · 拖动平移 · 滚轮/双击缩放 · ⌖ 回到矿区范围 · ⤢ 全屏 · 左上角切换卫星/道路底图 · 「图层」面板叠加道路、地名（城市/边界）、电网。无网络时底图不显示，边界仍可用。</p>
+    <p class="hint">这张图只讲「项目在哪里」：赞比亚国家位置、每本矿证的范围（多本矿证各一种颜色）。可切换「全部矿证」或单本查看 · 拖动平移 · 滚轮/双击缩放 · ⌖ 回到矿区范围 · ⤢ 全屏 · 左上角切换「卫星 / 道路」底图——「道路」底图含道路、城市名和电网线。无网络时底图不显示，边界仍可用。</p>
   </div>`;
 }
 function pickChips(ls,picked){
