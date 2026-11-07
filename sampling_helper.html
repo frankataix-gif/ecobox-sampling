@@ -106,8 +106,8 @@ progress{width:100%;height:10px;margin-top:8px}
   <!-- ===== 记录页 ===== -->
   <section id="pg-form">
     <div class="tabs" id="formtabs">
-      <button type="button" data-tab="cur" class="on">✏️ 当前页</button>
-      <button type="button" data-tab="list">📋 取样</button>
+      <button type="button" data-tab="cur" class="on">✏️ 取样记录</button>
+      <button type="button" data-tab="list">📋 记录</button>
     </div>
     <div id="tab_cur">
     <div class="card">
@@ -189,7 +189,7 @@ progress{width:100%;height:10px;margin-top:8px}
     </div>
     <div id="tab_list" class="hidden">
       <div id="samlist"></div>
-      <div class="card" id="empty_tip" style="text-align:center;color:var(--muted)">暂无记录，在「当前页」录入并保存后会出现在这里</div>
+      <div class="card" id="empty_tip" style="text-align:center;color:var(--muted)">暂无记录，在「取样记录」录入并保存后会出现在这里</div>
     </div>
   </section>
 
@@ -276,10 +276,10 @@ progress{width:100%;height:10px;margin-top:8px}
     <div class="card">
       <h3>🔄 版本更新</h3>
       <button class="btn secondary block" id="btn_update">检查并强制更新到最新版</button>
-      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：b20261107-114</p>
+      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：b20261107-115</p>
     </div>
     <div class="card">
-      <p style="font-size:11px;color:var(--muted);text-align:center">b20261107-114</p>
+      <p style="font-size:11px;color:var(--muted);text-align:center">b20261107-115</p>
       <h3>🗑 危险操作</h3>
       <button class="btn danger block" id="btn_wipe">🔒 清空本机全部数据（需密码）</button>
     </div>
@@ -586,7 +586,7 @@ addEventListener("online",()=>{netStatus();toast("网络已恢复，可同步");
 addEventListener("offline",netStatus);netStatus();
 
 /* ============ 页面切换 ============ */
-// 记录页两个视图：当前页（录入）/ 取样（已保存列表）
+// 记录页两个视图：取样记录（录入）/ 记录（已保存列表）
 function setFormTab(t){
   document.querySelectorAll("#formtabs button").forEach(b=>b.classList.toggle("on",b.dataset.tab===t));
   $("tab_cur").classList.toggle("hidden",t!=="cur");
@@ -1850,7 +1850,7 @@ if(!isStandalone){
 }
 
 /* ============ 版本检查：发布新版本后自动弹「更新」按钮 ============ */
-const APP_VER="b20261107-114";
+const APP_VER="b20261107-115";
 let updateDismissed=false;
 function showUpdateTip(){if(updateDismissed)return;const t=$("update_tip");if(t)t.style.display="flex";}
 async function checkUpdate(){

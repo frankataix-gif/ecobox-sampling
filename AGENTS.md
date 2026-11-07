@@ -184,3 +184,12 @@ go/no-go 由人拍板并记 decision log。取样点永不写入矿证归属（�
 - 路由：`#proj/<area_id>` 进项目；`#lic/<no>` 仍可用（自动定位到该证所属项目）。
 - 新增/编辑/删除矿证仍在「设置」里（项目 → 矿证两层），改完侧栏只更新「N 本矿证」计数。
 - 测试：`t_multilic.html`（侧栏只列项目、加证后计数变 2、两张边界卡、地图画两条环）。
+## 采集页（sampling_helper.html）页面结构
+
+- 底部导航 4 项：`pg-form`（记录）/ `pg-track`（行程）/ `pg-map`（地图）/ `pg-set`（设置）。旧的独立 `pg-list`（取样）已删除。
+- `pg-form` 内两个视图，用 `#formtabs` 切换：`tab_cur`（取样记录，录入表单）与 `tab_list`（记录，已保存列表，原 `pg-list` 内容）。
+  切换函数 `setFormTab("cur"|"list")`；进列表视图时才 `renderList()`。老客户端 `kv.cur_page === "pg-list"` 由启动逻辑映射到 `setFormTab("list")`。
+- 记录人由登录锁定：`openLogin()` / `submitLogin()`，账号 `ACCOUNTS` 写在 HTML 里（离线无后端，已知取舍）；
+  `#f_recorder` 只读，值取登录身份，保存时 `recorder` 直接取该字段，软件内无「切换」入口。
+- 坐标区 `.gpsrow` 三个按钮（获取定位 / 地图选点 / 定位查看）一行三等宽 36px；改动后要在 320/360/414px 复测不换行。
+
