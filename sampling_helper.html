@@ -37,9 +37,11 @@ textarea{min-height:64px;resize:vertical}
 .secondary{background:var(--border);color:var(--text)}
 .danger{background:var(--danger);color:#fff}
 .block{width:100%;margin-top:12px}
-.gpsbox{background:#f0f7ff;border:1px dashed var(--primary);border-radius:8px;padding:10px;font-size:14px}
-.gpsbox .big{font-size:17px;font-weight:600;font-variant-numeric:tabular-nums}
-.gps-acc{color:var(--muted);font-size:13px}
+.gpsbox{background:#f0f7ff;border:1px dashed var(--primary);border-radius:8px;padding:8px 10px;font-size:14px}
+.gpsbox .big{font-size:17px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.3}
+.gps-acc{color:var(--muted);font-size:12.5px;line-height:1.35}
+.gpsrow{display:flex;gap:6px;margin-top:8px}
+.gpsrow .btn{flex:1 1 0;min-width:0;padding:7px 4px;font-size:13px;min-height:36px;white-space:nowrap}
 .elgrid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:10px}
 .elgrid button{border:1px solid #111;background:#111;color:#fff;border-radius:8px;padding:8px 0;font-size:15px;font-weight:600;font-family:ui-monospace,monospace;min-height:40px}
 .elgrid button.used{background:#e2e8f0;border-color:#cbd5e1;color:#1e293b}
@@ -136,7 +138,7 @@ progress{width:100%;height:10px;margin-top:8px}
         <div class="big" id="gps_text">尚未定位</div>
         <div class="gps-acc" id="gps_acc" style="display:none"></div>
         <div class="gps-acc" id="gps_utm" style="display:none"></div>
-        <div style="margin-top:6px"><label style="margin:0 0 3px">📍 定位地址（由 GPS 自动生成，不可修改）</label>
+        <div style="margin-top:4px"><label style="margin:0 0 2px;font-size:12px">📍 定位地址（由 GPS 自动生成，不可修改）</label>
         <input id="f_area" readonly style="background:#f1f5f9;color:var(--muted)" placeholder="定位后自动填入：省 / 县 / 村镇"></div>
       </div>
       <div class="row hidden" style="margin-top:8px">
@@ -144,8 +146,8 @@ progress{width:100%;height:10px;margin-top:8px}
         <div><label>经度</label><input id="f_lon" inputmode="decimal" placeholder="28.xxx"></div>
         <div class="hidden"><input id="f_alt"></div>
       </div>
-      <div class="row" style="margin-top:8px">
-        <button class="btn primary" id="btn_gps" style="font-size:17px">📍 获取定位</button>
+      <div class="gpsrow">
+        <button class="btn primary" id="btn_gps">📍 获取定位</button>
         <button class="btn secondary" id="btn_pick">🗺 地图选点</button>
         <button class="btn secondary" id="btn_viewpos">👁 定位查看</button>
       </div>
@@ -171,7 +173,7 @@ progress{width:100%;height:10px;margin-top:8px}
     </div>
     <div class="card">
       <div class="row">
-        <div><label>记录人 <span style="color:var(--danger)">*</span></label><input id="f_recorder" placeholder="姓名"></div>
+        <div><label>记录人 <span id="btn_user" style="color:var(--primary);font-size:12px;font-weight:600;cursor:pointer;text-decoration:underline">切换</span></label><input id="f_recorder" placeholder="姓名"></div>
       </div>
       <label>备注</label><textarea id="f_remark"></textarea>
       <button class="btn primary block" id="btn_save" style="font-size:17px">💾 保存记录</button>
@@ -267,10 +269,10 @@ progress{width:100%;height:10px;margin-top:8px}
     <div class="card">
       <h3>🔄 版本更新</h3>
       <button class="btn secondary block" id="btn_update">检查并强制更新到最新版</button>
-      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：b20261107-111</p>
+      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：b20261107-112</p>
     </div>
     <div class="card">
-      <p style="font-size:11px;color:var(--muted);text-align:center">b20261107-111</p>
+      <p style="font-size:11px;color:var(--muted);text-align:center">b20261107-112</p>
       <h3>🗑 危险操作</h3>
       <button class="btn danger block" id="btn_wipe">🔒 清空本机全部数据（需密码）</button>
     </div>
@@ -340,6 +342,14 @@ progress{width:100%;height:10px;margin-top:8px}
     6️⃣ iPhone：设置 → 隐私与安全性 → 定位服务 → Safari/Chrome → 使用App期间
   </div>
   <button class="btn primary block" id="gpsmodal_close" style="margin-top:12px">知道了，重试定位</button>
+</div></div>
+<div class="modal hidden" id="loginmodal"><div class="box">
+  <h3>👤 选择记录人</h3>
+  <p style="font-size:13px;color:var(--muted);margin-bottom:10px">选一次就好，以后打开软件自动带入「记录人」。</p>
+  <div class="chips" id="login_users"></div>
+  <label>密码</label><input id="login_pwd" type="password" inputmode="numeric" autocomplete="current-password" placeholder="6 位密码">
+  <p id="login_err" style="color:var(--danger);font-size:13px;min-height:18px;margin-top:6px"></p>
+  <button class="btn primary block" id="login_ok">进入</button>
 </div></div>
 <div class="modal hidden" id="dlmodal"><div class="box">
   <h3>下载离线地图</h3>
@@ -1827,7 +1837,7 @@ if(!isStandalone){
 }
 
 /* ============ 版本检查：发布新版本后自动弹「更新」按钮 ============ */
-const APP_VER="b20261107-111";
+const APP_VER="b20261107-112";
 let updateDismissed=false;
 function showUpdateTip(){if(updateDismissed)return;const t=$("update_tip");if(t)t.style.display="flex";}
 async function checkUpdate(){
@@ -1884,6 +1894,35 @@ if("serviceWorker" in navigator&&location.protocol==="https:"){
   },6000);
 }
 
+/* ============ 记录人（一次登录，之后自动带入） ============ */
+const ACCOUNTS={frank:"123456",supeichang:"123456"};
+let loginPick="";
+function openLogin(){
+  const cur=$("f_recorder").value.trim();
+  loginPick=ACCOUNTS[cur]?cur:"";
+  $("login_users").innerHTML=Object.keys(ACCOUNTS).map(n=>`<button type="button" data-n="${n}" class="${n===loginPick?"on":""}">${n}</button>`).join("");
+  $("login_users").querySelectorAll("button").forEach(b=>b.onclick=()=>{
+    loginPick=b.dataset.n;
+    $("login_users").querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));
+    $("login_pwd").focus();
+  });
+  $("login_pwd").value="";$("login_err").textContent="";
+  $("loginmodal").classList.remove("hidden");
+  setTimeout(()=>$("login_pwd").focus(),100);
+}
+async function submitLogin(){
+  const pwd=$("login_pwd").value.trim();
+  if(!loginPick){$("login_err").textContent="请先选择记录人";return}
+  if(pwd!==ACCOUNTS[loginPick]){$("login_err").textContent="密码不对，请重试";return}
+  await store.set("user",loginPick);await store.set("recorder",loginPick);
+  $("f_recorder").value=loginPick;
+  $("loginmodal").classList.add("hidden");
+  toast(`✅ 记录人：${loginPick}`);
+}
+$("login_ok").onclick=submitLogin;
+$("login_pwd").onkeydown=e=>{if(e.key==="Enter")submitLogin()};
+$("btn_user").onclick=openLogin;
+
 /* ============ 启动 ============ */
 (async()=>{
   // 一键配置：链接带 ?t=令牌 自动保存同步设置，打开一次即可，以后不用再填
@@ -1895,6 +1934,13 @@ if("serviceWorker" in navigator&&location.protocol==="https:"){
   }catch(e){}
   try{await loadAreas();await mergeLegacyStores();await dedupeSamples()}catch(e){toast("矿区配置读取失败："+String(e&&e.message||e).slice(0,60),6000)}
   await loadSet();resetForm();refreshPend();refreshSampleCache();TR.load();setTimeout(resumeTrack,800);
+  // 记录人：已登录就直接带入；老用户的历史 recorder 若是账号名，直接认
+  let name=(await store.get("user"))||"";
+  if(!ACCOUNTS[name]){
+    const r=((await store.get("recorder"))||"").trim();
+    if(ACCOUNTS[r]){name=r;await store.set("user",r)}
+  }
+  if(name)$("f_recorder").value=name;else openLogin();
 })();
 store.get("track_mode").then(m=>setTrackMode(m==="walk"?"walk":"car"));
 // 本机存储可用性检测（iOS 无痕/隐私模式会禁 IndexedDB）
