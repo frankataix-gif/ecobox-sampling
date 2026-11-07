@@ -1,6 +1,6 @@
 // 野外取样工具 Service Worker — 页面本体+静态文件离线可用
 // v30：矿权边界支持「粘贴坐标」直接生成（DMS/十进制/ArcGIS 表）
-const CACHE = "sampling-v44";
+const CACHE = "sampling-v45";
 const BASE = new URL(self.registration.scope).pathname; // /ecobox-sampling/
 const BASE_ROOT = BASE.endsWith("/") ? BASE.slice(0, -1) : BASE;
 const MAIN_PAGE = BASE + "sampling_helper.html";

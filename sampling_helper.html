@@ -45,6 +45,16 @@ textarea{min-height:64px;resize:vertical}
 .tabs{display:flex;gap:6px;margin-bottom:10px}
 .tabs button{flex:1;border:1.5px solid #cbd5e1;background:#fff;color:#1e293b;border-radius:9px;padding:8px 0;font-size:14px;font-weight:600;min-height:38px}
 .tabs button.on{background:var(--primary);border-color:var(--primary);color:#fff}
+.tabs button{position:relative}
+.tabdot{position:absolute;top:4px;right:6px;width:8px;height:8px;border-radius:50%;background:var(--danger);box-shadow:0 0 0 2px #fff}
+.toolbar{display:flex;gap:8px;margin-bottom:8px}
+.toolbar input{flex:1;min-height:42px}
+.hint{font-size:12.5px;color:var(--muted);line-height:1.5}
+.stat{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stat>div{background:#f8fafc;border:1px solid var(--border);border-radius:9px;padding:8px 10px;font-size:12.5px;color:var(--muted)}
+.stat b{display:block;font-size:17px;color:var(--text);font-variant-numeric:tabular-nums}
+.empty{text-align:center;color:var(--muted);font-size:14px;padding:18px 0}
+.livecard{border:1px solid var(--ok)!important;box-shadow:0 0 0 2px rgba(34,197,94,.2)!important}
 .elgrid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:10px}
 .elgrid button{border:1px solid #111;background:#111;color:#fff;border-radius:8px;padding:8px 0;font-size:15px;font-weight:600;font-family:ui-monospace,monospace;min-height:40px}
 .elgrid button.used{background:#e2e8f0;border-color:#cbd5e1;color:#1e293b}
@@ -108,7 +118,7 @@ progress{width:100%;height:10px;margin-top:8px}
     <div class="tabs" id="formtabs">
       <button type="button" data-tab="cur" class="on">✏️ 取样</button>
       <button type="button" data-tab="list">📋 取样历史</button>
-      <button type="button" data-tab="trip">🧭 行程</button>
+      <button type="button" data-tab="trip">🧭 行程<span class="tabdot hidden" id="tab_trip_dot"></span></button>
     </div>
     <div id="tab_cur">
     <div class="card">
@@ -168,8 +178,8 @@ progress{width:100%;height:10px;margin-top:8px}
       <button class="btn secondary block" id="btn_add_assay">＋ 添加其他元素</button>
     </div>
     <textarea id="f_desc" class="hidden"></textarea>
-    <div class="card">
-      <h3>📷 照片（至少 1 张，最多 6 张）<span style="color:var(--danger)">*</span></h3>
+    <div class="card" id="card_photo">
+      <h3 id="h_photo">📷 照片（至少 1 张，最多 6 张）<span id="req_photo" style="color:var(--danger)">*</span></h3>
       <p style="font-size:12px;color:var(--muted);margin-bottom:6px">含量读数（XRF 屏幕照）请标记 🧪，可联网用 AI 自动识别填入上表。</p>
       <div class="row">
         <button class="btn secondary" id="btn_cam">📸 拍照</button>
@@ -186,9 +196,17 @@ progress{width:100%;height:10px;margin-top:8px}
       </div>
       <label>备注</label><textarea id="f_remark"></textarea>
       <button class="btn primary block" id="btn_save" style="font-size:17px">💾 保存记录</button>
+      <button class="btn secondary block" id="btn_clear" style="margin-top:8px;font-size:14px;min-height:40px">🧹 清空本次输入</button>
     </div>
     </div>
     <div id="tab_list" class="hidden">
+      <div class="toolbar"><input id="q_list" placeholder="🔍 搜索 编号 / 备注 / 地区 / 元素" inputmode="search"></div>
+      <div class="chips" id="chips_filter">
+        <button type="button" data-f="all" class="on">全部</button>
+        <button type="button" data-f="pend">待同步</button>
+        <button type="button" data-f="ok">已同步</button>
+      </div>
+      <div class="hint" id="list_stat" style="margin:0 2px 10px"></div>
       <div id="samlist"></div>
       <div class="card" id="empty_tip" style="text-align:center;color:var(--muted)">暂无记录，在「取样」录入并保存后会出现在这里</div>
     </div>
@@ -206,6 +224,7 @@ progress{width:100%;height:10px;margin-top:8px}
       <button class="btn primary block" id="btn_trk" style="font-size:17px">▶ 开始新的行程</button>
       <p style="font-size:13px;color:var(--muted);margin-top:8px">一次行程 = 一段独立旅行：开始→记录轨迹→结束存档。与样品无关。中途关掉页面会自动续录。</p>
     </div>
+    <div id="triplive"></div>
     <div class="card">
       <h3>🗂 历史行程</h3>
       <div id="triplist"></div>
@@ -265,6 +284,15 @@ progress{width:100%;height:10px;margin-top:8px}
       <p style="font-size:13px;color:var(--muted);margin-top:8px">点导出会弹手机分享面板，直接选 Drive 存云端、或选邮件/WhatsApp 发出去，无需先下载。</p>
     </div>
     <div class="card">
+      <h3>👤 记录人</h3>
+      <p style="font-size:15px;line-height:1.7"><b id="set_user">—</b><br><span class="hint">登录后即锁定为本机记录人，软件内不提供换人入口。</span></p>
+    </div>
+    <div class="card">
+      <h3>📊 本机数据</h3>
+      <div class="stat" id="set_stat"></div>
+      <button class="btn secondary block" id="btn_stat_refresh" style="margin-top:10px;font-size:14px;min-height:40px">刷新统计</button>
+    </div>
+    <div class="card">
       <h3>ℹ️ 说明</h3>
       <p style="font-size:13px;color:var(--muted);line-height:1.7">
         · 定位依靠 GPS 卫星，<b>无网络也能用</b>；首次定位请站开阔地等 30 秒–2 分钟。<br>
@@ -275,10 +303,10 @@ progress{width:100%;height:10px;margin-top:8px}
     <div class="card">
       <h3>🔄 版本更新</h3>
       <button class="btn secondary block" id="btn_update">检查并强制更新到最新版</button>
-      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：b20261107-117</p>
+      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：b20261107-118</p>
     </div>
     <div class="card">
-      <p style="font-size:11px;color:var(--muted);text-align:center">b20261107-117</p>
+      <p style="font-size:11px;color:var(--muted);text-align:center">b20261107-118</p>
       <h3>🗑 危险操作</h3>
       <button class="btn danger block" id="btn_wipe">🔒 清空本机全部数据（需密码）</button>
     </div>
@@ -586,6 +614,7 @@ addEventListener("offline",netStatus);netStatus();
 /* ============ 页面切换 ============ */
 // 记录页三个视图：取样（录入）/ 取样历史（已保存列表）/ 行程（轨迹）
 function setFormTab(t,save){
+  if(t!=="cur")saveDraft();
   document.querySelectorAll("#formtabs button").forEach(b=>b.classList.toggle("on",b.dataset.tab===t));
   $("tab_cur").classList.toggle("hidden",t!=="cur");
   $("tab_list").classList.toggle("hidden",t!=="list");
@@ -593,6 +622,7 @@ function setFormTab(t,save){
   if(t==="list")renderList();
   if(t==="trip"){updTrk();renderTrips()}
   if(save!==false)store.set("form_tab",t);
+  window.scrollTo(0,0);
 }
 document.querySelectorAll("#formtabs button").forEach(b=>b.onclick=()=>setFormTab(b.dataset.tab));
 document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
@@ -601,7 +631,9 @@ document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
   $(b.dataset.pg).classList.remove("hidden");
   store.set("cur_page",b.dataset.pg); // 刷新后回到当前页
   if(b.dataset.pg!=="pg-map"){pickMode=false;pickPreview=null;if(map)map.draw();$("picktip").classList.add("hidden");$("pickbar").classList.add("hidden")}
-  if(b.dataset.pg==="pg-map")initMap();
+  if(b.dataset.pg==="pg-map"){viewTrip=null;initMap()}
+  if(b.dataset.pg==="pg-set")renderSetStats();
+  window.scrollTo(0,0);
 });
 
 /* ============ GPS ============ */
@@ -609,7 +641,8 @@ let watchId=null,lastPos=null;
 function showPos(p){
   lastPos=p;const c=p.coords;
   $("gps_text").textContent=`纬度：${c.latitude.toFixed(6)}  经度：${c.longitude.toFixed(6)}`;
-  $("gps_acc").textContent=(c.altitude!=null?`海拔 ${c.altitude.toFixed(0)} m · `:"")+new Date(p.timestamp).toLocaleTimeString();
+  const acc=c.accuracy?`精度 ±${Math.round(c.accuracy)} m · `:"";
+  $("gps_acc").textContent=acc+(c.altitude!=null?`海拔 ${c.altitude.toFixed(0)} m · `:"")+new Date(p.timestamp).toLocaleTimeString();
   $("gps_utm").textContent="UTM："+toUTM(c.latitude,c.longitude);
   $("f_lat").value=c.latitude.toFixed(6);$("f_lon").value=c.longitude.toFixed(6);
   if(c.altitude!=null)$("f_alt").value=c.altitude.toFixed(1);
@@ -619,8 +652,9 @@ function showPos(p){
 // 反向地理编码：省 → 县 → 村/镇，拼成详细地区名
 async function geoAddr(lat,lon){
   if(!navigator.onLine)return;
+  const ctrl=new AbortController(),tm=setTimeout(()=>ctrl.abort(),8000);
   try{
-    const r=await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`);
+    const r=await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`,{signal:ctrl.signal});
     const j=await r.json();
     const parts=[];
     const push=n=>{if(n&&!parts.includes(n))parts.push(n)};
@@ -633,7 +667,7 @@ async function geoAddr(lat,lon){
     if(!small.length)push(j.locality);       // 村/地名兜底
     const addr=parts.join(" / ");
     if(addr)$("f_area").value=addr;
-  }catch(e){}
+  }catch(e){}finally{clearTimeout(tm)}
 }
 function gpsErr(e){const m={1:"定位被拒绝——需要允许位置权限",2:"定位不可用（信号弱/室内）",3:"定位超时，请到开阔地重试"};toast(m[e.code]||"定位失败");showGpsDiag(e)}
 async function showGpsDiag(err){
@@ -655,9 +689,15 @@ $("btn_viewpos").onclick=()=>{
   document.querySelector('nav button[data-pg="pg-map"]').click();
   setTimeout(()=>{if(map&&map.centerOn)map.centerOn(la,lo)},80);
 };
-$("gpsmodal_close").onclick=()=>{$("gpsmodal").classList.add("hidden");$("btn_gps").click()};
+$("gpsmodal_close").onclick=()=>{$("gpsmodal").classList.add("hidden");if(!$("btn_gps").disabled)$("btn_gps").click()};
 $("gpsmodal").onclick=e=>{if(e.target.id==="gpsmodal")$("gpsmodal").classList.add("hidden")};
-$("btn_gps").onclick=()=>{toast("定位中…（无网络也可用）");navigator.geolocation.getCurrentPosition(showPos,gpsErr,{enableHighAccuracy:true,timeout:60000,maximumAge:0})};
+$("btn_gps").onclick=()=>{
+  const b=$("btn_gps");if(b.disabled)return;
+  b.disabled=true;const old=b.textContent;b.textContent="⏳ 定位中…";
+  toast("定位中…（无网络也可用）");
+  const done=()=>{b.disabled=false;b.textContent=old};
+  navigator.geolocation.getCurrentPosition(p=>{done();showPos(p)},e=>{done();gpsErr(e)},{enableHighAccuracy:true,timeout:60000,maximumAge:0});
+};
 // 手动填经纬度时同步显示
 ["f_lat","f_lon"].forEach(id=>$(id).onchange=()=>{
   const la=+$("f_lat").value,lo=+$("f_lon").value;
@@ -676,10 +716,12 @@ $("btn_pick").onclick=()=>{
 $("pickok").onclick=()=>{
   if(!pickPreview)return;
   $("f_lat").value=pickPreview.lat.toFixed(6);$("f_lon").value=pickPreview.lon.toFixed(6);
+  $("f_alt").value=""; // 地图选点没有海拔，清掉上一次 GPS 的值
   $("gps_text").textContent=`纬度：${pickPreview.lat.toFixed(6)}  经度：${pickPreview.lon.toFixed(6)}（地图选点）`;
   $("gps_utm").textContent="UTM："+toUTM(pickPreview.lat,pickPreview.lon);
-  $("gps_acc").textContent="";
+  $("gps_acc").textContent="地图选点 · "+new Date().toLocaleTimeString();
   licAt(pickPreview.lat,pickPreview.lon);
+  geoAddr(pickPreview.lat,pickPreview.lon); // 选点后同样补地区名
   pickMode=false;pickPreview=null;$("picktip").classList.add("hidden");$("pickbar").classList.add("hidden");if(map)map.draw();
   document.querySelector('nav button[data-pg="pg-form"]').click();
 };
@@ -734,6 +776,7 @@ async function addPhotos(files){
     }catch(e){ /* 单张失败跳过 */ }
   }
   renderThumbs();
+  if(added){saveDraftPhotos();queueDraftSave()}
   if(added<arr.length)toast(`已加 ${added} 张，${arr.length-added} 张读取失败（可能是 HEIC 格式，请在相册设置里改用 JPEG）`);
 }
 $("f_cam").onchange=e=>{addPhotos(e.target.files);e.target.value=""};
@@ -758,15 +801,15 @@ function renderThumbs(){
     <button class="thtag ${p.kind==="assay"?"on":""}" data-i="${i}">${p.kind==="assay"?"🧪 含量读数":"标记为含量"}</button>
     ${p.kind==="assay"?`<button class="thai" data-i="${i}">🤖 AI识别</button>`:""}
     <button class="thdel" data-i="${i}">✕</button></div>`).join("");
-  document.querySelectorAll(".thtag").forEach(b=>b.onclick=()=>{const p=photos[+b.dataset.i];p.kind=p.kind==="assay"?"field":"assay";renderThumbs()});
-  document.querySelectorAll(".thdel").forEach(b=>b.onclick=()=>{if(confirm("删除这张照片？")){photos.splice(+b.dataset.i,1);renderThumbs()}});
+  document.querySelectorAll(".thtag").forEach(b=>b.onclick=()=>{const p=photos[+b.dataset.i];p.kind=p.kind==="assay"?"field":"assay";renderThumbs();saveDraftPhotos()});
+  document.querySelectorAll(".thdel").forEach(b=>b.onclick=()=>{if(confirm("删除这张照片？")){photos.splice(+b.dataset.i,1);renderThumbs();saveDraftPhotos();queueDraftSave()}});
   document.querySelectorAll(".thai").forEach(b=>b.onclick=()=>aiAssay(+b.dataset.i));
   document.querySelectorAll("#thumbs img").forEach(im=>im.onclick=()=>{ // 点缩略图全屏查看
     $("vimg").src=im.src;$("viewer").classList.remove("hidden")});
 }
 async function aiAssay(i){
   if(!navigator.onLine){toast("AI 识别需要联网");return}
-  const wurl=(await store.get("worker_url"))||"",tok=(await store.get("app_token"))||"";
+  const wurl=(await store.get("worker_url"))||DEF_WORKER,tok=(await store.get("app_token"))||"";
   if(!wurl){toast("请先在设置页填 Worker 地址");return}
   toast("AI 识别中…");
   try{
@@ -782,6 +825,56 @@ async function aiAssay(i){
   }catch(e){toast("识别失败："+e.message)}
 }
 
+/* ============ 草稿：切页 / 锁屏 / 刷新不丢未保存的输入 ============ */
+let draftTimer=0,draftReady=false;
+function draftText(){
+  const assays=[...document.querySelectorAll(".assay-row")].map(r=>{
+    const i=r.querySelectorAll("input"),s=r.querySelector("select");
+    return{element:i[0].value,value:i[1].value,unit:s.value};
+  }).filter(a=>(a.element||"").trim()||(a.value||"").trim());
+  return{kind:$("f_kind").value,loc:$("f_loc").value,mark:$("f_mark").value,
+    lat:$("f_lat").value,lon:$("f_lon").value,alt:$("f_alt").value,area:$("f_area").value,
+    remark:$("f_remark").value.trim(),assays,t:Date.now()};
+}
+const draftEmpty=d=>!(d.remark||d.lat||(d.assays||[]).length||d.loc||d.mark||photos.length);
+function queueDraftSave(){clearTimeout(draftTimer);draftTimer=setTimeout(saveDraftText,600)}
+async function saveDraftText(){
+  if(!draftReady||editingSample)return; // 启动恢复完成前不写，避免把草稿清掉；编辑旧记录时不产生草稿
+  try{const d=draftText();await store.set("draft",draftEmpty(d)?null:d)}catch(e){}
+}
+async function saveDraftPhotos(){
+  if(!draftReady||editingSample)return;
+  try{await store.set("draft_photos",photos.length?photos.map(p=>({name:p.name,kind:p.kind,blob:p.blob})):null)}catch(e){}
+}
+async function saveDraft(){clearTimeout(draftTimer);await saveDraftText();await saveDraftPhotos()}
+async function clearDraft(){clearTimeout(draftTimer);try{await store.set("draft",null);await store.set("draft_photos",null)}catch(e){}}
+async function restoreDraft(){
+  try{
+    const d=await store.get("draft");if(!d)return;
+    if(Date.now()-(d.t||0)>12*3600e3){await clearDraft();return} // 超过半天视为过期
+    const ph=await store.get("draft_photos");
+    if(d.kind){$("f_kind").value=d.kind;applyKind()}
+    if(d.loc)$("f_loc").value=d.loc;
+    if(d.mark)$("f_mark").value=d.mark;
+    refreshChips();
+    if(d.lat&&d.lon){
+      $("f_lat").value=d.lat;$("f_lon").value=d.lon;$("f_alt").value=d.alt||"";
+      $("gps_text").textContent=`纬度：${(+d.lat).toFixed(6)}  经度：${(+d.lon).toFixed(6)}`;
+      $("gps_utm").textContent="UTM："+toUTM(+d.lat,+d.lon);
+      $("gps_acc").textContent="上次未保存的坐标";
+    }
+    if(d.area)$("f_area").value=d.area;
+    $("f_remark").value=d.remark||"";
+    (d.assays||[]).forEach(a=>addAssay(a.element||"",a.value||"",a.unit||"%"));
+    if(Array.isArray(ph)&&ph.length){photos=ph.map(p=>({name:p.name,kind:p.kind||"field",blob:p.blob}));renderThumbs()}
+    toast("已恢复上次未保存的输入（保存或清空后消失）",5000);
+  }finally{draftReady=true} // 无论有没有草稿，恢复结束后才允许写草稿
+}
+$("tab_cur").addEventListener("input",queueDraftSave);
+$("tab_cur").addEventListener("change",queueDraftSave);
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")saveDraft()});
+window.addEventListener("pagehide",()=>{saveDraft()});
+
 /* ============ 保存记录 ============ */
 /* 记录类型切换：取样 vs 标记点 */
 function applyKind(){
@@ -789,6 +882,7 @@ function applyKind(){
   $("w_type").classList.toggle("hidden",isMark);
   $("w_mark").classList.toggle("hidden",!isMark);
   $("card_assay").classList.toggle("hidden",isMark);
+  $("h_photo").innerHTML=isMark?"📷 照片（最多 6 张，可后补）":'📷 照片（至少 1 张，最多 6 张）<span id="req_photo" style="color:var(--danger)">*</span>';
   refreshChips();
 }
 $("f_kind").onchange=async()=>{applyKind();$("f_sid").value=await nextSid();await store.set("last_kind",$("f_kind").value)};
@@ -796,7 +890,7 @@ $("f_kind").onchange=async()=>{applyKind();$("f_sid").value=await nextSid();awai
 function buildChips(cid,sid){
   const sel=$(sid),box=$(cid);
   box.innerHTML=[...sel.options].map(o=>`<button type="button" data-v="${o.value}">${o.text}</button>`).join("");
-  box.querySelectorAll("button").forEach(b=>b.onclick=()=>{sel.value=b.dataset.v;sel.dispatchEvent(new Event("change"));refreshChips()});
+  box.querySelectorAll("button").forEach(b=>b.onclick=()=>{sel.value=b.dataset.v;sel.dispatchEvent(new Event("change"));refreshChips();queueDraftSave()});
 }
 function refreshChips(){
   [["f_kind","chips_kind"],["f_loc","chips_loc"],["f_mark","chips_mark"]].forEach(([s,c])=>{
@@ -821,35 +915,36 @@ async function resetForm(){
   exitEdit();
   const lk=await store.get("last_kind");if(lk){$("f_kind").value=lk;applyKind()}
   $("f_sid").value=await nextSid();$("f_time").value=nowLocal();
-  $("f_recorder").value=(await store.get("recorder"))||"";
+  $("f_recorder").value=(await store.get("user"))||(await store.get("recorder"))||"";
   $("f_loc").value="";
   refreshChips();
 }
 $("btn_save").onclick=async()=>{
   if($("btn_save").disabled)return;
-  // === 保存前三项必填校验 ===
-  const lat=+$("f_lat").value||null,lon=+$("f_lon").value||null;
-  if(lat==null||lon==null){toast("缺少坐标：请先📍获取定位或🗺地图选点");return}
+  const isMark=$("f_kind").value==="marker";
+  // === 必填校验：坐标（取样）/ 记录人；照片对标记点放宽 ===
+  const lat=parseFloat($("f_lat").value),lon=parseFloat($("f_lon").value);
+  if(!isFinite(lat)||!isFinite(lon)){toast("缺少坐标：请先📍获取定位或🗺地图选点");return}
+  if(Math.abs(lat)>90||Math.abs(lon)>180){toast("坐标超出范围，请重新定位");return}
   const assays0=[...document.querySelectorAll(".assay-row")].map(r=>{
     const i=r.querySelectorAll("input"),s=r.querySelector("select");
     return{element:i[0].value.trim(),value:i[1].value.trim(),unit:s.value};
   }).filter(a=>a.element&&a.value);
   // 含量非必填：现场未知可后补
-  if(!photos.length){toast("缺少照片：至少拍 1 张（样品或读数）");return}
-  if(!$("f_recorder").value.trim()){toast("缺少记录人：请填写姓名");$("f_recorder").focus();return}
+  if(!isMark&&!photos.length){toast("缺少照片：至少拍 1 张（样品或读数）");return}
+  if(!$("f_recorder").value.trim()){toast("缺少记录人：请重新登录");openLogin();return}
   $("btn_save").disabled=true;$("btn_save").textContent="保存中…";
   try{
   $("f_time").value=nowLocal(); // 保存瞬间打时间戳
   const sid=$("f_sid").value.trim();
   if(!sid){toast("请填写样品编号");$("f_sid").focus();return}
   const lic=licAt(lat,lon);
-  const isMark=$("f_kind").value==="marker";
   const assays=isMark?[]:assays0;
   const rec={
     sample_id:sid,sample_type:isMark?$("f_mark").value:$("f_type").value,sample_time:$("f_time").value,
     kind:isMark?"marker":"sample",
     latitude:lat,longitude:lon,altitude:+$("f_alt").value||null,
-    utm:lat!=null?toUTM(lat,lon):"",
+    utm:toUTM(lat,lon),
     gps_accuracy:lastPos&&lastPos.coords.accuracy||null,
     assays,lithology:"",description:$("f_desc").value.trim(),
     loc_status:isMark?"":$("f_loc").value,
@@ -861,46 +956,75 @@ $("btn_save").onclick=async()=>{
     photos:photos.map(p=>({name:p.name,kind:p.kind,blob:p.blob})),
     status:"pending",created_at:new Date().toISOString(),
   };
-  if(editingSample){ // 编辑模式：保留原编号/时间；坐标以表单里的经纬度为准（可手动修正）
+  if(editingSample){ // 编辑模式：编号/时间/记录人保持原值，坐标以表单为准（可修正）
     rec.id=editingSample.id;rec.sample_id=editingSample.sample_id;
     rec.sample_time=editingSample.sample_time;
+    rec.recorder=editingSample.recorder||rec.recorder;
     rec.latitude=lat;rec.longitude=lon;rec.altitude=+$("f_alt").value||editingSample.altitude;
     rec.utm=toUTM(lat,lon);rec.gps_accuracy=null;
-    rec.captured_licence=licAt(lat,lon)?.no||rec.captured_licence||"";
+    rec.captured_licence=lic?lic.no:rec.captured_licence||"";
     rec.area_id=editingSample.area_id||(areaAt(lat,lon)||UNASSIGNED_AREA).id;
     rec.created_at=editingSample.created_at||rec.created_at;
   }
   await S.put(rec);await refreshSampleCache();
   autoSync(rec); // 联网且已配置 Worker/Token 时自动上传到云端
   await store.set("recorder",rec.recorder);
+  await clearDraft();
   toast(editingSample?`✅ 已更新 ${sid}`:`✅ 已保存记录 ${sid}`,4000);exitEdit();refreshPend();
-  // 清空（地区名保留——同一区域连续取样不用重填）
   photos=[];renderThumbs();$("assays").innerHTML="";updateElGrid();
   $("f_desc").value="";$("f_remark").value="";$("f_loc").value="";
-  $("f_lat").value="";$("f_lon").value="";$("f_alt").value="";lastPos=null;
+  $("f_lat").value="";$("f_lon").value="";$("f_alt").value="";$("f_area").value="";lastPos=null;
   $("gps_text").textContent="尚未定位";$("gps_acc").textContent="";$("gps_utm").textContent="";
   await resetForm();
+  window.scrollTo(0,0);
   }finally{$("btn_save").disabled=false;$("btn_save").textContent="💾 保存记录"}
+};
+$("btn_clear").onclick=async()=>{
+  if(!confirm("清空本次输入？已保存的记录不受影响"))return;
+  if(editingSample){exitEdit();await resetForm()} // 退出编辑，避免清空后仍覆盖旧记录
+  photos=[];renderThumbs();$("assays").innerHTML="";updateElGrid();
+  $("f_remark").value="";$("f_loc").value="";$("f_lat").value="";$("f_lon").value="";$("f_alt").value="";$("f_area").value="";
+  $("gps_text").textContent="尚未定位";$("gps_acc").textContent="";$("gps_utm").textContent="";lastPos=null;
+  await clearDraft();refreshChips();toast("已清空本次输入");
 };
 
 /* ============ 列表 ============ */
+let listQ="",listFilter="all";
 async function renderList(){
   const all=(await S.all()).sort((a,b)=>(b.created_at||"").localeCompare(a.created_at||""));
-  $("empty_tip").style.display=all.length?"none":"";
-  $("samlist").innerHTML=all.map(s=>{
+  const pend=all.filter(s=>s.status!=="synced").length;
+  const q=listQ.trim().toLowerCase();
+  const rows=all.filter(s=>{
+    if(listFilter==="pend"&&s.status==="synced")return false;
+    if(listFilter==="ok"&&s.status!=="synced")return false;
+    if(!q)return true;
+    const hay=[s.sample_id,s.remark,s.area_name,s.loc_status,s.recorder,s.sample_time,
+      (s.assays||[]).map(a=>a.element+" "+a.value).join(" ")].filter(Boolean).join(" ").toLowerCase();
+    return hay.includes(q);
+  });
+  $("list_stat").textContent=`共 ${all.length} 条 · 待同步 ${pend} 条`+(q?` · 匹配 ${rows.length} 条`:"");
+  $("chips_filter").querySelectorAll("button").forEach(b=>b.classList.toggle("on",b.dataset.f===listFilter));
+  $("empty_tip").style.display=rows.length?"none":"";
+  $("empty_tip").textContent=all.length?"没有匹配的记录，换个关键词或点「全部」":"暂无记录，在「取样」录入并保存后会出现在这里";
+  $("samlist").innerHTML=rows.map(s=>{
     const b=s.status==="synced"?'<span class="badge b-ok">已同步</span>':s.status==="failed"?'<span class="badge b-fail">同步失败</span>':'<span class="badge b-pend">待同步</span>';
     const as=(s.assays||[]).map(a=>`${a.element} ${a.value}${a.unit}`).join(" · ");
+    const gps=(s.latitude!=null&&s.longitude!=null)?`<div class="meta">🧭 ${(+s.latitude).toFixed(5)}, ${(+s.longitude).toFixed(5)}</div>`:"";
     return`<div class="card samcard" data-id="${s.id}">
       <div class="info"><div><span class="sid">${xesc(s.sample_id)}</span>${b}${s.kind==="marker"?"<span class=\"badge\" style=\"background:#dbeafe;color:#1e40af\">标记点</span>":""}</div>
       <div class="meta">${s.kind==="marker"?"🚩 ":""}${xesc(s.sample_time||"")}${s.sample_type?" · "+xesc(s.sample_type):""}${s.loc_status?" · ⛏"+xesc(s.loc_status):""}${s.area_name?" · 📍"+xesc(s.area_name):""}</div>
+      ${gps}
       ${as?`<div class="meta">🧪 ${xesc(as)}</div>`:""}
       ${s.description?`<div class="meta">🪨 ${xesc(s.description)}</div>`:""}
-      <div class="meta">📷 ${(s.photos||[]).length} 张${s.erp_name?" · ERP:"+xesc(s.erp_name):""}</div>
+      <div class="meta">📷 ${(s.photos||[]).length} 张${s.erp_name?" · ERP:"+xesc(s.erp_name):""}${s.recorder?" · 👤"+xesc(s.recorder):""}</div>
       <div class="row" style="margin-top:8px">
         <button class="btn secondary act-view" style="padding:6px 12px;min-height:36px">详情/照片</button>
-        <button class="btn secondary act-edit" style="padding:6px 12px;min-height:36px">⋯ 编辑</button>
-      </div></div></div>`;
-  }).join("");
+        <button class="btn secondary act-edit" style="padding:6px 12px;min-height:36px">⋯ 更多</button>
+      </div></div></div>`}).join("");
+  document.querySelectorAll("#samlist .samcard").forEach(c=>c.onclick=e=>{
+    if(e.target.closest("button"))return;
+    viewDetail(+c.dataset.id,all);
+  });
   document.querySelectorAll(".act-edit").forEach(b=>b.onclick=e=>{
     const s=all.find(x=>x.id===+e.target.closest(".samcard").dataset.id);if(!s)return;
     editingSample=s;
@@ -909,10 +1033,13 @@ async function renderList(){
   });
   document.querySelectorAll(".act-view").forEach(b=>b.onclick=e=>viewDetail(+e.target.closest(".samcard").dataset.id,all));
 }
+$("q_list").addEventListener("input",()=>{listQ=$("q_list").value;renderList()});
+$("chips_filter").querySelectorAll("button").forEach(b=>b.onclick=()=>{listFilter=b.dataset.f;renderList()});
 /* ---- 记录编辑/删除 ---- */
 let editingSample=null;
-$("samedit").onclick=e=>{if(e.target.id==="samedit")$("samedit").classList.add("hidden")};
-$("samedit_no").onclick=()=>$("samedit").classList.add("hidden");
+const closeSamEdit=()=>{editingSample=null;$("samedit").classList.add("hidden")}; // 取消时务必清掉，否则下一条保存会覆盖旧记录
+$("samedit").onclick=e=>{if(e.target.id==="samedit")closeSamEdit()};
+$("samedit_no").onclick=closeSamEdit;
 $("samedit_del").onclick=async()=>{
   if(!editingSample)return;
   if(!confirm("确认删除这条记录？不可恢复"))return;
@@ -923,6 +1050,7 @@ $("samedit_del").onclick=async()=>{
 $("samedit_edit").onclick=async()=>{
   const s=editingSample;if(!s)return;
   $("samedit").classList.add("hidden");
+  await clearDraft(); // 编辑不沿用草稿
   $("f_sid").value=s.sample_id;$("f_time").value=s.sample_time||"";
   $("f_kind").value=s.kind==="marker"?"marker":"sample";applyKind();
   if(s.kind==="marker")$("f_mark").value=s.sample_type||"";else $("f_type").value=s.sample_type||"";
@@ -947,12 +1075,17 @@ function exitEdit(){
 function viewDetail(id,all){
   const s=all.find(x=>x.id===id);if(!s)return;
   const m=document.createElement("div");m.className="modal";
+  const urls=[];
   const row=(k,v)=>v?`<div style="display:flex;gap:8px;font-size:14px;margin-bottom:5px"><span style="color:var(--muted);min-width:64px">${k}</span><span>${v}</span></div>`:"";
+  const coord=s.latitude!=null?`${(+s.latitude).toFixed(6)}, ${(+s.longitude).toFixed(6)}`:"";
   m.innerHTML=`<div class="box"><h3>${xesc(s.sample_id)}</h3>
-    <div class="thumbs">${(s.photos||[]).map((p,i)=>p.blob?`<img src="${URL.createObjectURL(p.blob)}" data-i="${i}" style="max-width:100px;border-radius:8px;cursor:pointer">`:(p.url?`<img src="${xesc(p.url)}" data-i="${i}" style="max-width:100px;border-radius:8px;cursor:pointer">`:"")).join("")||"<span style='color:var(--muted)'>无照片</span>"}</div>
+    <div class="thumbs">${(s.photos||[]).map(p=>{
+      const u=p.blob?URL.createObjectURL(p.blob):(p.url||"");if(p.blob&&u)urls.push(u);
+      return u?`<img src="${u}" style="max-width:100px;border-radius:8px;cursor:pointer">`:"";
+    }).join("")||"<span style='color:var(--muted)'>无照片</span>"}</div>
     ${row("取样时间",xesc(s.sample_time))}
     ${row("类型",xesc(s.sample_type))}
-    ${row("坐标",s.latitude!=null?`${(+s.latitude).toFixed(6)}, ${(+s.longitude).toFixed(6)}`:"")}
+    ${row("坐标",coord)}
     ${row("UTM",xesc(s.utm))}
     ${row("海拔",s.altitude!=null?`${s.altitude} m`:"")}
     ${row("地区",xesc(s.area_name))}
@@ -964,9 +1097,26 @@ function viewDetail(id,all){
     ${row("记录人",xesc(s.recorder))}
     ${row("备注",xesc(s.remark))}
     ${row("同步错误",xesc(s.sync_err))}
-    <button class="btn secondary block" style="margin-top:10px">关闭</button></div>`;
-  m.querySelector("button").onclick=()=>m.remove();
-  m.onclick=e=>{if(e.target===m)m.remove()};
+    ${coord?`<button class="btn secondary block" data-copy style="margin-top:10px">📋 复制坐标</button>`:""}
+    ${s.status!=="synced"?`<button class="btn primary block" data-sync style="margin-top:8px">🔄 立即同步这条</button>`:""}
+    <button class="btn secondary block" data-close style="margin-top:8px">关闭</button></div>`;
+  const close=()=>{urls.forEach(u=>URL.revokeObjectURL(u));$("viewer").classList.add("hidden");m.remove()};
+  m.querySelectorAll("[data-close]").forEach(b=>b.onclick=close);
+  m.onclick=e=>{if(e.target===m)close()};
+  const cp=m.querySelector("[data-copy]");
+  if(cp)cp.onclick=async()=>{
+    try{await navigator.clipboard.writeText(coord);toast("坐标已复制")}
+    catch(e){toast("复制失败：请长按坐标手动复制",3500)}
+  };
+  const sb=m.querySelector("[data-sync]");
+  if(sb)sb.onclick=async()=>{
+    sb.disabled=true;sb.textContent="上传中…";
+    try{
+      await uploadSample(s);
+      toast(s.status==="synced"?`✅ 已同步 ${s.sample_id}`:`同步失败：${(s.sync_err||"未知错误").slice(0,120)}`,5000);
+    }catch(e){toast("同步失败："+(e.message||e),6000)}
+    close();await renderList();refreshPend();
+  };
   m.querySelectorAll("img").forEach(im=>im.onclick=()=>{ // 点照片全屏查看
     $("vimg").src=im.src;$("viewer").classList.remove("hidden");
   });
@@ -1066,6 +1216,28 @@ async function loadSet(){
   $("s_token").value=(await store.get("app_token"))||"";
 }
 $("btn_saveset").onclick=async()=>{await store.set("worker_url",$("s_worker").value.trim());await store.set("app_token",$("s_token").value.trim());toast("已保存")};
+/* 本机数据统计（设置页） */
+async function renderSetStats(){
+  const el=$("set_stat");if(!el)return;
+  const user=(await store.get("user"))||($("f_recorder").value||"").trim();
+  const su=$("set_user");if(su)su.textContent=user||"未登录";
+  el.innerHTML='<div style="grid-column:1/-1;color:var(--muted);font-size:13px">统计中…</div>';
+  try{
+    const [all,trips,tiles]=await Promise.all([S.all(),TRIPS.all(),T.count()]);
+    const photos=all.reduce((n,s)=>n+((s.photos||[]).length),0);
+    const pend=all.filter(s=>s.status!=="synced").length;
+    const failed=all.filter(s=>s.status==="failed").length;
+    const km=trips.reduce((n,t)=>n+trkDist(t.pts||[]),0)/1000;
+    el.innerHTML=`
+      <div><b>${all.length}</b>样品 / 标记</div>
+      <div><b>${pend}</b>待同步${failed?`（失败 ${failed}）`:""}</div>
+      <div><b>${photos}</b>张照片</div>
+      <div><b>${trips.length}</b>条行程</div>
+      <div><b>${km.toFixed(1)}</b>公里轨迹合计</div>
+      <div><b>${tiles}</b>张离线地图瓦片</div>`;
+  }catch(e){el.innerHTML='<div style="grid-column:1/-1;color:var(--danger)">统计失败：'+xesc(e.message||e)+'</div>'}
+}
+$("btn_stat_refresh").onclick=renderSetStats;
 $("btn_synctest").onclick=async()=>{
   const w=$("s_worker").value.trim();if(!w){toast("先填 Worker 地址");return}
   const tok=$("s_token").value.trim();
@@ -1526,15 +1698,16 @@ function trkDist(pts){let d=0;const p=(pts||[]).slice().sort((a,b)=>a.t-b.t);for
 async function updTrk(){
   if(!$("trk_state"))return;
   const on=trackWatch!=null||await store.get("track_on");
+  const dot=$("tab_trip_dot");if(dot)dot.classList.toggle("hidden",!on);
   if(on){
     const t0=await store.get("trip_t0"),name=await store.get("trip_name");
     $("trk_state").textContent="● 记录中 — "+(name||"行程")+(trackMode==="walk"?"（步行）":"（行车）");
     $("trk_state").style.color="#166534";
-    $("trk_info").textContent=`开始 ${t0?new Date(t0).toLocaleTimeString():"--"} · 已走 ${(trkDist(trackCache)/1000).toFixed(2)} km · 用时 ${fmtDur(Date.now()-(t0||Date.now()))}`;
+    $("trk_info").textContent=`开始 ${t0?new Date(t0).toLocaleTimeString():"--"} · 已走 ${(trkDist(trackCache)/1000).toFixed(2)} km · 用时 ${fmtDur(Date.now()-(t0||Date.now()))} · ${trackCache.length} 个点`;
     $("btn_trk").textContent="■ 结束本次行程";$("btn_trk").className="btn danger block";
   }else{
     $("trk_state").textContent="未记录";$("trk_state").style.color="";
-    $("trk_info").textContent="点开始，记录本次行程轨迹";
+    $("trk_info").textContent=trackCache.length?`点下方按钮开始记录新行程`:"点下方按钮开始记录行程轨迹";
     $("btn_trk").textContent="▶ 开始新的行程";$("btn_trk").className="btn primary block";
   }
 }
@@ -1636,7 +1809,7 @@ async function toggleTrack(){
     $("tripstop_info").innerHTML=`「${xesc(name||"行程")}」<br>开始 ${t0?new Date(t0).toLocaleTimeString():"--"} · 已走 ${(trkDist(trackCache)/1000).toFixed(2)} km · 用时 ${fmtDur(Date.now()-(t0||Date.now()))}`;
     $("tripstop").classList.remove("hidden");return}
   // 未记录 → 弹出取名框
-  $("tripname").value="行程 "+new Date().toLocaleString("zh",{year:"numeric",month:"2-digit",day:"2-digit"});
+  $("tripname").value="行程 "+new Date().toLocaleString("zh",{month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"});
   $("tripmodal").classList.remove("hidden");setTimeout(()=>$("tripname").select(),100);
 }
 async function stopTrip(){ // 确认后真正结束并存档
@@ -1659,7 +1832,7 @@ $("tripstop_yes").onclick=stopTrip;
 $("tripstop_no").onclick=()=>$("tripstop").classList.add("hidden");
 $("tripstop").onclick=e=>{if(e.target.id==="tripstop")$("tripstop").classList.add("hidden")};
 async function startTrip(){
-  const name=$("tripname").value.trim()||("行程 "+new Date().toLocaleString("zh",{year:"numeric",month:"2-digit",day:"2-digit"}));
+  const name=$("tripname").value.trim()||("行程 "+new Date().toLocaleString("zh",{month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"}));
   if("getBattery" in navigator){
     const bat=await navigator.getBattery();
     if(!bat.charging && bat.level<=0.25){
@@ -1670,8 +1843,8 @@ async function startTrip(){
   await store.set("trip_name",name);
   await store.set("trip_t0",Date.now());
   await TR.clear();lastTP=null;gpsWatchStartT=0;lastFixT=0;gpsLostWarned=false;
-  startWatch();await store.set("track_on",true);updTrk();
-  toast("行程记录中（15s/10m 打点）");
+  startWatch();await store.set("track_on",true);updTrk();renderTrips();
+  toast(trackMode==="walk"?"行程记录中（步行：每 2 米 / 3 秒打一点）":"行程记录中（行车：每 10 米 / 5 秒打一点）",4000);
 }
 $("tripok").onclick=startTrip;
 $("tripcancel").onclick=()=>$("tripmodal").classList.add("hidden");
@@ -1680,25 +1853,49 @@ async function resumeTrack(){ // 页面重开后自动续录同一次行程
   if(await store.get("track_on"))startWatch();
 }
 $("btn_trk").onclick=toggleTrack;
-setInterval(()=>{if((trackWatch!=null)&&!$("tab_trip").classList.contains("hidden"))updTrk()},1000);
+setInterval(()=>{
+  if(document.hidden)return;
+  if(trackWatch!=null)updTrk();
+  if(!$("tab_trip").classList.contains("hidden"))renderTripsLive();
+},1000);
 /* ---- 历史行程列表 ---- */
+async function renderTripsLive(){ // 记录中卡片每秒刷新（只改文字，不重建按钮）
+  const box=$("triplive");if(!box)return;
+  const on=(trackWatch!=null)||await store.get("track_on");
+  if(!on){if(box.innerHTML)box.innerHTML="";return}
+  if(!box.firstElementChild){
+    box.innerHTML=`<div class="card livecard">
+      <div style="display:flex;align-items:center;gap:8px"><span class="sid" id="live_name"></span><span class="badge" style="background:#dcfce7;color:#166534">● 记录中</span></div>
+      <div class="meta" id="live_meta"></div>
+      <div class="row" style="margin-top:8px"><button class="btn danger" id="btn_live_stop" style="padding:6px 12px;min-height:36px">■ 结束本次行程</button></div></div>`;
+    $("btn_live_stop").onclick=toggleTrack;
+  }
+  const t0=+(await store.get("trip_t0"))||Date.now(),name=(await store.get("trip_name"))||"行程";
+  $("live_name").textContent=name;
+  $("live_meta").textContent=`开始 ${new Date(t0).toLocaleTimeString()} · ⏱ ${fmtDur(Date.now()-t0)} · 📏 ${(trkDist(trackCache)/1000).toFixed(2)} km · ${trackCache.length} 个点`;
+}
 async function renderTrips(){
   const el=$("triplist");if(!el)return;
   const all=(await TRIPS.all()).sort((a,b)=>b.t0-a.t0);
-  const activeId=(await store.get("track_on"))?await store.get("trip_active_id"):null;
-  el.innerHTML=all.map(t=>{const live=activeId&&t.id===activeId;
-    return`<div class="samcard" data-tid="${t.id}"${live?' style="border-color:var(--ok);box-shadow:0 0 0 2px rgba(34,197,94,.25)"':""}>
+  const on=(trackWatch!=null)||await store.get("track_on");
+  const activeId=on?await store.get("trip_active_id"):null;
+  el.innerHTML=all.map(t=>{
+    const live=activeId&&t.id===activeId;
+    const pts=t.pts||[];
+    const t1=t.t1||(pts.length?pts[pts.length-1].t:t.t0);
+    return`<div class="card samcard" data-tid="${t.id}">
     <div class="info"><div><span class="sid">${xesc(t.name)}</span>${live?'<span class="badge" style="background:#dcfce7;color:#166534">● 记录中</span>':""}</div>
-    <div class="meta">${new Date(t.t0).toLocaleString()} → ${new Date(t.t1).toLocaleTimeString()}</div>
-    <div class="meta">⏱ ${fmtDur(t.t1-t.t0)} · 📏 ${(trkDist(t.pts)/1000).toFixed(2)} km</div>
+    <div class="meta">${new Date(t.t0).toLocaleString()} → ${new Date(t1).toLocaleTimeString()}</div>
+    <div class="meta">⏱ ${fmtDur(t1-t.t0)} · 📏 ${(trkDist(pts)/1000).toFixed(2)} km · ${pts.length} 个点</div>
     <div class="row" style="margin-top:8px">
       <button class="btn secondary act-replay" style="padding:6px 12px;min-height:36px">🗺 回放轨迹</button>
       <button class="btn secondary act-edit" style="padding:6px 12px;min-height:36px">⋯ 编辑</button>
-    </div></div></div>`}).join("")||'<p style="color:var(--muted);font-size:14px">还没有行程记录</p>';
+    </div></div></div>`}).join("")||'<p class="empty">还没有行程记录，点上面的按钮开始第一次行程</p>';
   el.querySelectorAll(".act-replay").forEach(b=>b.onclick=()=>{
     const t=all.find(x=>x.id===+b.closest(".samcard").dataset.tid);if(!t)return;
-    viewTrip=t.pts||[];
-    document.querySelector('nav button[data-pg="pg-map"]').click();
+    const pts=t.pts||[];
+    document.querySelector('nav button[data-pg="pg-map"]').click(); // 先切页（切页会清掉上一次回放）
+    viewTrip=pts;
     setTimeout(()=>{if(map&&viewTrip.length){map.cx=lon2x(viewTrip[0].lon,12);map.cy=lat2y(viewTrip[0].lat,12);map.draw()}toast("回放："+t.name)},150);
   });
   el.querySelectorAll(".act-edit").forEach(b=>b.onclick=()=>{
@@ -1707,6 +1904,7 @@ async function renderTrips(){
     $("tripedit").dataset.tid=t.id;
     $("tripedit").classList.remove("hidden");
   });
+  renderTripsLive();
 }
 $("tripedit").onclick=e=>{if(e.target.id==="tripedit")$("tripedit").classList.add("hidden")};
 $("tripedit_no").onclick=()=>$("tripedit").classList.add("hidden");
@@ -1723,7 +1921,8 @@ $("tripedit_resume").onclick=async()=>{ // 把新轨迹续接到这条行程
   await store.set("trip_name",t.name);
   await store.set("trip_t0",t.t0); // 保留原开始时间
   await TR.clear();trackCache=t.pts||[];
-  for(const p of trackCache)await idb().then(d=>new Promise(res=>{const tr=d.transaction("track","readwrite");tr.objectStore("track").add(p);tr.oncomplete=res}));
+  const pts=trackCache; // 一次事务写回，长行程也快
+  if(pts.length)await idb().then(d=>new Promise(res=>{const tr=d.transaction("track","readwrite");const os=tr.objectStore("track");pts.forEach(p=>os.add(p));tr.oncomplete=res}));
   lastTP=trackCache.length?{t:trackCache[trackCache.length-1].t,lat:trackCache[trackCache.length-1].lat,lon:trackCache[trackCache.length-1].lon}:null;
   startWatch();await store.set("track_on",true);updTrk();renderTrips();
   toast(`继续记录「${t.name}」，新轨迹将接到后面`);
@@ -1850,7 +2049,7 @@ if(!isStandalone){
 }
 
 /* ============ 版本检查：发布新版本后自动弹「更新」按钮 ============ */
-const APP_VER="b20261107-117";
+const APP_VER="b20261107-118";
 let updateDismissed=false;
 function showUpdateTip(){if(updateDismissed)return;const t=$("update_tip");if(t)t.style.display="flex";}
 async function checkUpdate(){
@@ -1929,6 +2128,7 @@ async function submitLogin(){
   if(pwd!==ACCOUNTS[loginPick]){$("login_err").textContent="密码不对，请重试";return}
   await store.set("user",loginPick);await store.set("recorder",loginPick);
   $("f_recorder").value=loginPick;
+  if($("set_user"))$("set_user").textContent=loginPick;
   $("loginmodal").classList.add("hidden");
   toast(`✅ 记录人：${loginPick}`);
 }
@@ -1945,7 +2145,7 @@ $("login_pwd").onkeydown=e=>{if(e.key==="Enter")submitLogin()};
       toast("✅ 同步已自动配置好，以后保存记录会自动上传",5000);}
   }catch(e){}
   try{await loadAreas();await mergeLegacyStores();await dedupeSamples()}catch(e){toast("矿区配置读取失败："+String(e&&e.message||e).slice(0,60),6000)}
-  await loadSet();resetForm();refreshPend();refreshSampleCache();TR.load();setTimeout(resumeTrack,800);
+  await loadSet();await resetForm();await restoreDraft();await refreshPend();await refreshSampleCache();await TR.load();setTimeout(resumeTrack,800);
   // 记录人只认登录态：没登录就弹窗，登录后锁定，软件内不给换人
   const name=(await store.get("user"))||"";
   if(ACCOUNTS[name])$("f_recorder").value=name;else{$("f_recorder").value="";openLogin()}
