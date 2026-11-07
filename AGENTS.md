@@ -40,13 +40,31 @@
 - 样品读写统一走 `S.*`；kv 用 `store.get/set`。
 - 试验版遗留的 `samples_*` 由 `mergeLegacyStores()` 首启并回主库（标记 `kv.areas_merged_v2`）。
 
+### 写入路径的坑（2026-11-07 修）
+
+- `S.put()` **必须回写自增主键**。不带 `id` 的 `put()` 在 IndexedDB 里是**插入新行**；
+  旧版没写回，于是「保存 → `autoSync` 又 `S.put` 一次」会给每条新记录插出两条同号记录。
+  现在 `S.put` 完成后把 `r.result` 赋回 `s.id`。改这里之前先想清楚所有调用点（保存、编辑、同步、迁移）。
+- 一次性修复：`dedupeSamples()`（标记 `kv.dedupe_v1`）按 `sample_id` 去重，保留后写的那条，
+  并把「已同步」状态和照片并过去；启动时在 `mergeLegacyStores()` 之后调用。
+- `uploadSample()` 的 `captured_licence` 只能取 `s.captured_licence`。
+  早期写成 `s.licence||s.license_no`（S1 已删的字段），结果把采集快照清成空串再写进 D1。
+- 上传载荷里 `status` 固定为 `"synced"`：客户端的同步状态不该写进云端记录。
+- 照片上传成功后把 `key/url/idx` 回写本地记录；重试/再保存时同序号照片直接复用，不再重传几 MB。
+- 地图位图缓存 `tileCache` 上限 240 张（LRU），瓦片本体仍在 IndexedDB `tiles` 里。
+
 ## 验证方式
 
 本地起 `python -m http.server`，用一个同源测试页 iframe 载入 `sampling_helper.html`，父页可直接读 `contentDocument` 和 IndexedDB 做断言（曾经的 P1 测试即此法）。注意：`indexedDB.deleteDatabase` 会被未关闭的连接阻塞，测试里要给超时兜底。
 
 ## 版本号
 
-`sampling_helper.html` 里两处 `bYYYYMMDD-NNN` 要同步改；SW 的 `CACHE` 单独加一。
+改完在 `ecobox-sampling/` 下跑 `py -3.12 devtools/bump_version.py`，一次同步三处（`--dry-run` 可先看）：
+`sampling_helper.html` 的 `APP_VER` + 设置页两处显示、`sampling_sw.js` 的 `CACHE`（`sampling-vNN` 必须变，否则老客户端不换缓存）、`version.txt`。
+
+`version.txt` 是**更新探针**：页面加载后、回到前台、每 5 分钟各 fetch 一次（`no-store`），内容与 `APP_VER` 不一致就在底部导航上方弹出「🔄 有新版本 / 立即更新 / 稍后」。
+「立即更新」优先走 `SW.postMessage("SKIP_WAITING")` + `controllerchange` 重载，没有 waiting SW 时退回 `forceAppUpdate()`（清缓存 + 注销 SW + 带 `?r=` 重载）。
+`version.txt` 必须发布（不能进 `.gitignore`）；漏传时探针 404，横幅永远不弹。
 
 ## 地质图层（QGIS → 网页，2026-11）
 
@@ -114,6 +132,18 @@ go/no-go 由人拍板并记 decision log。取样点永不写入矿证归属（�
 | R2 桶 | `ecobox-media` | 照片/报告/图层；当前前缀白名单 `photos/ reports/ geo/ test/`，单文件 ≤16 MB |
 | 上传口令 | `_deploy/worker/.media_token` | **不入库**；前端 `DEF_MEDIA_TOKEN` 内嵌（临时，见下） |
 | 部署 | `$env:CLOUDFLARE_API_TOKEN=...; python devtools\deploy_media_worker.py` | 走 CF API multipart 上传，含 r2_binding + secret |
+
+## 云端鉴权（2026-11-07 起）
+
+- 采样 Worker 已配 `APP_TOKEN`：`/ping` `/sample` `/samples` `/sample/<id>` `/ocr` 全部要求 `X-App-Token`，没带就 401。
+  改之前是**全开**的（`env.APP_TOKEN` 为空时整段鉴权被跳过），等于任何人可读、可覆盖、可删 D1 里的取样记录。
+- 令牌只存本机：`_deploy/worker/.sampling_token`，**不入库、不进仓库**。泄露或丢失就在 CF 重新
+  `PUT /accounts/<acc>/workers/scripts/fancy-heart-7a80/secrets` 覆盖成新值，再让设备重扫一次。
+- 设备授权：打开 `sampling_helper.html?t=<令牌>` 一次即可，页面把令牌写进 IndexedDB `app_token` 并清掉地址栏的 `?t=`；
+  `_deploy/bootstrap.html` 是本地二维码页（每台设备扫一次）。
+- 没授权的设备照样能离线记录，只是同步标 `failed`、提示「需要访问令牌」；补上令牌后点顶部「同步」补传，数据不丢。
+- 媒体 Worker 的 `UPLOAD_TOKEN` 是**另一个独立口令**（仍硬编码在前端，见 S5 待办）。两者故意不共用：
+  前端是公开的，合并只会把一个泄露点放大成全部权限。
 
 ## S1（照片搬 R2 + 取样与矿证解绑）— 已上线
 

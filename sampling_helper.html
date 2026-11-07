@@ -15,8 +15,9 @@
 :root{--primary:#1668dc;--bg:#f4f6f9;--card:#fff;--text:#1e293b;--muted:#64748b;--border:#e2e8f0;--danger:#ef4444;--ok:#22c55e;--warn:#f59e0b}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);font-size:15px}
-#update_tip{position:relative;z-index:100;background:var(--warn);color:#fff;padding:9px 14px;text-align:center;font-size:14px;display:none;gap:10px;justify-content:center;align-items:center}
-#update_tip button{background:#fff;color:var(--warn);border:none;border-radius:6px;padding:4px 10px;font-size:13px;font-weight:600}
+#update_tip{position:fixed;left:0;right:0;bottom:56px;z-index:300;background:var(--warn);color:#fff;padding:10px 14px;text-align:center;font-size:14px;display:none;gap:10px;justify-content:center;align-items:center;box-shadow:0 -2px 12px rgba(0,0,0,.18)}
+#update_tip button{background:#fff;color:var(--warn);border:none;border-radius:6px;padding:8px 14px;font-size:13px;font-weight:600;min-height:34px}
+#update_tip button.ghost{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.75);font-weight:500}
 header{position:sticky;top:0;z-index:50;background:#111;color:#fff;padding:10px 14px;display:flex;align-items:center;gap:10px}
 header h1{font-size:17px;flex:1}
 .netdot{width:10px;height:10px;border-radius:50%;background:var(--ok)}
@@ -85,7 +86,7 @@ progress{width:100%;height:10px;margin-top:8px}
 </style>
 </head>
 <body>
-<div id="update_tip">🔄 发现新版本 <button id="update_now">立即更新</button></div>
+<div id="update_tip">🔄 有新版本 <button id="update_now">立即更新</button><button id="update_later" class="ghost">稍后</button></div>
 <header>
   <span class="netdot" id="netdot" title="网络状态"></span>
   <h1>ECOBOX矿区考察记录本</h1>
@@ -102,7 +103,20 @@ progress{width:100%;height:10px;margin-top:8px}
     <div class="card">
       <label>记录类型</label>
       <div class="chips" id="chips_kind"></div>
-      <div id="w_type"><label>取样类型</label><div class="chips" id="chips_type"></div></div>
+      <div id="w_type"><label>取样类型</label><div class="chips" id="chips_type"></div>
+        <label style="margin-top:8px">位置状态</label>
+        <select id="f_loc">
+          <option value="">— 请选择 —</option>
+          <option>勘探开挖</option>
+          <option>自然露头</option>
+          <option>民采点</option>
+          <option>废弃开采坑</option>
+          <option>废石/尾矿堆</option>
+          <option>钻孔岩心</option>
+          <option>大型开采作业点</option>
+          <option>其他</option>
+        </select>
+      </div>
       <div id="w_mark" class="hidden"><label>标记类型</label><div class="chips" id="chips_mark"></div></div>
       <select id="f_kind" class="hidden">
         <option value="sample" selected>⛏ 取样</option><option value="marker">🚩 标记点</option>
@@ -141,21 +155,6 @@ progress{width:100%;height:10px;margin-top:8px}
       <div class="elgrid" id="elgrid"></div>
       <div id="assays"></div>
       <button class="btn secondary block" id="btn_add_assay">＋ 添加其他元素</button>
-    </div>
-    <div class="card" id="card_loc">
-      <h3>📍 取样位置 / 状态</h3>
-      <label>位置状态</label>
-      <select id="f_loc">
-        <option value="">— 请选择 —</option>
-        <option>勘探开挖</option>
-        <option>自然露头</option>
-        <option>民采点</option>
-        <option>废弃开采坑</option>
-        <option>废石/尾矿堆</option>
-        <option>钻孔岩心</option>
-        <option>大型开采作业点</option>
-        <option>其他</option>
-      </select>
     </div>
     <div class="card">
       <h3>🪨 地质描述</h3>
@@ -248,6 +247,7 @@ progress{width:100%;height:10px;margin-top:8px}
       <p style="font-size:12px;color:var(--muted);margin-bottom:8px">已开启<b>免配置模式</b>：联网即自动同步到云端，无需任何设置。下面的字段仅供高级用户改服务器用，一般不用动。</p>
       <label>Worker 地址（已固定）</label><input id="s_worker" value="https://fancy-heart-7a80.frankataix.workers.dev" readonly style="background:#f1f5f9;color:var(--muted)">
       <label>访问令牌</label><input id="s_token" placeholder="Worker 里配置的 APP_TOKEN">
+      <p style="font-size:12px;color:var(--muted);margin-top:6px">用带 <code>?t=</code> 的链接打开过一次就会自动填好；留空则只存本机、不上云。</p>
       <button class="btn primary block" id="btn_saveset">保存设置</button>
       <button class="btn secondary block" id="btn_synctest">测试连接</button>
     </div>
@@ -271,10 +271,10 @@ progress{width:100%;height:10px;margin-top:8px}
     <div class="card">
       <h3>🔄 版本更新</h3>
       <button class="btn secondary block" id="btn_update">检查并强制更新到最新版</button>
-      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：b20261102-104</p>
+      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：b20261107-108</p>
     </div>
     <div class="card">
-      <p style="font-size:11px;color:var(--muted);text-align:center">b20261102-104</p>
+      <p style="font-size:11px;color:var(--muted);text-align:center">b20261107-108</p>
       <h3>🗑 危险操作</h3>
       <button class="btn danger block" id="btn_wipe">🔒 清空本机全部数据（需密码）</button>
     </div>
@@ -492,7 +492,9 @@ const store={ // kv helpers
 const getAllReq=st=>idb().then(d=>new Promise((res,rej)=>{const r=d.transaction(st).objectStore(st).getAll();r.onsuccess=()=>res(r.result||[]);r.onerror=()=>rej(r.error)}));
 const S={ // 全部样品同一个 store：矿区归属只是记录上的字段
   all:()=>getAllReq("samples"),
-  put:s=>idb().then(d=>new Promise(res=>{const t=d.transaction("samples","readwrite");t.objectStore("samples").put(s);t.oncomplete=res})),
+  // 必须回写自增主键：否则上传后再次 put 同一条会插出重复记录
+  put:s=>idb().then(d=>new Promise(res=>{const t=d.transaction("samples","readwrite");const r=t.objectStore("samples").put(s);
+    t.oncomplete=()=>{if(s.id==null&&r.result!=null)s.id=r.result;res()}})),
   del:id=>idb().then(d=>new Promise(res=>{const t=d.transaction("samples","readwrite");t.objectStore("samples").delete(id);t.oncomplete=res})),
   clear:()=>idb().then(d=>new Promise(res=>{const t=d.transaction(["samples","tiles"],"readwrite");t.objectStore("samples").clear();t.objectStore("tiles").clear();t.oncomplete=res})),
   wipeAll:async()=>{ // 兼容曾按矿区分 store 的试验版
@@ -546,6 +548,22 @@ const TRIPS={ // 行程记录：一次旅行=一条
   put:t=>idb().then(d=>new Promise(res=>{const tr=d.transaction("trips","readwrite");tr.objectStore("trips").put(t);tr.oncomplete=res})),
   del:id=>idb().then(d=>new Promise(res=>{const tr=d.transaction("trips","readwrite");tr.objectStore("trips").delete(id);tr.oncomplete=res})),
 };
+async function dedupeSamples(){ // 旧版本联网保存会插出重复记录：按 sample_id 留一条
+  if(await store.get("dedupe_v1"))return;
+  const byId=new Map(),drop=[];
+  for(const s of await S.all()){
+    const k=s.sample_id;if(!k)continue;
+    const prev=byId.get(k);
+    if(!prev){byId.set(k,s);continue}
+    const keep=prev.id>s.id?prev:s,gone=prev.id>s.id?s:prev;
+    if(gone.status==="synced"&&keep.status!=="synced")keep.status="synced";
+    if(!(keep.photos||[]).length&&(gone.photos||[]).length)keep.photos=gone.photos;
+    byId.set(k,keep);drop.push(gone);
+  }
+  for(const s of drop)await S.del(s.id);
+  await store.set("dedupe_v1",true);
+  if(drop.length){await refreshSampleCache();toast(`已清理 ${drop.length} 条重复记录`,4000)}
+}
 /* 内存缓存：地图每帧绘制用同步数据，避免每帧查 IndexedDB 造成覆盖层闪烁 */
 let sampleCache=[],trackCache=[],viewTrip=null;
 async function refreshSampleCache(){sampleCache=await S.all();if(map)map.draw()}
@@ -752,7 +770,6 @@ function applyKind(){
   $("w_type").classList.toggle("hidden",isMark);
   $("w_mark").classList.toggle("hidden",!isMark);
   $("card_assay").classList.toggle("hidden",isMark);
-  $("card_loc").classList.toggle("hidden",isMark);
   refreshChips();
 }
 $("f_kind").onchange=async()=>{applyKind();$("f_sid").value=await nextSid();await store.set("last_kind",$("f_kind").value)};
@@ -949,6 +966,8 @@ const DEF_MEDIA="https://ecobox-media.frankataix.workers.dev";
 const DEF_MEDIA_TOKEN="BNs1CoMILEsITqt3rUtD5mqh4c467Ihe";
 /* 照片直传 R2，D1 只留 key/url（否则单条记录几十 MB，列表拉不动） */
 async function uploadPhoto(sid,i,p){
+  // 已按同一序号传过就复用：重试/再次保存不必把几 MB 照片重发一遍
+  if(p.key&&p.url&&p.idx===i)return{name:p.name,kind:p.kind,key:p.key,url:p.url,size:p.size};
   const ab=await p.blob.arrayBuffer();
   const key="photos/"+sid+"/"+String(i+1).padStart(2,"0")+".jpg";
   const mtok=(await store.get("media_token"))||DEF_MEDIA_TOKEN;
@@ -963,12 +982,21 @@ async function uploadSample(s){
   const wurl=(await store.get("worker_url"))||DEF_WORKER,tok=(await store.get("app_token"))||"";
   if(!navigator.onLine)throw new Error("当前无网络");
   const photos=[];
-  for(let i=0;i<(s.photos||[]).length;i++)photos.push(await uploadPhoto(s.sample_id,i,s.photos[i]));
+  for(let i=0;i<(s.photos||[]).length;i++){
+    const up=await uploadPhoto(s.sample_id,i,s.photos[i]);
+    const local=s.photos[i];local.key=up.key;local.url=up.url;local.idx=i; // 回写：下次重试直接复用
+    photos.push(up);
+  }
   const headers={"Content-Type":"application/json"};if(tok)headers["X-App-Token"]=tok;
-  const payload={...s,area_id:s.area_id||"",captured_licence:s.licence||s.license_no||"",
-    licence:undefined,license_no:undefined,license_holder:undefined,photos,id:undefined};
+  // captured_licence 是采集快照，必须原样上云；status 以本次上传结果为准
+  const payload={...s,area_id:s.area_id||"",captured_licence:s.captured_licence||"",
+    licence:undefined,license_no:undefined,license_holder:undefined,photos,id:undefined,status:"synced"};
   const r=await fetch(wurl.replace(/\/$/,"")+"/sample",{method:"POST",headers,body:JSON.stringify(payload)});
-  const j=await r.json();
+  if(r.status===401){ // 云端开了鉴权：提示怎么补令牌，别只留一个 JSON 错误
+    s.status="failed";s.sync_err="401 未授权：缺少访问令牌";await S.put(s);
+    throw new Error("需要访问令牌：请用带 ?t= 的链接打开一次，或在「设置 → 访问令牌」里填入");
+  }
+  const j=await r.json().catch(()=>({}));
   if(r.ok&&j.ok){s.status="synced";s.erp_name=j.name;}
   else{s.status="failed";s.sync_err=JSON.stringify(j).slice(0,300)}
   await S.put(s);
@@ -1026,6 +1054,7 @@ $("btn_synctest").onclick=async()=>{
   const tok=$("s_token").value.trim();
   try{const r=await fetch(w.replace(/\/$/,"")+"/ping",{headers:{"X-App-Token":tok}});
     if(r.ok){await store.set("worker_url",w);await store.set("app_token",tok);toast("连接成功 ✔ 已自动保存")}
+    else if(r.status===401)toast("🔑 令牌不对（401）：核对 Worker 里的 APP_TOKEN",5000);
     else toast("连接失败 "+r.status)}catch(e){toast("连接失败："+e.message)}
 };
 async function forceAppUpdate(){
@@ -1300,12 +1329,18 @@ function initMap(){
   }catch(err){ // iOS 等环境出错时显示原因而不是白屏
     $("mapinfo").textContent="地图绘制出错："+String(err&&err.message||err).slice(0,80);
   }};
-  const tileCache={},tilePending={};
+  // 瓦片位图缓存上限：长距离平移后不无限占内存（瓦片本体仍在 IndexedDB）
+  const tileCache={},tilePending={},tileOrder=[],TILE_CACHE_MAX=240;
+  function cacheTile(k,im){
+    if(!tileCache[k]){tileOrder.push(k);
+      while(tileOrder.length>TILE_CACHE_MAX)delete tileCache[tileOrder.shift()]}
+    tileCache[k]=im;
+  }
   async function drawTile(z,x,y,px,py,sz){
     const k=z+"/"+x+"/"+y;
     if(tileCache[k]){ctx.drawImage(tileCache[k],px,py,sz,sz);return}
     const blob=await T.get(k);
-    if(blob){const im=await mkBitmap(blob);tileCache[k]=im;ctx.drawImage(im,px,py,sz,sz);return}
+    if(blob){const im=await mkBitmap(blob);cacheTile(k,im);ctx.drawImage(im,px,py,sz,sz);return}
     if(tilePending[k]){ // 已在下载中，画占位
       ctx.strokeStyle="rgba(100,116,139,.15)";ctx.strokeRect(px,py,sz,sz);return}
     // 父级补位：逐级向上找已缓存瓦片，放大裁切显示（保证离线有底图）
@@ -1325,7 +1360,7 @@ function initMap(){
     tilePending[k]=1;
     const ctrl=new AbortController();const tm=setTimeout(()=>ctrl.abort(),8000);
     fetch(`${OSM}/${k}.png`,{signal:ctrl.signal}).then(r=>r.ok?r.blob():null).then(async b=>{
-      if(b){await T.put(k,b);tileCache[k]=await mkBitmap(b)}
+      if(b){await T.put(k,b);cacheTile(k,await mkBitmap(b))}
       tilePending[k]=0;scheduleDraw();
     }).catch(()=>{tilePending[k]=0}).finally(()=>clearTimeout(tm));
     ctx.strokeStyle="rgba(100,116,139,.2)";ctx.strokeRect(px,py,sz,sz);
@@ -1797,6 +1832,41 @@ if(!isStandalone){
   setTimeout(()=>{if(!deferredPrompt&&!isIOS)banner.classList.add("hidden")},12000);
 }
 
+/* ============ 版本检查：发布新版本后自动弹「更新」按钮 ============ */
+const APP_VER="b20261107-108";
+let updateDismissed=false;
+function showUpdateTip(){if(updateDismissed)return;const t=$("update_tip");if(t)t.style.display="flex";}
+async function checkUpdate(){
+  try{
+    const r=await fetch("version.txt?_="+Date.now(),{cache:"no-store"});
+    if(!r.ok)return;
+    const v=(await r.text()).trim();
+    if(v&&v!==APP_VER)showUpdateTip();
+  }catch(e){}
+}
+async function applyUpdate(){
+  const b=$("update_now");
+  if(b){b.disabled=true;b.textContent="更新中…";}
+  try{
+    const reg=await navigator.serviceWorker.getRegistration();
+    if(reg&&reg.waiting){
+      reg.waiting.postMessage("SKIP_WAITING");
+      await new Promise(res=>{
+        const done=setTimeout(res,2500);
+        navigator.serviceWorker.addEventListener("controllerchange",()=>{clearTimeout(done);res()},{once:true});
+      });
+      location.reload();return;
+    }
+  }catch(e){}
+  await forceAppUpdate();
+}
+$("update_now").onclick=applyUpdate;
+$("update_later").onclick=()=>{updateDismissed=true;$("update_tip").style.display="none"};
+setTimeout(checkUpdate,2500);
+setInterval(checkUpdate,5*60*1000);
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")checkUpdate()});
+addEventListener("online",checkUpdate);
+
 /* ============ Service Worker：缓存页面本体，离线可打开 ============ */
 if("serviceWorker" in navigator&&location.protocol==="https:"){
   navigator.serviceWorker.register("sampling_sw.js",{updateViaCache:"none"}).then(reg=>{
@@ -1804,14 +1874,12 @@ if("serviceWorker" in navigator&&location.protocol==="https:"){
       const w=reg.installing;
       if(!w)return;
       w.addEventListener('statechange',()=>{
-        if(w.state==='installed'&&navigator.serviceWorker.controller){
-          const t=$('update_tip');
-          if(t){t.style.display='flex';$('update_now').onclick=forceAppUpdate;}
-        }
+        if(w.state==='installed')showUpdateTip();
       });
     });
     // 进入页面后主动检查一次更新
     setTimeout(()=>reg.update(),2000);
+    setInterval(()=>reg.update(),5*60*1000);
   }).catch(()=>{});
   // 离线就绪自检：6 秒后 SW 还没激活，说明离线缓存没装上（离线打不开）
   setTimeout(()=>{
@@ -1830,7 +1898,7 @@ if("serviceWorker" in navigator&&location.protocol==="https:"){
       u.searchParams.delete("t");u.searchParams.delete("token");history.replaceState(null,"",u.toString());
       toast("✅ 同步已自动配置好，以后保存记录会自动上传",5000);}
   }catch(e){}
-  try{await loadAreas();await mergeLegacyStores()}catch(e){toast("矿区配置读取失败："+String(e&&e.message||e).slice(0,60),6000)}
+  try{await loadAreas();await mergeLegacyStores();await dedupeSamples()}catch(e){toast("矿区配置读取失败："+String(e&&e.message||e).slice(0,60),6000)}
   await loadSet();resetForm();refreshPend();refreshSampleCache();TR.load();setTimeout(resumeTrack,800);
 })();
 store.get("track_mode").then(m=>setTrackMode(m==="walk"?"walk":"car"));
