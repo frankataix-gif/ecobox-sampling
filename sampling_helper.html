@@ -103,8 +103,7 @@ progress{width:100%;height:10px;margin-top:8px}
     <div class="card">
       <label>记录类型</label>
       <div class="chips" id="chips_kind"></div>
-      <div id="w_type"><label>取样类型</label><div class="chips" id="chips_type"></div>
-        <label style="margin-top:8px">位置状态</label>
+      <div id="w_type"><label>位置状态</label>
         <div class="chips" id="chips_loc"></div>
         <select id="f_loc" class="hidden">
           <option value="">— 不填 —</option>
@@ -123,7 +122,7 @@ progress{width:100%;height:10px;margin-top:8px}
         <option value="sample" selected>⛏ 取样</option><option value="marker">🚩 标记点</option>
       </select>
       <select id="f_type" class="hidden">
-        <option selected>岩石</option><option>土壤</option><option>刻槽</option><option>岩心</option><option>矿点/民采点</option><option>其他</option>
+        <option value="" selected>—</option><option>岩石</option><option>土壤</option><option>刻槽</option><option>岩心</option><option>矿点/民采点</option><option>其他</option>
       </select>
       <select id="f_mark" class="hidden">
         <option selected>桥</option><option>路口</option><option>岔路</option><option>过河点</option><option>营地</option><option>水井</option><option>村庄</option><option>矿部/办公室</option><option>停车点</option><option>其他标记</option>
@@ -268,10 +267,10 @@ progress{width:100%;height:10px;margin-top:8px}
     <div class="card">
       <h3>🔄 版本更新</h3>
       <button class="btn secondary block" id="btn_update">检查并强制更新到最新版</button>
-      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：b20261107-110</p>
+      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：b20261107-111</p>
     </div>
     <div class="card">
-      <p style="font-size:11px;color:var(--muted);text-align:center">b20261107-110</p>
+      <p style="font-size:11px;color:var(--muted);text-align:center">b20261107-111</p>
       <h3>🗑 危险操作</h3>
       <button class="btn danger block" id="btn_wipe">🔒 清空本机全部数据（需密码）</button>
     </div>
@@ -777,12 +776,12 @@ function buildChips(cid,sid){
   box.querySelectorAll("button").forEach(b=>b.onclick=()=>{sel.value=b.dataset.v;sel.dispatchEvent(new Event("change"));refreshChips()});
 }
 function refreshChips(){
-  [["f_kind","chips_kind"],["f_type","chips_type"],["f_loc","chips_loc"],["f_mark","chips_mark"]].forEach(([s,c])=>{
+  [["f_kind","chips_kind"],["f_loc","chips_loc"],["f_mark","chips_mark"]].forEach(([s,c])=>{
     const v=$(s).value;
     $(c).querySelectorAll("button").forEach(b=>b.classList.toggle("on",b.dataset.v===v));
   });
 }
-buildChips("chips_kind","f_kind");buildChips("chips_type","f_type");buildChips("chips_loc","f_loc");buildChips("chips_mark","f_mark");
+buildChips("chips_kind","f_kind");buildChips("chips_loc","f_loc");buildChips("chips_mark","f_mark");
 /* ============ 保存记录 ============ */
 async function nextSid(){
   const d=new Date(),pre=($("f_kind").value==="marker"?"M":"S")+d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate())+"-";
@@ -801,7 +800,6 @@ async function resetForm(){
   $("f_sid").value=await nextSid();$("f_time").value=nowLocal();
   $("f_recorder").value=(await store.get("recorder"))||"";
   $("f_loc").value="";
-  const lt=await store.get("last_type");if(lt)$("f_type").value=lt; // 取样类型记住上次
   refreshChips();
 }
 $("btn_save").onclick=async()=>{
@@ -852,7 +850,6 @@ $("btn_save").onclick=async()=>{
   await S.put(rec);await refreshSampleCache();
   autoSync(rec); // 联网且已配置 Worker/Token 时自动上传到云端
   await store.set("recorder",rec.recorder);
-  await store.set("last_type",rec.sample_type);
   toast(editingSample?`✅ 已更新 ${sid}`:`✅ 已保存记录 ${sid}`,4000);exitEdit();refreshPend();
   // 清空（地区名保留——同一区域连续取样不用重填）
   photos=[];renderThumbs();$("assays").innerHTML="";updateElGrid();
@@ -872,7 +869,7 @@ async function renderList(){
     const as=(s.assays||[]).map(a=>`${a.element} ${a.value}${a.unit}`).join(" · ");
     return`<div class="card samcard" data-id="${s.id}">
       <div class="info"><div><span class="sid">${xesc(s.sample_id)}</span>${b}${s.kind==="marker"?"<span class=\"badge\" style=\"background:#dbeafe;color:#1e40af\">标记点</span>":""}</div>
-      <div class="meta">${s.kind==="marker"?"🚩 ":""}${xesc(s.sample_time||"")} · ${xesc(s.sample_type||"")}${s.loc_status?" · ⛏"+xesc(s.loc_status):""}${s.area_name?" · 📍"+xesc(s.area_name):""}</div>
+      <div class="meta">${s.kind==="marker"?"🚩 ":""}${xesc(s.sample_time||"")}${s.sample_type?" · "+xesc(s.sample_type):""}${s.loc_status?" · ⛏"+xesc(s.loc_status):""}${s.area_name?" · 📍"+xesc(s.area_name):""}</div>
       ${as?`<div class="meta">🧪 ${xesc(as)}</div>`:""}
       ${s.description?`<div class="meta">🪨 ${xesc(s.description)}</div>`:""}
       <div class="meta">📷 ${(s.photos||[]).length} 张${s.erp_name?" · ERP:"+xesc(s.erp_name):""}</div>
@@ -1830,7 +1827,7 @@ if(!isStandalone){
 }
 
 /* ============ 版本检查：发布新版本后自动弹「更新」按钮 ============ */
-const APP_VER="b20261107-110";
+const APP_VER="b20261107-111";
 let updateDismissed=false;
 function showUpdateTip(){if(updateDismissed)return;const t=$("update_tip");if(t)t.style.display="flex";}
 async function checkUpdate(){
