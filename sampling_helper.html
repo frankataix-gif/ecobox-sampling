@@ -42,6 +42,9 @@ textarea{min-height:64px;resize:vertical}
 .gps-acc{color:var(--muted);font-size:12.5px;line-height:1.35}
 .gpsrow{display:flex;gap:6px;margin-top:8px}
 .gpsrow .btn{flex:1 1 0;min-width:0;padding:7px 4px;font-size:13px;min-height:36px;white-space:nowrap}
+.tabs{display:flex;gap:6px;margin-bottom:10px}
+.tabs button{flex:1;border:1.5px solid #cbd5e1;background:#fff;color:#1e293b;border-radius:9px;padding:8px 0;font-size:14px;font-weight:600;min-height:38px}
+.tabs button.on{background:var(--primary);border-color:var(--primary);color:#fff}
 .elgrid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:10px}
 .elgrid button{border:1px solid #111;background:#111;color:#fff;border-radius:8px;padding:8px 0;font-size:15px;font-weight:600;font-family:ui-monospace,monospace;min-height:40px}
 .elgrid button.used{background:#e2e8f0;border-color:#cbd5e1;color:#1e293b}
@@ -102,6 +105,11 @@ progress{width:100%;height:10px;margin-top:8px}
   </div>
   <!-- ===== 记录页 ===== -->
   <section id="pg-form">
+    <div class="tabs" id="formtabs">
+      <button type="button" data-tab="cur" class="on">✏️ 当前页</button>
+      <button type="button" data-tab="list">📋 取样</button>
+    </div>
+    <div id="tab_cur">
     <div class="card">
       <label>记录类型</label>
       <div class="chips" id="chips_kind"></div>
@@ -178,12 +186,11 @@ progress{width:100%;height:10px;margin-top:8px}
       <label>备注</label><textarea id="f_remark"></textarea>
       <button class="btn primary block" id="btn_save" style="font-size:17px">💾 保存记录</button>
     </div>
-  </section>
-
-  <!-- ===== 列表页 ===== -->
-  <section id="pg-list" class="hidden">
-    <div id="samlist"></div>
-    <div class="card" id="empty_tip" style="text-align:center;color:var(--muted)">暂无记录，切到「记录」页开始</div>
+    </div>
+    <div id="tab_list" class="hidden">
+      <div id="samlist"></div>
+      <div class="card" id="empty_tip" style="text-align:center;color:var(--muted)">暂无记录，在「当前页」录入并保存后会出现在这里</div>
+    </div>
   </section>
 
   <!-- ===== 地图页 ===== -->
@@ -269,10 +276,10 @@ progress{width:100%;height:10px;margin-top:8px}
     <div class="card">
       <h3>🔄 版本更新</h3>
       <button class="btn secondary block" id="btn_update">检查并强制更新到最新版</button>
-      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：b20261107-113</p>
+      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：b20261107-114</p>
     </div>
     <div class="card">
-      <p style="font-size:11px;color:var(--muted);text-align:center">b20261107-113</p>
+      <p style="font-size:11px;color:var(--muted);text-align:center">b20261107-114</p>
       <h3>🗑 危险操作</h3>
       <button class="btn danger block" id="btn_wipe">🔒 清空本机全部数据（需密码）</button>
     </div>
@@ -280,7 +287,6 @@ progress{width:100%;height:10px;margin-top:8px}
 </main>
 <nav>
   <button data-pg="pg-form" class="on">✏️ 记录</button>
-  <button data-pg="pg-list">📋 取样</button>
   <button data-pg="pg-track">🧭 行程</button>
   <button data-pg="pg-map">🗺 地图</button>
   <button data-pg="pg-set">⚙️ 设置</button>
@@ -580,13 +586,20 @@ addEventListener("online",()=>{netStatus();toast("网络已恢复，可同步");
 addEventListener("offline",netStatus);netStatus();
 
 /* ============ 页面切换 ============ */
+// 记录页两个视图：当前页（录入）/ 取样（已保存列表）
+function setFormTab(t){
+  document.querySelectorAll("#formtabs button").forEach(b=>b.classList.toggle("on",b.dataset.tab===t));
+  $("tab_cur").classList.toggle("hidden",t!=="cur");
+  $("tab_list").classList.toggle("hidden",t!=="list");
+  if(t==="list")renderList();
+}
+document.querySelectorAll("#formtabs button").forEach(b=>b.onclick=()=>setFormTab(b.dataset.tab));
 document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
   document.querySelectorAll("nav button").forEach(x=>x.classList.remove("on"));b.classList.add("on");
   document.querySelectorAll("main section").forEach(s=>s.classList.add("hidden"));
   $(b.dataset.pg).classList.remove("hidden");
   store.set("cur_page",b.dataset.pg); // 刷新后回到当前页
   if(b.dataset.pg!=="pg-map"){pickMode=false;pickPreview=null;if(map)map.draw();$("picktip").classList.add("hidden");$("pickbar").classList.add("hidden")}
-  if(b.dataset.pg==="pg-list")renderList();
   if(b.dataset.pg==="pg-track"){updTrk();renderTrips()}
   if(b.dataset.pg==="pg-map")initMap();
 });
@@ -1837,7 +1850,7 @@ if(!isStandalone){
 }
 
 /* ============ 版本检查：发布新版本后自动弹「更新」按钮 ============ */
-const APP_VER="b20261107-113";
+const APP_VER="b20261107-114";
 let updateDismissed=false;
 function showUpdateTip(){if(updateDismissed)return;const t=$("update_tip");if(t)t.style.display="flex";}
 async function checkUpdate(){
@@ -1942,6 +1955,7 @@ store.get("track_mode").then(m=>setTrackMode(m==="walk"?"walk":"car"));
 idb().then(()=>{}).catch(()=>toast("⚠️ 本机存储不可用：请关闭无痕/隐私模式，用普通浏览器打开，否则记录无法保存",6000));
 // 刷新后回到上次停留的页面
 store.get("cur_page").then(pg=>{
+  if(pg==="pg-list"){document.querySelector('nav button[data-pg="pg-form"]').click();setFormTab("list");return}
   if(pg&&pg!=="pg-form"){const b=document.querySelector(`nav button[data-pg="${pg}"]`);if(b)b.click()}
 });
 </script>
