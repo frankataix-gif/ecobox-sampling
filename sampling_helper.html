@@ -108,6 +108,7 @@ progress{width:100%;height:10px;margin-top:8px}
     <div class="tabs" id="formtabs">
       <button type="button" data-tab="cur" class="on">✏️ 取样</button>
       <button type="button" data-tab="list">📋 取样历史</button>
+      <button type="button" data-tab="trip">🧭 行程</button>
     </div>
     <div id="tab_cur">
     <div class="card">
@@ -191,6 +192,25 @@ progress{width:100%;height:10px;margin-top:8px}
       <div id="samlist"></div>
       <div class="card" id="empty_tip" style="text-align:center;color:var(--muted)">暂无记录，在「取样」录入并保存后会出现在这里</div>
     </div>
+    <div id="tab_trip" class="hidden">
+    <div class="card">
+      <h3>🧭 行程轨迹记录</h3>
+      <div class="gpsbox">
+        <div class="big" id="trk_state">未记录</div>
+        <div class="gps-acc" id="trk_info">点下方按钮开始记录行程轨迹</div>
+      </div>
+      <div class="row" style="margin-bottom:8px">
+        <button class="btn secondary" id="trk_mode_car" style="flex:1">🚗 行车 <span style="color:#7c3aed">━</span></button>
+        <button class="btn secondary" id="trk_mode_walk" style="flex:1">🚶 步行 <span style="color:#0ea5e9">━</span></button>
+      </div>
+      <button class="btn primary block" id="btn_trk" style="font-size:17px">▶ 开始新的行程</button>
+      <p style="font-size:13px;color:var(--muted);margin-top:8px">一次行程 = 一段独立旅行：开始→记录轨迹→结束存档。与样品无关。中途关掉页面会自动续录。</p>
+    </div>
+    <div class="card">
+      <h3>🗂 历史行程</h3>
+      <div id="triplist"></div>
+    </div>
+    </div>
   </section>
 
   <!-- ===== 地图页 ===== -->
@@ -215,27 +235,6 @@ progress{width:100%;height:10px;margin-top:8px}
         <button class="btn secondary" id="pickagain" style="padding:6px 10px;font-size:13px">重新选</button>
         <button class="btn primary" id="pickok" style="padding:6px 12px;font-size:13px">确认</button>
       </div>
-    </div>
-  </section>
-
-  <!-- ===== 行程页 ===== -->
-  <section id="pg-track" class="hidden">
-    <div class="card">
-      <h3>🧭 行程轨迹记录</h3>
-      <div class="gpsbox">
-        <div class="big" id="trk_state">未记录</div>
-        <div class="gps-acc" id="trk_info">点下方按钮开始记录行程轨迹</div>
-      </div>
-      <div class="row" style="margin-bottom:8px">
-        <button class="btn secondary" id="trk_mode_car" style="flex:1">🚗 行车 <span style="color:#7c3aed">━</span></button>
-        <button class="btn secondary" id="trk_mode_walk" style="flex:1">🚶 步行 <span style="color:#0ea5e9">━</span></button>
-      </div>
-      <button class="btn primary block" id="btn_trk" style="font-size:17px">▶ 开始新的行程</button>
-      <p style="font-size:13px;color:var(--muted);margin-top:8px">一次行程 = 一段独立旅行：开始→记录轨迹→结束存档。与样品无关。中途关掉页面会自动续录。</p>
-    </div>
-    <div class="card">
-      <h3>🗂 历史行程</h3>
-      <div id="triplist"></div>
     </div>
   </section>
 
@@ -276,10 +275,10 @@ progress{width:100%;height:10px;margin-top:8px}
     <div class="card">
       <h3>🔄 版本更新</h3>
       <button class="btn secondary block" id="btn_update">检查并强制更新到最新版</button>
-      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：b20261107-116</p>
+      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：b20261107-117</p>
     </div>
     <div class="card">
-      <p style="font-size:11px;color:var(--muted);text-align:center">b20261107-116</p>
+      <p style="font-size:11px;color:var(--muted);text-align:center">b20261107-117</p>
       <h3>🗑 危险操作</h3>
       <button class="btn danger block" id="btn_wipe">🔒 清空本机全部数据（需密码）</button>
     </div>
@@ -287,7 +286,6 @@ progress{width:100%;height:10px;margin-top:8px}
 </main>
 <nav>
   <button data-pg="pg-form" class="on">✏️ 记录</button>
-  <button data-pg="pg-track">🧭 行程</button>
   <button data-pg="pg-map">🗺 地图</button>
   <button data-pg="pg-set">⚙️ 设置</button>
 </nav>
@@ -586,12 +584,15 @@ addEventListener("online",()=>{netStatus();toast("网络已恢复，可同步");
 addEventListener("offline",netStatus);netStatus();
 
 /* ============ 页面切换 ============ */
-// 记录页两个视图：取样（录入）/ 取样历史（已保存列表）
-function setFormTab(t){
+// 记录页三个视图：取样（录入）/ 取样历史（已保存列表）/ 行程（轨迹）
+function setFormTab(t,save){
   document.querySelectorAll("#formtabs button").forEach(b=>b.classList.toggle("on",b.dataset.tab===t));
   $("tab_cur").classList.toggle("hidden",t!=="cur");
   $("tab_list").classList.toggle("hidden",t!=="list");
+  $("tab_trip").classList.toggle("hidden",t!=="trip");
   if(t==="list")renderList();
+  if(t==="trip"){updTrk();renderTrips()}
+  if(save!==false)store.set("form_tab",t);
 }
 document.querySelectorAll("#formtabs button").forEach(b=>b.onclick=()=>setFormTab(b.dataset.tab));
 document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
@@ -600,7 +601,6 @@ document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
   $(b.dataset.pg).classList.remove("hidden");
   store.set("cur_page",b.dataset.pg); // 刷新后回到当前页
   if(b.dataset.pg!=="pg-map"){pickMode=false;pickPreview=null;if(map)map.draw();$("picktip").classList.add("hidden");$("pickbar").classList.add("hidden")}
-  if(b.dataset.pg==="pg-track"){updTrk();renderTrips()}
   if(b.dataset.pg==="pg-map")initMap();
 });
 
@@ -1680,7 +1680,7 @@ async function resumeTrack(){ // 页面重开后自动续录同一次行程
   if(await store.get("track_on"))startWatch();
 }
 $("btn_trk").onclick=toggleTrack;
-setInterval(()=>{if((trackWatch!=null)&&!$("pg-track").classList.contains("hidden"))updTrk()},1000);
+setInterval(()=>{if((trackWatch!=null)&&!$("tab_trip").classList.contains("hidden"))updTrk()},1000);
 /* ---- 历史行程列表 ---- */
 async function renderTrips(){
   const el=$("triplist");if(!el)return;
@@ -1850,7 +1850,7 @@ if(!isStandalone){
 }
 
 /* ============ 版本检查：发布新版本后自动弹「更新」按钮 ============ */
-const APP_VER="b20261107-116";
+const APP_VER="b20261107-117";
 let updateDismissed=false;
 function showUpdateTip(){if(updateDismissed)return;const t=$("update_tip");if(t)t.style.display="flex";}
 async function checkUpdate(){
@@ -1954,9 +1954,12 @@ store.get("track_mode").then(m=>setTrackMode(m==="walk"?"walk":"car"));
 // 本机存储可用性检测（iOS 无痕/隐私模式会禁 IndexedDB）
 idb().then(()=>{}).catch(()=>toast("⚠️ 本机存储不可用：请关闭无痕/隐私模式，用普通浏览器打开，否则记录无法保存",6000));
 // 刷新后回到上次停留的页面
-store.get("cur_page").then(pg=>{
+store.get("cur_page").then(async pg=>{
   if(pg==="pg-list"){document.querySelector('nav button[data-pg="pg-form"]').click();setFormTab("list");return}
-  if(pg&&pg!=="pg-form"){const b=document.querySelector(`nav button[data-pg="${pg}"]`);if(b)b.click()}
+  if(pg==="pg-track"){document.querySelector('nav button[data-pg="pg-form"]').click();setFormTab("trip");return}
+  if(pg&&pg!=="pg-form"){const b=document.querySelector(`nav button[data-pg="${pg}"]`);if(b)b.click();return}
+  const t=await store.get("form_tab");
+  if(t&&t!=="cur")setFormTab(t,false);
 });
 </script>
 </body>
