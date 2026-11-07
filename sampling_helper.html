@@ -293,6 +293,12 @@ progress{width:100%;height:10px;margin-top:8px}
       <button class="btn secondary block" id="btn_stat_refresh" style="margin-top:10px;font-size:14px;min-height:40px">刷新统计</button>
     </div>
     <div class="card">
+      <h3>♻️ 从云端恢复记录</h3>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:8px;line-height:1.6">换手机、清了浏览器数据、或旧记录没显示出来时用。会把云端已有的记录补回本机；<b>本机已有记录不会被删除</b>，本机还没同步的修改优先保留。</p>
+      <button class="btn primary block" id="btn_pull">☁️ 从云端恢复记录</button>
+      <p id="pull_info" style="font-size:12px;color:var(--muted);margin-top:6px"></p>
+    </div>
+    <div class="card">
       <h3>ℹ️ 说明</h3>
       <p style="font-size:13px;color:var(--muted);line-height:1.7">
         · 定位依靠 GPS 卫星，<b>无网络也能用</b>；首次定位请站开阔地等 30 秒–2 分钟。<br>
@@ -303,10 +309,10 @@ progress{width:100%;height:10px;margin-top:8px}
     <div class="card">
       <h3>🔄 版本更新</h3>
       <button class="btn secondary block" id="btn_update">检查并强制更新到最新版</button>
-      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：b20261107-118</p>
+      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：b20261107-119</p>
     </div>
     <div class="card">
-      <p style="font-size:11px;color:var(--muted);text-align:center">b20261107-118</p>
+      <p style="font-size:11px;color:var(--muted);text-align:center">b20261107-119</p>
       <h3>🗑 危险操作</h3>
       <button class="btn danger block" id="btn_wipe">🔒 清空本机全部数据（需密码）</button>
     </div>
@@ -797,7 +803,7 @@ function renderThumbs(){
   $("btn_cam").disabled=full;$("btn_album").disabled=full;
   $("btn_cam").style.opacity=full?0.4:1;$("btn_album").style.opacity=full?0.4:1;
   $("thumbs").innerHTML=photos.map((p,i)=>`<div class="th">
-    <img src="${URL.createObjectURL(p.blob)}" data-v="${i}" style="cursor:pointer">
+    <img src="${p.blob?URL.createObjectURL(p.blob):(p.url||"")}" data-v="${i}" style="cursor:pointer">
     <button class="thtag ${p.kind==="assay"?"on":""}" data-i="${i}">${p.kind==="assay"?"🧪 含量读数":"标记为含量"}</button>
     ${p.kind==="assay"?`<button class="thai" data-i="${i}">🤖 AI识别</button>`:""}
     <button class="thdel" data-i="${i}">✕</button></div>`).join("");
@@ -809,6 +815,7 @@ function renderThumbs(){
 }
 async function aiAssay(i){
   if(!navigator.onLine){toast("AI 识别需要联网");return}
+  if(!photos[i]||!photos[i].blob){toast("这张照片只有云端副本，AI 识别需要本机原图");return}
   const wurl=(await store.get("worker_url"))||DEF_WORKER,tok=(await store.get("app_token"))||"";
   if(!wurl){toast("请先在设置页填 Worker 地址");return}
   toast("AI 识别中…");
@@ -1004,8 +1011,14 @@ async function renderList(){
   });
   $("list_stat").textContent=`共 ${all.length} 条 · 待同步 ${pend} 条`+(q?` · 匹配 ${rows.length} 条`:"");
   $("chips_filter").querySelectorAll("button").forEach(b=>b.classList.toggle("on",b.dataset.f===listFilter));
-  $("empty_tip").style.display=rows.length?"none":"";
-  $("empty_tip").textContent=all.length?"没有匹配的记录，换个关键词或点「全部」":"暂无记录，在「取样」录入并保存后会出现在这里";
+  const empty=$("empty_tip");
+  empty.style.display=rows.length?"none":"";
+  if(rows.length){}else if(!all.length){
+    empty.innerHTML='暂无记录。换手机或清过浏览器数据？<br><button class="btn secondary" id="btn_pull2" style="margin-top:10px">☁️ 从云端恢复记录</button>';
+    const b=$("btn_pull2");if(b)b.onclick=pullSamples;
+  }else{
+    empty.textContent="没有匹配的记录，换个关键词或点「全部」";
+  }
   $("samlist").innerHTML=rows.map(s=>{
     const b=s.status==="synced"?'<span class="badge b-ok">已同步</span>':s.status==="failed"?'<span class="badge b-fail">同步失败</span>':'<span class="badge b-pend">待同步</span>';
     const as=(s.assays||[]).map(a=>`${a.element} ${a.value}${a.unit}`).join(" · ");
@@ -1060,7 +1073,7 @@ $("samedit_edit").onclick=async()=>{
   $("gps_acc").textContent="";
   $("f_area").value=s.area_name||"";$("f_loc").value=s.loc_status||"";$("f_desc").value=s.description||"";
   $("f_recorder").value=s.recorder||"";$("f_remark").value=s.remark||"";
-  photos=(s.photos||[]).map(p=>({name:p.name,kind:p.kind,blob:p.blob}));renderThumbs();
+  photos=(s.photos||[]).map(p=>({name:p.name,kind:p.kind,blob:p.blob,key:p.key,url:p.url,size:p.size}));renderThumbs();
   $("assays").innerHTML="";(s.assays||[]).forEach(a=>addAssay(a.element,a.value,a.unit));updateElGrid();
   $("btn_gps").disabled=true;$("btn_pick").disabled=false;$("btn_viewpos").disabled=false; // 编辑时：GPS禁用，地图选点可修正，定位查看可用
   $("btn_save").textContent="💾 更新记录（覆盖原记录）";
@@ -1133,8 +1146,9 @@ const DEF_MEDIA="https://ecobox-media.frankataix.workers.dev";
 const DEF_MEDIA_TOKEN="BNs1CoMILEsITqt3rUtD5mqh4c467Ihe";
 /* 照片直传 R2，D1 只留 key/url（否则单条记录几十 MB，列表拉不动） */
 async function uploadPhoto(sid,i,p){
-  // 已按同一序号传过就复用：重试/再次保存不必把几 MB 照片重发一遍
-  if(p.key&&p.url&&p.idx===i)return{name:p.name,kind:p.kind,key:p.key,url:p.url,size:p.size};
+  // 已传过就复用：重试/再次保存/从云端恢复的记录，不必把几 MB 照片重发一遍
+  if(p.key&&p.url)return{name:p.name,kind:p.kind,key:p.key,url:p.url,size:p.size};
+  if(!p.blob)throw new Error("照片「"+(p.name||i+1)+"」本机没有原图，请重新选择");
   const ab=await p.blob.arrayBuffer();
   const key="photos/"+sid+"/"+String(i+1).padStart(2,"0")+".jpg";
   const mtok=(await store.get("media_token"))||DEF_MEDIA_TOKEN;
@@ -1238,6 +1252,46 @@ async function renderSetStats(){
   }catch(e){el.innerHTML='<div style="grid-column:1/-1;color:var(--danger)">统计失败：'+xesc(e.message||e)+'</div>'}
 }
 $("btn_stat_refresh").onclick=renderSetStats;
+/* 从云端（D1）拉回记录：补齐本机没有的，不删除本机记录 */
+async function pullSamples(){
+  const btns=[$("btn_pull"),$("btn_pull2")].filter(Boolean);
+  const info=$("pull_info");
+  btns.forEach(b=>{b.disabled=true;b.textContent="⏳ 拉取中…"});
+  try{
+    if(!navigator.onLine)throw new Error("当前无网络");
+    const w=((await store.get("worker_url"))||DEF_WORKER||"").replace(/\/$/,"");
+    if(!w)throw new Error("还没有配置 Worker 地址");
+    const tok=(await store.get("app_token"))||"";
+    const r=await fetch(w+"/samples",{headers:tok?{"X-App-Token":tok}:{}});
+    if(r.status===401)throw new Error("访问令牌不对：请用带 ?t= 的链接打开一次，或在上面填令牌");
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok||!j.ok)throw new Error(j.error||("HTTP "+r.status));
+    const remote=Array.isArray(j.samples)?j.samples:[];
+    const local=await S.all();
+    const byId=new Map();local.forEach(s=>{if(s.sample_id)byId.set(s.sample_id,s)});
+    let add=0,upd=0,keep=0;
+    for(const rs of remote){
+      if(!rs||!rs.sample_id)continue;
+      const rec={...rs,status:"synced"};delete rec._synced_at;
+      const l=byId.get(rs.sample_id);
+      if(!l){delete rec.id;await S.put(rec);byId.set(rs.sample_id,rec);add++}
+      else if(l.status==="synced"){rec.id=l.id;await S.put(rec);upd++}
+      else keep++; // 本机有未同步修改，保留本机
+    }
+    const msg=`云端 ${remote.length} 条：新增 ${add}，更新 ${upd}`+(keep?`，保留本机未同步 ${keep}`:"");
+    if(info)info.textContent=msg;
+    toast(msg,7000);
+    await refreshSampleCache();await refreshPend();await renderList();
+    if($("set_stat")&&!$("pg-set").classList.contains("hidden"))renderSetStats();
+  }catch(e){
+    const m="恢复失败："+(e&&e.message||e);
+    if(info)info.textContent=m;toast(m,8000);
+  }finally{
+    if($("btn_pull")){$("btn_pull").disabled=false;$("btn_pull").textContent="☁️ 从云端恢复记录"}
+    if($("btn_pull2")){$("btn_pull2").disabled=false;$("btn_pull2").textContent="☁️ 从云端恢复记录"}
+  }
+}
+$("btn_pull").onclick=pullSamples;
 $("btn_synctest").onclick=async()=>{
   const w=$("s_worker").value.trim();if(!w){toast("先填 Worker 地址");return}
   const tok=$("s_token").value.trim();
@@ -2049,7 +2103,7 @@ if(!isStandalone){
 }
 
 /* ============ 版本检查：发布新版本后自动弹「更新」按钮 ============ */
-const APP_VER="b20261107-118";
+const APP_VER="b20261107-119";
 let updateDismissed=false;
 function showUpdateTip(){if(updateDismissed)return;const t=$("update_tip");if(t)t.style.display="flex";}
 async function checkUpdate(){
