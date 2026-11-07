@@ -69,7 +69,7 @@ def main(argv):
     HTML.write_text(html.replace(cur, new), encoding="utf-8")
     VER_FILE.write_text(new + "\n", encoding="utf-8")
     SW.write_text(sw.replace(m.group(0), f'"sampling-v{int(m.group(1)) + 1}"'), encoding="utf-8")
-    print("完成：刷新页面即可在顶部看到「立即更新」")
+    print("完成：刷新页面即可在底部看到「立即更新」")
 
 
 if __name__ == "__main__":
