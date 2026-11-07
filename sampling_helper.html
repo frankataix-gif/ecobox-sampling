@@ -105,8 +105,9 @@ progress{width:100%;height:10px;margin-top:8px}
       <div class="chips" id="chips_kind"></div>
       <div id="w_type"><label>取样类型</label><div class="chips" id="chips_type"></div>
         <label style="margin-top:8px">位置状态</label>
-        <select id="f_loc">
-          <option value="">— 请选择 —</option>
+        <div class="chips" id="chips_loc"></div>
+        <select id="f_loc" class="hidden">
+          <option value="">— 不填 —</option>
           <option>勘探开挖</option>
           <option>自然露头</option>
           <option>民采点</option>
@@ -156,11 +157,7 @@ progress{width:100%;height:10px;margin-top:8px}
       <div id="assays"></div>
       <button class="btn secondary block" id="btn_add_assay">＋ 添加其他元素</button>
     </div>
-    <div class="card">
-      <h3>🪨 地质描述</h3>
-      <label>描述（岩性、矿化、蚀变、构造等）</label>
-      <textarea id="f_desc" placeholder="如：花岗岩，石英脉发育，可见黄铁矿化…"></textarea>
-    </div>
+    <textarea id="f_desc" class="hidden"></textarea>
     <div class="card">
       <h3>📷 照片（至少 1 张，最多 6 张）<span style="color:var(--danger)">*</span></h3>
       <p style="font-size:12px;color:var(--muted);margin-bottom:6px">含量读数（XRF 屏幕照）请标记 🧪，可联网用 AI 自动识别填入上表。</p>
@@ -271,10 +268,10 @@ progress{width:100%;height:10px;margin-top:8px}
     <div class="card">
       <h3>🔄 版本更新</h3>
       <button class="btn secondary block" id="btn_update">检查并强制更新到最新版</button>
-      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：b20261107-109</p>
+      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：b20261107-110</p>
     </div>
     <div class="card">
-      <p style="font-size:11px;color:var(--muted);text-align:center">b20261107-109</p>
+      <p style="font-size:11px;color:var(--muted);text-align:center">b20261107-110</p>
       <h3>🗑 危险操作</h3>
       <button class="btn danger block" id="btn_wipe">🔒 清空本机全部数据（需密码）</button>
     </div>
@@ -780,12 +777,12 @@ function buildChips(cid,sid){
   box.querySelectorAll("button").forEach(b=>b.onclick=()=>{sel.value=b.dataset.v;sel.dispatchEvent(new Event("change"));refreshChips()});
 }
 function refreshChips(){
-  [["f_kind","chips_kind"],["f_type","chips_type"],["f_mark","chips_mark"]].forEach(([s,c])=>{
+  [["f_kind","chips_kind"],["f_type","chips_type"],["f_loc","chips_loc"],["f_mark","chips_mark"]].forEach(([s,c])=>{
     const v=$(s).value;
     $(c).querySelectorAll("button").forEach(b=>b.classList.toggle("on",b.dataset.v===v));
   });
 }
-buildChips("chips_kind","f_kind");buildChips("chips_type","f_type");buildChips("chips_mark","f_mark");
+buildChips("chips_kind","f_kind");buildChips("chips_type","f_type");buildChips("chips_loc","f_loc");buildChips("chips_mark","f_mark");
 /* ============ 保存记录 ============ */
 async function nextSid(){
   const d=new Date(),pre=($("f_kind").value==="marker"?"M":"S")+d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate())+"-";
@@ -1833,7 +1830,7 @@ if(!isStandalone){
 }
 
 /* ============ 版本检查：发布新版本后自动弹「更新」按钮 ============ */
-const APP_VER="b20261107-109";
+const APP_VER="b20261107-110";
 let updateDismissed=false;
 function showUpdateTip(){if(updateDismissed)return;const t=$("update_tip");if(t)t.style.display="flex";}
 async function checkUpdate(){
