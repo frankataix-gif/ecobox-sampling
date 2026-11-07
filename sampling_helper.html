@@ -173,7 +173,7 @@ progress{width:100%;height:10px;margin-top:8px}
     </div>
     <div class="card">
       <div class="row">
-        <div><label>记录人 <span id="btn_user" style="color:var(--primary);font-size:12px;font-weight:600;cursor:pointer;text-decoration:underline">切换</span></label><input id="f_recorder" placeholder="姓名"></div>
+        <div><label>记录人</label><input id="f_recorder" readonly placeholder="登录后自动填入" style="background:#f1f5f9;color:var(--muted)"></div>
       </div>
       <label>备注</label><textarea id="f_remark"></textarea>
       <button class="btn primary block" id="btn_save" style="font-size:17px">💾 保存记录</button>
@@ -269,10 +269,10 @@ progress{width:100%;height:10px;margin-top:8px}
     <div class="card">
       <h3>🔄 版本更新</h3>
       <button class="btn secondary block" id="btn_update">检查并强制更新到最新版</button>
-      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：b20261107-112</p>
+      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：b20261107-113</p>
     </div>
     <div class="card">
-      <p style="font-size:11px;color:var(--muted);text-align:center">b20261107-112</p>
+      <p style="font-size:11px;color:var(--muted);text-align:center">b20261107-113</p>
       <h3>🗑 危险操作</h3>
       <button class="btn danger block" id="btn_wipe">🔒 清空本机全部数据（需密码）</button>
     </div>
@@ -345,7 +345,7 @@ progress{width:100%;height:10px;margin-top:8px}
 </div></div>
 <div class="modal hidden" id="loginmodal"><div class="box">
   <h3>👤 选择记录人</h3>
-  <p style="font-size:13px;color:var(--muted);margin-bottom:10px">选一次就好，以后打开软件自动带入「记录人」。</p>
+  <p style="font-size:13px;color:var(--muted);margin-bottom:10px">登录一次，之后打开自动带入「记录人」。登录后锁定为你本人，软件里不能改成别人。</p>
   <div class="chips" id="login_users"></div>
   <label>密码</label><input id="login_pwd" type="password" inputmode="numeric" autocomplete="current-password" placeholder="6 位密码">
   <p id="login_err" style="color:var(--danger);font-size:13px;min-height:18px;margin-top:6px"></p>
@@ -1837,7 +1837,7 @@ if(!isStandalone){
 }
 
 /* ============ 版本检查：发布新版本后自动弹「更新」按钮 ============ */
-const APP_VER="b20261107-112";
+const APP_VER="b20261107-113";
 let updateDismissed=false;
 function showUpdateTip(){if(updateDismissed)return;const t=$("update_tip");if(t)t.style.display="flex";}
 async function checkUpdate(){
@@ -1899,7 +1899,7 @@ const ACCOUNTS={frank:"123456",supeichang:"123456"};
 let loginPick="";
 function openLogin(){
   const cur=$("f_recorder").value.trim();
-  loginPick=ACCOUNTS[cur]?cur:"";
+  loginPick=ACCOUNTS[cur]?cur:"";  // 只在改密码重登时预选，登录后无法在软件里换人
   $("login_users").innerHTML=Object.keys(ACCOUNTS).map(n=>`<button type="button" data-n="${n}" class="${n===loginPick?"on":""}">${n}</button>`).join("");
   $("login_users").querySelectorAll("button").forEach(b=>b.onclick=()=>{
     loginPick=b.dataset.n;
@@ -1921,7 +1921,6 @@ async function submitLogin(){
 }
 $("login_ok").onclick=submitLogin;
 $("login_pwd").onkeydown=e=>{if(e.key==="Enter")submitLogin()};
-$("btn_user").onclick=openLogin;
 
 /* ============ 启动 ============ */
 (async()=>{
@@ -1934,13 +1933,9 @@ $("btn_user").onclick=openLogin;
   }catch(e){}
   try{await loadAreas();await mergeLegacyStores();await dedupeSamples()}catch(e){toast("矿区配置读取失败："+String(e&&e.message||e).slice(0,60),6000)}
   await loadSet();resetForm();refreshPend();refreshSampleCache();TR.load();setTimeout(resumeTrack,800);
-  // 记录人：已登录就直接带入；老用户的历史 recorder 若是账号名，直接认
-  let name=(await store.get("user"))||"";
-  if(!ACCOUNTS[name]){
-    const r=((await store.get("recorder"))||"").trim();
-    if(ACCOUNTS[r]){name=r;await store.set("user",r)}
-  }
-  if(name)$("f_recorder").value=name;else openLogin();
+  // 记录人只认登录态：没登录就弹窗，登录后锁定，软件内不给换人
+  const name=(await store.get("user"))||"";
+  if(ACCOUNTS[name])$("f_recorder").value=name;else{$("f_recorder").value="";openLogin()}
 })();
 store.get("track_mode").then(m=>setTrackMode(m==="walk"?"walk":"car"));
 // 本机存储可用性检测（iOS 无痕/隐私模式会禁 IndexedDB）
