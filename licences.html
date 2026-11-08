@@ -2046,6 +2046,50 @@ function smapFocus(sid){
   const card=[...document.querySelectorAll("#pane [data-card]")].find(c=>c.dataset.card===sid);
   if(card)card.classList.add("focus");
 }
+/* ---------- 直接写回仓库（File System Access API，Chrome/Edge） ---------- */
+const FSD_DB="ecobox_fs",FSD_STORE="h";
+let FS_DIR_NAME="";
+function fsSupported(){return typeof window.showDirectoryPicker==="function"}
+function fsIdb(){return new Promise((res,rej)=>{const r=indexedDB.open(FSD_DB,1);r.onupgradeneeded=()=>{try{r.result.createObjectStore(FSD_STORE)}catch(e){}};r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
+async function fsGetDir(){
+  try{
+    const db=await fsIdb();
+    return await new Promise((res,rej)=>{const t=db.transaction(FSD_STORE,"readonly").objectStore(FSD_STORE).get("dir");t.onsuccess=()=>res(t.result||null);t.onerror=()=>rej(t.error)});
+  }catch(e){return null}
+}
+async function fsPutDir(dir){
+  try{
+    const db=await fsIdb();
+    await new Promise((res,rej)=>{const tx=db.transaction(FSD_STORE,"readwrite");tx.objectStore(FSD_STORE).put(dir,"dir");tx.oncomplete=res;tx.onerror=()=>rej(tx.error)});
+  }catch(e){}
+}
+async function fsGrant(dir){
+  if(!dir)return false;
+  if((await dir.queryPermission({mode:"readwrite"}))==="granted")return true;
+  return (await dir.requestPermission({mode:"readwrite"}))==="granted";
+}
+async function fsWriteSamples(text){
+  const dir=await fsGetDir();
+  if(!dir||!(await fsGrant(dir)))return null;
+  const fh=await dir.getFileHandle("samples.json",{create:true});
+  const w=await fh.createWritable();
+  await w.write(text);
+  await w.close();
+  return dir.name||"目录";
+}
+async function bindSamplesDir(){
+  if(!fsSupported()){toast("这个浏览器不支持直接写文件（要用 Chrome/Edge）");return}
+  try{
+    const dir=await window.showDirectoryPicker({id:"ecobox-repo",mode:"readwrite"});
+    await fsPutDir(dir);
+    FS_DIR_NAME=dir.name||"目录";
+    toast("已绑定 "+FS_DIR_NAME+"，以后导出直接覆盖 samples.json");
+    render();
+  }catch(e){
+    if(e&&e.name==="AbortError")return;
+    toast("绑定失败："+(e&&e.message||e));
+  }
+}
 function exportDoc(){
   const edits=sampEdits(),del=sampDeleted(),pa=photoAI();
   const out=sampAll().filter(s=>!isSampDeleted(s.sample_id)).map(s=>{
@@ -2057,9 +2101,22 @@ function exportDoc(){
   });
   return {note:"现场取样结果（全量）。网页端编辑后导出（devtools/classify_samples.py 可重算 category/subtype）。",deleted:del,samples:out};
 }
-function exportSamples(){
+async function exportSamples(){
   const doc=exportDoc(),out=doc.samples,del=doc.deleted;
-  const blob=new Blob([JSON.stringify(doc,null,1)],{type:"application/json"});
+  const text=JSON.stringify(doc,null,1);
+  if(fsSupported()){
+    try{
+      const name=await fsWriteSamples(text);
+      if(name){
+        toast(`已写入 ${name}\\samples.json：${out.length} 条`+(del.length?`（删 ${del.length}）`:""));
+        return;
+      }
+    }catch(e){
+      console.warn("直接写文件失败",e);
+      toast("写入失败，改走下载："+(e&&e.message||e));
+    }
+  }
+  const blob=new Blob([text],{type:"application/json"});
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="samples.json";
   document.body.appendChild(a);a.click();a.remove();
   setTimeout(()=>URL.revokeObjectURL(a.href),1200);
@@ -2086,7 +2143,8 @@ function tabSamples(ls){
     <button data-scat="" class="${SCAT?"":"on"}">全部（${all.length}）</button>
     <button data-scat="取样" class="${SCAT==="取样"?"on":""}">取样（${catCount["取样"]||0}）</button>
     <button data-scat="标记点" class="${SCAT==="标记点"?"on":""}">标记点（${catCount["标记点"]||0}）</button>
-    <button id="sampImport" style="margin-left:auto" title="选手机原图，按照片里的 GPS 自动建点，再补信息">📷 从照片新建（自动定位）</button>
+    ${fsSupported()?`<button id="sampBind" style="margin-left:auto" title="选一次仓库目录，以后导出直接覆盖该目录下的 samples.json，不再走下载">📁 ${FS_DIR_NAME?"已绑定 "+esc(FS_DIR_NAME):"绑定保存目录"}</button>`:""}
+    <button id="sampImport"${fsSupported()?"":" style=\"margin-left:auto\""} title="选手机原图，按照片里的 GPS 自动建点，再补信息">📷 从照片新建（自动定位）</button>
     <button id="sampExport" title="把本机修改合并后下载 samples.json">导出 samples.json</button>
   </div>`;
   return `<div class="pane"><div class="sampwrap">
@@ -2267,8 +2325,9 @@ function render(){
       deleteSample(sid);render();toast("已删除 "+sid);
     });
     document.querySelectorAll("#pane [data-scat]").forEach(b=>b.onclick=()=>{SCAT=b.dataset.scat;render()});
-    const ex=$("#sampExport");if(ex)ex.onclick=exportSamples;
+    const ex=$("#sampExport");if(ex)ex.onclick=()=>exportSamples();
     const im=$("#sampImport");if(im)im.onclick=()=>importPhotos(im);
+    const bd=$("#sampBind");if(bd)bd.onclick=()=>bindSamplesDir();
     document.querySelectorAll("#pane [data-card]").forEach(card=>{
       const imgs=[...card.querySelectorAll(".sphotos img")];
       imgs.forEach((img,i)=>img.onclick=e=>{e.stopPropagation();openLightbox(imgs.map(x=>x.src),i)});
@@ -3052,6 +3111,7 @@ async function start(){
     $("#view").innerHTML=`<div class="empty">${esc(e.message)}<br>请确认 areas.json / licences.json 与页面在同一目录。</div>`;
     return;
   }
+  if(fsSupported())fsGetDir().then(dir=>{if(dir&&FS_DIR_NAME!==(dir.name||"")){FS_DIR_NAME=dir.name||"";if(TAB==="samples")render()}}).catch(()=>{});
   feedLoad();
   $("#who").value=author()==="ecobox"?"":author();
   const pm=location.hash.match(/^#\/?(?:set|mgr)\/(.+)$/);
