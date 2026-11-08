@@ -150,7 +150,8 @@ go/no-go 由人拍板并记 decision log。取样点永不写入矿证归属（�
 - **照片说明**：解读完每张照片下方 `figcaption` 分三段——`岩性 · 置信 86%`（`<b>`）、`结构；矿物`（`.aimeta`）、
   模型描述（`.aidesc`，最多 3 行），画质不佳再挂 `⚠ 偏暗`（`.aiq`）。由 `aiCapHTML(url)` 生成，
   `photoFig()` 初渲染和 `paintCap()` 复绘共用；没结果时返回空串，靠 `figcaption:empty{display:none}` 隐藏。
-  `.sphotos` 是 `minmax(150px,1fr)` 网格（原来 96 px 固定宽，放不下文字）。
+  版式是**一行一张**：`.sphotos` 纵向 flex，`figure.ph` 横向 flex（照片 124 px 定宽，手机上 96 px），
+  说明占剩余宽度并在右侧留 46 px 给 `AI` 按钮。**别改回田字格**——96 px 宽时说明会被挤成一行截断。
 - **部署（2026-11-08 实际走通的那条）**：
   ```powershell
   cd _deploy\worker
