@@ -1519,6 +1519,10 @@ function sampleAllPhotos(s){
   return base.concat(extra).slice(0,6);
 }
 function mediaTok(){return (localStorage.getItem(MT_KEY)||"").trim()}
+function mtState(){
+  const t=mediaTok();
+  return t?`已保存 ····${esc(t.slice(-4))}（照片上传与 AI 解读共用，每台设备填一次）`:"未设置：上传照片 / 点 AI 时会要求输入";
+}
 /* ---------- AI（Gemini，走 ecobox-media Worker，key 只在服务端） ---------- */
 const PAI_KEY="samp_photo_ai_v1";
 function photoKeyOf(url){
@@ -2131,6 +2135,14 @@ function drawManage(){
       <button class="btn" id="mExport">导出 licences.json</button>
     </div>
   </div>
+  <div class="mcard" style="margin-top:12px">
+    <div class="mfhead" style="padding:12px 12px 6px"><b>本机设置 · 媒体令牌</b></div>
+    <div class="props" style="padding:0 12px 8px">
+      <label style="flex:1">X-Upload-Token<input id="mtTok" type="password" autocomplete="off" placeholder="粘贴一次，本机记住"></label>
+    </div>
+    <div class="propsfoot"><span id="mtMsg">${mtState()}</span><span class="sp"></span>
+      <button class="btn" id="mtSave">保存令牌</button></div>
+  </div>
   <p class="mnote">首页只改「项目名称」和「排序」，改完即时存本机。矿证的增删改在「设置」里：一个项目可以挂 0 本或多本矿证。</p>`;
   wireManage();
 }
@@ -2158,6 +2170,15 @@ function filesPanel(){
   </div>`;
 }
 function wireManage(){
+  const mtSave=$("#mtSave");
+  if(mtSave)mtSave.onclick=()=>{
+    const inp=$("#mtTok"),v=(inp.value||"").trim();
+    if(!v){$("#mtMsg").textContent="令牌不能为空";return}
+    localStorage.setItem(MT_KEY,v);
+    inp.value="";
+    $("#mtMsg").innerHTML=mtState();
+    toast("令牌已保存");
+  };
   $("#view").querySelectorAll(".mrow:not(.head)").forEach(el=>{
     const i=+el.dataset.i,r=MROWS[i];
     el.querySelectorAll("input[data-f]").forEach(inp=>{
