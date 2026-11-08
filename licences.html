@@ -345,6 +345,9 @@ label.btn{display:inline-block;cursor:pointer}
 .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
 .mnote{font-size:12.5px;color:var(--muted);line-height:1.7;margin-top:12px}
 .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:rgba(17,24,39,.92);color:#fff;padding:9px 16px;border-radius:9px;font-size:13px;z-index:120}
+.newver{position:fixed;left:50%;bottom:78px;transform:translateX(-50%);background:#b45309;color:#fff;padding:9px 14px;border-radius:10px;font-size:13px;z-index:130;display:flex;gap:10px;align-items:center;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+.newver b{font-weight:600}
+.newver button{background:#fff;color:#7c2d12;border:0;padding:5px 12px;border-radius:7px;font-size:13px;cursor:pointer}
 
 /* ---------- 登录闸门 ---------- */
 #gate{position:fixed;inset:0;z-index:100;background:linear-gradient(160deg,#0b4a45,#0d5c55);display:flex;align-items:center;justify-content:center;padding:20px}
@@ -437,6 +440,7 @@ const esc=s=>String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>
 let AREAS=[],LICS=[],BASE=[],SEL=null,PROJ=null,TAB="intro",PIMG="",VIEW="lic",MROWS=[],MAP_PICK="",MAP_PICK_AREA=null,SAMPLES=[],FACTORY={};
 let HOLDER_TOUCHED=false;
 const FS_KEY="lic_feed_v1",AU_KEY="lic_author",CACHE_KEY="lic_cache_v1",EDIT_KEY="lic_edit_v1",NOTE_KEY="lic_notes_v1",INFO_KEY="lic_info_v1",SET_KEY="lic_setok";
+const PAGE_VER="20261109-0037";  /* build_public.py 会替换成构建时间戳 */
 const MEDIA_URL="https://ecobox-media.frankataix.workers.dev",SP_KEY="samp_photos_v1",MT_KEY="m_token";
 let EDITS={},ADDED=[],DELETED=[],NOTES={};
 
@@ -530,6 +534,28 @@ function toast(msg){
   const d=document.createElement("div");
   d.className="toast";d.textContent=msg;document.body.appendChild(d);
   setTimeout(()=>d.remove(),1700);
+}
+
+/* ---------- 版本自检（手机上不至于一直看旧页面） ---------- */
+async function verCheck(){
+  try{
+    const r=await fetch("version.txt?t="+Date.now(),{cache:"no-store"});
+    if(!r.ok)return "";
+    const v=(await r.text()).trim();
+    if(!v||v===PAGE_VER)return v;
+    newVerBar(v);
+    return v;
+  }catch(e){return ""}
+}
+function newVerBar(v){
+  if(document.getElementById("newver"))return;
+  const d=document.createElement("div");
+  d.id="newver";d.className="newver";
+  d.innerHTML=`<span>有新版本 <b>${esc(v)}</b>（当前 ${esc(PAGE_VER)}）</span><button id="newverGo">刷新</button>`;
+  document.body.appendChild(d);
+  d.querySelector("#newverGo").onclick=()=>{
+    const u=new URL(location.href);u.searchParams.set("v",v);location.replace(u.toString());
+  };
 }
 
 /* ---------- 项目文字记录（localStorage） ---------- */
@@ -3112,6 +3138,8 @@ async function start(){
     return;
   }
   if(fsSupported())fsGetDir().then(dir=>{if(dir&&FS_DIR_NAME!==(dir.name||"")){FS_DIR_NAME=dir.name||"";if(TAB==="samples")render()}}).catch(()=>{});
+  verCheck();setInterval(verCheck,300000);
+  document.addEventListener("visibilitychange",()=>{if(!document.hidden)verCheck()});
   feedLoad();
   $("#who").value=author()==="ecobox"?"":author();
   const pm=location.hash.match(/^#\/?(?:set|mgr)\/(.+)$/);
