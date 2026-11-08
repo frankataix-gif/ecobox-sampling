@@ -1620,7 +1620,7 @@ function editSampleDialog(sid){
     <div class="rowbtns"><button class="btn" id="se_gps">用当前定位修正 GPS</button><span id="se_gpsmsg" style="font-size:12px;color:#64748b"></span></div>
     <label>一级分类<select id="se_cat">${SAMP_CATEGORIES.map(x=>`<option ${x===c.cat?"selected":""}>${x}</option>`).join("")}</select></label>
     <label>二级分类（直接点标签）</label>
-    <div class="subtags" id="se_subtags">${Object.keys(SUB_BY_CAT).map(cat=>`<div class="subgrp" data-grp="${cat}"><span class="glab">${cat}</span>${SUB_BY_CAT[cat].map(x=>`<button type="button" class="subtag${x===c.sub?" on":""}" data-sub="${esc(x)}" data-cat="${cat}">${esc(x)}</button>`).join("")}</div>`).join("")}</div>
+    <div class="subtags" id="se_subtags">${Object.keys(SUB_BY_CAT).map(cat=>`<div class="subgrp" data-grp="${cat}"><span class="glab">${cat}</span>${cat===c.cat&&SUB_OPTIONS.indexOf(c.sub)<0&&c.sub?`<button type="button" class="subtag on" data-sub="${esc(c.sub)}" data-cat="${cat}">${esc(c.sub)}</button>`:""}${SUB_BY_CAT[cat].map(x=>`<button type="button" class="subtag${x===c.sub?" on":""}" data-sub="${esc(x)}" data-cat="${cat}">${esc(x)}</button>`).join("")}</div>`).join("")}</div>
     <label>记录人<input id="se_rec" value="${esc(s.recorder||"")}"></label>
     <div class="merr" id="se_err"></div>
     <div class="mfoot2"><button class="btn danger" id="se_del" style="margin-right:auto">删除这个点</button><button class="btn" id="se_reset">恢复原始</button><button class="btn" id="se_cancel">取消</button><button class="btn primary" id="se_ok">保存</button></div>
