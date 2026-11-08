@@ -221,6 +221,14 @@ textarea#ptext{flex:1;min-height:58px;border:1px solid var(--line);border-radius
 .modal2 .subtag{font-size:12.5px;padding:4px 10px;border-radius:999px;border:1px solid #cbd5e1;background:#f8fafc;color:#334155;cursor:pointer;white-space:nowrap;line-height:1.4}
 .modal2 .subtag:hover{background:#e0f2fe;border-color:#7dd3fc}
 .modal2 .subtag.on{background:#0f766e;border-color:#0f766e;color:#fff;font-weight:600}
+.modal2 .sphotos{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 8px}
+.modal2 figure.ph{position:relative;width:96px;margin:0}
+.modal2 figure.ph img{width:96px;height:72px;object-fit:cover;border-radius:8px;display:block;cursor:zoom-in}
+.modal2 figure.ph .aibtn{position:absolute;top:3px;right:3px;font-size:10.5px;padding:1px 6px;border-radius:999px;border:1px solid rgba(255,255,255,.7);background:rgba(15,23,42,.72);color:#fff;cursor:pointer;line-height:1.5;font-family:inherit}
+.modal2 figure.ph .aibtn:disabled{opacity:.6;cursor:progress}
+.modal2 figure.ph figcaption{font-size:10.5px;color:#475569;line-height:1.3;margin-top:2px;max-width:96px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.modal2 figure.ph figcaption:empty{display:none}
+.ailine{font-size:12px;color:#0f766e;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:8px;padding:3px 8px;margin:0 0 8px;display:inline-block}
 .scatseg{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 10px}
 .scatseg button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:5px 11px;font-size:12.5px;color:#334155;cursor:pointer}
 .scatseg button.on{background:#0f766e;color:#fff;border-color:#0f766e;font-weight:600}
@@ -1476,6 +1484,12 @@ function deleteSample(sid){
   const all=Object.assign({},sampEdits());delete all[sid];
   try{localStorage.setItem(SE_KEY,JSON.stringify(all));_eRaw=null}catch(e){}
   const ph=sampPhotos();if(ph[sid]){delete ph[sid];try{localStorage.setItem(SP_KEY,JSON.stringify(ph))}catch(e){}}
+  const s0=SAMPLES.find(x=>x.sample_id===sid);
+  if(s0){
+    const pa=photoAI();let ch=false;
+    sampleAllPhotos(s0).forEach(u=>{if(pa[u]){delete pa[u];ch=true}});
+    if(ch)try{localStorage.setItem(PAI_KEY,JSON.stringify(pa))}catch(e){}
+  }
 }
 function clearSampDeleted(){try{localStorage.setItem(SD_KEY,"[]");_dRaw=null}catch(e){}}
 const SAMP_CATEGORIES=["取样","标记点"];
@@ -1505,6 +1519,44 @@ function sampleAllPhotos(s){
   return base.concat(extra).slice(0,6);
 }
 function mediaTok(){return (localStorage.getItem(MT_KEY)||"").trim()}
+/* ---------- AI（Gemini，走 ecobox-media Worker，key 只在服务端） ---------- */
+const PAI_KEY="samp_photo_ai_v1";
+function photoKeyOf(url){
+  const s=String(url||""),i=s.indexOf("/m/");
+  if(i<0)return "";
+  const k=s.slice(i+3);
+  try{return decodeURIComponent(k)}catch(e){return k}
+}
+function photoAI(){try{return JSON.parse(localStorage.getItem(PAI_KEY)||"{}")}catch(e){return {}}}
+function setPhotoAI(url,v){
+  const m=photoAI();
+  if(v)m[url]=v;else delete m[url];
+  localStorage.setItem(PAI_KEY,JSON.stringify(m));
+}
+function aiCap(url){
+  const v=photoAI()[url];
+  if(!v)return "";
+  const c=v.pegmatite_confidence!=null?" · "+Math.round(v.pegmatite_confidence*100)+"%":"";
+  return (v.lithology||"")+c;
+}
+function photoFig(u){
+  return `<figure class="ph" data-url="${esc(u)}"><img src="${esc(u)}" alt=""><button type="button" class="aibtn" data-photo-ai="${esc(u)}">AI</button><figcaption>${esc(aiCap(u))}</figcaption></figure>`;
+}
+async function aiCall(path,body){
+  if(!mediaTok()){
+    const t=prompt("请输入媒体令牌（X-Upload-Token，AI 接口也用它鉴权）：");
+    if(t==null)throw new Error("已取消");
+    if(!t.trim())throw new Error("令牌不能为空");
+    localStorage.setItem(MT_KEY,t.trim());
+  }
+  const r=await fetch(MEDIA_URL+path,{
+    method:"POST",
+    headers:{"Content-Type":"application/json","X-Upload-Token":mediaTok()},
+    body:JSON.stringify(body)});
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok||!j.ok)throw new Error(j.error||("HTTP "+r.status));
+  return j;
+}
 async function uploadPhotos(sid,btn,onDone){
   let tok=mediaTok();
   if(!tok){
@@ -1555,6 +1607,8 @@ async function uploadPhotos(sid,btn,onDone){
 function sampleCard(s0){
   const s=sampData(s0);
   const photos=sampleAllPhotos(s);
+  const pais=photos.map(u=>photoAI()[u]).filter(Boolean);
+  const aiLine=pais.length?`<div class="ailine">AI：${esc(pais[0].lithology||"")}${pais[0].pegmatite_confidence!=null?` · 伟晶岩 ${Math.round(pais[0].pegmatite_confidence*100)}%`:""}${pais.length>1?` · 共 ${pais.length} 张`:""}</div>`:"";
   const coord=(s.lat!=null&&s.lon!=null)?`${(+s.lat).toFixed(5)}°S, ${(+s.lon).toFixed(5)}°E`:"";
   const assays=(s.assays||[]).map(a=>`${esc(a.element)} ${esc(a.value)}${esc(a.unit||"")}`).join("、");
   const hasTaNb=(s.ta2o5_pct!=null&&s.ta2o5_pct!=="")||(s.nb2o5_pct!=null&&s.nb2o5_pct!=="");
@@ -1568,6 +1622,7 @@ function sampleCard(s0){
   return `<div class="liccard" data-card="${esc(s.sample_id||"")}">
     <div class="lch"><b>${esc(s.sample_id||"")}</b>${badges.map(b=>`<span class="pill" style="background:#eef2f5;color:#475569">${esc(b)}</span>`).join("")}${s.status&&s.status!=="待化验"?`<span class="pill">${esc(s.status)}</span>`:""}<span class="cardacts">${editBtn}${delBtn}${up}</span></div>
     ${photos.length?`<div class="sphotos">${photos.map(p=>`<img src="${esc(p)}" alt="" loading="lazy">`).join("")}</div>`:`<div class="nophoto">照片待上传</div>`}
+    ${aiLine}
     <dl>
       ${hasTaNb?row("Ta₂O₅",gradeFmt(s.ta2o5_pct))+row("Nb₂O₅",gradeFmt(s.nb2o5_pct)):""}
       ${s.li2o_pct!=null?row("Li₂O",gradeFmt(s.li2o_pct)):""}
@@ -1610,9 +1665,10 @@ function editSampleDialog(sid){
   m.innerHTML=`<div class="mbox"><h3>编辑样点 ${esc(sid)}</h3>
     <label>描述<textarea id="se_desc" rows="4" placeholder="如：伟晶岩脉，块状构造，石英+钠长石+锂云母；Ta=0.052%，Nb=0.031%">${esc(s.description||"")}</textarea></label>
     <div class="insrow"><span class="inslab">化验代码（写成 Ta=0.052%）</span>${["Ta","Nb","Li","Cs","Be","Sn"].map(c=>`<button type="button" class="insbtn" data-ins="${c}=">${c}</button>`).join("")}<button type="button" class="insbtn" data-ins="%">%</button><button type="button" class="insbtn" data-ins="ppm">ppm</button></div>
+    <div class="rowbtns"><button type="button" class="btn" id="se_ai_desc">✨ AI 整理描述</button><span id="se_aimsg" style="font-size:12px;color:#64748b"></span></div>
     <label>照片（${photos.length}/6）</label>
-    <div class="sphotos" id="se_photos">${photos.map(p=>`<img src="${esc(p)}" alt="">`).join("")||'<span class="nophoto" style="display:inline-block;margin:0">暂无照片</span>'}</div>
-    <div class="rowbtns"><button class="btn" id="se_up" ${photos.length>=6?"disabled":""}>上传照片</button><span id="se_upmsg" style="font-size:12px;color:#64748b"></span></div>
+    <div class="sphotos" id="se_photos">${photos.map(photoFig).join("")||'<span class="nophoto" style="display:inline-block;margin:0">暂无照片</span>'}</div>
+    <div class="rowbtns"><button class="btn" id="se_up" ${photos.length>=6?"disabled":""}>上传照片</button><button type="button" class="btn" id="se_ai_all" ${photos.length?"":"disabled"}>AI 解读全部</button><span id="se_upmsg" style="font-size:12px;color:#64748b"></span></div>
     <div class="mrow2">
       <label>纬度<input id="se_lat" value="${s.lat!=null?s.lat:""}" placeholder="-13.116964"></label>
       <label>经度<input id="se_lon" value="${s.lon!=null?s.lon:""}" placeholder="30.175822"></label>
@@ -1655,6 +1711,70 @@ function editSampleDialog(sid){
     paintSub();
   };
   paintSub();
+  q("#se_ai_desc").onclick=async()=>{
+    const ta=q("#se_desc"),btn=q("#se_ai_desc"),msg=q("#se_aimsg");
+    const text=ta.value.trim();
+    if(!text){msg.textContent="先写点内容，再让 AI 整理";return}
+    const prev=ta.value;
+    btn.disabled=true;msg.textContent="AI 整理中…";
+    try{
+      const j=await aiCall("/ai/desc",{text,sample:{sample_id:sid,symbol:s.symbol||"",mineral:s.mineral||""}});
+      const r=j.result||{};
+      if(r.description)ta.value=r.description;
+      if(r.category&&SAMP_CATEGORIES.indexOf(r.category)>=0)q("#se_cat").value=r.category;
+      if(r.subtype){
+        const opts=SUB_BY_CAT[q("#se_cat").value]||[];
+        pickedSub=opts.indexOf(r.subtype)>=0?r.subtype:(opts[opts.length-1]||"其他");
+      }
+      paintSub();
+      msg.innerHTML=`<span style="color:#0f766e">AI 已整理 · ${esc(j.model||"")}</span> <a href="#" id="se_ai_undo" style="color:#b45309">撤销</a>`;
+      q("#se_ai_undo").onclick=ev=>{ev.preventDefault();ta.value=prev;msg.textContent="已撤销 AI 结果"};
+    }catch(e){msg.textContent="AI 失败："+(e.message||e)}
+    finally{btn.disabled=false}
+  };
+  const paintCap=url=>{
+    const fig=[...m.querySelectorAll("figure.ph")].find(f=>f.dataset.url===url);
+    const c=fig&&fig.querySelector("figcaption");
+    if(c)c.textContent=aiCap(url);
+  };
+  const runPhotoAI=async(url,btn)=>{
+    const key=photoKeyOf(url),umsg=q("#se_upmsg");
+    if(!key){if(umsg)umsg.textContent="这张照片不在 R2，无法解读";return false}
+    if(btn){btn.disabled=true;btn.textContent="…"}
+    try{
+      const j=await aiCall("/ai/photo",{key});
+      setPhotoAI(url,j.result);
+      paintCap(url);
+      if(btn)btn.textContent="AI✓";
+      return true;
+    }catch(e){
+      if(btn)btn.textContent="AI";
+      if(umsg)umsg.textContent="AI 失败："+(e.message||e);
+      return false;
+    }finally{if(btn)btn.disabled=false}
+  };
+  const bindPhotoAI=()=>{
+    m.querySelectorAll("[data-photo-ai]").forEach(b=>b.onclick=ev=>{
+      ev.preventDefault();
+      runPhotoAI(b.dataset.photoAi,b);
+    });
+  };
+  bindPhotoAI();
+  const aiAll=q("#se_ai_all");
+  if(aiAll)aiAll.onclick=async()=>{
+    const urls=[...m.querySelectorAll("[data-photo-ai]")].map(b=>b.dataset.photoAi);
+    const umsg=q("#se_upmsg");
+    if(!urls.length)return;
+    aiAll.disabled=true;
+    let ok=0;
+    for(let i=0;i<urls.length;i++){
+      if(umsg)umsg.textContent=`AI 解读 ${i+1}/${urls.length}…`;
+      const btn=[...m.querySelectorAll("[data-photo-ai]")].find(b=>b.dataset.photoAi===urls[i]);
+      if(await runPhotoAI(urls[i],btn))ok++;
+    }
+    aiAll.disabled=false;
+    if(umsg)umsg.textContent=`AI 解读完成 ${ok}/${urls.length}`;
+  };
   q("#se_gps").onclick=()=>{
     const msg=q("#se_gpsmsg");
     if(!navigator.geolocation){msg.textContent="浏览器不支持定位";return}
@@ -1672,8 +1792,9 @@ function editSampleDialog(sid){
       const box=q("#se_photos");
       if(box){
         const urls=sampleAllPhotos(base);
-        box.innerHTML=urls.map(u=>`<img src="${esc(u)}" alt="">`).join("")||'<span class="nophoto" style="display:inline-block;margin:0">暂无照片</span>';
+        box.innerHTML=urls.map(photoFig).join("")||'<span class="nophoto" style="display:inline-block;margin:0">暂无照片</span>';
         wireP(box);
+        bindPhotoAI();
       }
       const msg=q("#se_upmsg");if(msg)msg.textContent="已上传 "+added.length+" 张";
     });
@@ -1712,8 +1833,14 @@ function smapFocus(sid){
   if(card)card.classList.add("focus");
 }
 function exportSamples(){
-  const edits=sampEdits(),del=sampDeleted();
-  const out=SAMPLES.filter(s=>!isSampDeleted(s.sample_id)).map(s=>Object.assign({},s,edits[s.sample_id]||{}));
+  const edits=sampEdits(),del=sampDeleted(),pa=photoAI();
+  const out=SAMPLES.filter(s=>!isSampDeleted(s.sample_id)).map(s=>{
+    const o=Object.assign({},s,edits[s.sample_id]||{});
+    const m={};
+    sampleAllPhotos(o).forEach(u=>{if(pa[u])m[u]=pa[u]});
+    if(Object.keys(m).length)o.photo_ai=m;
+    return o;
+  });
   const doc={note:"现场取样结果（全量）。网页端编辑后导出（devtools/classify_samples.py 可重算 category/subtype）。",samples:out};
   const blob=new Blob([JSON.stringify(doc,null,1)],{type:"application/json"});
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="samples.json";

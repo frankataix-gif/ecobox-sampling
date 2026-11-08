@@ -128,10 +128,27 @@ go/no-go 由人拍板并记 decision log。取样点永不写入矿证归属（�
 | 名称 | 值 | 说明 |
 |---|---|---|
 | 采样 API Worker | `https://fancy-heart-7a80.frankataix.workers.dev` | `/ping` `/sample` `/samples` `/ocr`，D1 `78e80331-66f2-486d-8d7a-d7cf906bc7a7`（表 `samples(sample_id,data,created_at,updated_at)`，整条 JSON） |
-| 媒体 Worker | `https://ecobox-media.frankataix.workers.dev` | `POST /put?key=photos/<sid>/NN.jpg`（需 `X-Upload-Token`）、`GET /m/<key>`、`GET /health`；源码 `_deploy/worker/media-worker.js` |
+| 媒体 Worker | `https://ecobox-media.frankataix.workers.dev` | `POST /put?key=photos/<sid>/NN.jpg`（需 `X-Upload-Token`）、`GET /m/<key>`、`GET /health`、`POST /ai/desc`、`POST /ai/photo`；源码 `_deploy/worker/media-worker.js` |
 | R2 桶 | `ecobox-media` | 照片/报告/图层；当前前缀白名单 `photos/ reports/ geo/ test/`，单文件 ≤16 MB |
 | 上传口令 | `_deploy/worker/.media_token` | **不入库**；前端 `DEF_MEDIA_TOKEN` 内嵌（临时，见下） |
 | 部署 | `$env:CLOUDFLARE_API_TOKEN=...; python devtools\deploy_media_worker.py` | 走 CF API multipart 上传，含 r2_binding + secret |
+
+## AI（Gemini，2026-11 加）
+
+- **端点**都在 ecobox-media Worker，需 `X-Upload-Token`；Gemini key 只存 `env.GEMINI_KEY`，前端拿不到：
+  - `POST /ai/desc` `{text, sample?}` → `{description, category, subtype, assays[], notes}`
+    把长描述规范化、把 `ta 0.05` / `钽0.05%` 统一成 `Ta=0.05%`，顺带定一级/二级分类。
+  - `POST /ai/photo` `{key, force?}` → `{lithology, minerals[], texture, pegmatite_confidence, description, quality}`
+    解读 R2 里的照片，结果缓存在 `ai/photo/<key>.json`，重复点击不重复计费。
+- **模型**：文本 `gemini-3.5-flash-lite`、照片 `gemini-3.8-flash`（都有免费额度）。
+  模型 ID 会下线（`gemini-2.5-flash` 已废弃并转到 3.5 Flash-Lite），worker 按 `TEXT_MODELS` / `VISION_MODELS`
+  顺序自动降级，也可用 `MODEL_TEXT` / `MODEL_VISION` 环境变量钉死。
+- **前端**：编辑框 `✨ AI 整理描述`（结果可「撤销」）、每张照片右上角 `AI` 按钮、`AI 解读全部`；
+  结果存 `localStorage.samp_photo_ai_v1`（键是照片 URL），卡片多一条 `AI：岩性 · 86%`，导出时并入 `photo_ai`。
+- **部署**：`$env:CLOUDFLARE_API_TOKEN=...; $env:GEMINI_API_KEY=...; python devtools\deploy_media_worker.py`
+  key 会落到 `_deploy/worker/.gemini_key`（不入库）；不设就沿用上次的，都没有则 `/ai/*` 返回 502。
+- **测试**：`node devtools\test_media_worker.mjs`（真跑 worker，只替换 R2 / Gemini 两个外部边界，30 断言）
+  + `devtools\t_ai.html`（24 断言，只替换 `fetch`，页面解析/落盘/渲染全真跑）。
 
 ## 云端鉴权（2026-11-07 起）
 
