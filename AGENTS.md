@@ -40,13 +40,31 @@
 - 样品读写统一走 `S.*`；kv 用 `store.get/set`。
 - 试验版遗留的 `samples_*` 由 `mergeLegacyStores()` 首启并回主库（标记 `kv.areas_merged_v2`）。
 
+### 写入路径的坑（2026-11-07 修）
+
+- `S.put()` **必须回写自增主键**。不带 `id` 的 `put()` 在 IndexedDB 里是**插入新行**；
+  旧版没写回，于是「保存 → `autoSync` 又 `S.put` 一次」会给每条新记录插出两条同号记录。
+  现在 `S.put` 完成后把 `r.result` 赋回 `s.id`。改这里之前先想清楚所有调用点（保存、编辑、同步、迁移）。
+- 一次性修复：`dedupeSamples()`（标记 `kv.dedupe_v1`）按 `sample_id` 去重，保留后写的那条，
+  并把「已同步」状态和照片并过去；启动时在 `mergeLegacyStores()` 之后调用。
+- `uploadSample()` 的 `captured_licence` 只能取 `s.captured_licence`。
+  早期写成 `s.licence||s.license_no`（S1 已删的字段），结果把采集快照清成空串再写进 D1。
+- 上传载荷里 `status` 固定为 `"synced"`：客户端的同步状态不该写进云端记录。
+- 照片上传成功后把 `key/url/idx` 回写本地记录；重试/再保存时同序号照片直接复用，不再重传几 MB。
+- 地图位图缓存 `tileCache` 上限 240 张（LRU），瓦片本体仍在 IndexedDB `tiles` 里。
+
 ## 验证方式
 
 本地起 `python -m http.server`，用一个同源测试页 iframe 载入 `sampling_helper.html`，父页可直接读 `contentDocument` 和 IndexedDB 做断言（曾经的 P1 测试即此法）。注意：`indexedDB.deleteDatabase` 会被未关闭的连接阻塞，测试里要给超时兜底。
 
 ## 版本号
 
-`sampling_helper.html` 里两处 `bYYYYMMDD-NNN` 要同步改；SW 的 `CACHE` 单独加一。
+改完在 `ecobox-sampling/` 下跑 `py -3.12 devtools/bump_version.py`，一次同步三处（`--dry-run` 可先看）：
+`sampling_helper.html` 的 `APP_VER` + 设置页两处显示、`sampling_sw.js` 的 `CACHE`（`sampling-vNN` 必须变，否则老客户端不换缓存）、`version.txt`。
+
+`version.txt` 是**更新探针**：页面加载后、回到前台、每 5 分钟各 fetch 一次（`no-store`），内容与 `APP_VER` 不一致就在底部导航上方弹出「🔄 有新版本 / 立即更新 / 稍后」。
+「立即更新」优先走 `SW.postMessage("SKIP_WAITING")` + `controllerchange` 重载，没有 waiting SW 时退回 `forceAppUpdate()`（清缓存 + 注销 SW + 带 `?r=` 重载）。
+`version.txt` 必须发布（不能进 `.gitignore`）；漏传时探针 404，横幅永远不弹。
 
 ## 地质图层（QGIS → 网页，2026-11）
 
@@ -115,6 +133,18 @@ go/no-go 由人拍板并记 decision log。取样点永不写入矿证归属（�
 | 上传口令 | `_deploy/worker/.media_token` | **不入库**；前端 `DEF_MEDIA_TOKEN` 内嵌（临时，见下） |
 | 部署 | `$env:CLOUDFLARE_API_TOKEN=...; python devtools\deploy_media_worker.py` | 走 CF API multipart 上传，含 r2_binding + secret |
 
+## 云端鉴权（2026-11-07 起）
+
+- 采样 Worker 已配 `APP_TOKEN`：`/ping` `/sample` `/samples` `/sample/<id>` `/ocr` 全部要求 `X-App-Token`，没带就 401。
+  改之前是**全开**的（`env.APP_TOKEN` 为空时整段鉴权被跳过），等于任何人可读、可覆盖、可删 D1 里的取样记录。
+- 令牌只存本机：`_deploy/worker/.sampling_token`，**不入库、不进仓库**。泄露或丢失就在 CF 重新
+  `PUT /accounts/<acc>/workers/scripts/fancy-heart-7a80/secrets` 覆盖成新值，再让设备重扫一次。
+- 设备授权：打开 `sampling_helper.html?t=<令牌>` 一次即可，页面把令牌写进 IndexedDB `app_token` 并清掉地址栏的 `?t=`；
+  `_deploy/bootstrap.html` 是本地二维码页（每台设备扫一次）。
+- 没授权的设备照样能离线记录，只是同步标 `failed`、提示「需要访问令牌」；补上令牌后点顶部「同步」补传，数据不丢。
+- 媒体 Worker 的 `UPLOAD_TOKEN` 是**另一个独立口令**（仍硬编码在前端，见 S5 待办）。两者故意不共用：
+  前端是公开的，合并只会把一个泄露点放大成全部权限。
+
 ## S1（照片搬 R2 + 取样与矿证解绑）— 已上线
 
 - D1 里 36 个样点、58 张 base64 照片已迁到 R2，`/samples` 载荷 **53.4 MB → 29 KB**（约 1840×）。
@@ -155,6 +185,21 @@ go/no-go 由人拍板并记 decision log。取样点永不写入矿证归属（�
 - 路由：`#proj/<area_id>` 进项目；`#lic/<no>` 仍可用（自动定位到该证所属项目）。
 - 新增/编辑/删除矿证仍在「设置」里（项目 → 矿证两层），改完侧栏只更新「N 本矿证」计数。
 - 测试：`t_multilic.html`（侧栏只列项目、加证后计数变 2、两张边界卡、地图画两条环）。
+## 采集页（sampling_helper.html）页面结构
+
+- 底部导航 3 项：`pg-form`（记录）/ `pg-map`（地图）/ `pg-set`（设置）。独立的 `pg-list`（取样）与 `pg-track`（行程）都已删掉。
+- `pg-form` 内三个视图，用 `#formtabs` 切换：`tab_cur`（取样，录入表单）、`tab_list`（取样历史，已保存列表）、`tab_trip`（行程，轨迹记录 + 历史行程）。
+  切换函数 `setFormTab("cur"|"list"|"trip")`；进列表视图才 `renderList()`，进行程视图才 `updTrk()/renderTrips()`。
+  老客户端 `kv.cur_page === "pg-list"` / `"pg-track"` 由启动逻辑映射到对应视图；`kv.form_tab` 记住上次停留的视图。
+- 记录人由登录锁定：`openLogin()` / `submitLogin()`，账号 `ACCOUNTS` 写在 HTML 里（离线无后端，已知取舍）；
+  `#f_recorder` 只读，值取登录身份，保存时 `recorder` 直接取该字段，软件内无「切换」入口。
+- 取样视图有**草稿自动保存**：`kv.draft`（文字/含量）+ `kv.draft_photos`（照片 Blob），切页/切后台/刷新后自动恢复，保存或「清空本次输入」后清除；半天以上视为过期。编辑旧记录期间不写草稿（避免被当成新记录）。
+- 取样历史：`#q_list` 本地搜索（编号/备注/地区/记录人/元素）+ `#chips_filter`（全部/待同步/已同步）+ `#list_stat` 计数；卡片整卡可点开详情，详情里有「复制坐标」「立即同步这条」。
+- 行程：记录中在 `#triplive` 显示实时卡片（时长/里程/点数），`#formtabs` 的🧭上有红点；回放轨迹会在切到地图页时自动清除。
+- 设置页：`#set_user` 显示当前记录人；`#set_stat` 显示本机数据（样品/待同步/照片/行程/里程/离线瓦片）。
+- **云端恢复**：`pullSamples()` 用 `GET {worker}/samples`（`X-App-Token`）把 D1 里已有记录补回本机：本机没有的新增、本机已同步的覆盖、本机未同步的保留；入口在设置页「♻️ 从云端恢复记录」和空列表页的按钮。云端记录的照片只有 R2 `url`（无 blob），缩略图/详情用 url 兜底，`uploadPhoto()` 见到 `key+url` 直接复用不再重传。
+- **备份导入**：设置页 `#btn_import` → `#file_import` 读取「完整备份 JSON」（`{app,samples,trips}` 或裸数组），照片 `data`(base64) 用 `unb64()` 还原成 Blob；合并规则同云端恢复（新增 / 覆盖已同步 / 保留未同步）。导出时照片同时写 `data` 与 `key/url`，保证「导出→导入」可完整往返。
+- 坐标区 `.gpsrow` 三个按钮（获取定位 / 地图选点 / 定位查看）一行三等宽 36px；改动后要在 320/360/414px 复测不换行。
 
 ## geo_packs 离线地质包（Chitambo 1230SE，2026-11）
 
