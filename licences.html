@@ -175,6 +175,9 @@ textarea#ptext{flex:1;min-height:58px;border:1px solid var(--line);border-radius
 .rep{margin:0 0 22px}
 .rep h4{margin:0 0 10px;font-size:15px;color:#0f172a}
 .repimg{width:100%;max-width:100%;border-radius:10px;border:1px solid var(--line);display:block;margin:0 0 10px;background:#f8fafb}
+.sphotos{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
+.sphotos img{width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid var(--line);cursor:pointer}
+.nophoto{font-size:12px;color:var(--muted);background:#f8fafb;border:1px dashed var(--line);border-radius:8px;padding:10px;margin:0 0 10px;text-align:center}
 .cmts{margin-top:10px;border-top:1px dashed var(--line);padding-top:8px;display:flex;flex-direction:column;gap:5px}
 .cmt{font-size:12.8px;background:#f8fafb;border-radius:7px;padding:5px 8px}
 .cmt b{color:#0b5f57;margin-right:4px}
@@ -1240,25 +1243,49 @@ function tabFeed(ls){
 }
 
 /* ---------- 现场取样结果 / 工厂信息 ---------- */
+function gradeFmt(v,u){
+  if(v==null||v==="") return "待化验";
+  if(typeof v==="number") return String(v)+(u||"%");
+  return String(v)+(u||"%");
+}
+function sampleCard(s){
+  const photos=(s.photos||[]).filter(Boolean);
+  const coord=(s.lat!=null&&s.lon!=null)?`${(+s.lat).toFixed(5)}°S, ${(+s.lon).toFixed(5)}°E`:"";
+  return `<div class="liccard">
+    <div class="lch"><b>${esc(s.sample_id||"")}</b>${s.source?`<span class="pill" style="background:#eef2f5;color:#475569">${esc(s.source)}</span>`:""}${s.status?`<span class="pill">${esc(s.status)}</span>`:""}</div>
+    ${photos.length?`<div class="sphotos">${photos.map(p=>`<img src="${esc(p)}" alt="" loading="lazy">`).join("")}</div>`:`<div class="nophoto">照片待上传</div>`}
+    <dl>
+      ${row("矿种",esc(s.symbol||s.Symbol||""))}
+      ${row("矿物",esc(s.mineral||s.Mineral||""))}
+      ${row("Ta₂O₅",gradeFmt(s.ta2o5_pct))}
+      ${row("Nb₂O₅",gradeFmt(s.nb2o5_pct))}
+      ${s.li2o_pct!=null?row("Li₂O",gradeFmt(s.li2o_pct)):""}
+      ${s.cs_ppm!=null?row("Cs ppm",esc(s.cs_ppm)):""}
+      ${s.be_ppm!=null?row("Be ppm",esc(s.be_ppm)):""}
+      ${s.sn_ppm!=null?row("Sn ppm",esc(s.sn_ppm)):""}
+      ${coord?row("坐标",esc(coord)):""}
+      ${s.datetime?row("日期",esc(s.datetime||s.Sample_date||"")):""}
+      ${s.description?row("描述",esc(s.description||s.Description||"")):""}
+    </dl>
+  </div>`;
+}
 function tabSamples(ls){
   const aid=PROJ;
   const rows=SAMPLES.filter(s=>!s.area_id||s.area_id===aid);
   if(!rows.length){
-    return `<div class="pane"><div class="empty">还没有现场取样结果。<br>把取样点写进 <code>samples.json</code> 的 <code>samples[]</code>，字段对齐 QGIS <code>field_samples</code> 图层：<code>sample_id / symbol / mineral / ta2o5_pct / nb2o5_pct / photos[]</code>。</div></div>`;
+    return `<div class="pane"><div class="empty">还没有现场取样结果。<br>由 <code>devtools/export_samples.py</code> 从 QGIS <code>field_samples.gpkg</code> 导出到 <code>samples.json</code>，自动按坐标归类到当前项目范围。</div></div>`;
   }
+  const groups={};
+  rows.forEach(s=>{const m=s.mineral||s.symbol||"其他";(groups[m]=groups[m]||[]).push(s);});
+  const gkeys=Object.keys(groups);
   return `<div class="pane">
-    <h4>现场取样结果（${rows.length} 个点）</h4>
-    ${rows.map(s=>`<div class="liccard">
-      <dl>
-        ${row("样号",esc(s.sample_id||s.Sample_ID||""))}
-        ${row("矿种",esc(s.symbol||s.Symbol||""))}
-        ${row("矿物",esc(s.mineral||s.Mineral||""))}
-        ${row("Ta₂O₅ %",esc(s.ta2o5_pct??""))}
-        ${row("Nb₂O₅ %",esc(s.nb2o5_pct??""))}
-        ${row("日期",esc(s.datetime||s.Sample_date||""))}
-        ${row("描述",esc(s.description||s.Description||""))}
-      </dl>
-    </div>`).join("")}
+    <div class="liccards">
+      <div class="liccard">
+        <div class="lch"><b>取样统计</b><span class="pill">${rows.length} 个点</span></div>
+        <dl>${gkeys.map(k=>row(k,groups[k].length+" 个点")).join("")}</dl>
+      </div>
+    </div>
+    ${gkeys.map(k=>`<h4>${esc(k)}（${groups[k].length}）</h4>${groups[k].map(sampleCard).join("")}`).join("")}
   </div>`;
 }
 
