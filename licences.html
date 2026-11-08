@@ -1571,7 +1571,8 @@ function sampleCard(s0){
     </dl>
   </div>`;
 }
-const SUB_OPTIONS=["岩石","土壤","刻槽","其他","桥","路口","道路","电线","土地/农户","其他标记"];
+const SUB_BY_CAT={"取样":["岩石","土壤","刻槽","其他"],"标记点":["桥","路口","道路","电线","土地/农户","其他标记"]};
+const SUB_OPTIONS=[].concat(SUB_BY_CAT["取样"],SUB_BY_CAT["标记点"]);
 function openLightbox(srcs,idx){
   const box=document.createElement("div");box.className="lightbox";box.id="lightbox";
   let i=idx||0;
@@ -1607,7 +1608,7 @@ function editSampleDialog(sid){
     <div class="rowbtns"><button class="btn" id="se_gps">用当前定位修正 GPS</button><span id="se_gpsmsg" style="font-size:12px;color:#64748b"></span></div>
     <div class="mrow2">
       <label>一级分类<select id="se_cat">${SAMP_CATEGORIES.map(x=>`<option ${x===c.cat?"selected":""}>${x}</option>`).join("")}</select></label>
-      <label>二级分类<input id="se_sub" list="se_sublist" value="${esc(c.sub)}"><datalist id="se_sublist">${SUB_OPTIONS.map(x=>`<option value="${esc(x)}">`).join("")}</datalist></label>
+      <label>二级分类<select id="se_sub">${SUB_OPTIONS.indexOf(c.sub)<0&&c.sub?`<option selected>${esc(c.sub)}</option>`:""}${Object.keys(SUB_BY_CAT).map(cat=>`<optgroup label="${cat}">${SUB_BY_CAT[cat].map(x=>`<option ${x===c.sub?"selected":""}>${x}</option>`).join("")}</optgroup>`).join("")}</select></label>
     </div>
     <label>记录人<input id="se_rec" value="${esc(s.recorder||"")}"></label>
     <div class="mrow2">
@@ -1621,6 +1622,10 @@ function editSampleDialog(sid){
   const close=()=>m.remove();
   m.onclick=e=>{if(e.target===m)close()};
   q("#se_cancel").onclick=close;
+  q("#se_cat").onchange=()=>{
+    const cat=q("#se_cat").value,opts=SUB_BY_CAT[cat]||[],sel=q("#se_sub");
+    if(opts.indexOf(sel.value)<0)sel.value=opts[opts.length-1]||"";
+  };
   q("#se_gps").onclick=()=>{
     const msg=q("#se_gpsmsg");
     if(!navigator.geolocation){msg.textContent="浏览器不支持定位";return}
