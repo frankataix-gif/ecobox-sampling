@@ -1797,7 +1797,7 @@ function sampleCard(s0){
   if(s.mineral)badges.push(s.mineral);
   const up=photos.length<6?`<button class="upbtn" data-upload="${esc(s.sample_id||"")}">上传照片</button>`:"";
   const editBtn=`<button class="editbtn" data-edit="${esc(s.sample_id||"")}">编辑</button>`;
-  const delBtn=`<button class="delbtn" data-del="${esc(s.sample_id||"")}" title="彻底删除这个点">删除</button>`;
+  const delBtn=`<button class="delbtn" data-del="${esc(s.sample_id||"")}" title="删除这个点，不能撤销">删除</button>`;
   return `<div class="liccard" data-card="${esc(s.sample_id||"")}">
     <div class="lch"><b>${esc(s.sample_id||"")}</b>${badges.map(b=>`<span class="pill" style="background:#eef2f5;color:#475569">${esc(b)}</span>`).join("")}${s.status&&s.status!=="待化验"?`<span class="pill">${esc(s.status)}</span>`:""}<span class="cardacts">${editBtn}${delBtn}${up}</span></div>
     ${photos.length?`<div class="sphotos">${photos.map(p=>`<img src="${esc(p)}" alt="" loading="lazy">`).join("")}</div>`:`<div class="nophoto">照片待上传</div>`}
@@ -2015,8 +2015,8 @@ function editSampleDialog(sid){
   };
   q("#se_reset").onclick=()=>{resetSampEdit(sid);close();render()};
   q("#se_del").onclick=()=>{
-    if(!confirm(`彻底删除样点 ${sid}？\n\n删除后不再出现在列表和地图；导出 samples.json 并替换文件后，将永久从数据中移除。`))return;
-    deleteSample(sid);close();render();toast("已删除 "+sid+"，导出 samples.json 后永久生效");
+    if(!confirm(`删除样点 ${sid}？\n\n删掉后列表、地图和统计里都没有了，不能撤销。`))return;
+    deleteSample(sid);close();render();toast("已删除 "+sid);
   };
   q("#se_ok").onclick=()=>{
     const err=q("#se_err");
@@ -2260,8 +2260,8 @@ function render(){
     document.querySelectorAll("#pane [data-del]").forEach(b=>b.onclick=e=>{
       e.stopPropagation();
       const sid=b.dataset.del;
-      if(!confirm(`删除样点 ${sid}？\n\n删掉后列表和地图里都没有了，不能撤销。\n导出 samples.json 并替换文件后，才真正从数据里移除。`))return;
-      deleteSample(sid);render();toast("已删除 "+sid+"（没有撤销入口）");
+      if(!confirm(`删除样点 ${sid}？\n\n删掉后列表、地图和统计里都没有了，不能撤销。`))return;
+      deleteSample(sid);render();toast("已删除 "+sid);
     });
     document.querySelectorAll("#pane [data-scat]").forEach(b=>b.onclick=()=>{SCAT=b.dataset.scat;render()});
     const ex=$("#sampExport");if(ex)ex.onclick=exportSamples;
