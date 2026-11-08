@@ -1559,7 +1559,7 @@ function sampleCard(s0){
   const editBtn=`<button class="editbtn" data-edit="${esc(s.sample_id||"")}">编辑</button>`;
   const delBtn=`<button class="delbtn" data-del="${esc(s.sample_id||"")}" title="彻底删除这个点">删除</button>`;
   return `<div class="liccard" data-card="${esc(s.sample_id||"")}">
-    <div class="lch"><b>${esc(s.sample_id||"")}</b>${badges.map(b=>`<span class="pill" style="background:#eef2f5;color:#475569">${esc(b)}</span>`).join("")}${s.status?`<span class="pill">${esc(s.status)}</span>`:""}<span class="cardacts">${editBtn}${delBtn}${up}</span></div>
+    <div class="lch"><b>${esc(s.sample_id||"")}</b>${badges.map(b=>`<span class="pill" style="background:#eef2f5;color:#475569">${esc(b)}</span>`).join("")}${s.status&&s.status!=="待化验"?`<span class="pill">${esc(s.status)}</span>`:""}<span class="cardacts">${editBtn}${delBtn}${up}</span></div>
     ${photos.length?`<div class="sphotos">${photos.map(p=>`<img src="${esc(p)}" alt="" loading="lazy">`).join("")}</div>`:`<div class="nophoto">照片待上传</div>`}
     <dl>
       ${hasTaNb?row("Ta₂O₅",gradeFmt(s.ta2o5_pct))+row("Nb₂O₅",gradeFmt(s.nb2o5_pct)):""}
