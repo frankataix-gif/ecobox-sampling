@@ -2046,7 +2046,7 @@ function smapFocus(sid){
   const card=[...document.querySelectorAll("#pane [data-card]")].find(c=>c.dataset.card===sid);
   if(card)card.classList.add("focus");
 }
-function exportSamples(){
+function exportDoc(){
   const edits=sampEdits(),del=sampDeleted(),pa=photoAI();
   const out=sampAll().filter(s=>!isSampDeleted(s.sample_id)).map(s=>{
     const o=Object.assign({},s,edits[s.sample_id]||{});
@@ -2055,7 +2055,10 @@ function exportSamples(){
     if(Object.keys(m).length)o.photo_ai=m;
     return o;
   });
-  const doc={note:"现场取样结果（全量）。网页端编辑后导出（devtools/classify_samples.py 可重算 category/subtype）。",samples:out};
+  return {note:"现场取样结果（全量）。网页端编辑后导出（devtools/classify_samples.py 可重算 category/subtype）。",deleted:del,samples:out};
+}
+function exportSamples(){
+  const doc=exportDoc(),out=doc.samples,del=doc.deleted;
   const blob=new Blob([JSON.stringify(doc,null,1)],{type:"application/json"});
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="samples.json";
   document.body.appendChild(a);a.click();a.remove();
