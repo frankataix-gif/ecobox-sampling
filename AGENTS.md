@@ -143,6 +143,8 @@ go/no-go 由人拍板并记 decision log。取样点永不写入矿证归属（�
 - **模型**：文本 `gemini-3.5-flash-lite`、照片 `gemini-3.8-flash`（都有免费额度）。
   模型 ID 会下线（`gemini-2.5-flash` 已废弃并转到 3.5 Flash-Lite），worker 按 `TEXT_MODELS` / `VISION_MODELS`
   顺序自动降级，也可用 `MODEL_TEXT` / `MODEL_VISION` 环境变量钉死。
+  实测（2026-11-02 真 key）：两个 ID 都在 `models` 列表内；文本 3~5 s，1024 px / 200 KB 照片约 35 s。
+  热门模型会偶发 503 或 404，`gemini()` 对这两种状态都自动换下一个模型（其余错误直接报回去）。
 - **前端**：编辑框 `✨ AI 整理描述`（结果可「撤销」）、每张照片右上角 `AI` 按钮、`AI 解读全部`；
   结果存 `localStorage.samp_photo_ai_v1`（键是照片 URL），卡片多一条 `AI：岩性 · 86%`，导出时并入 `photo_ai`。
 - **部署**：`$env:CLOUDFLARE_API_TOKEN=...; $env:GEMINI_API_KEY=...; python devtools\deploy_media_worker.py`
