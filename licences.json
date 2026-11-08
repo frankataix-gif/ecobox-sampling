@@ -122,6 +122,62 @@
      "title": "勘查现状与工作建议",
      "date": "2026-11-02",
      "summary": "现场已采 7 个 Ta 点并入库 QGIS field_samples（GPS 定位 + 每点 ≤6 张照片 + XRF 屏幕照）。进行中：AI 照片解读（岩性/矿物/结构/伟晶岩判别）与化验报告后补。建议优先对 27 个高优先级靶区做地面检查，对 5 条矿脉沿走向追索取样，并补做 36413 小矿证范围内的精查。"
+    },
+    {
+     "title": "01 野外实测数据",
+     "date": "2026-11-02",
+     "summary": "现场采集的取样点与已核实矿脉分布：7 个 Ta 取样点（field_samples，Ta₂O₅/Nb₂O₅）叠加 5 条矿脉，底图为磁异常背景，反映已探明的地表矿化分布。",
+     "img": "https://ecobox-media.frankataix.workers.dev/m/report/serenje/map_01.png",
+     "legend": "取样点 7 个 · 矿脉 5 条 · 磁异常底图"
+    },
+    {
+     "title": "02 已知矿化参考",
+     "date": "2026-11-02",
+     "summary": "已知钽铌矿化点（Mineral_Occurrence 11 点）与矿脉的空间参考，作为成矿模型的空间锚点，用于约束盲预测与靶区圈定。",
+     "img": "https://ecobox-media.frankataix.workers.dev/m/report/serenje/map_02.png",
+     "legend": "矿化点 11 个 · 钽铌矿脉"
+    },
+    {
+     "title": "03 三矿种盲预测",
+     "date": "2026-11-02",
+     "summary": "基于岩性—构造—磁异常多要素叠加的 Ta / Nb / Be 盲预测潜力区（核心成果），圈定成矿有利空间。",
+     "img": "https://ecobox-media.frankataix.workers.dev/m/report/serenje/map_03.png",
+     "legend": "Ta-Nb 潜力区（3–5 km 缓冲）23 个 · Be-Ta 潜力区（0.5–3 km 缓冲）41 个"
+    },
+    {
+     "title": "04 钻探靶区与钻孔布置",
+     "date": "2026-11-02",
+     "summary": "多要素综合评分产出的 27 个高优先级靶区与建议钻探布置，指示下一步验证方向。",
+     "img": "https://ecobox-media.frankataix.workers.dev/m/report/serenje/map_04.png",
+     "legend": "高优先级靶区 27 个 · 建议钻孔位置"
+    },
+    {
+     "title": "05 园区基础设施",
+     "date": "2026-11-02",
+     "summary": "园区/工厂规划的基础设施布局（道路、水电、场地），用于建厂选址参考。",
+     "img": "https://ecobox-media.frankataix.workers.dev/m/report/serenje/map_05.png",
+     "legend": "园区边界 · 道路 · 水电基础设施"
+    },
+    {
+     "title": "06 土地证地块",
+     "date": "2026-11-02",
+     "summary": "矿证范围与土地证地块边界叠加，核对矿权与地表权属的空间关系。",
+     "img": "https://ecobox-media.frankataix.workers.dev/m/report/serenje/map_06.png",
+     "legend": "42881 / 36413 矿证边界 · 土地证地块"
+    },
+    {
+     "title": "07 区域基础设施与地形",
+     "date": "2026-11-02",
+     "summary": "区域交通（大北公路 T2、坦赞铁路 TAZARA）与地形底图，说明项目区位与可达性。",
+     "img": "https://ecobox-media.frankataix.workers.dev/m/report/serenje/map_07.png",
+     "legend": "公路 · 铁路 · 地形底图"
+    },
+    {
+     "title": "08 区域地质底图",
+     "date": "2026-11-02",
+     "summary": "区域地质底图：岩性、地质界线、构造线与环状构造，作为全部专题图的地质背景。",
+     "img": "https://ecobox-media.frankataix.workers.dev/m/report/serenje/map_08.png",
+     "legend": "岩性 · 地质界线 · 构造线 · 环状构造"
     }
    ]
   },
