@@ -94,6 +94,10 @@ dd{word-break:break-word}
 .gpoly{fill:rgba(20,184,166,.20);stroke:#14b8a6;stroke-width:2.2;vector-effect:non-scaling-stroke}
 .gv{fill:#fff;stroke:#0f766e;stroke-width:1.3}
 .glabel{font:600 13px/1 system-ui,sans-serif;fill:#fff;stroke:#0b3b36;stroke-width:3.4;paint-order:stroke;text-anchor:middle;dominant-baseline:middle}
+.smark{pointer-events:auto;cursor:pointer}
+.smark:hover circle{stroke:#0f172a;stroke-width:3.4}
+.slabel{font:600 11px/1 system-ui,sans-serif;fill:#fff;stroke:#0b3b36;stroke-width:3;paint-order:stroke;text-anchor:middle;pointer-events:none}
+.liccard.flash{box-shadow:0 0 0 3px #0f766e}
 .gctrl{position:absolute;right:10px;top:10px;display:flex;flex-direction:column;gap:6px}
 .gctrl button{width:30px;height:30px;border-radius:8px;border:1px solid rgba(0,0,0,.14);background:rgba(255,255,255,.94);color:#0f172a;font-size:15px;font-weight:600;line-height:1;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.15)}
 .gctrl button:hover{background:#fff}
@@ -1100,6 +1104,139 @@ function mapMount(ls){
   if(window.ResizeObserver)new ResizeObserver(()=>mapDraw()).observe(el);
 }
 
+/* ---------------- 现场取样点地图 ---------------- */
+let SMAP=null;
+const SAMP_COLORS={"岩石":"#0f766e","土壤":"#b45309","刻槽":"#7c3aed","其他":"#64748b","其他标记":"#db2777"};
+function sampColor(t){return SAMP_COLORS[t]||"#2563eb"}
+function smapBBox(rows,ls){
+  const pts=rows.filter(s=>s.lat!=null&&s.lon!=null);
+  if(pts.length){
+    let b=[Infinity,Infinity,-Infinity,-Infinity];
+    pts.forEach(s=>{const x=+s.lon,y=+s.lat;
+      b[0]=Math.min(b[0],x);b[1]=Math.min(b[1],y);b[2]=Math.max(b[2],x);b[3]=Math.max(b[3],y);});
+    const dx=Math.max((b[2]-b[0])*0.25,0.003),dy=Math.max((b[3]-b[1])*0.25,0.003);
+    return [b[0]-dx,b[1]-dy,b[2]+dx,b[3]+dy];
+  }
+  return projBBox(ls);
+}
+function smapZoom(dir,ev){
+  if(!SMAP)return;
+  const el=SMAP.el,w=el.clientWidth||600,h=el.clientHeight||360;
+  const oldZ=SMAP.zoom;
+  const nz=Math.max(2,Math.min(MAP_TILES[SMAP.layer].max,oldZ+dir));
+  if(nz===oldZ)return;
+  const old=256*Math.pow(2,oldZ),scale=256*Math.pow(2,nz);
+  let mx=w/2,my=h/2;
+  if(ev){const r=el.getBoundingClientRect();mx=ev.clientX-r.left;my=ev.clientY-r.top}
+  const left=mercX(SMAP.center[0])*old-w/2,top=mercY(SMAP.center[1])*old-h/2;
+  const wx=(left+mx)/old,wy=(top+my)/old;
+  SMAP.zoom=nz;
+  SMAP.center=[unmercX((wx*scale-mx+w/2)/scale),unmercY(Math.max(0,Math.min(1,(wy*scale-my+h/2)/scale)))];
+  smapDraw();
+}
+function smapDraw(){
+  if(!SMAP)return;
+  const{el,layer}=SMAP;
+  const w=el.clientWidth||600,h=el.clientHeight||360;
+  const scale=256*Math.pow(2,SMAP.zoom),n=Math.pow(2,SMAP.zoom);
+  const cx=mercX(SMAP.center[0])*scale,cy=mercY(SMAP.center[1])*scale;
+  const left=cx-w/2,top=cy-h/2;
+  const T=MAP_TILES[layer];
+  const tx0=Math.floor(left/256),tx1=Math.floor((left+w)/256);
+  const ty0=Math.floor(top/256),ty1=Math.floor((top+h)/256);
+  let html="";
+  for(let ty=ty0;ty<=ty1;ty++){
+    if(ty<0||ty>=n)continue;
+    for(let tx=tx0;tx<=tx1;tx++){
+      const wx=((tx%n)+n)%n;
+      html+=`<img alt="" draggable="false" src="${T.url(SMAP.zoom,wx,ty)}" style="left:${tx*256-left}px;top:${ty*256-top}px">`;
+    }
+  }
+  el.querySelector(".gtiles").innerHTML=html;
+  el.querySelector(".gattr").textContent=T.attr;
+  el.querySelector(".gzoomnow").textContent="z"+SMAP.zoom;
+
+  const px=(lon,lat)=>[mercX(lon)*scale-left,mercY(lat)*scale-top];
+  const ringPath=r=>"M"+r.map(q=>{const[a,b]=px(q[0],q[1]);return a.toFixed(1)+","+b.toFixed(1)}).join("L")+"Z";
+  let vec="";
+  (SMAP.ks||[]).forEach(it=>{
+    const k=it.k,col=it.color||"#0f766e";
+    if(!k||!k.rings||!k.rings.length)return;
+    vec+=`<path d="${k.rings.map(ringPath).join(" ")}" fill="${col}" fill-opacity="0.10" stroke="${col}" stroke-width="1.4" stroke-dasharray="5 4"/>`;
+  });
+  const showLbl=SMAP.zoom>=14;
+  SMAP.pts.forEach(p=>{
+    const[a,b]=px(p.lon,p.lat);
+    if(a<-40||a>w+40||b<-40||b>h+40)return;
+    const col=sampColor(p.type);
+    vec+=`<g class="smark" data-sid="${esc(p.sid)}"><circle cx="${a.toFixed(1)}" cy="${b.toFixed(1)}" r="6" fill="${col}" stroke="#fff" stroke-width="2"><title>${esc(p.sid)}${p.type?" · "+esc(p.type):""}</title></circle></g>`;
+    if(showLbl)vec+=`<text class="slabel" x="${a.toFixed(1)}" y="${(b-10).toFixed(1)}">${esc(p.sid)}</text>`;
+  });
+  const svg=el.querySelector(".gvec");
+  svg.setAttribute("viewBox",`0 0 ${w} ${h}`);
+  svg.setAttribute("width",w);svg.setAttribute("height",h);
+  svg.innerHTML=vec;
+  svg.querySelectorAll(".smark").forEach(g=>{
+    g.onclick=()=>{
+      const sid=g.dataset.sid;
+      const card=[...document.querySelectorAll("#pane [data-card]")].find(c=>c.dataset.card===sid);
+      if(!card)return;
+      card.scrollIntoView({behavior:"smooth",block:"center"});
+      card.classList.add("flash");
+      setTimeout(()=>card.classList.remove("flash"),1400);
+    };
+  });
+}
+function mapMountSmap(rows,ls){
+  const el=$("#smap");if(!el)return;
+  const bbox=smapBBox(rows,ls);
+  const pts=rows.filter(s=>s.lat!=null&&s.lon!=null).map(s=>({sid:s.sample_id,lon:+s.lon,lat:+s.lat,type:s.sample_type||s.mineral||s.symbol||"其他"}));
+  const center=bbox?[(bbox[0]+bbox[2])/2,(bbox[1]+bbox[3])/2]:(pts[0]?[pts[0].lon,pts[0].lat]:null);
+  if(!center)return;
+  SMAP={el,pts,ks:ksFor(ls,ls),bbox,fit:bbox?bbox.slice():null,center:center.slice(),layer:mapLayer(),zoom:13};
+  SMAP.zoom=bbox?mapFitZoom(bbox,el.clientWidth||600,el.clientHeight||360):14;
+  smapDraw();
+  el.querySelectorAll("[data-slayer]").forEach(x=>x.classList.toggle("on",x.dataset.slayer===SMAP.layer));
+  el.addEventListener("pointerdown",e=>{
+    if(e.target.closest("button,input,label,select,textarea,a,.smark"))return;
+    try{el.setPointerCapture(e.pointerId)}catch(_){}
+    SMAP.drag={x:e.clientX,y:e.clientY,c:SMAP.center.slice()};
+  });
+  el.addEventListener("pointermove",e=>{
+    if(!SMAP.drag)return;
+    const w=el.clientWidth||600,h=el.clientHeight||360,scale=256*Math.pow(2,SMAP.zoom);
+    const nx=mercX(SMAP.drag.c[0])-(e.clientX-SMAP.drag.x)/scale;
+    const ny=mercY(SMAP.drag.c[1])-(e.clientY-SMAP.drag.y)/scale;
+    SMAP.center=[unmercX(nx),unmercY(Math.max(0,Math.min(1,ny)))];
+    smapDraw();
+  });
+  const drop=()=>{if(SMAP)SMAP.drag=null};
+  el.addEventListener("pointerup",drop);
+  el.addEventListener("pointercancel",drop);
+  el.addEventListener("wheel",e=>{e.preventDefault();smapZoom(e.deltaY<0?1:-1,e)},{passive:false});
+  el.addEventListener("dblclick",e=>smapZoom(1,e));
+  el.querySelectorAll("[data-sz]").forEach(b=>b.onclick=()=>smapZoom(+b.dataset.sz));
+  const fit=el.querySelector("[data-sfit]");
+  if(fit)fit.onclick=()=>{
+    if(!SMAP.fit)return;
+    SMAP.zoom=mapFitZoom(SMAP.fit,el.clientWidth||600,el.clientHeight||360);
+    SMAP.center=[(SMAP.fit[0]+SMAP.fit[2])/2,(SMAP.fit[1]+SMAP.fit[3])/2];
+    smapDraw();
+  };
+  const fs=el.querySelector("[data-sfull]");
+  if(fs)fs.onclick=()=>{
+    if(document.fullscreenElement){document.exitFullscreen&&document.exitFullscreen().catch(()=>{})}
+    else{el.requestFullscreen&&el.requestFullscreen().catch(()=>{})}
+  };
+  el.querySelectorAll("[data-slayer]").forEach(b=>b.onclick=()=>{
+    SMAP.layer=b.dataset.slayer;
+    try{localStorage.setItem(MAPK,SMAP.layer)}catch(e){}
+    el.querySelectorAll("[data-slayer]").forEach(x=>x.classList.toggle("on",x.dataset.slayer===SMAP.layer));
+    smapDraw();
+  });
+  if(window.ResizeObserver)new ResizeObserver(()=>smapDraw()).observe(el);
+}
+
 function projBBox(ls){
   let b=null;
   ls.forEach(x=>{
@@ -1313,7 +1450,7 @@ function sampleCard(s){
   if(s.symbol)badges.push(s.symbol);
   if(s.mineral)badges.push(s.mineral);
   const up=photos.length<6?`<button class="upbtn" data-upload="${esc(s.sample_id||"")}">上传照片</button>`:"";
-  return `<div class="liccard">
+  return `<div class="liccard" data-card="${esc(s.sample_id||"")}">
     <div class="lch"><b>${esc(s.sample_id||"")}</b>${badges.map(b=>`<span class="pill" style="background:#eef2f5;color:#475569">${esc(b)}</span>`).join("")}${s.status?`<span class="pill">${esc(s.status)}</span>`:""}${up}</div>
     ${photos.length?`<div class="sphotos">${photos.map(p=>`<img src="${esc(p)}" alt="" loading="lazy">`).join("")}</div>`:`<div class="nophoto">照片待上传</div>`}
     <dl>
@@ -1340,6 +1477,8 @@ function tabSamples(ls){
   const groups={};
   rows.forEach(s=>{const k=s.sample_type||s.mineral||s.symbol||"其他";(groups[k]=groups[k]||[]).push(s);});
   const gkeys=Object.keys(groups);
+  const withCoord=rows.filter(s=>s.lat!=null&&s.lon!=null).length;
+  const box=smapBBox(rows,ls);
   return `<div class="pane">
     <div class="liccards">
       <div class="liccard">
@@ -1347,6 +1486,19 @@ function tabSamples(ls){
         <dl>${gkeys.map(k=>row(k,groups[k].length+" 个点")).join("")}</dl>
       </div>
     </div>
+    ${box?`<div class="gmap" id="smap">
+      <div class="gtiles"></div>
+      <svg class="gvec" xmlns="http://www.w3.org/2000/svg"></svg>
+      <div class="glayerpick"><button data-slayer="sat">卫星</button><button data-slayer="street">道路</button></div>
+      <div class="gctrl">
+        <button data-sz="1" title="放大">+</button>
+        <button data-sz="-1" title="缩小">−</button>
+        <button data-sfit="1" title="回到取样范围">⌖</button>
+        <button data-sfull="1" title="全屏地图">⤢</button>
+      </div>
+      <span class="gzoomnow">z--</span><span class="gattr"></span>
+    </div>
+    <div class="mapmeta">${withCoord} 个点有坐标 · 颜色按类型 · 拖动平移 · 滚轮/双击缩放 · 点标记跳到取样卡</div>`:`<div class="empty" style="font-size:12.5px">这些取样点还没有坐标，无法在地图上定位。</div>`}
     ${gkeys.map(k=>`<h4>${esc(k)}（${groups[k].length}）</h4>${groups[k].map(sampleCard).join("")}`).join("")}
   </div>`;
 }
@@ -1483,7 +1635,7 @@ function render(){
   if(mpick)mpick.querySelectorAll("[data-mpick]").forEach(b=>b.onclick=()=>{MAP_PICK=b.dataset.mpick;render()});
   if(TAB==="map")mapMount(ls);
   if(TAB==="intro"){const b=$("#introUpd");if(b)b.onclick=()=>refreshIntro(b,ls);}
-  if(TAB==="samples"){document.querySelectorAll("#pane [data-upload]").forEach(b=>b.onclick=()=>uploadPhotos(b.dataset.upload,b));}
+  if(TAB==="samples"){document.querySelectorAll("#pane [data-upload]").forEach(b=>b.onclick=()=>uploadPhotos(b.dataset.upload,b));mapMountSmap(SAMPLES.filter(s=>!s.area_id||s.area_id===PROJ),ls);}
 }
 
 function wireFeed(ls){
