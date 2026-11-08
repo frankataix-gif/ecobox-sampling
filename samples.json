@@ -25,7 +25,9 @@
    "datetime": "2026-10-22T10:24:27",
    "status": "待同步",
    "recorder": "frank",
-   "license_no": "42881-HQ-LEL"
+   "license_no": "42881-HQ-LEL",
+   "category": "标记点",
+   "subtype": "土地/农户"
   },
   {
    "sample_id": "M20261022-003",
@@ -50,7 +52,9 @@
    "datetime": "2026-10-22T10:20:31",
    "status": "待同步",
    "recorder": "frank",
-   "license_no": "42881-HQ-LEL"
+   "license_no": "42881-HQ-LEL",
+   "category": "标记点",
+   "subtype": "其他标记"
   },
   {
    "sample_id": "M20261022-002",
@@ -75,7 +79,9 @@
    "datetime": "2026-10-22T10:10:47",
    "status": "同步失败",
    "recorder": "frank",
-   "license_no": "42881-HQ-LEL"
+   "license_no": "42881-HQ-LEL",
+   "category": "标记点",
+   "subtype": "其他标记"
   },
   {
    "sample_id": "M20261022-001",
@@ -102,7 +108,9 @@
    "datetime": "2026-10-22T09:59:08",
    "status": "待同步",
    "recorder": "frank",
-   "license_no": "42881-HQ-LEL"
+   "license_no": "42881-HQ-LEL",
+   "category": "标记点",
+   "subtype": "土地/农户"
   },
   {
    "sample_id": "S20261017-004",
@@ -129,7 +137,9 @@
    "datetime": "2026-10-17T13:45:31",
    "status": "待同步",
    "recorder": "frank",
-   "license_no": "42881-HQ-LEL"
+   "license_no": "42881-HQ-LEL",
+   "category": "取样",
+   "subtype": "岩石"
   },
   {
    "sample_id": "S20261017-003",
@@ -154,7 +164,9 @@
    "datetime": "2026-10-17T13:36:33",
    "status": "待同步",
    "recorder": "frank",
-   "license_no": "42881-HQ-LEL"
+   "license_no": "42881-HQ-LEL",
+   "category": "取样",
+   "subtype": "岩石"
   },
   {
    "sample_id": "S20261017-001",
@@ -179,7 +191,9 @@
    "datetime": "2026-10-17T13:14:26",
    "status": "待同步",
    "recorder": "frank",
-   "license_no": "42881-HQ-LEL"
+   "license_no": "42881-HQ-LEL",
+   "category": "取样",
+   "subtype": "岩石"
   },
   {
    "sample_id": "S20261014-001",
@@ -204,7 +218,9 @@
    "datetime": "2026-10-14T08:12:19",
    "status": "待同步",
    "recorder": "1a",
-   "license_no": null
+   "license_no": null,
+   "category": "取样",
+   "subtype": "岩石"
   },
   {
    "sample_id": "S20261012-003",
@@ -229,7 +245,9 @@
    "datetime": "2026-10-12T16:03:55",
    "status": "待同步",
    "recorder": "frank",
-   "license_no": null
+   "license_no": null,
+   "category": "取样",
+   "subtype": "岩石"
   },
   {
    "sample_id": "S20261012-002",
@@ -257,7 +275,9 @@
    "datetime": "2026-10-12T15:08:51",
    "status": "待同步",
    "recorder": "frank",
-   "license_no": "42881-HQ-LEL"
+   "license_no": "42881-HQ-LEL",
+   "category": "取样",
+   "subtype": "岩石"
   },
   {
    "sample_id": "S20261012-001",
@@ -282,7 +302,9 @@
    "datetime": "2026-10-12T13:34:37",
    "status": "同步失败",
    "recorder": "frank",
-   "license_no": "42881-HQ-LEL"
+   "license_no": "42881-HQ-LEL",
+   "category": "取样",
+   "subtype": "岩石"
   },
   {
    "sample_id": "S20261010-002",
@@ -307,7 +329,9 @@
    "datetime": "2026-10-10T13:46:02",
    "status": "待同步",
    "recorder": "frank",
-   "license_no": "42881-HQ-LEL"
+   "license_no": "42881-HQ-LEL",
+   "category": "取样",
+   "subtype": "土壤"
   },
   {
    "sample_id": "S20261010-001",
@@ -332,7 +356,9 @@
    "datetime": "2026-10-10T12:33:45",
    "status": "待同步",
    "recorder": "frank",
-   "license_no": null
+   "license_no": null,
+   "category": "取样",
+   "subtype": "土壤"
   },
   {
    "sample_id": "S20261006-002",
@@ -357,7 +383,9 @@
    "datetime": "2026-10-06T09:28:11",
    "status": "待同步",
    "recorder": "frank",
-   "license_no": null
+   "license_no": null,
+   "category": "取样",
+   "subtype": "岩石"
   },
   {
    "sample_id": "S20261006-001",
@@ -382,7 +410,9 @@
    "datetime": "2026-10-06T09:23:28",
    "status": "待同步",
    "recorder": "frank",
-   "license_no": null
+   "license_no": null,
+   "category": "取样",
+   "subtype": "岩石"
   },
   {
    "sample_id": "S20261005-001",
@@ -410,7 +440,9 @@
    "datetime": "2026-10-05T09:40:23",
    "status": "待同步",
    "recorder": "frank",
-   "license_no": null
+   "license_no": null,
+   "category": "取样",
+   "subtype": "岩石"
   },
   {
    "sample_id": "S20261004-004",
@@ -437,7 +469,9 @@
    "datetime": "2026-10-04T11:07:42",
    "status": "待同步",
    "recorder": "frank",
-   "license_no": null
+   "license_no": null,
+   "category": "取样",
+   "subtype": "刻槽"
   },
   {
    "sample_id": "S20261004-003",
@@ -462,7 +496,9 @@
    "datetime": "2026-10-04T08:14:05",
    "status": "待同步",
    "recorder": "frank",
-   "license_no": "42881-HQ-LEL"
+   "license_no": "42881-HQ-LEL",
+   "category": "标记点",
+   "subtype": "桥"
   },
   {
    "sample_id": "S20261004-002",
@@ -487,7 +523,9 @@
    "datetime": "2026-10-04T07:45:38",
    "status": "待同步",
    "recorder": "frank",
-   "license_no": null
+   "license_no": null,
+   "category": "标记点",
+   "subtype": "路口"
   },
   {
    "sample_id": "S20261004-001",
@@ -512,7 +550,9 @@
    "datetime": "2026-10-04T07:40:50",
    "status": "待同步",
    "recorder": "frank",
-   "license_no": null
+   "license_no": null,
+   "category": "标记点",
+   "subtype": "电线"
   },
   {
    "sample_id": "SER-002",
@@ -531,7 +571,9 @@
    "photos": [],
    "source": "现场取样",
    "datetime": null,
-   "status": "待化验"
+   "status": "待化验",
+   "category": "取样",
+   "subtype": "其他"
   },
   {
    "sample_id": "SER-004",
@@ -550,7 +592,9 @@
    "photos": [],
    "source": "现场取样",
    "datetime": null,
-   "status": "待化验"
+   "status": "待化验",
+   "category": "取样",
+   "subtype": "其他"
   },
   {
    "sample_id": "SER-005",
@@ -569,7 +613,9 @@
    "photos": [],
    "source": "现场取样",
    "datetime": null,
-   "status": "待化验"
+   "status": "待化验",
+   "category": "取样",
+   "subtype": "其他"
   },
   {
    "sample_id": "SER-006",
@@ -588,7 +634,9 @@
    "photos": [],
    "source": "现场取样",
    "datetime": null,
-   "status": "待化验"
+   "status": "待化验",
+   "category": "取样",
+   "subtype": "其他"
   }
  ]
 }

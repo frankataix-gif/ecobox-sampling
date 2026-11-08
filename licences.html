@@ -184,6 +184,11 @@ textarea#ptext{flex:1;min-height:58px;border:1px solid var(--line);border-radius
 .nophoto{font-size:12px;color:var(--muted);background:#f8fafb;border:1px dashed var(--line);border-radius:8px;padding:10px;margin:0 0 10px;text-align:center}
 .upbtn{margin-left:auto;font-size:12px;padding:3px 8px;border-radius:6px;border:1px solid var(--line);background:#fff;color:#0b5f57;cursor:pointer;white-space:nowrap}
 .upbtn:disabled{opacity:.5;cursor:default}
+.scatseg{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 10px}
+.scatseg button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:5px 11px;font-size:12.5px;color:#334155;cursor:pointer}
+.scatseg button.on{background:#0f766e;color:#fff;border-color:#0f766e;font-weight:600}
+.scat{margin:20px 0 4px;font-size:15px;color:#0b5f57;border-left:4px solid #0f766e;padding-left:8px}
+.scat:first-of-type{margin-top:12px}
 .cmts{margin-top:10px;border-top:1px dashed var(--line);padding-top:8px;display:flex;flex-direction:column;gap:5px}
 .cmt{font-size:12.8px;background:#f8fafb;border-radius:7px;padding:5px 8px}
 .cmt b{color:#0b5f57;margin-right:4px}
@@ -1106,8 +1111,9 @@ function mapMount(ls){
 
 /* ---------------- 现场取样点地图 ---------------- */
 let SMAP=null;
-const SAMP_COLORS={"岩石":"#0f766e","土壤":"#b45309","刻槽":"#7c3aed","其他":"#64748b","其他标记":"#db2777"};
-function sampColor(t){return SAMP_COLORS[t]||"#2563eb"}
+const SUB_COLORS={"岩石":"#0f766e","土壤":"#b45309","刻槽":"#7c3aed","其他":"#64748b",
+  "桥":"#2563eb","路口":"#0891b2","电线":"#db2777","道路":"#7c3aed","土地/农户":"#ca8a04","其他标记":"#475569"};
+function sampColor(t){return SUB_COLORS[t]||"#2563eb"}
 function smapBBox(rows,ls){
   const pts=rows.filter(s=>s.lat!=null&&s.lon!=null);
   if(pts.length){
@@ -1168,8 +1174,11 @@ function smapDraw(){
   SMAP.pts.forEach(p=>{
     const[a,b]=px(p.lon,p.lat);
     if(a<-40||a>w+40||b<-40||b>h+40)return;
-    const col=sampColor(p.type);
-    vec+=`<g class="smark" data-sid="${esc(p.sid)}"><circle cx="${a.toFixed(1)}" cy="${b.toFixed(1)}" r="6" fill="${col}" stroke="#fff" stroke-width="2"><title>${esc(p.sid)}${p.type?" · "+esc(p.type):""}</title></circle></g>`;
+    const title=esc(p.sid)+(p.sub?" · "+esc(p.sub):"");
+    const shape=p.cat==="标记点"
+      ?`<rect x="${(a-5).toFixed(1)}" y="${(b-5).toFixed(1)}" width="10" height="10" transform="rotate(45 ${a.toFixed(1)} ${b.toFixed(1)})" fill="#475569" stroke="#fff" stroke-width="2"><title>${title}</title></rect>`
+      :`<circle cx="${a.toFixed(1)}" cy="${b.toFixed(1)}" r="6" fill="${sampColor(p.sub)}" stroke="#fff" stroke-width="2"><title>${title}</title></circle>`;
+    vec+=`<g class="smark" data-sid="${esc(p.sid)}">${shape}</g>`;
     if(showLbl)vec+=`<text class="slabel" x="${a.toFixed(1)}" y="${(b-10).toFixed(1)}">${esc(p.sid)}</text>`;
   });
   const svg=el.querySelector(".gvec");
@@ -1190,7 +1199,7 @@ function smapDraw(){
 function mapMountSmap(rows,ls){
   const el=$("#smap");if(!el)return;
   const bbox=smapBBox(rows,ls);
-  const pts=rows.filter(s=>s.lat!=null&&s.lon!=null).map(s=>({sid:s.sample_id,lon:+s.lon,lat:+s.lat,type:s.sample_type||s.mineral||s.symbol||"其他"}));
+  const pts=rows.filter(s=>s.lat!=null&&s.lon!=null).map(s=>{const c=sampCat(s);return {sid:s.sample_id,lon:+s.lon,lat:+s.lat,cat:c.cat,sub:c.sub};});
   const center=bbox?[(bbox[0]+bbox[2])/2,(bbox[1]+bbox[3])/2]:(pts[0]?[pts[0].lon,pts[0].lat]:null);
   if(!center)return;
   SMAP={el,pts,ks:ksFor(ls,ls),bbox,fit:bbox?bbox.slice():null,center:center.slice(),layer:mapLayer(),zoom:13};
@@ -1388,6 +1397,26 @@ function gradeFmt(v,u){
   if(typeof v==="number") return String(v)+(u||"%");
   return String(v)+(u||"%");
 }
+const SAMP_CATEGORIES=["取样","标记点"];
+let SCAT="",SCAT_PROJ=null;
+function markerSubCat(d){
+  d=d||"";
+  if(d.includes("桥"))return "桥";
+  if(d.includes("路口")||d.includes("转弯"))return "路口";
+  if(d.includes("电线")||d.includes("电杆"))return "电线";
+  if(d.includes("马路")||d.includes("道路")||d.includes("路"))return "道路";
+  if(d.includes("土地")||d.includes("农民")||d.includes("酋长"))return "土地/农户";
+  return "其他标记";
+}
+function sampCat(s){
+  if(s.category)return {cat:s.category,sub:s.subtype||"其他"};
+  const t=(s.sample_type||"").trim();
+  if(t==="岩石"||t==="土壤"||t==="刻槽")return {cat:"取样",sub:t};
+  if(t==="其他标记")return {cat:"标记点",sub:markerSubCat(s.description)};
+  if(s.mineral||(s.assays&&s.assays.length))return {cat:"取样",sub:t||"其他"};
+  if(t==="其他")return {cat:"标记点",sub:markerSubCat(s.description)};
+  return {cat:"取样",sub:"其他"};
+}
 function sampPhotos(){try{return JSON.parse(localStorage.getItem(SP_KEY)||"{}")}catch(e){return {}}}
 function sampleAllPhotos(s){
   const base=(s&&s.photos||[]).filter(Boolean);
@@ -1445,8 +1474,8 @@ function sampleCard(s){
   const photos=sampleAllPhotos(s);
   const coord=(s.lat!=null&&s.lon!=null)?`${(+s.lat).toFixed(5)}°S, ${(+s.lon).toFixed(5)}°E`:"";
   const assays=(s.assays||[]).map(a=>`${esc(a.element)} ${esc(a.value)}${esc(a.unit||"")}`).join("、");
-  const badges=[];
-  if(s.sample_type)badges.push(s.sample_type);
+  const sc=sampCat(s);
+  const badges=[sc.cat,sc.sub];
   if(s.symbol)badges.push(s.symbol);
   if(s.mineral)badges.push(s.mineral);
   const up=photos.length<6?`<button class="upbtn" data-upload="${esc(s.sample_id||"")}">上传照片</button>`:"";
@@ -1470,24 +1499,34 @@ function sampleCard(s){
 }
 function tabSamples(ls){
   const aid=PROJ;
-  const rows=SAMPLES.filter(s=>s.area_id===aid);
+  if(SCAT_PROJ!==aid){SCAT="";SCAT_PROJ=aid;}
+  const all=SAMPLES.filter(s=>s.area_id===aid);
   const un=SAMPLES.filter(s=>!s.area_id);
-  const unHtml=un.length?`<h4>未归类（${un.length}）· 不在本项目范围</h4>${un.map(sampleCard).join("")}`:"";
-  if(!rows.length){
+  const unRows=SCAT?un.filter(s=>sampCat(s).cat===SCAT):un;
+  const unHtml=unRows.length?`<h3 class="scat">未归类（${unRows.length}）· 不在本项目范围</h3>${unRows.map(sampleCard).join("")}`:"";
+  if(!all.length){
     return `<div class="pane"><div class="empty">还没有现场取样结果。<br>由 <code>devtools/import_ecobox_samples.py</code> 从 Ecobox 历史记录全量导入，按坐标自动归类到当前项目范围。</div>${unHtml}</div>`;
   }
-  const groups={};
-  rows.forEach(s=>{const k=s.sample_type||s.mineral||s.symbol||"其他";(groups[k]=groups[k]||[]).push(s);});
-  const gkeys=Object.keys(groups);
+  const catCount={"取样":0,"标记点":0};
+  all.forEach(s=>{const c=sampCat(s).cat;catCount[c]=(catCount[c]||0)+1;});
+  const rows=SCAT?all.filter(s=>sampCat(s).cat===SCAT):all;
+  const byCat={};
+  rows.forEach(s=>{const c=sampCat(s);const g=byCat[c.cat]||(byCat[c.cat]={});(g[c.sub]=g[c.sub]||[]).push(s);});
   const withCoord=rows.filter(s=>s.lat!=null&&s.lon!=null).length;
   const box=smapBBox(rows,ls);
+  const seg=`<div class="scatseg">
+    <button data-scat="" class="${SCAT?"":"on"}">全部（${all.length}）</button>
+    <button data-scat="取样" class="${SCAT==="取样"?"on":""}">取样（${catCount["取样"]||0}）</button>
+    <button data-scat="标记点" class="${SCAT==="标记点"?"on":""}">标记点（${catCount["标记点"]||0}）</button>
+  </div>`;
   return `<div class="pane">
     <div class="liccards">
       <div class="liccard">
-        <div class="lch"><b>取样统计</b><span class="pill">${rows.length} 个点</span></div>
-        <dl>${gkeys.map(k=>row(k,groups[k].length+" 个点")).join("")}</dl>
+        <div class="lch"><b>取样统计</b><span class="pill">${all.length} 个点</span></div>
+        <dl>${SAMP_CATEGORIES.map(c=>row(c,(catCount[c]||0)+" 个点")).join("")}</dl>
       </div>
     </div>
+    ${seg}
     ${box?`<div class="gmap" id="smap">
       <div class="gtiles"></div>
       <svg class="gvec" xmlns="http://www.w3.org/2000/svg"></svg>
@@ -1500,8 +1539,14 @@ function tabSamples(ls){
       </div>
       <span class="gzoomnow">z--</span><span class="gattr"></span>
     </div>
-    <div class="mapmeta">本项目 ${rows.length} 个点${withCoord<rows.length?`（${withCoord} 个有坐标）`:""} · 颜色按类型 · 拖动平移 · 滚轮/双击缩放 · 点标记跳到取样卡${un.length?` · 另有 ${un.length} 个未归类点不在图上`:""}</div>`:`<div class="empty" style="font-size:12.5px">这些取样点还没有坐标，无法在地图上定位。</div>`}
-    ${gkeys.map(k=>`<h4>${esc(k)}（${groups[k].length}）</h4>${groups[k].map(sampleCard).join("")}`).join("")}
+    <div class="mapmeta">${SCAT?SCAT+" ":""}${rows.length} 个点${withCoord<rows.length?`（${withCoord} 个有坐标）`:""} · 圆点=取样 · 菱形=标记点 · 拖动平移 · 滚轮/双击缩放 · 点标记跳到取样卡${un.length?` · 另有 ${un.length} 个未归类点不在图上`:""}</div>`:`<div class="empty" style="font-size:12.5px">这些取样点还没有坐标，无法在地图上定位。</div>`}
+    ${SAMP_CATEGORIES.map(cat=>{
+      const subs=byCat[cat]||{};const keys=Object.keys(subs);
+      const total=keys.reduce((t,k)=>t+subs[k].length,0);
+      if(!total)return "";
+      return `<h3 class="scat">${cat}（${total}）</h3>`+
+        keys.map(k=>`<h4>${esc(k)}（${subs[k].length}）</h4>${subs[k].map(sampleCard).join("")}`).join("");
+    }).join("")}
     ${unHtml}
   </div>`;
 }
@@ -1638,7 +1683,7 @@ function render(){
   if(mpick)mpick.querySelectorAll("[data-mpick]").forEach(b=>b.onclick=()=>{MAP_PICK=b.dataset.mpick;render()});
   if(TAB==="map")mapMount(ls);
   if(TAB==="intro"){const b=$("#introUpd");if(b)b.onclick=()=>refreshIntro(b,ls);}
-  if(TAB==="samples"){document.querySelectorAll("#pane [data-upload]").forEach(b=>b.onclick=()=>uploadPhotos(b.dataset.upload,b));mapMountSmap(SAMPLES.filter(s=>s.area_id===PROJ),ls);}
+  if(TAB==="samples"){document.querySelectorAll("#pane [data-upload]").forEach(b=>b.onclick=()=>uploadPhotos(b.dataset.upload,b));document.querySelectorAll("#pane [data-scat]").forEach(b=>b.onclick=()=>{SCAT=b.dataset.scat;render();});mapMountSmap(SAMPLES.filter(s=>s.area_id===PROJ).filter(s=>!SCAT||sampCat(s).cat===SCAT),ls);}
 }
 
 function wireFeed(ls){
