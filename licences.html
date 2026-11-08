@@ -188,6 +188,12 @@ textarea#ptext{flex:1;min-height:58px;border:1px solid var(--line);border-radius
 .cardacts{margin-left:auto;display:flex;gap:6px;align-items:center}
 .cardacts .upbtn{margin-left:0}
 .editbtn{font-size:12px;padding:3px 8px;border-radius:6px;border:1px solid var(--line);background:#fff;color:#334155;cursor:pointer;white-space:nowrap}
+.delbtn{font-size:12px;padding:3px 8px;border-radius:6px;border:1px solid #fecaca;background:#fff;color:#b91c1c;cursor:pointer;white-space:nowrap}
+.delbtn:hover{background:#fef2f2}
+.btn.danger{color:#b91c1c;border-color:#fecaca}
+.btn.danger:hover{background:#fef2f2}
+.delbar{margin:0 0 12px;padding:8px 12px;border:1px solid #fecaca;background:#fef2f2;border-radius:8px;font-size:12.5px;color:#b91c1c;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.delbar button{border:1px solid #fecaca;background:#fff;border-radius:6px;padding:3px 8px;font-size:12px;color:#b91c1c;cursor:pointer}
 .liccard[data-card]{cursor:pointer}
 .liccard[data-card]:hover{border-color:#94a3b8}
 .liccard.focus{outline:2px solid #f59e0b;outline-offset:2px}
@@ -1443,6 +1449,24 @@ function resetSampEdit(sid){
   try{localStorage.setItem(SE_KEY,JSON.stringify(all));_eRaw=null}catch(e){}
   toast("已恢复原始数据");
 }
+const SD_KEY="samp_deleted_v1";
+let _dRaw=null,_dCache=[];
+function sampDeleted(){
+  let raw="";
+  try{raw=localStorage.getItem(SD_KEY)||""}catch(e){}
+  if(raw!==_dRaw){_dRaw=raw;try{const a=JSON.parse(raw||"[]");_dCache=Array.isArray(a)?a:[]}catch(e){_dCache=[]}}
+  return _dCache;
+}
+function isSampDeleted(sid){return sid!=null&&sampDeleted().indexOf(sid)>=0}
+function deleteSample(sid){
+  const arr=sampDeleted().slice();
+  if(arr.indexOf(sid)<0)arr.push(sid);
+  try{localStorage.setItem(SD_KEY,JSON.stringify(arr));_dRaw=null}catch(e){}
+  const all=Object.assign({},sampEdits());delete all[sid];
+  try{localStorage.setItem(SE_KEY,JSON.stringify(all));_eRaw=null}catch(e){}
+  const ph=sampPhotos();if(ph[sid]){delete ph[sid];try{localStorage.setItem(SP_KEY,JSON.stringify(ph))}catch(e){}}
+}
+function clearSampDeleted(){try{localStorage.setItem(SD_KEY,"[]");_dRaw=null}catch(e){}}
 const SAMP_CATEGORIES=["取样","标记点"];
 let SCAT="",SCAT_PROJ=null;
 function markerSubCat(d){
@@ -1528,8 +1552,9 @@ function sampleCard(s0){
   if(s.mineral)badges.push(s.mineral);
   const up=photos.length<6?`<button class="upbtn" data-upload="${esc(s.sample_id||"")}">上传照片</button>`:"";
   const editBtn=`<button class="editbtn" data-edit="${esc(s.sample_id||"")}">编辑</button>`;
+  const delBtn=`<button class="delbtn" data-del="${esc(s.sample_id||"")}" title="彻底删除这个点">删除</button>`;
   return `<div class="liccard" data-card="${esc(s.sample_id||"")}">
-    <div class="lch"><b>${esc(s.sample_id||"")}</b>${badges.map(b=>`<span class="pill" style="background:#eef2f5;color:#475569">${esc(b)}</span>`).join("")}${s.status?`<span class="pill">${esc(s.status)}</span>`:""}<span class="cardacts">${editBtn}${up}</span></div>
+    <div class="lch"><b>${esc(s.sample_id||"")}</b>${badges.map(b=>`<span class="pill" style="background:#eef2f5;color:#475569">${esc(b)}</span>`).join("")}${s.status?`<span class="pill">${esc(s.status)}</span>`:""}<span class="cardacts">${editBtn}${delBtn}${up}</span></div>
     ${photos.length?`<div class="sphotos">${photos.map(p=>`<img src="${esc(p)}" alt="" loading="lazy">`).join("")}</div>`:`<div class="nophoto">照片待上传</div>`}
     <dl>
       ${row("Ta₂O₅",gradeFmt(s.ta2o5_pct))}
@@ -1590,7 +1615,7 @@ function editSampleDialog(sid){
       <label>Nb₂O₅ %<input id="se_nb" value="${s.nb2o5_pct!=null?s.nb2o5_pct:""}"></label>
     </div>
     <div class="merr" id="se_err"></div>
-    <div class="mfoot2"><button class="btn" id="se_reset">恢复原始</button><button class="btn" id="se_cancel">取消</button><button class="btn primary" id="se_ok">保存</button></div>
+    <div class="mfoot2"><button class="btn danger" id="se_del" style="margin-right:auto">删除这个点</button><button class="btn" id="se_reset">恢复原始</button><button class="btn" id="se_cancel">取消</button><button class="btn primary" id="se_ok">保存</button></div>
   </div>`;
   document.body.appendChild(m);
   const close=()=>m.remove();
@@ -1620,6 +1645,10 @@ function editSampleDialog(sid){
     });
   };
   q("#se_reset").onclick=()=>{resetSampEdit(sid);close();render()};
+  q("#se_del").onclick=()=>{
+    if(!confirm(`彻底删除样点 ${sid}？\n\n删除后不再出现在列表和地图；导出 samples.json 并替换文件后，将永久从数据中移除。`))return;
+    deleteSample(sid);close();render();toast("已删除 "+sid+"，导出 samples.json 后永久生效");
+  };
   q("#se_ok").onclick=()=>{
     const err=q("#se_err");
     const latS=q("#se_lat").value.trim(),lonS=q("#se_lon").value.trim();
@@ -1652,20 +1681,20 @@ function smapFocus(sid){
   if(card)card.classList.add("focus");
 }
 function exportSamples(){
-  const edits=sampEdits();
-  const out=SAMPLES.map(s=>Object.assign({},s,edits[s.sample_id]||{}));
+  const edits=sampEdits(),del=sampDeleted();
+  const out=SAMPLES.filter(s=>!isSampDeleted(s.sample_id)).map(s=>Object.assign({},s,edits[s.sample_id]||{}));
   const doc={note:"现场取样结果（全量）。网页端编辑后导出（devtools/classify_samples.py 可重算 category/subtype）。",samples:out};
   const blob=new Blob([JSON.stringify(doc,null,1)],{type:"application/json"});
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="samples.json";
   document.body.appendChild(a);a.click();a.remove();
   setTimeout(()=>URL.revokeObjectURL(a.href),1200);
-  toast("已下载 samples.json（含 "+Object.keys(edits).length+" 处修改）");
+  toast("已下载 samples.json："+out.length+" 条"+(del.length?`，已移除 ${del.length} 条删除`:""));
 }
 function tabSamples(ls){
   const aid=PROJ;
   if(SCAT_PROJ!==aid){SCAT="";SCAT_PROJ=aid;}
-  const all=SAMPLES.filter(s=>s.area_id===aid);
-  const un=SAMPLES.filter(s=>!s.area_id);
+  const all=SAMPLES.filter(s=>s.area_id===aid&&!isSampDeleted(s.sample_id));
+  const un=SAMPLES.filter(s=>!s.area_id&&!isSampDeleted(s.sample_id));
   const unRows=SCAT?un.filter(s=>sampCat(s).cat===SCAT):un;
   const unHtml=unRows.length?`<h3 class="scat">未归类（${unRows.length}）· 不在本项目范围</h3>${unRows.map(sampleCard).join("")}`:"";
   if(!all.length){
@@ -1684,6 +1713,8 @@ function tabSamples(ls){
     <button data-scat="标记点" class="${SCAT==="标记点"?"on":""}">标记点（${catCount["标记点"]||0}）</button>
     <button id="sampExport" style="margin-left:auto" title="把本机修改合并后下载 samples.json">导出 samples.json</button>
   </div>`;
+  const del=sampDeleted();
+  const delBar=del.length?`<div class="delbar">本机已删除 <b>${del.length}</b> 条（导出 samples.json 后永久移除）<button id="sampUndelete">撤销删除</button></div>`:"";
   return `<div class="pane"><div class="sampwrap">
     <div class="samplist">
       <div class="liccards">
@@ -1693,6 +1724,7 @@ function tabSamples(ls){
         </div>
       </div>
       ${seg}
+      ${delBar}
       ${SAMP_CATEGORIES.map(cat=>{
         const subs=byCat[cat]||{};const keys=Object.keys(subs);
         const total=keys.reduce((t,k)=>t+subs[k].length,0);
@@ -1746,7 +1778,7 @@ function introFacts(ls){
   const aid=PROJ;
   const area=areaById(aid);
   const c=(area&&area.center)||(ls[0]&&ls[0].center)||null;
-  const rows=SAMPLES.filter(s=>!s.area_id||s.area_id===aid);
+  const rows=SAMPLES.filter(s=>(!s.area_id||s.area_id===aid)&&!isSampDeleted(s.sample_id));
   const ta=rows.map(s=>+s.ta2o5_pct).filter(v=>!isNaN(v));
   const nb=rows.map(s=>+s.nb2o5_pct).filter(v=>!isNaN(v));
   return {
@@ -1855,8 +1887,15 @@ function render(){
   if(TAB==="samples"){
     document.querySelectorAll("#pane [data-upload]").forEach(b=>b.onclick=e=>{e.stopPropagation();uploadPhotos(b.dataset.upload,b)});
     document.querySelectorAll("#pane [data-edit]").forEach(b=>b.onclick=e=>{e.stopPropagation();editSampleDialog(b.dataset.edit)});
+    document.querySelectorAll("#pane [data-del]").forEach(b=>b.onclick=e=>{
+      e.stopPropagation();
+      const sid=b.dataset.del;
+      if(!confirm(`彻底删除样点 ${sid}？\n\n删除后不再出现在列表和地图；导出 samples.json 并替换文件后，将永久从数据中移除。`))return;
+      deleteSample(sid);render();toast("已删除 "+sid+"，导出 samples.json 后永久生效");
+    });
     document.querySelectorAll("#pane [data-scat]").forEach(b=>b.onclick=()=>{SCAT=b.dataset.scat;render()});
     const ex=$("#sampExport");if(ex)ex.onclick=exportSamples;
+    const und=$("#sampUndelete");if(und)und.onclick=()=>{clearSampDeleted();render();toast("已撤销删除")};
     document.querySelectorAll("#pane [data-card]").forEach(card=>{
       const imgs=[...card.querySelectorAll(".sphotos img")];
       imgs.forEach((img,i)=>img.onclick=e=>{e.stopPropagation();openLightbox(imgs.map(x=>x.src),i)});
@@ -1865,7 +1904,7 @@ function render(){
         smapFocus(card.dataset.card);
       });
     });
-    mapMountSmap(SAMPLES.filter(s=>s.area_id===PROJ).filter(s=>!SCAT||sampCat(s).cat===SCAT),ls);
+    mapMountSmap(SAMPLES.filter(s=>s.area_id===PROJ&&!isSampDeleted(s.sample_id)).filter(s=>!SCAT||sampCat(s).cat===SCAT),ls);
   }
 }
 
