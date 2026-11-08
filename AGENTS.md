@@ -29,7 +29,7 @@
 - `sampling_sw.js`：离线缓存。**改任何缓存内容都要同时 bump `CACHE` 版本**，否则老客户端拿不到新文件。
 - `areas.json`：矿区范围（bbox），只用于把记录按坐标自动归到矿区。
 - `licences.json`：矿证 + 地质背景 + 取样要点（未知字段写「待核实」，不要编）。
-- `samples.json`：现场取样结果（框架已建，空 `samples[]`；字段对齐 QGIS `field_samples`：sample_id/symbol/mineral/ta2o5_pct/nb2o5_pct/photos[]，逐步补充）。
+- `samples.json`：现场取样结果。由 `devtools/export_samples.py`（python-qgis.bat 跑）从 QGIS `field_samples.gpkg` 导出，并按坐标自动归类 `area_id`（点落哪个 area 的 bbox）；字段 sample_id/area_id/lat/lon/symbol/mineral/description/ta2o5_pct/nb2o5_pct/li2o_pct/cs_ppm/be_ppm/sn_ppm/photos[]/source/datetime/status。品位/照片可后续更新（先图后补）。
 - `factory.json`：工厂信息（框架已建；location/equipment/capacity/plan，逐步补充）。
 - `geo_packs/`：离线地图包，`index.json` 列出可用包 id。
 
@@ -181,7 +181,7 @@ go/no-go 由人拍板并记 decision log。取样点永不写入矿证归属（�
   - `tabIntro(ls)`：项目介绍 + 地质背景 + 取样要点；带「更新」按钮（`#introUpd`）→ `refreshIntro(btn,ls)`：`introFacts()` 汇总矿证/地质/取样/工厂关键事实，无 worker 走 `buildIntroTemplate()` 模板聚合，有 `localStorage.worker_url` 则 POST `/summarize`（`X-App-Token: s_token`）让 Worker 用服务端 AI key 精炼；结果存 `localStorage.lic_intro_override[area_id]`（覆盖显示，不改 licences.json）
   - `tabMap(ls)` / `mapMount(ls)` / `mapDraw()`：`projBBox()`/`projCenter()` 合并所有矿证 KML 的 bbox，一图画多条边界，`MAP.ks=[{no,k}]`
   - `tabReports(ls)`：报告列表，支持 `img`（PNG 图，`<a><img class="repimg">`）与 `legend`（图例）字段；42881 现有 5 条文字报告 + 8 条 QGIS 专题图报告（`report/serenje/map_01..08.png`，存 R2 桶 ecobox-media，经 `GET /m/<key>` 公开读）
-  - `tabSamples(ls)`（读 `SAMPLES`，过滤 `area_id===PROJ`）、`tabFactory(ls)`（读 `FACTORY`）；旧的 `tabFeed/wireFeed` 已不用（动态入口移除，数据 `lic_feed_v1` 仍保留）
+  - `tabSamples(ls)`：读 `SAMPLES`，过滤 `area_id===PROJ`；顶部「取样统计」卡 + 按 `mineral` 分组 + 每点 `sampleCard()`（照片缩略图/`nophoto` 占位、品位 `gradeFmt()` 空值显示「待化验」、坐标、描述）。`tabFactory(ls)`（读 `FACTORY`）；旧的 `tabFeed/wireFeed` 已不用（动态入口移除，数据 `lic_feed_v1` 仍保留）
 - 路由：`#proj/<area_id>` 进项目；`#lic/<no>` 仍可用（自动定位到该证所属项目）。
 - 新增/编辑/删除矿证仍在「设置」里（项目 → 矿证两层），改完侧栏只更新「N 本矿证」计数。
 - 测试：`t_multilic.html`（侧栏只列项目、加证后计数变 2、两张边界卡、地图画两条环）。
