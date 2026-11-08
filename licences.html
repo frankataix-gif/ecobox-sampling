@@ -226,13 +226,25 @@ textarea#ptext{flex:1;min-height:58px;border:1px solid var(--line);border-radius
 .modal2 figure.ph img{width:124px;height:93px;flex:0 0 124px;object-fit:cover;border-radius:8px;display:block;cursor:zoom-in}
 .modal2 figure.ph .aibtn{position:absolute;top:3px;right:3px;font-size:10.5px;padding:1px 6px;border-radius:999px;border:1px solid rgba(255,255,255,.7);background:rgba(15,23,42,.72);color:#fff;cursor:pointer;line-height:1.5;font-family:inherit}
 .modal2 figure.ph .aibtn:disabled{opacity:.6;cursor:progress}
-.modal2 figure.ph figcaption{flex:1 1 auto;min-width:0;font-size:11.5px;color:#475569;line-height:1.45;padding:0 46px 0 0;overflow:hidden}
+.modal2 figure.ph .pcap{flex:1 1 auto;min-width:0;padding:0 46px 0 0}
+.modal2 figure.ph .edbtn{position:absolute;top:3px;right:42px;font-size:11px;padding:1px 7px;border-radius:999px;border:1px solid rgba(255,255,255,.7);background:rgba(15,23,42,.72);color:#fff;cursor:pointer;line-height:1.5;font-family:inherit}
+.modal2 figure.ph .edbtn.on{background:#0f766e;border-color:#0f766e}
+.modal2 figure.ph .edbtn[hidden]{display:none}
+.modal2 .pai-edit{display:flex;flex-direction:column;gap:6px;margin-top:6px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;background:#f8fafc}
+.modal2 .pai-edit[hidden]{display:none}
+.modal2 .pai-edit label{display:flex;flex-direction:column;gap:2px;font-size:11px;color:#64748b}
+.modal2 .pai-edit input,.modal2 .pai-edit textarea{width:100%;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:6px;padding:4px 6px;font-size:12px;font-family:inherit;color:#0f172a;background:#fff}
+.modal2 .pai-edit textarea{resize:vertical;line-height:1.5}
+.modal2 .paiact{display:flex;gap:8px}
+.modal2 .paiact button{border:1px solid #cbd5e1;background:#fff;border-radius:6px;padding:3px 12px;font-size:12px;cursor:pointer;color:#334155;font-family:inherit}
+.modal2 .paiact button[data-act="save"]{background:#0f766e;border-color:#0f766e;color:#fff;font-weight:600}
+.modal2 figure.ph figcaption{flex:1 1 auto;min-width:0;font-size:11.5px;color:#475569;line-height:1.45}
 .modal2 figure.ph figcaption:empty{display:none}
 .modal2 figure.ph figcaption b{display:block;color:#0f766e;font-weight:600}
 .modal2 figure.ph figcaption .aimeta{display:block;color:#64748b}
-.modal2 figure.ph figcaption .aidesc{display:block;color:#334155;margin-top:1px;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.modal2 figure.ph figcaption .aidesc{display:block;color:#334155;margin-top:1px;white-space:pre-wrap;word-break:break-word}
 .modal2 figure.ph figcaption .aiq{display:inline-block;margin-top:2px;color:#b45309}
-@media(max-width:420px){.modal2 figure.ph img{width:96px;height:72px;flex:0 0 96px}.modal2 figure.ph figcaption{padding-right:42px;font-size:11px}}
+@media(max-width:420px){.modal2 figure.ph img{width:96px;height:72px;flex:0 0 96px}.modal2 figure.ph .pcap{padding-right:42px}.modal2 figure.ph figcaption{font-size:11px}}
 .ailine{font-size:12px;color:#0f766e;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:8px;padding:3px 8px;margin:0 0 8px;display:inline-block}
 .scatseg{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 10px}
 .scatseg button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:5px 11px;font-size:12.5px;color:#334155;cursor:pointer}
@@ -1549,7 +1561,7 @@ function aiCapHTML(url){
   const head=[v.lithology||"未判岩性",pct?"置信 "+pct:""].filter(Boolean).join(" · ");
   const bits=[];
   if(v.texture)bits.push(v.texture);
-  if(Array.isArray(v.minerals)&&v.minerals.length)bits.push(v.minerals.slice(0,4).join("、"));
+  if(Array.isArray(v.minerals)&&v.minerals.length)bits.push(v.minerals.join("、"));
   const q=String(v.quality||"").trim();
   const warn=q&&!/(良好|清晰|可辨|清楚|good)/i.test(q)?`<span class="aiq">⚠ ${esc(q)}</span>`:"";
   return `<b>${esc(head)}</b>`
@@ -1558,7 +1570,11 @@ function aiCapHTML(url){
     +warn;
 }
 function photoFig(u){
-  return `<figure class="ph" data-url="${esc(u)}"><img src="${esc(u)}" alt=""><button type="button" class="aibtn" data-photo-ai="${esc(u)}">AI</button><figcaption>${aiCapHTML(u)}</figcaption></figure>`;
+  const has=!!photoAI()[u];
+  return `<figure class="ph" data-url="${esc(u)}"><img src="${esc(u)}" alt="">`
+    +`<div class="pcap"><figcaption>${aiCapHTML(u)}</figcaption><div class="pai-edit" hidden></div></div>`
+    +`<button type="button" class="edbtn${has&&photoAI()[u].edited?" on":""}" data-photo-edit="${esc(u)}" title="编辑这段说明"${has?"":" hidden"}>✎</button>`
+    +`<button type="button" class="aibtn" data-photo-ai="${esc(u)}">AI</button></figure>`;
 }
 async function aiCall(path,body){
   if(!mediaTok()){
@@ -1750,8 +1766,9 @@ function editSampleDialog(sid){
     }catch(e){msg.textContent="AI 失败："+(e.message||e)}
     finally{btn.disabled=false}
   };
+  const figOf=url=>[...m.querySelectorAll("figure.ph")].find(f=>f.dataset.url===url);
   const paintCap=url=>{
-    const fig=[...m.querySelectorAll("figure.ph")].find(f=>f.dataset.url===url);
+    const fig=figOf(url);
     const c=fig&&fig.querySelector("figcaption");
     if(c)c.innerHTML=aiCapHTML(url);
   };
@@ -1763,6 +1780,8 @@ function editSampleDialog(sid){
       const j=await aiCall("/ai/photo",{key});
       setPhotoAI(url,j.result);
       paintCap(url);
+      const ed=figOf(url)&&figOf(url).querySelector(".edbtn");
+      if(ed){ed.hidden=false;ed.classList.remove("on")}
       if(btn)btn.textContent="AI✓";
       return true;
     }catch(e){
@@ -1777,7 +1796,39 @@ function editSampleDialog(sid){
       runPhotoAI(b.dataset.photoAi,b);
     });
   };
+  const openEditor=url=>{
+    const fig=figOf(url),box=fig&&fig.querySelector(".pai-edit"),v=photoAI()[url];
+    if(!box||!v)return;
+    box.innerHTML=`<label>岩性<input data-f="lithology" value="${esc(v.lithology||"")}"></label>`
+      +`<label>矿物<input data-f="minerals" value="${esc((v.minerals||[]).join("、"))}" placeholder="用、或空格分隔"></label>`
+      +`<label>描述<textarea data-f="description" rows="4">${esc(v.description||"")}</textarea></label>`
+      +`<div class="paiact"><button type="button" data-act="save">保存</button><button type="button" data-act="cancel">取消</button></div>`;
+    box.hidden=false;
+    const val=f=>{const el=box.querySelector('[data-f="'+f+'"]');return el?el.value.trim():""};
+    box.querySelector('[data-act="save"]').onclick=()=>{
+      setPhotoAI(url,Object.assign({},v,{
+        lithology:val("lithology"),
+        minerals:val("minerals").split(/[、,，;；\s]+/).filter(Boolean),
+        description:val("description"),
+        edited:true
+      }));
+      box.hidden=true;box.innerHTML="";
+      paintCap(url);
+      const ed=fig.querySelector(".edbtn");
+      if(ed){ed.hidden=false;ed.classList.add("on");ed.title="已手工修改"}
+      const umsg=q("#se_upmsg");if(umsg)umsg.textContent="照片说明已保存";
+    };
+    box.querySelector('[data-act="cancel"]').onclick=()=>{box.hidden=true;box.innerHTML=""};
+    const ta=box.querySelector('textarea[data-f="description"]');if(ta)ta.focus();
+  };
+  const bindPhotoEdit=()=>{
+    m.querySelectorAll("[data-photo-edit]").forEach(b=>b.onclick=ev=>{
+      ev.preventDefault();
+      openEditor(b.dataset.photoEdit);
+    });
+  };
   bindPhotoAI();
+  bindPhotoEdit();
   const aiAll=q("#se_ai_all");
   if(aiAll)aiAll.onclick=async()=>{
     const urls=[...m.querySelectorAll("[data-photo-ai]")].map(b=>b.dataset.photoAi);
