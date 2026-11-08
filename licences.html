@@ -192,8 +192,6 @@ textarea#ptext{flex:1;min-height:58px;border:1px solid var(--line);border-radius
 .delbtn:hover{background:#fef2f2}
 .btn.danger{color:#b91c1c;border-color:#fecaca}
 .btn.danger:hover{background:#fef2f2}
-.delbar{margin:0 0 12px;padding:8px 12px;border:1px solid #fecaca;background:#fef2f2;border-radius:8px;font-size:12.5px;color:#b91c1c;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.delbar button{border:1px solid #fecaca;background:#fff;border-radius:6px;padding:3px 8px;font-size:12px;color:#b91c1c;cursor:pointer}
 .liccard[data-card]{cursor:pointer}
 .liccard[data-card]:hover{border-color:#94a3b8}
 .liccard.focus{outline:2px solid #f59e0b;outline-offset:2px}
@@ -2088,8 +2086,6 @@ function tabSamples(ls){
     <button id="sampImport" style="margin-left:auto" title="选手机原图，按照片里的 GPS 自动建点，再补信息">📷 从照片新建（自动定位）</button>
     <button id="sampExport" title="把本机修改合并后下载 samples.json">导出 samples.json</button>
   </div>`;
-  const del=sampDeleted();
-  const delBar=del.length?`<div class="delbar">本机已删除 <b>${del.length}</b> 条（导出 samples.json 后永久移除）<button id="sampUndelete">撤销删除</button></div>`:"";
   return `<div class="pane"><div class="sampwrap">
     <div class="samplist">
       <div class="liccards">
@@ -2099,7 +2095,6 @@ function tabSamples(ls){
         </div>
       </div>
       ${seg}
-      ${delBar}
       ${SAMP_CATEGORIES.map(cat=>{
         const subs=byCat[cat]||{};const keys=Object.keys(subs);
         const total=keys.reduce((t,k)=>t+subs[k].length,0);
@@ -2265,13 +2260,12 @@ function render(){
     document.querySelectorAll("#pane [data-del]").forEach(b=>b.onclick=e=>{
       e.stopPropagation();
       const sid=b.dataset.del;
-      if(!confirm(`彻底删除样点 ${sid}？\n\n删除后不再出现在列表和地图；导出 samples.json 并替换文件后，将永久从数据中移除。`))return;
-      deleteSample(sid);render();toast("已删除 "+sid+"，导出 samples.json 后永久生效");
+      if(!confirm(`删除样点 ${sid}？\n\n删掉后列表和地图里都没有了，不能撤销。\n导出 samples.json 并替换文件后，才真正从数据里移除。`))return;
+      deleteSample(sid);render();toast("已删除 "+sid+"（没有撤销入口）");
     });
     document.querySelectorAll("#pane [data-scat]").forEach(b=>b.onclick=()=>{SCAT=b.dataset.scat;render()});
     const ex=$("#sampExport");if(ex)ex.onclick=exportSamples;
     const im=$("#sampImport");if(im)im.onclick=()=>importPhotos(im);
-    const und=$("#sampUndelete");if(und)und.onclick=()=>{clearSampDeleted();render();toast("已撤销删除")};
     document.querySelectorAll("#pane [data-card]").forEach(card=>{
       const imgs=[...card.querySelectorAll(".sphotos img")];
       imgs.forEach((img,i)=>img.onclick=e=>{e.stopPropagation();openLightbox(imgs.map(x=>x.src),i)});
