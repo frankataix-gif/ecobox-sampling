@@ -148,7 +148,7 @@ go/no-go 由人拍板并记 decision log。取样点永不写入矿证归属（�
 - **前端**：编辑框 `✨ AI 整理描述`（结果可「撤销」）、每张照片右上角 `AI` 按钮、`AI 解读全部`；
   结果存 `localStorage.samp_photo_ai_v1`（键是照片 URL），卡片多一条 `AI：岩性 · 86%`，导出时并入 `photo_ai`。
 - **照片说明**：解读完每张照片下方 `figcaption` 分三段——`岩性 · 置信 86%`（`<b>`）、`结构；矿物`（`.aimeta`）、
-  模型描述（`.aidesc`，最多 3 行），画质不佳再挂 `⚠ 偏暗`（`.aiq`）。由 `aiCapHTML(url)` 生成，
+  模型描述（`.aidesc`，最多 4 行），画质不佳再挂 `⚠ 偏暗`（`.aiq`）。由 `aiCapHTML(url)` 生成，
   `photoFig()` 初渲染和 `paintCap()` 复绘共用；没结果时返回空串，靠 `figcaption:empty{display:none}` 隐藏。
   版式是**一行一张**：`.sphotos` 纵向 flex，`figure.ph` 横向 flex（照片 124 px 定宽，手机上 96 px），
   说明占剩余宽度并在右侧留 46 px 给 `AI` 按钮。**别改回田字格**——96 px 宽时说明会被挤成一行截断。
