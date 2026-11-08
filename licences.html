@@ -178,6 +178,8 @@ textarea#ptext{flex:1;min-height:58px;border:1px solid var(--line);border-radius
 .sphotos{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
 .sphotos img{width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid var(--line);cursor:pointer}
 .nophoto{font-size:12px;color:var(--muted);background:#f8fafb;border:1px dashed var(--line);border-radius:8px;padding:10px;margin:0 0 10px;text-align:center}
+.upbtn{margin-left:auto;font-size:12px;padding:3px 8px;border-radius:6px;border:1px solid var(--line);background:#fff;color:#0b5f57;cursor:pointer;white-space:nowrap}
+.upbtn:disabled{opacity:.5;cursor:default}
 .cmts{margin-top:10px;border-top:1px dashed var(--line);padding-top:8px;display:flex;flex-direction:column;gap:5px}
 .cmt{font-size:12.8px;background:#f8fafb;border-radius:7px;padding:5px 8px}
 .cmt b{color:#0b5f57;margin-right:4px}
@@ -366,6 +368,7 @@ const esc=s=>String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>
 let AREAS=[],LICS=[],BASE=[],SEL=null,PROJ=null,TAB="intro",PIMG="",VIEW="lic",MROWS=[],MAP_PICK="",MAP_PICK_AREA=null,SAMPLES=[],FACTORY={};
 let HOLDER_TOUCHED=false;
 const FS_KEY="lic_feed_v1",AU_KEY="lic_author",CACHE_KEY="lic_cache_v1",EDIT_KEY="lic_edit_v1",NOTE_KEY="lic_notes_v1",INFO_KEY="lic_info_v1",SET_KEY="lic_setok";
+const MEDIA_URL="https://ecobox-media.frankataix.workers.dev",SP_KEY="samp_photos_v1",MT_KEY="m_token";
 let EDITS={},ADDED=[],DELETED=[],NOTES={};
 
 /* ---------- 数据 ---------- */
@@ -1248,16 +1251,70 @@ function gradeFmt(v,u){
   if(typeof v==="number") return String(v)+(u||"%");
   return String(v)+(u||"%");
 }
+function sampPhotos(){try{return JSON.parse(localStorage.getItem(SP_KEY)||"{}")}catch(e){return {}}}
+function sampleAllPhotos(s){
+  const base=(s&&s.photos||[]).filter(Boolean);
+  const extra=sampPhotos()[s&&s.sample_id]||[];
+  return base.concat(extra).slice(0,6);
+}
+function mediaTok(){return (localStorage.getItem(MT_KEY)||"").trim()}
+async function uploadPhotos(sid,btn){
+  let tok=mediaTok();
+  if(!tok){
+    const t=prompt("请输入媒体上传令牌（X-Upload-Token，用于把照片写入 R2）：");
+    if(t==null)return;
+    tok=t.trim();
+    if(!tok){alert("令牌不能为空");return}
+    localStorage.setItem(MT_KEY,tok);
+  }
+  const s=SAMPLES.find(x=>x.sample_id===sid)||{};
+  const cur=sampleAllPhotos(s);
+  const remain=Math.max(0,6-cur.length);
+  if(remain<=0){alert("该样点已达 6 张照片上限");return}
+  const inp=document.createElement("input");
+  inp.type="file";inp.accept="image/*";inp.multiple=true;
+  inp.onchange=async()=>{
+    const files=Array.from(inp.files||[]).slice(0,remain);
+    if(!files.length)return;
+    const setBusy=(b)=>{if(btn){btn.disabled=b;btn.textContent=b?"上传中…":"上传照片"}};
+    setBusy(true);
+    const added=[];
+    for(const f of files){
+      const ext=f.type==="image/png"?"png":f.type==="image/webp"?"webp":"jpg";
+      const idx=cur.length+added.length+1;
+      const key=`photos/${sid}/${String(idx).padStart(2,"0")}.${ext}`;
+      try{
+        const r=await fetch(`${MEDIA_URL}/put?key=${encodeURIComponent(key)}`,{
+          method:"POST",
+          headers:{"X-Upload-Token":localStorage.getItem(MT_KEY)||"","Content-Type":f.type||"application/octet-stream"},
+          body:f});
+        const j=await r.json();
+        if(!r.ok||!j.ok)throw new Error(j.error||("HTTP "+r.status));
+        added.push(j.url||(MEDIA_URL+"/m/"+key));
+      }catch(e){alert("照片上传失败："+(e.message||e))}
+    }
+    if(added.length){
+      const m=sampPhotos();
+      m[sid]=(m[sid]||[]).concat(added).slice(0,6);
+      localStorage.setItem(SP_KEY,JSON.stringify(m));
+      render();
+    }else{
+      setBusy(false);
+    }
+  };
+  inp.click();
+}
 function sampleCard(s){
-  const photos=(s.photos||[]).filter(Boolean);
+  const photos=sampleAllPhotos(s);
   const coord=(s.lat!=null&&s.lon!=null)?`${(+s.lat).toFixed(5)}°S, ${(+s.lon).toFixed(5)}°E`:"";
   const assays=(s.assays||[]).map(a=>`${esc(a.element)} ${esc(a.value)}${esc(a.unit||"")}`).join("、");
   const badges=[];
   if(s.sample_type)badges.push(s.sample_type);
   if(s.symbol)badges.push(s.symbol);
   if(s.mineral)badges.push(s.mineral);
+  const up=photos.length<6?`<button class="upbtn" data-upload="${esc(s.sample_id||"")}">上传照片</button>`:"";
   return `<div class="liccard">
-    <div class="lch"><b>${esc(s.sample_id||"")}</b>${badges.map(b=>`<span class="pill" style="background:#eef2f5;color:#475569">${esc(b)}</span>`).join("")}${s.status?`<span class="pill">${esc(s.status)}</span>`:""}</div>
+    <div class="lch"><b>${esc(s.sample_id||"")}</b>${badges.map(b=>`<span class="pill" style="background:#eef2f5;color:#475569">${esc(b)}</span>`).join("")}${s.status?`<span class="pill">${esc(s.status)}</span>`:""}${up}</div>
     ${photos.length?`<div class="sphotos">${photos.map(p=>`<img src="${esc(p)}" alt="" loading="lazy">`).join("")}</div>`:`<div class="nophoto">照片待上传</div>`}
     <dl>
       ${row("Ta₂O₅",gradeFmt(s.ta2o5_pct))}
@@ -1426,6 +1483,7 @@ function render(){
   if(mpick)mpick.querySelectorAll("[data-mpick]").forEach(b=>b.onclick=()=>{MAP_PICK=b.dataset.mpick;render()});
   if(TAB==="map")mapMount(ls);
   if(TAB==="intro"){const b=$("#introUpd");if(b)b.onclick=()=>refreshIntro(b,ls);}
+  if(TAB==="samples"){document.querySelectorAll("#pane [data-upload]").forEach(b=>b.onclick=()=>uploadPhotos(b.dataset.upload,b));}
 }
 
 function wireFeed(ls){

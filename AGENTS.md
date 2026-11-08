@@ -181,7 +181,7 @@ go/no-go 由人拍板并记 decision log。取样点永不写入矿证归属（�
   - `tabIntro(ls)`：项目介绍 + 地质背景 + 取样要点；带「更新」按钮（`#introUpd`）→ `refreshIntro(btn,ls)`：`introFacts()` 汇总矿证/地质/取样/工厂关键事实，无 worker 走 `buildIntroTemplate()` 模板聚合，有 `localStorage.worker_url` 则 POST `/summarize`（`X-App-Token: s_token`）让 Worker 用服务端 AI key 精炼；结果存 `localStorage.lic_intro_override[area_id]`（覆盖显示，不改 licences.json）
   - `tabMap(ls)` / `mapMount(ls)` / `mapDraw()`：`projBBox()`/`projCenter()` 合并所有矿证 KML 的 bbox，一图画多条边界，`MAP.ks=[{no,k}]`
   - `tabReports(ls)`：报告列表，支持 `img`（PNG 图，`<a><img class="repimg">`）与 `legend`（图例）字段；42881 现有 5 条文字报告 + 8 条 QGIS 专题图报告（`report/serenje/map_01..08.png`，存 R2 桶 ecobox-media，经 `GET /m/<key>` 公开读）
-  - `tabSamples(ls)`：读 `SAMPLES`，过滤 `area_id===PROJ`；顶部「取样统计」卡 + 按 `mineral` 分组 + 每点 `sampleCard()`（照片缩略图/`nophoto` 占位、品位 `gradeFmt()` 空值显示「待化验」、坐标、描述）。`tabFactory(ls)`（读 `FACTORY`）；旧的 `tabFeed/wireFeed` 已不用（动态入口移除，数据 `lic_feed_v1` 仍保留）
+  - `tabSamples(ls)`：读 `SAMPLES`，过滤 `area_id===PROJ`；顶部「取样统计」卡 + 按 `sample_type`（岩石/土壤/刻槽/其他/其他标记）分组 + 每点 `sampleCard()`（照片缩略图/`nophoto` 占位、品位 `gradeFmt()` 空值显示「待化验」、化验 assays、坐标、记录人、描述）。**「上传照片」按钮**（`data-upload` → `uploadPhotos(sid,btn)`）：选图 → `POST ${MEDIA_URL}/put?key=photos/<sid>/<NN>.<ext>`（`X-Upload-Token` 读 `localStorage.m_token`，首次缺则 prompt 输入）→ 成功 URL 存 `localStorage.samp_photos_v1[sid]` → 渲染时 `sampleAllPhotos()` 合并（≤6 张）。`tabFactory(ls)`（读 `FACTORY`）；旧的 `tabFeed/wireFeed` 已不用（动态入口移除，数据 `lic_feed_v1` 仍保留）
 - 路由：`#proj/<area_id>` 进项目；`#lic/<no>` 仍可用（自动定位到该证所属项目）。
 - 新增/编辑/删除矿证仍在「设置」里（项目 → 矿证两层），改完侧栏只更新「N 本矿证」计数。
 - 测试：`t_multilic.html`（侧栏只列项目、加证后计数变 2、两张边界卡、地图画两条环）。
