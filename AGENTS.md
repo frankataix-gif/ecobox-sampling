@@ -147,6 +147,10 @@ go/no-go 由人拍板并记 decision log。取样点永不写入矿证归属（�
   热门模型会偶发 503 / 404 / 70 s 超时；`gemini()` 对 404 和任何 5xx（含超时，统一记 504）都换下一个模型，其余错误直接报回去。
 - **前端**：编辑框 `✨ AI 整理描述`（结果可「撤销」）、每张照片右上角 `AI` 按钮、`AI 解读全部`；
   结果存 `localStorage.samp_photo_ai_v1`（键是照片 URL），卡片多一条 `AI：岩性 · 86%`，导出时并入 `photo_ai`。
+- **照片说明**：解读完每张照片下方 `figcaption` 分三段——`岩性 · 置信 86%`（`<b>`）、`结构；矿物`（`.aimeta`）、
+  模型描述（`.aidesc`，最多 3 行），画质不佳再挂 `⚠ 偏暗`（`.aiq`）。由 `aiCapHTML(url)` 生成，
+  `photoFig()` 初渲染和 `paintCap()` 复绘共用；没结果时返回空串，靠 `figcaption:empty{display:none}` 隐藏。
+  `.sphotos` 是 `minmax(150px,1fr)` 网格（原来 96 px 固定宽，放不下文字）。
 - **部署（2026-11-08 实际走通的那条）**：
   ```powershell
   cd _deploy\worker
