@@ -1251,20 +1251,25 @@ function gradeFmt(v,u){
 function sampleCard(s){
   const photos=(s.photos||[]).filter(Boolean);
   const coord=(s.lat!=null&&s.lon!=null)?`${(+s.lat).toFixed(5)}°S, ${(+s.lon).toFixed(5)}°E`:"";
+  const assays=(s.assays||[]).map(a=>`${esc(a.element)} ${esc(a.value)}${esc(a.unit||"")}`).join("、");
+  const badges=[];
+  if(s.sample_type)badges.push(s.sample_type);
+  if(s.symbol)badges.push(s.symbol);
+  if(s.mineral)badges.push(s.mineral);
   return `<div class="liccard">
-    <div class="lch"><b>${esc(s.sample_id||"")}</b>${s.source?`<span class="pill" style="background:#eef2f5;color:#475569">${esc(s.source)}</span>`:""}${s.status?`<span class="pill">${esc(s.status)}</span>`:""}</div>
+    <div class="lch"><b>${esc(s.sample_id||"")}</b>${badges.map(b=>`<span class="pill" style="background:#eef2f5;color:#475569">${esc(b)}</span>`).join("")}${s.status?`<span class="pill">${esc(s.status)}</span>`:""}</div>
     ${photos.length?`<div class="sphotos">${photos.map(p=>`<img src="${esc(p)}" alt="" loading="lazy">`).join("")}</div>`:`<div class="nophoto">照片待上传</div>`}
     <dl>
-      ${row("矿种",esc(s.symbol||s.Symbol||""))}
-      ${row("矿物",esc(s.mineral||s.Mineral||""))}
       ${row("Ta₂O₅",gradeFmt(s.ta2o5_pct))}
       ${row("Nb₂O₅",gradeFmt(s.nb2o5_pct))}
       ${s.li2o_pct!=null?row("Li₂O",gradeFmt(s.li2o_pct)):""}
       ${s.cs_ppm!=null?row("Cs ppm",esc(s.cs_ppm)):""}
       ${s.be_ppm!=null?row("Be ppm",esc(s.be_ppm)):""}
       ${s.sn_ppm!=null?row("Sn ppm",esc(s.sn_ppm)):""}
+      ${assays?row("化验",esc(assays)):""}
       ${coord?row("坐标",esc(coord)):""}
       ${s.datetime?row("日期",esc(s.datetime||s.Sample_date||"")):""}
+      ${s.recorder?row("记录人",esc(s.recorder)):""}
       ${s.description?row("描述",esc(s.description||s.Description||"")):""}
     </dl>
   </div>`;
@@ -1273,10 +1278,10 @@ function tabSamples(ls){
   const aid=PROJ;
   const rows=SAMPLES.filter(s=>!s.area_id||s.area_id===aid);
   if(!rows.length){
-    return `<div class="pane"><div class="empty">还没有现场取样结果。<br>由 <code>devtools/export_samples.py</code> 从 QGIS <code>field_samples.gpkg</code> 导出到 <code>samples.json</code>，自动按坐标归类到当前项目范围。</div></div>`;
+    return `<div class="pane"><div class="empty">还没有现场取样结果。<br>由 <code>devtools/import_ecobox_samples.py</code> 从 Ecobox 历史记录全量导入，按坐标自动归类到当前项目范围。</div></div>`;
   }
   const groups={};
-  rows.forEach(s=>{const m=s.mineral||s.symbol||"其他";(groups[m]=groups[m]||[]).push(s);});
+  rows.forEach(s=>{const k=s.sample_type||s.mineral||s.symbol||"其他";(groups[k]=groups[k]||[]).push(s);});
   const gkeys=Object.keys(groups);
   return `<div class="pane">
     <div class="liccards">
