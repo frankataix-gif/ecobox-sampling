@@ -184,6 +184,26 @@ textarea#ptext{flex:1;min-height:58px;border:1px solid var(--line);border-radius
 .nophoto{font-size:12px;color:var(--muted);background:#f8fafb;border:1px dashed var(--line);border-radius:8px;padding:10px;margin:0 0 10px;text-align:center}
 .upbtn{margin-left:auto;font-size:12px;padding:3px 8px;border-radius:6px;border:1px solid var(--line);background:#fff;color:#0b5f57;cursor:pointer;white-space:nowrap}
 .upbtn:disabled{opacity:.5;cursor:default}
+.sphotos img{cursor:zoom-in}
+.cardacts{margin-left:auto;display:flex;gap:6px;align-items:center}
+.cardacts .upbtn{margin-left:0}
+.editbtn{font-size:12px;padding:3px 8px;border-radius:6px;border:1px solid var(--line);background:#fff;color:#334155;cursor:pointer;white-space:nowrap}
+.liccard[data-card]{cursor:pointer}
+.liccard[data-card]:hover{border-color:#94a3b8}
+.liccard.focus{outline:2px solid #f59e0b;outline-offset:2px}
+.sampwrap{display:grid;grid-template-columns:minmax(0,1fr) 440px;gap:16px;align-items:start}
+.sampmapcol{position:sticky;top:98px}
+.sampmapcol .gmap{height:min(70vh,600px)}
+@media(max-width:1000px){.sampwrap{display:block}.sampmapcol{position:static;margin-bottom:12px}.sampmapcol .gmap{height:340px}}
+.lightbox{position:fixed;inset:0;z-index:320;background:rgba(0,0,0,.9);display:flex;align-items:center;justify-content:center}
+.lightbox img{max-width:94vw;max-height:88vh;border-radius:8px;box-shadow:0 10px 40px rgba(0,0,0,.5)}
+.lightbox .lbclose{position:absolute;top:12px;right:16px;font-size:30px;line-height:1;color:#fff;background:none;border:0;cursor:pointer}
+.lightbox .lbprev,.lightbox .lbnext{position:absolute;top:50%;transform:translateY(-50%);font-size:34px;line-height:1;color:#fff;background:rgba(255,255,255,.16);border:0;width:46px;height:64px;border-radius:8px;cursor:pointer}
+.lightbox .lbprev{left:12px}.lightbox .lbnext{right:12px}
+.lightbox .lbnav{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);color:#fff;font-size:13px}
+.modal2 textarea,.modal2 select{width:100%;margin-top:4px;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit;background:#fff}
+.modal2 .rowbtns{display:flex;gap:8px;align-items:center;margin:-4px 0 8px}
+.modal2 .rowbtns .btn{flex:0 0 auto}
 .scatseg{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 10px}
 .scatseg button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:5px 11px;font-size:12.5px;color:#334155;cursor:pointer}
 .scatseg button.on{background:#0f766e;color:#fff;border-color:#0f766e;font-weight:600}
@@ -1115,7 +1135,7 @@ const SUB_COLORS={"岩石":"#0f766e","土壤":"#b45309","刻槽":"#7c3aed","其�
   "桥":"#2563eb","路口":"#0891b2","电线":"#db2777","道路":"#7c3aed","土地/农户":"#ca8a04","其他标记":"#475569"};
 function sampColor(t){return SUB_COLORS[t]||"#2563eb"}
 function smapBBox(rows,ls){
-  const pts=rows.filter(s=>s.lat!=null&&s.lon!=null);
+  const pts=rows.map(sampData).filter(s=>s.lat!=null&&s.lon!=null);
   if(pts.length){
     let b=[Infinity,Infinity,-Infinity,-Infinity];
     pts.forEach(s=>{const x=+s.lon,y=+s.lat;
@@ -1175,6 +1195,7 @@ function smapDraw(){
     const[a,b]=px(p.lon,p.lat);
     if(a<-40||a>w+40||b<-40||b>h+40)return;
     const title=esc(p.sid)+(p.sub?" · "+esc(p.sub):"");
+    if(p.sid===SMAP.focus)vec+=`<circle cx="${a.toFixed(1)}" cy="${b.toFixed(1)}" r="13" fill="none" stroke="#f59e0b" stroke-width="3"/>`;
     const shape=p.cat==="标记点"
       ?`<rect x="${(a-5).toFixed(1)}" y="${(b-5).toFixed(1)}" width="10" height="10" transform="rotate(45 ${a.toFixed(1)} ${b.toFixed(1)})" fill="#475569" stroke="#fff" stroke-width="2"><title>${title}</title></rect>`
       :`<circle cx="${a.toFixed(1)}" cy="${b.toFixed(1)}" r="6" fill="${sampColor(p.sub)}" stroke="#fff" stroke-width="2"><title>${title}</title></circle>`;
@@ -1199,7 +1220,7 @@ function smapDraw(){
 function mapMountSmap(rows,ls){
   const el=$("#smap");if(!el)return;
   const bbox=smapBBox(rows,ls);
-  const pts=rows.filter(s=>s.lat!=null&&s.lon!=null).map(s=>{const c=sampCat(s);return {sid:s.sample_id,lon:+s.lon,lat:+s.lat,cat:c.cat,sub:c.sub};});
+  const pts=rows.map(sampData).filter(s=>s.lat!=null&&s.lon!=null).map(s=>{const c=sampCat(s);return {sid:s.sample_id,lon:+s.lon,lat:+s.lat,cat:c.cat,sub:c.sub};});
   const center=bbox?[(bbox[0]+bbox[2])/2,(bbox[1]+bbox[3])/2]:(pts[0]?[pts[0].lon,pts[0].lat]:null);
   if(!center)return;
   SMAP={el,pts,ks:ksFor(ls,ls),bbox,fit:bbox?bbox.slice():null,center:center.slice(),layer:mapLayer(),zoom:13};
@@ -1397,6 +1418,31 @@ function gradeFmt(v,u){
   if(typeof v==="number") return String(v)+(u||"%");
   return String(v)+(u||"%");
 }
+const SE_KEY="samp_edit_v1";
+let _eRaw=null,_eCache={};
+function sampEdits(){
+  let raw="";
+  try{raw=localStorage.getItem(SE_KEY)||""}catch(e){}
+  if(raw!==_eRaw){_eRaw=raw;try{_eCache=JSON.parse(raw||"{}")}catch(e){_eCache={}}}
+  return _eCache;
+}
+function sampData(s){
+  if(!s)return s;
+  const e=sampEdits()[s.sample_id];
+  return e?Object.assign({},s,e):s;
+}
+function saveSampEdit(sid,patch){
+  const all=Object.assign({},sampEdits());
+  all[sid]=Object.assign({},all[sid]||{},patch);
+  try{localStorage.setItem(SE_KEY,JSON.stringify(all));_eRaw=null}catch(e){}
+  toast("已保存（本机），可点「导出 samples.json」写回文件");
+}
+function resetSampEdit(sid){
+  const all=Object.assign({},sampEdits());
+  delete all[sid];
+  try{localStorage.setItem(SE_KEY,JSON.stringify(all));_eRaw=null}catch(e){}
+  toast("已恢复原始数据");
+}
 const SAMP_CATEGORIES=["取样","标记点"];
 let SCAT="",SCAT_PROJ=null;
 function markerSubCat(d){
@@ -1424,7 +1470,7 @@ function sampleAllPhotos(s){
   return base.concat(extra).slice(0,6);
 }
 function mediaTok(){return (localStorage.getItem(MT_KEY)||"").trim()}
-async function uploadPhotos(sid,btn){
+async function uploadPhotos(sid,btn,onDone){
   let tok=mediaTok();
   if(!tok){
     const t=prompt("请输入媒体上传令牌（X-Upload-Token，用于把照片写入 R2）：");
@@ -1464,13 +1510,15 @@ async function uploadPhotos(sid,btn){
       m[sid]=(m[sid]||[]).concat(added).slice(0,6);
       localStorage.setItem(SP_KEY,JSON.stringify(m));
       render();
+      if(onDone)onDone(added);
     }else{
       setBusy(false);
     }
   };
   inp.click();
 }
-function sampleCard(s){
+function sampleCard(s0){
+  const s=sampData(s0);
   const photos=sampleAllPhotos(s);
   const coord=(s.lat!=null&&s.lon!=null)?`${(+s.lat).toFixed(5)}°S, ${(+s.lon).toFixed(5)}°E`:"";
   const assays=(s.assays||[]).map(a=>`${esc(a.element)} ${esc(a.value)}${esc(a.unit||"")}`).join("、");
@@ -1479,8 +1527,9 @@ function sampleCard(s){
   if(s.symbol)badges.push(s.symbol);
   if(s.mineral)badges.push(s.mineral);
   const up=photos.length<6?`<button class="upbtn" data-upload="${esc(s.sample_id||"")}">上传照片</button>`:"";
+  const editBtn=`<button class="editbtn" data-edit="${esc(s.sample_id||"")}">编辑</button>`;
   return `<div class="liccard" data-card="${esc(s.sample_id||"")}">
-    <div class="lch"><b>${esc(s.sample_id||"")}</b>${badges.map(b=>`<span class="pill" style="background:#eef2f5;color:#475569">${esc(b)}</span>`).join("")}${s.status?`<span class="pill">${esc(s.status)}</span>`:""}${up}</div>
+    <div class="lch"><b>${esc(s.sample_id||"")}</b>${badges.map(b=>`<span class="pill" style="background:#eef2f5;color:#475569">${esc(b)}</span>`).join("")}${s.status?`<span class="pill">${esc(s.status)}</span>`:""}<span class="cardacts">${editBtn}${up}</span></div>
     ${photos.length?`<div class="sphotos">${photos.map(p=>`<img src="${esc(p)}" alt="" loading="lazy">`).join("")}</div>`:`<div class="nophoto">照片待上传</div>`}
     <dl>
       ${row("Ta₂O₅",gradeFmt(s.ta2o5_pct))}
@@ -1496,6 +1545,121 @@ function sampleCard(s){
       ${s.description?row("描述",esc(s.description||s.Description||"")):""}
     </dl>
   </div>`;
+}
+const SUB_OPTIONS=["岩石","土壤","刻槽","其他","桥","路口","道路","电线","土地/农户","其他标记"];
+function openLightbox(srcs,idx){
+  const box=document.createElement("div");box.className="lightbox";box.id="lightbox";
+  let i=idx||0;
+  const draw=()=>{
+    box.innerHTML=`<button class="lbclose" title="关闭">×</button>
+      ${srcs.length>1?'<button class="lbprev" title="上一张">‹</button><button class="lbnext" title="下一张">›</button>':''}
+      <img src="${esc(srcs[i])}" alt="">
+      <div class="lbnav">${i+1} / ${srcs.length}</div>`;
+    box.querySelector(".lbclose").onclick=()=>box.remove();
+    if(srcs.length>1){
+      box.querySelector(".lbprev").onclick=e=>{e.stopPropagation();i=(i-1+srcs.length)%srcs.length;draw()};
+      box.querySelector(".lbnext").onclick=e=>{e.stopPropagation();i=(i+1)%srcs.length;draw()};
+    }
+    box.onclick=e=>{if(e.target===box)box.remove()};
+  };
+  document.body.appendChild(box);draw();
+}
+function editSampleDialog(sid){
+  const base=SAMPLES.find(x=>x.sample_id===sid);
+  if(!base)return;
+  const s=sampData(base),c=sampCat(s),photos=sampleAllPhotos(s);
+  const m=document.createElement("div");m.className="modal2";
+  const q=x=>m.querySelector(x);
+  m.innerHTML=`<div class="mbox"><h3>编辑样点 ${esc(sid)}</h3>
+    <label>描述<textarea id="se_desc" rows="3">${esc(s.description||"")}</textarea></label>
+    <label>照片（${photos.length}/6）</label>
+    <div class="sphotos" id="se_photos">${photos.map(p=>`<img src="${esc(p)}" alt="">`).join("")||'<span class="nophoto" style="display:inline-block;margin:0">暂无照片</span>'}</div>
+    <div class="rowbtns"><button class="btn" id="se_up" ${photos.length>=6?"disabled":""}>上传照片</button><span id="se_upmsg" style="font-size:12px;color:#64748b"></span></div>
+    <div class="mrow2">
+      <label>纬度<input id="se_lat" value="${s.lat!=null?s.lat:""}" placeholder="-13.116964"></label>
+      <label>经度<input id="se_lon" value="${s.lon!=null?s.lon:""}" placeholder="30.175822"></label>
+    </div>
+    <div class="rowbtns"><button class="btn" id="se_gps">用当前定位修正 GPS</button><span id="se_gpsmsg" style="font-size:12px;color:#64748b"></span></div>
+    <div class="mrow2">
+      <label>一级分类<select id="se_cat">${SAMP_CATEGORIES.map(x=>`<option ${x===c.cat?"selected":""}>${x}</option>`).join("")}</select></label>
+      <label>二级分类<input id="se_sub" list="se_sublist" value="${esc(c.sub)}"><datalist id="se_sublist">${SUB_OPTIONS.map(x=>`<option value="${esc(x)}">`).join("")}</datalist></label>
+    </div>
+    <label>记录人<input id="se_rec" value="${esc(s.recorder||"")}"></label>
+    <div class="mrow2">
+      <label>Ta₂O₅ %<input id="se_ta" value="${s.ta2o5_pct!=null?s.ta2o5_pct:""}"></label>
+      <label>Nb₂O₅ %<input id="se_nb" value="${s.nb2o5_pct!=null?s.nb2o5_pct:""}"></label>
+    </div>
+    <div class="merr" id="se_err"></div>
+    <div class="mfoot2"><button class="btn" id="se_reset">恢复原始</button><button class="btn" id="se_cancel">取消</button><button class="btn primary" id="se_ok">保存</button></div>
+  </div>`;
+  document.body.appendChild(m);
+  const close=()=>m.remove();
+  m.onclick=e=>{if(e.target===m)close()};
+  q("#se_cancel").onclick=close;
+  q("#se_gps").onclick=()=>{
+    const msg=q("#se_gpsmsg");
+    if(!navigator.geolocation){msg.textContent="浏览器不支持定位";return}
+    msg.textContent="定位中…";
+    navigator.geolocation.getCurrentPosition(p=>{
+      q("#se_lat").value=p.coords.latitude.toFixed(6);
+      q("#se_lon").value=p.coords.longitude.toFixed(6);
+      msg.textContent="已填入当前坐标（±"+Math.round(p.coords.accuracy||0)+"m）";
+    },e=>{msg.textContent="定位失败："+(e.message||"")},{enableHighAccuracy:true,timeout:10000});
+  };
+  const wireP=box=>{const imgs=[...box.querySelectorAll("img")];imgs.forEach((img,i)=>img.onclick=()=>openLightbox(imgs.map(x=>x.src),i))};
+  const pbox=q("#se_photos");if(pbox)wireP(pbox);
+  q("#se_up").onclick=()=>{
+    uploadPhotos(sid,q("#se_up"),added=>{
+      const box=q("#se_photos");
+      if(box){
+        const urls=sampleAllPhotos(base);
+        box.innerHTML=urls.map(u=>`<img src="${esc(u)}" alt="">`).join("")||'<span class="nophoto" style="display:inline-block;margin:0">暂无照片</span>';
+        wireP(box);
+      }
+      const msg=q("#se_upmsg");if(msg)msg.textContent="已上传 "+added.length+" 张";
+    });
+  };
+  q("#se_reset").onclick=()=>{resetSampEdit(sid);close();render()};
+  q("#se_ok").onclick=()=>{
+    const err=q("#se_err");
+    const latS=q("#se_lat").value.trim(),lonS=q("#se_lon").value.trim();
+    const lat=latS===""?null:parseFloat(latS),lon=lonS===""?null:parseFloat(lonS);
+    if(lat!=null&&isNaN(lat)){err.textContent="纬度不是数字";return}
+    if(lon!=null&&isNaN(lon)){err.textContent="经度不是数字";return}
+    const taS=q("#se_ta").value.trim(),nbS=q("#se_nb").value.trim();
+    saveSampEdit(sid,{
+      description:q("#se_desc").value.trim()||null,
+      lat,lon,
+      category:q("#se_cat").value,
+      subtype:q("#se_sub").value.trim()||"其他",
+      recorder:q("#se_rec").value.trim()||null,
+      ta2o5_pct:taS===""?null:parseFloat(taS),
+      nb2o5_pct:nbS===""?null:parseFloat(nbS),
+    });
+    close();render();
+  };
+}
+function smapFocus(sid){
+  if(!SMAP)return;
+  const p=SMAP.pts.find(x=>x.sid===sid);
+  if(!p)return;
+  SMAP.center=[p.lon,p.lat];
+  SMAP.zoom=Math.max(SMAP.zoom,16);
+  SMAP.focus=sid;
+  smapDraw();
+  document.querySelectorAll("#pane .liccard.focus").forEach(c=>c.classList.remove("focus"));
+  const card=[...document.querySelectorAll("#pane [data-card]")].find(c=>c.dataset.card===sid);
+  if(card)card.classList.add("focus");
+}
+function exportSamples(){
+  const edits=sampEdits();
+  const out=SAMPLES.map(s=>Object.assign({},s,edits[s.sample_id]||{}));
+  const doc={note:"现场取样结果（全量）。网页端编辑后导出（devtools/classify_samples.py 可重算 category/subtype）。",samples:out};
+  const blob=new Blob([JSON.stringify(doc,null,1)],{type:"application/json"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="samples.json";
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1200);
+  toast("已下载 samples.json（含 "+Object.keys(edits).length+" 处修改）");
 }
 function tabSamples(ls){
   const aid=PROJ;
@@ -1518,37 +1682,42 @@ function tabSamples(ls){
     <button data-scat="" class="${SCAT?"":"on"}">全部（${all.length}）</button>
     <button data-scat="取样" class="${SCAT==="取样"?"on":""}">取样（${catCount["取样"]||0}）</button>
     <button data-scat="标记点" class="${SCAT==="标记点"?"on":""}">标记点（${catCount["标记点"]||0}）</button>
+    <button id="sampExport" style="margin-left:auto" title="把本机修改合并后下载 samples.json">导出 samples.json</button>
   </div>`;
-  return `<div class="pane">
-    <div class="liccards">
-      <div class="liccard">
-        <div class="lch"><b>取样统计</b><span class="pill">${all.length} 个点</span></div>
-        <dl>${SAMP_CATEGORIES.map(c=>row(c,(catCount[c]||0)+" 个点")).join("")}</dl>
+  return `<div class="pane"><div class="sampwrap">
+    <div class="samplist">
+      <div class="liccards">
+        <div class="liccard">
+          <div class="lch"><b>取样统计</b><span class="pill">${all.length} 个点</span></div>
+          <dl>${SAMP_CATEGORIES.map(c=>row(c,(catCount[c]||0)+" 个点")).join("")}</dl>
+        </div>
       </div>
+      ${seg}
+      ${SAMP_CATEGORIES.map(cat=>{
+        const subs=byCat[cat]||{};const keys=Object.keys(subs);
+        const total=keys.reduce((t,k)=>t+subs[k].length,0);
+        if(!total)return "";
+        return `<h3 class="scat">${cat}（${total}）</h3>`+
+          keys.map(k=>`<h4>${esc(k)}（${subs[k].length}）</h4>${subs[k].map(sampleCard).join("")}`).join("");
+      }).join("")}
+      ${unHtml}
     </div>
-    ${seg}
-    ${box?`<div class="gmap" id="smap">
-      <div class="gtiles"></div>
-      <svg class="gvec" xmlns="http://www.w3.org/2000/svg"></svg>
-      <div class="glayerpick"><button data-slayer="sat">卫星</button><button data-slayer="street">道路</button></div>
-      <div class="gctrl">
-        <button data-sz="1" title="放大">+</button>
-        <button data-sz="-1" title="缩小">−</button>
-        <button data-sfit="1" title="回到取样范围">⌖</button>
-        <button data-sfull="1" title="全屏地图">⤢</button>
+    <div class="sampmapcol">
+      ${box?`<div class="gmap" id="smap">
+        <div class="gtiles"></div>
+        <svg class="gvec" xmlns="http://www.w3.org/2000/svg"></svg>
+        <div class="glayerpick"><button data-slayer="sat">卫星</button><button data-slayer="street">道路</button></div>
+        <div class="gctrl">
+          <button data-sz="1" title="放大">+</button>
+          <button data-sz="-1" title="缩小">−</button>
+          <button data-sfit="1" title="回到取样范围">⌖</button>
+          <button data-sfull="1" title="全屏地图">⤢</button>
+        </div>
+        <span class="gzoomnow">z--</span><span class="gattr"></span>
       </div>
-      <span class="gzoomnow">z--</span><span class="gattr"></span>
+      <div class="mapmeta">${SCAT?SCAT+" ":""}${rows.length} 个点${withCoord<rows.length?`（${withCoord} 个有坐标）`:""} · 圆点=取样 · 菱形=标记点 · 点卡片定位到地图 · 点标记跳到卡片${un.length?` · 另有 ${un.length} 个未归类点不在图上`:""}</div>`:`<div class="empty" style="font-size:12.5px">这些取样点还没有坐标，无法在地图上定位。</div>`}
     </div>
-    <div class="mapmeta">${SCAT?SCAT+" ":""}${rows.length} 个点${withCoord<rows.length?`（${withCoord} 个有坐标）`:""} · 圆点=取样 · 菱形=标记点 · 拖动平移 · 滚轮/双击缩放 · 点标记跳到取样卡${un.length?` · 另有 ${un.length} 个未归类点不在图上`:""}</div>`:`<div class="empty" style="font-size:12.5px">这些取样点还没有坐标，无法在地图上定位。</div>`}
-    ${SAMP_CATEGORIES.map(cat=>{
-      const subs=byCat[cat]||{};const keys=Object.keys(subs);
-      const total=keys.reduce((t,k)=>t+subs[k].length,0);
-      if(!total)return "";
-      return `<h3 class="scat">${cat}（${total}）</h3>`+
-        keys.map(k=>`<h4>${esc(k)}（${subs[k].length}）</h4>${subs[k].map(sampleCard).join("")}`).join("");
-    }).join("")}
-    ${unHtml}
-  </div>`;
+  </div></div>`;
 }
 
 function tabFactory(ls){
@@ -1683,7 +1852,21 @@ function render(){
   if(mpick)mpick.querySelectorAll("[data-mpick]").forEach(b=>b.onclick=()=>{MAP_PICK=b.dataset.mpick;render()});
   if(TAB==="map")mapMount(ls);
   if(TAB==="intro"){const b=$("#introUpd");if(b)b.onclick=()=>refreshIntro(b,ls);}
-  if(TAB==="samples"){document.querySelectorAll("#pane [data-upload]").forEach(b=>b.onclick=()=>uploadPhotos(b.dataset.upload,b));document.querySelectorAll("#pane [data-scat]").forEach(b=>b.onclick=()=>{SCAT=b.dataset.scat;render();});mapMountSmap(SAMPLES.filter(s=>s.area_id===PROJ).filter(s=>!SCAT||sampCat(s).cat===SCAT),ls);}
+  if(TAB==="samples"){
+    document.querySelectorAll("#pane [data-upload]").forEach(b=>b.onclick=e=>{e.stopPropagation();uploadPhotos(b.dataset.upload,b)});
+    document.querySelectorAll("#pane [data-edit]").forEach(b=>b.onclick=e=>{e.stopPropagation();editSampleDialog(b.dataset.edit)});
+    document.querySelectorAll("#pane [data-scat]").forEach(b=>b.onclick=()=>{SCAT=b.dataset.scat;render()});
+    const ex=$("#sampExport");if(ex)ex.onclick=exportSamples;
+    document.querySelectorAll("#pane [data-card]").forEach(card=>{
+      const imgs=[...card.querySelectorAll(".sphotos img")];
+      imgs.forEach((img,i)=>img.onclick=e=>{e.stopPropagation();openLightbox(imgs.map(x=>x.src),i)});
+      card.addEventListener("click",e=>{
+        if(e.target.closest("button,a,input,textarea,select,img"))return;
+        smapFocus(card.dataset.card);
+      });
+    });
+    mapMountSmap(SAMPLES.filter(s=>s.area_id===PROJ).filter(s=>!SCAT||sampCat(s).cat===SCAT),ls);
+  }
 }
 
 function wireFeed(ls){
