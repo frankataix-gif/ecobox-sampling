@@ -214,6 +214,13 @@ textarea#ptext{flex:1;min-height:58px;border:1px solid var(--line);border-radius
 .modal2 .inslab{font-size:12px;color:#64748b}
 .modal2 .insbtn{font-size:12px;padding:3px 9px;border-radius:999px;border:1px solid #cbd5e1;background:#f8fafc;color:#334155;cursor:pointer;font-family:ui-monospace,Menlo,Consolas,monospace;line-height:1.4}
 .modal2 .insbtn:hover{background:#e0f2fe;border-color:#7dd3fc}
+.modal2 .subtags{display:flex;flex-direction:column;gap:6px;margin:-4px 0 12px}
+.modal2 .subgrp{display:flex;gap:6px;flex-wrap:wrap;align-items:center;transition:opacity .15s}
+.modal2 .subgrp.dim{opacity:.4}
+.modal2 .glab{font-size:11px;color:#64748b;min-width:42px;flex:0 0 auto}
+.modal2 .subtag{font-size:12.5px;padding:4px 10px;border-radius:999px;border:1px solid #cbd5e1;background:#f8fafc;color:#334155;cursor:pointer;white-space:nowrap;line-height:1.4}
+.modal2 .subtag:hover{background:#e0f2fe;border-color:#7dd3fc}
+.modal2 .subtag.on{background:#0f766e;border-color:#0f766e;color:#fff;font-weight:600}
 .scatseg{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 10px}
 .scatseg button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:5px 11px;font-size:12.5px;color:#334155;cursor:pointer}
 .scatseg button.on{background:#0f766e;color:#fff;border-color:#0f766e;font-weight:600}
@@ -1611,10 +1618,9 @@ function editSampleDialog(sid){
       <label>经度<input id="se_lon" value="${s.lon!=null?s.lon:""}" placeholder="30.175822"></label>
     </div>
     <div class="rowbtns"><button class="btn" id="se_gps">用当前定位修正 GPS</button><span id="se_gpsmsg" style="font-size:12px;color:#64748b"></span></div>
-    <div class="mrow2">
-      <label>一级分类<select id="se_cat">${SAMP_CATEGORIES.map(x=>`<option ${x===c.cat?"selected":""}>${x}</option>`).join("")}</select></label>
-      <label>二级分类<select id="se_sub">${SUB_OPTIONS.indexOf(c.sub)<0&&c.sub?`<option selected>${esc(c.sub)}</option>`:""}${Object.keys(SUB_BY_CAT).map(cat=>`<optgroup label="${cat}">${SUB_BY_CAT[cat].map(x=>`<option ${x===c.sub?"selected":""}>${x}</option>`).join("")}</optgroup>`).join("")}</select></label>
-    </div>
+    <label>一级分类<select id="se_cat">${SAMP_CATEGORIES.map(x=>`<option ${x===c.cat?"selected":""}>${x}</option>`).join("")}</select></label>
+    <label>二级分类（直接点标签）</label>
+    <div class="subtags" id="se_subtags">${Object.keys(SUB_BY_CAT).map(cat=>`<div class="subgrp" data-grp="${cat}"><span class="glab">${cat}</span>${SUB_BY_CAT[cat].map(x=>`<button type="button" class="subtag${x===c.sub?" on":""}" data-sub="${esc(x)}" data-cat="${cat}">${esc(x)}</button>`).join("")}</div>`).join("")}</div>
     <label>记录人<input id="se_rec" value="${esc(s.recorder||"")}"></label>
     <div class="merr" id="se_err"></div>
     <div class="mfoot2"><button class="btn danger" id="se_del" style="margin-right:auto">删除这个点</button><button class="btn" id="se_reset">恢复原始</button><button class="btn" id="se_cancel">取消</button><button class="btn primary" id="se_ok">保存</button></div>
@@ -1630,10 +1636,25 @@ function editSampleDialog(sid){
     ta.value=ta.value.slice(0,a)+txt+ta.value.slice(b0);
     const p=a+txt.length;ta.setSelectionRange(p,p);ta.focus();
   });
-  q("#se_cat").onchange=()=>{
-    const cat=q("#se_cat").value,opts=SUB_BY_CAT[cat]||[],sel=q("#se_sub");
-    if(opts.indexOf(sel.value)<0)sel.value=opts[opts.length-1]||"";
+  let pickedSub=c.sub||"";
+  const subChips=()=>[...m.querySelectorAll("[data-sub]")];
+  const paintSub=()=>{
+    const cat=q("#se_cat").value;
+    subChips().forEach(b=>b.classList.toggle("on",b.dataset.sub===pickedSub));
+    m.querySelectorAll(".subgrp").forEach(g=>g.classList.toggle("dim",g.dataset.grp!==cat));
   };
+  subChips().forEach(b=>b.onclick=e=>{
+    e.preventDefault();
+    pickedSub=b.dataset.sub;
+    q("#se_cat").value=b.dataset.cat;
+    paintSub();
+  });
+  q("#se_cat").onchange=()=>{
+    const opts=SUB_BY_CAT[q("#se_cat").value]||[];
+    if(opts.indexOf(pickedSub)<0)pickedSub=opts[opts.length-1]||"";
+    paintSub();
+  };
+  paintSub();
   q("#se_gps").onclick=()=>{
     const msg=q("#se_gpsmsg");
     if(!navigator.geolocation){msg.textContent="浏览器不支持定位";return}
@@ -1672,7 +1693,7 @@ function editSampleDialog(sid){
       description:q("#se_desc").value.trim()||null,
       lat,lon,
       category:q("#se_cat").value,
-      subtype:q("#se_sub").value.trim()||"其他",
+      subtype:pickedSub||"其他",
       recorder:q("#se_rec").value.trim()||null,
     });
     close();render();
