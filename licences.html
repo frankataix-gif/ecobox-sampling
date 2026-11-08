@@ -1495,13 +1495,15 @@ function sampDeleted(){
 }
 function isSampDeleted(sid){return sid!=null&&sampDeleted().indexOf(sid)>=0}
 function deleteSample(sid){
+  const mine=newSamps().filter(x=>x.sample_id!==sid);
+  saveNewSamps(mine);
   const arr=sampDeleted().slice();
   if(arr.indexOf(sid)<0)arr.push(sid);
   try{localStorage.setItem(SD_KEY,JSON.stringify(arr));_dRaw=null}catch(e){}
   const all=Object.assign({},sampEdits());delete all[sid];
   try{localStorage.setItem(SE_KEY,JSON.stringify(all));_eRaw=null}catch(e){}
   const ph=sampPhotos();if(ph[sid]){delete ph[sid];try{localStorage.setItem(SP_KEY,JSON.stringify(ph))}catch(e){}}
-  const s0=SAMPLES.find(x=>x.sample_id===sid);
+  const s0=sampAll().find(x=>x.sample_id===sid);
   if(s0){
     const pa=photoAI();let ch=false;
     sampleAllPhotos(s0).forEach(u=>{if(pa[u]){delete pa[u];ch=true}});
@@ -1534,6 +1536,118 @@ function sampleAllPhotos(s){
   const base=(s&&s.photos||[]).filter(Boolean);
   const extra=sampPhotos()[s&&s.sample_id]||[];
   return base.concat(extra).slice(0,6);
+}
+/* ---------- 本机新建的样点（按照片 EXIF 定位补录） ---------- */
+const SN_KEY="samp_new_v1";
+function newSamps(){
+  try{const a=JSON.parse(localStorage.getItem(SN_KEY)||"[]");return Array.isArray(a)?a:[]}catch(e){return []}
+}
+function saveNewSamps(a){try{localStorage.setItem(SN_KEY,JSON.stringify(a))}catch(e){}}
+function sampAll(){return newSamps().concat(SAMPLES)}
+function nextSampId(d){
+  const day=d instanceof Date&&!isNaN(d)?d:new Date();
+  const p="M"+day.getFullYear()+String(day.getMonth()+1).padStart(2,"0")+String(day.getDate()).padStart(2,"0")+"-";
+  let mx=0;
+  sampAll().forEach(x=>{
+    const id=String(x.sample_id||"");
+    if(id.indexOf(p)!==0)return;
+    const n=parseInt(id.slice(p.length),10);
+    if(n>mx)mx=n;
+  });
+  return p+String(mx+1).padStart(3,"0");
+}
+/* EXIF：JPEG 的 APP1 / HEIC 里的 Exif 块，取 GPS 与拍摄时间 */
+function exifFromBuffer(u8){
+  const n=u8.length;let t=-1;
+  if(n>3&&u8[0]===0xFF&&u8[1]===0xD8){
+    let i=2;
+    while(i+4<n){
+      if(u8[i]!==0xFF){i++;continue}
+      const mk=u8[i+1];
+      if(mk===0xD8||mk===0x01||(mk>=0xD0&&mk<=0xD7)){i+=2;continue}
+      if(mk===0xDA)break;
+      const len=(u8[i+2]<<8)|u8[i+3];
+      if(len<2)break;
+      if(mk===0xE1&&u8[i+4]===0x45&&u8[i+5]===0x78&&u8[i+6]===0x69&&u8[i+7]===0x66){t=i+10;break}
+      i+=2+len;
+    }
+  }
+  if(t<0){
+    for(let i=0;i+6<n;i++){
+      if(u8[i]===0x45&&u8[i+1]===0x78&&u8[i+2]===0x69&&u8[i+3]===0x66&&u8[i+4]===0&&u8[i+5]===0){t=i+6;break}
+    }
+  }
+  if(t<0||t+8>n)return null;
+  const dv=new DataView(u8.buffer,u8.byteOffset);
+  const bo=dv.getUint16(t),le=bo===0x4949;
+  if(!le&&bo!==0x4D4D)return null;
+  const u16=o=>dv.getUint16(o,le),u32=o=>dv.getUint32(o,le);
+  const ifd=o=>{
+    const m={},c=u16(o);
+    for(let i=0;i<c;i++){
+      const e=o+2+i*12;
+      if(e+12>dv.byteLength)break;
+      m[u16(e)]={type:u16(e+2),count:u32(e+4),val:e+8};
+    }
+    return m;
+  };
+  const val=e=>{
+    if(!e)return null;
+    const sz=e.type===3?2:e.type===4||e.type===9?4:e.type===5||e.type===10?8:1;
+    const off=e.count*sz<=4?e.val:t+u32(e.val);
+    if(e.type===2){
+      let s="";
+      for(let i=0;i<e.count;i++){const c=dv.getUint8(off+i);if(!c)break;s+=String.fromCharCode(c)}
+      return s;
+    }
+    if(e.type===1)return dv.getUint8(off);
+    if(e.type===3)return u16(off);
+    if(e.type===4)return u32(off);
+    return null;
+  };
+  const rats=e=>{
+    if(!e)return [];
+    const off=e.count*8<=4?e.val:t+u32(e.val),out=[];
+    for(let i=0;i<e.count;i++){const a=u32(off+i*8),b=u32(off+i*8+4);out.push(b?a/b:0)}
+    return out;
+  };
+  const dms=v=>v.length>=3?v[0]+v[1]/60+v[2]/3600:(v[0]||0);
+  const e0=ifd(t+u32(t+4));
+  let lat=null,lon=null,alt=null,dt=null;
+  if(e0[0x8825]){
+    const g=ifd(t+u32(e0[0x8825].val));
+    const la=rats(g[2]),lo=rats(g[4]);
+    if(la.length)lat=dms(la)*(String(val(g[1])||"N").toUpperCase()==="S"?-1:1);
+    if(lo.length)lon=dms(lo)*(String(val(g[3])||"E").toUpperCase()==="W"?-1:1);
+    const al=rats(g[6]);
+    if(al.length)alt=al[0]*(val(g[5])===1?-1:1);
+  }
+  if(e0[0x8769]){
+    const ex=ifd(t+u32(e0[0x8769].val));
+    const s=val(ex[0x9003]);
+    if(s)dt=s.replace(/^(\d{4}):(\d{2}):(\d{2})/,"$1-$2-$3");
+  }
+  if(lat==null&&lon==null)return null;
+  return {lat,lon,alt,dt};
+}
+async function exifOf(file){
+  try{return exifFromBuffer(new Uint8Array(await file.arrayBuffer()))}catch(e){return null}
+}
+function createSampFromExif(ex,area){
+  const day=String(ex&&ex.dt||"").slice(0,10);
+  const sid=nextSampId(day?new Date(day+"T00:00:00"):new Date());
+  const s={
+    sample_id:sid,
+    area_id:area!=null?area:(PROJ||""),
+    lat:Math.round(ex.lat*1e6)/1e6,
+    lon:Math.round(ex.lon*1e6)/1e6,
+    datetime:day||new Date().toISOString().slice(0,10),
+    status:"待补录",
+    source:"photo-exif"
+  };
+  if(ex.alt!=null&&isFinite(ex.alt))s.alt=Math.round(ex.alt);
+  saveNewSamps(newSamps().concat([s]));
+  return s;
 }
 function mediaTok(){return (localStorage.getItem(MT_KEY)||"").trim()}
 function mtState(){
@@ -1591,6 +1705,38 @@ async function aiCall(path,body){
   if(!r.ok||!j.ok)throw new Error(j.error||("HTTP "+r.status));
   return j;
 }
+async function putPhotos(sid,files,btn,onDone){
+  const s=sampAll().find(x=>x.sample_id===sid)||{};
+  const cur=sampleAllPhotos(s);
+  const list=Array.from(files||[]).slice(0,Math.max(0,6-cur.length));
+  if(!list.length)return [];
+  const setBusy=b=>{if(btn){btn.disabled=b;btn.textContent=b?"上传中…":"上传照片"}};
+  setBusy(true);
+  const added=[];
+  for(const f of list){
+    const ext=f.type==="image/png"?"png":f.type==="image/webp"?"webp":"jpg";
+    const key=`photos/${sid}/${String(cur.length+added.length+1).padStart(2,"0")}.${ext}`;
+    try{
+      const r=await fetch(`${MEDIA_URL}/put?key=${encodeURIComponent(key)}`,{
+        method:"POST",
+        headers:{"X-Upload-Token":localStorage.getItem(MT_KEY)||"","Content-Type":f.type||"application/octet-stream"},
+        body:f});
+      const j=await r.json();
+      if(!r.ok||!j.ok)throw new Error(j.error||("HTTP "+r.status));
+      added.push(j.url||(MEDIA_URL+"/m/"+key));
+    }catch(e){alert("照片上传失败："+(e.message||e))}
+  }
+  if(added.length){
+    const m=sampPhotos();
+    m[sid]=(m[sid]||[]).concat(added).slice(0,6);
+    localStorage.setItem(SP_KEY,JSON.stringify(m));
+    render();
+    if(onDone)onDone(added);
+  }else{
+    setBusy(false);
+  }
+  return added;
+}
 async function uploadPhotos(sid,btn,onDone){
   let tok=mediaTok();
   if(!tok){
@@ -1600,41 +1746,42 @@ async function uploadPhotos(sid,btn,onDone){
     if(!tok){alert("令牌不能为空");return}
     localStorage.setItem(MT_KEY,tok);
   }
-  const s=SAMPLES.find(x=>x.sample_id===sid)||{};
-  const cur=sampleAllPhotos(s);
-  const remain=Math.max(0,6-cur.length);
+  const s=sampAll().find(x=>x.sample_id===sid)||{};
+  const remain=Math.max(0,6-sampleAllPhotos(s).length);
   if(remain<=0){alert("该样点已达 6 张照片上限");return}
   const inp=document.createElement("input");
   inp.type="file";inp.accept="image/*";inp.multiple=true;
   inp.onchange=async()=>{
     const files=Array.from(inp.files||[]).slice(0,remain);
+    if(files.length)await putPhotos(sid,files,btn,onDone);
+  };
+  inp.click();
+}
+/* 忘记录入时的补录：从手机原图读 EXIF 定位，先建点再补信息 */
+async function importPhotos(btn){
+  const inp=document.createElement("input");
+  inp.type="file";inp.accept="image/*";inp.multiple=true;
+  inp.onchange=async()=>{
+    const files=Array.from(inp.files||[]);
     if(!files.length)return;
-    const setBusy=(b)=>{if(btn){btn.disabled=b;btn.textContent=b?"上传中…":"上传照片"}};
-    setBusy(true);
-    const added=[];
+    const label=btn?btn.textContent:"📷 从照片新建";
+    if(btn){btn.disabled=true;btn.textContent="读定位…"}
+    let ex=null;
     for(const f of files){
-      const ext=f.type==="image/png"?"png":f.type==="image/webp"?"webp":"jpg";
-      const idx=cur.length+added.length+1;
-      const key=`photos/${sid}/${String(idx).padStart(2,"0")}.${ext}`;
-      try{
-        const r=await fetch(`${MEDIA_URL}/put?key=${encodeURIComponent(key)}`,{
-          method:"POST",
-          headers:{"X-Upload-Token":localStorage.getItem(MT_KEY)||"","Content-Type":f.type||"application/octet-stream"},
-          body:f});
-        const j=await r.json();
-        if(!r.ok||!j.ok)throw new Error(j.error||("HTTP "+r.status));
-        added.push(j.url||(MEDIA_URL+"/m/"+key));
-      }catch(e){alert("照片上传失败："+(e.message||e))}
+      const e=await exifOf(f);
+      if(e&&isFinite(e.lat)&&isFinite(e.lon)){ex=e;break}
     }
-    if(added.length){
-      const m=sampPhotos();
-      m[sid]=(m[sid]||[]).concat(added).slice(0,6);
-      localStorage.setItem(SP_KEY,JSON.stringify(m));
-      render();
-      if(onDone)onDone(added);
-    }else{
-      setBusy(false);
+    if(btn){btn.disabled=false;btn.textContent=label}
+    if(!ex){
+      alert("这些照片里没有 GPS 定位信息。\n微信/QQ 转发、截图、相册压缩过的图片都会抹掉定位。\n请从相册选「原图」重试，或手动填坐标。");
+      return;
     }
+    const s=createSampFromExif(ex,PROJ||"");
+    render();
+    toast(`已按照片定位新建 ${s.sample_id}（${(+s.lat).toFixed(5)}°S, ${(+s.lon).toFixed(5)}°E）`);
+    if(mediaTok())await putPhotos(s.sample_id,files,null);
+    else alert("点位已建好，但照片还没上传（缺媒体令牌）。\n点这张卡上的「上传照片」补齐即可。");
+    editSampleDialog(s.sample_id);
   };
   inp.click();
 }
@@ -1691,7 +1838,7 @@ function openLightbox(srcs,idx){
   document.body.appendChild(box);draw();
 }
 function editSampleDialog(sid){
-  const base=SAMPLES.find(x=>x.sample_id===sid);
+  const base=sampAll().find(x=>x.sample_id===sid);
   if(!base)return;
   const s=sampData(base),c=sampCat(s),photos=sampleAllPhotos(s);
   const m=document.createElement("div");m.className="modal2";
@@ -1903,7 +2050,7 @@ function smapFocus(sid){
 }
 function exportSamples(){
   const edits=sampEdits(),del=sampDeleted(),pa=photoAI();
-  const out=SAMPLES.filter(s=>!isSampDeleted(s.sample_id)).map(s=>{
+  const out=sampAll().filter(s=>!isSampDeleted(s.sample_id)).map(s=>{
     const o=Object.assign({},s,edits[s.sample_id]||{});
     const m={};
     sampleAllPhotos(o).forEach(u=>{if(pa[u])m[u]=pa[u]});
@@ -1920,8 +2067,8 @@ function exportSamples(){
 function tabSamples(ls){
   const aid=PROJ;
   if(SCAT_PROJ!==aid){SCAT="";SCAT_PROJ=aid;}
-  const all=SAMPLES.filter(s=>s.area_id===aid&&!isSampDeleted(s.sample_id));
-  const un=SAMPLES.filter(s=>!s.area_id&&!isSampDeleted(s.sample_id));
+  const all=sampAll().filter(s=>s.area_id===aid&&!isSampDeleted(s.sample_id));
+  const un=sampAll().filter(s=>!s.area_id&&!isSampDeleted(s.sample_id));
   const unRows=SCAT?un.filter(s=>sampCat(s).cat===SCAT):un;
   const unHtml=unRows.length?`<h3 class="scat">未归类（${unRows.length}）· 不在本项目范围</h3>${unRows.map(sampleCard).join("")}`:"";
   if(!all.length){
@@ -1938,7 +2085,8 @@ function tabSamples(ls){
     <button data-scat="" class="${SCAT?"":"on"}">全部（${all.length}）</button>
     <button data-scat="取样" class="${SCAT==="取样"?"on":""}">取样（${catCount["取样"]||0}）</button>
     <button data-scat="标记点" class="${SCAT==="标记点"?"on":""}">标记点（${catCount["标记点"]||0}）</button>
-    <button id="sampExport" style="margin-left:auto" title="把本机修改合并后下载 samples.json">导出 samples.json</button>
+    <button id="sampImport" style="margin-left:auto" title="选手机原图，按照片里的 GPS 自动建点，再补信息">📷 从照片新建（自动定位）</button>
+    <button id="sampExport" title="把本机修改合并后下载 samples.json">导出 samples.json</button>
   </div>`;
   const del=sampDeleted();
   const delBar=del.length?`<div class="delbar">本机已删除 <b>${del.length}</b> 条（导出 samples.json 后永久移除）<button id="sampUndelete">撤销删除</button></div>`:"";
@@ -2005,7 +2153,7 @@ function introFacts(ls){
   const aid=PROJ;
   const area=areaById(aid);
   const c=(area&&area.center)||(ls[0]&&ls[0].center)||null;
-  const rows=SAMPLES.filter(s=>(!s.area_id||s.area_id===aid)&&!isSampDeleted(s.sample_id));
+  const rows=sampAll().filter(s=>(!s.area_id||s.area_id===aid)&&!isSampDeleted(s.sample_id));
   const ta=rows.map(s=>+s.ta2o5_pct).filter(v=>!isNaN(v));
   const nb=rows.map(s=>+s.nb2o5_pct).filter(v=>!isNaN(v));
   return {
@@ -2122,6 +2270,7 @@ function render(){
     });
     document.querySelectorAll("#pane [data-scat]").forEach(b=>b.onclick=()=>{SCAT=b.dataset.scat;render()});
     const ex=$("#sampExport");if(ex)ex.onclick=exportSamples;
+    const im=$("#sampImport");if(im)im.onclick=()=>importPhotos(im);
     const und=$("#sampUndelete");if(und)und.onclick=()=>{clearSampDeleted();render();toast("已撤销删除")};
     document.querySelectorAll("#pane [data-card]").forEach(card=>{
       const imgs=[...card.querySelectorAll(".sphotos img")];
@@ -2131,7 +2280,7 @@ function render(){
         smapFocus(card.dataset.card);
       });
     });
-    mapMountSmap(SAMPLES.filter(s=>s.area_id===PROJ&&!isSampDeleted(s.sample_id)).filter(s=>!SCAT||sampCat(s).cat===SCAT),ls);
+    mapMountSmap(sampAll().filter(s=>s.area_id===PROJ&&!isSampDeleted(s.sample_id)).filter(s=>!SCAT||sampCat(s).cat===SCAT),ls);
   }
 }
 

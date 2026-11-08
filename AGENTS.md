@@ -155,6 +155,11 @@ go/no-go 由人拍板并记 decision log。取样点永不写入矿证归属（�
 - **手工改说明**：解读完照片右上出现 `✎`（`data-photo-edit`），点开 `.pai-edit` 可改**岩性 / 矿物 / 描述**，
   保存写回 `samp_photo_ai_v1[url]` 并置 `edited:true`，`paintCap()` 重绘、`✎` 变绿；取消不改动。
   再跑一次 AI 会用新结果整体覆盖（`edited` 清掉），照片数据本体（`photos`/R2）不受影响。
+- **忘记录入时补录**：取样页 `📷 从照片新建（自动定位）` → 选相册原图 → `exifFromBuffer()` 读 JPEG 的 APP1
+  （HEIC 走 `Exif\0\0` 扫描）拿 GPS IFD + `DateTimeOriginal` → `createSampFromExif()` 建点：样号
+  `M<拍摄日期>-序号`、状态 `待补录`、`source:"photo-exif"`，存 `localStorage.samp_new_v1`，再自动开编辑框补描述。
+  有媒体令牌就顺手把这几张照片传上去。微信/QQ 转发、截图、压缩过的图没有 GPS，会明确报错而不是瞎猜坐标。
+  **列表/地图/导出统一走 `sampAll()`**（= 本机新建 + `samples.json`），别再直接读 `SAMPLES`。
 - **部署（2026-11-08 实际走通的那条）**：
   ```powershell
   cd _deploy\worker
