@@ -210,6 +210,10 @@ textarea#ptext{flex:1;min-height:58px;border:1px solid var(--line);border-radius
 .modal2 textarea,.modal2 select{width:100%;margin-top:4px;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit;background:#fff}
 .modal2 .rowbtns{display:flex;gap:8px;align-items:center;margin:-4px 0 8px}
 .modal2 .rowbtns .btn{flex:0 0 auto}
+.modal2 .insrow{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:-4px 0 12px}
+.modal2 .inslab{font-size:12px;color:#64748b}
+.modal2 .insbtn{font-size:12px;padding:3px 9px;border-radius:999px;border:1px solid #cbd5e1;background:#f8fafc;color:#334155;cursor:pointer;font-family:ui-monospace,Menlo,Consolas,monospace;line-height:1.4}
+.modal2 .insbtn:hover{background:#e0f2fe;border-color:#7dd3fc}
 .scatseg{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 10px}
 .scatseg button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:5px 11px;font-size:12.5px;color:#334155;cursor:pointer}
 .scatseg button.on{background:#0f766e;color:#fff;border-color:#0f766e;font-weight:600}
@@ -1420,7 +1424,7 @@ function tabFeed(ls){
 
 /* ---------- 现场取样结果 / 工厂信息 ---------- */
 function gradeFmt(v,u){
-  if(v==null||v==="") return "待化验";
+  if(v==null||v==="") return "-";
   if(typeof v==="number") return String(v)+(u||"%");
   return String(v)+(u||"%");
 }
@@ -1546,6 +1550,7 @@ function sampleCard(s0){
   const photos=sampleAllPhotos(s);
   const coord=(s.lat!=null&&s.lon!=null)?`${(+s.lat).toFixed(5)}°S, ${(+s.lon).toFixed(5)}°E`:"";
   const assays=(s.assays||[]).map(a=>`${esc(a.element)} ${esc(a.value)}${esc(a.unit||"")}`).join("、");
+  const hasTaNb=(s.ta2o5_pct!=null&&s.ta2o5_pct!=="")||(s.nb2o5_pct!=null&&s.nb2o5_pct!=="");
   const sc=sampCat(s);
   const badges=[sc.cat,sc.sub];
   if(s.symbol)badges.push(s.symbol);
@@ -1557,8 +1562,7 @@ function sampleCard(s0){
     <div class="lch"><b>${esc(s.sample_id||"")}</b>${badges.map(b=>`<span class="pill" style="background:#eef2f5;color:#475569">${esc(b)}</span>`).join("")}${s.status?`<span class="pill">${esc(s.status)}</span>`:""}<span class="cardacts">${editBtn}${delBtn}${up}</span></div>
     ${photos.length?`<div class="sphotos">${photos.map(p=>`<img src="${esc(p)}" alt="" loading="lazy">`).join("")}</div>`:`<div class="nophoto">照片待上传</div>`}
     <dl>
-      ${row("Ta₂O₅",gradeFmt(s.ta2o5_pct))}
-      ${row("Nb₂O₅",gradeFmt(s.nb2o5_pct))}
+      ${hasTaNb?row("Ta₂O₅",gradeFmt(s.ta2o5_pct))+row("Nb₂O₅",gradeFmt(s.nb2o5_pct)):""}
       ${s.li2o_pct!=null?row("Li₂O",gradeFmt(s.li2o_pct)):""}
       ${s.cs_ppm!=null?row("Cs ppm",esc(s.cs_ppm)):""}
       ${s.be_ppm!=null?row("Be ppm",esc(s.be_ppm)):""}
@@ -1597,7 +1601,8 @@ function editSampleDialog(sid){
   const m=document.createElement("div");m.className="modal2";
   const q=x=>m.querySelector(x);
   m.innerHTML=`<div class="mbox"><h3>编辑样点 ${esc(sid)}</h3>
-    <label>描述<textarea id="se_desc" rows="3">${esc(s.description||"")}</textarea></label>
+    <label>描述<textarea id="se_desc" rows="4" placeholder="如：伟晶岩脉，块状构造，石英+钠长石+锂云母；Ta=0.052%，Nb=0.031%">${esc(s.description||"")}</textarea></label>
+    <div class="insrow"><span class="inslab">化验代码（写成 Ta=0.052%）</span>${["Ta","Nb","Li","Cs","Be","Sn"].map(c=>`<button type="button" class="insbtn" data-ins="${c}=">${c}</button>`).join("")}<button type="button" class="insbtn" data-ins="%">%</button><button type="button" class="insbtn" data-ins="ppm">ppm</button></div>
     <label>照片（${photos.length}/6）</label>
     <div class="sphotos" id="se_photos">${photos.map(p=>`<img src="${esc(p)}" alt="">`).join("")||'<span class="nophoto" style="display:inline-block;margin:0">暂无照片</span>'}</div>
     <div class="rowbtns"><button class="btn" id="se_up" ${photos.length>=6?"disabled":""}>上传照片</button><span id="se_upmsg" style="font-size:12px;color:#64748b"></span></div>
@@ -1611,10 +1616,6 @@ function editSampleDialog(sid){
       <label>二级分类<select id="se_sub">${SUB_OPTIONS.indexOf(c.sub)<0&&c.sub?`<option selected>${esc(c.sub)}</option>`:""}${Object.keys(SUB_BY_CAT).map(cat=>`<optgroup label="${cat}">${SUB_BY_CAT[cat].map(x=>`<option ${x===c.sub?"selected":""}>${x}</option>`).join("")}</optgroup>`).join("")}</select></label>
     </div>
     <label>记录人<input id="se_rec" value="${esc(s.recorder||"")}"></label>
-    <div class="mrow2">
-      <label>Ta₂O₅ %<input id="se_ta" value="${s.ta2o5_pct!=null?s.ta2o5_pct:""}"></label>
-      <label>Nb₂O₅ %<input id="se_nb" value="${s.nb2o5_pct!=null?s.nb2o5_pct:""}"></label>
-    </div>
     <div class="merr" id="se_err"></div>
     <div class="mfoot2"><button class="btn danger" id="se_del" style="margin-right:auto">删除这个点</button><button class="btn" id="se_reset">恢复原始</button><button class="btn" id="se_cancel">取消</button><button class="btn primary" id="se_ok">保存</button></div>
   </div>`;
@@ -1622,6 +1623,13 @@ function editSampleDialog(sid){
   const close=()=>m.remove();
   m.onclick=e=>{if(e.target===m)close()};
   q("#se_cancel").onclick=close;
+  m.querySelectorAll("[data-ins]").forEach(b=>b.onclick=e=>{
+    e.preventDefault();
+    const ta=q("#se_desc"),txt=b.dataset.ins;
+    const a=ta.selectionStart==null?ta.value.length:ta.selectionStart,b0=ta.selectionEnd==null?a:ta.selectionEnd;
+    ta.value=ta.value.slice(0,a)+txt+ta.value.slice(b0);
+    const p=a+txt.length;ta.setSelectionRange(p,p);ta.focus();
+  });
   q("#se_cat").onchange=()=>{
     const cat=q("#se_cat").value,opts=SUB_BY_CAT[cat]||[],sel=q("#se_sub");
     if(opts.indexOf(sel.value)<0)sel.value=opts[opts.length-1]||"";
@@ -1660,15 +1668,12 @@ function editSampleDialog(sid){
     const lat=latS===""?null:parseFloat(latS),lon=lonS===""?null:parseFloat(lonS);
     if(lat!=null&&isNaN(lat)){err.textContent="纬度不是数字";return}
     if(lon!=null&&isNaN(lon)){err.textContent="经度不是数字";return}
-    const taS=q("#se_ta").value.trim(),nbS=q("#se_nb").value.trim();
     saveSampEdit(sid,{
       description:q("#se_desc").value.trim()||null,
       lat,lon,
       category:q("#se_cat").value,
       subtype:q("#se_sub").value.trim()||"其他",
       recorder:q("#se_rec").value.trim()||null,
-      ta2o5_pct:taS===""?null:parseFloat(taS),
-      nb2o5_pct:nbS===""?null:parseFloat(nbS),
     });
     close();render();
   };
