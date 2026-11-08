@@ -1,227 +1,20 @@
 {
- "note": "现场取样结果（全量）。由 devtools/import_ecobox_samples.py 从 Ecobox 历史记录导入，按坐标自动归类 area_id；QGIS field_samples 的 symbol/mineral/description 就近合并。",
+ "note": "现场取样结果（全量）。网页端编辑后导出（devtools/classify_samples.py 可重算 category/subtype）。",
+ "deleted": [
+  "S20261017-001",
+  "S20261017-004",
+  "S20261017-003",
+  "M20261022-003",
+  "M20261022-004",
+  "M20261022-001",
+  "M20261022-002",
+  "S20261006-002",
+  "S20261006-001",
+  "S20261004-002",
+  "S20261012-001",
+  "S20261014-001"
+ ],
  "samples": [
-  {
-   "sample_id": "M20261022-004",
-   "area_id": "serenje_1330nw",
-   "lon": 30.175822,
-   "lat": -13.116964,
-   "symbol": null,
-   "mineral": null,
-   "sample_type": "其他标记",
-   "description": "土地d点",
-   "ta2o5_pct": null,
-   "nb2o5_pct": null,
-   "li2o_pct": null,
-   "cs_ppm": null,
-   "be_ppm": null,
-   "sn_ppm": null,
-   "assays": [],
-   "photos": [
-    "https://ecobox-media.frankataix.workers.dev/m/photos/M20261022-004/01.jpg",
-    "https://ecobox-media.frankataix.workers.dev/m/photos/M20261022-004/02.jpg"
-   ],
-   "source": "ecobox",
-   "datetime": "2026-10-22T10:24:27",
-   "status": "待同步",
-   "recorder": "frank",
-   "license_no": "42881-HQ-LEL",
-   "category": "标记点",
-   "subtype": "土地/农户"
-  },
-  {
-   "sample_id": "M20261022-003",
-   "area_id": "serenje_1330nw",
-   "lon": 30.174782,
-   "lat": -13.118398,
-   "symbol": null,
-   "mineral": null,
-   "sample_type": "其他标记",
-   "description": "c点",
-   "ta2o5_pct": null,
-   "nb2o5_pct": null,
-   "li2o_pct": null,
-   "cs_ppm": null,
-   "be_ppm": null,
-   "sn_ppm": null,
-   "assays": [],
-   "photos": [
-    "https://ecobox-media.frankataix.workers.dev/m/photos/M20261022-003/01.jpg"
-   ],
-   "source": "ecobox",
-   "datetime": "2026-10-22T10:20:31",
-   "status": "待同步",
-   "recorder": "frank",
-   "license_no": "42881-HQ-LEL",
-   "category": "标记点",
-   "subtype": "其他标记"
-  },
-  {
-   "sample_id": "M20261022-002",
-   "area_id": "serenje_1330nw",
-   "lon": 30.174323,
-   "lat": -13.123074,
-   "symbol": null,
-   "mineral": null,
-   "sample_type": "其他标记",
-   "description": "b点",
-   "ta2o5_pct": null,
-   "nb2o5_pct": null,
-   "li2o_pct": null,
-   "cs_ppm": null,
-   "be_ppm": null,
-   "sn_ppm": null,
-   "assays": [],
-   "photos": [
-    "https://ecobox-media.frankataix.workers.dev/m/photos/M20261022-002/01.jpg"
-   ],
-   "source": "ecobox",
-   "datetime": "2026-10-22T10:10:47",
-   "status": "同步失败",
-   "recorder": "frank",
-   "license_no": "42881-HQ-LEL",
-   "category": "标记点",
-   "subtype": "其他标记"
-  },
-  {
-   "sample_id": "M20261022-001",
-   "area_id": "serenje_1330nw",
-   "lon": 30.168533,
-   "lat": -13.122528,
-   "symbol": null,
-   "mineral": null,
-   "sample_type": "其他标记",
-   "description": "土地坐标",
-   "ta2o5_pct": null,
-   "nb2o5_pct": null,
-   "li2o_pct": null,
-   "cs_ppm": null,
-   "be_ppm": null,
-   "sn_ppm": null,
-   "assays": [],
-   "photos": [
-    "https://ecobox-media.frankataix.workers.dev/m/photos/M20261022-001/01.jpg",
-    "https://ecobox-media.frankataix.workers.dev/m/photos/M20261022-001/02.jpg",
-    "https://ecobox-media.frankataix.workers.dev/m/photos/M20261022-001/03.jpg"
-   ],
-   "source": "ecobox",
-   "datetime": "2026-10-22T09:59:08",
-   "status": "待同步",
-   "recorder": "frank",
-   "license_no": "42881-HQ-LEL",
-   "category": "标记点",
-   "subtype": "土地/农户"
-  },
-  {
-   "sample_id": "S20261017-004",
-   "area_id": "serenje_1330nw",
-   "lon": 30.1779,
-   "lat": -13.124541,
-   "symbol": null,
-   "mineral": null,
-   "sample_type": "岩石",
-   "description": "d",
-   "ta2o5_pct": null,
-   "nb2o5_pct": null,
-   "li2o_pct": null,
-   "cs_ppm": null,
-   "be_ppm": null,
-   "sn_ppm": null,
-   "assays": [],
-   "photos": [
-    "https://ecobox-media.frankataix.workers.dev/m/photos/S20261017-004/01.jpg",
-    "https://ecobox-media.frankataix.workers.dev/m/photos/S20261017-004/02.jpg",
-    "https://ecobox-media.frankataix.workers.dev/m/photos/S20261017-004/03.jpg"
-   ],
-   "source": "ecobox",
-   "datetime": "2026-10-17T13:45:31",
-   "status": "待同步",
-   "recorder": "frank",
-   "license_no": "42881-HQ-LEL",
-   "category": "取样",
-   "subtype": "岩石"
-  },
-  {
-   "sample_id": "S20261017-003",
-   "area_id": "serenje_1330nw",
-   "lon": 30.180901,
-   "lat": -13.119916,
-   "symbol": null,
-   "mineral": null,
-   "sample_type": "岩石",
-   "description": "c",
-   "ta2o5_pct": null,
-   "nb2o5_pct": null,
-   "li2o_pct": null,
-   "cs_ppm": null,
-   "be_ppm": null,
-   "sn_ppm": null,
-   "assays": [],
-   "photos": [
-    "https://ecobox-media.frankataix.workers.dev/m/photos/S20261017-003/01.jpg"
-   ],
-   "source": "ecobox",
-   "datetime": "2026-10-17T13:36:33",
-   "status": "待同步",
-   "recorder": "frank",
-   "license_no": "42881-HQ-LEL",
-   "category": "取样",
-   "subtype": "岩石"
-  },
-  {
-   "sample_id": "S20261017-001",
-   "area_id": "serenje_1330nw",
-   "lon": 30.185786,
-   "lat": -13.130524,
-   "symbol": null,
-   "mineral": null,
-   "sample_type": "岩石",
-   "description": "路",
-   "ta2o5_pct": null,
-   "nb2o5_pct": null,
-   "li2o_pct": null,
-   "cs_ppm": null,
-   "be_ppm": null,
-   "sn_ppm": null,
-   "assays": [],
-   "photos": [
-    "https://ecobox-media.frankataix.workers.dev/m/photos/S20261017-001/01.jpg"
-   ],
-   "source": "ecobox",
-   "datetime": "2026-10-17T13:14:26",
-   "status": "待同步",
-   "recorder": "frank",
-   "license_no": "42881-HQ-LEL",
-   "category": "取样",
-   "subtype": "岩石"
-  },
-  {
-   "sample_id": "S20261014-001",
-   "area_id": "serenje_1330nw",
-   "lon": 30.235847,
-   "lat": -13.241764,
-   "symbol": null,
-   "mineral": null,
-   "sample_type": "岩石",
-   "description": "发",
-   "ta2o5_pct": null,
-   "nb2o5_pct": null,
-   "li2o_pct": null,
-   "cs_ppm": null,
-   "be_ppm": null,
-   "sn_ppm": null,
-   "assays": [],
-   "photos": [
-    "https://ecobox-media.frankataix.workers.dev/m/photos/S20261014-001/01.jpg"
-   ],
-   "source": "ecobox",
-   "datetime": "2026-10-14T08:12:19",
-   "status": "待同步",
-   "recorder": "1a",
-   "license_no": null,
-   "category": "取样",
-   "subtype": "岩石"
-  },
   {
    "sample_id": "S20261012-003",
    "area_id": "serenje_1330nw",
@@ -257,7 +50,7 @@
    "symbol": null,
    "mineral": null,
    "sample_type": "岩石",
-   "description": "取样点",
+   "description": "伟晶岩，未描述结构构造，矿物组合包含云母和水晶。蚀变未描述，矿化见少量富集。原矿Ta=0.04%，摇床富集后Ta=2%。其他备注：发现了一个约1米深的坑，取样30公斤破碎化验。",
    "ta2o5_pct": null,
    "nb2o5_pct": null,
    "li2o_pct": null,
@@ -277,34 +70,55 @@
    "recorder": "frank",
    "license_no": "42881-HQ-LEL",
    "category": "取样",
-   "subtype": "岩石"
-  },
-  {
-   "sample_id": "S20261012-001",
-   "area_id": "serenje_1330nw",
-   "lon": 30.186327,
-   "lat": -13.1203,
-   "symbol": null,
-   "mineral": null,
-   "sample_type": "岩石",
-   "description": "挖坑取样\n5米",
-   "ta2o5_pct": null,
-   "nb2o5_pct": null,
-   "li2o_pct": null,
-   "cs_ppm": null,
-   "be_ppm": null,
-   "sn_ppm": null,
-   "assays": [],
-   "photos": [
-    "https://ecobox-media.frankataix.workers.dev/m/photos/S20261012-001/01.jpg"
-   ],
-   "source": "ecobox",
-   "datetime": "2026-10-12T13:34:37",
-   "status": "同步失败",
-   "recorder": "frank",
-   "license_no": "42881-HQ-LEL",
-   "category": "取样",
-   "subtype": "岩石"
+   "subtype": "岩石",
+   "photo_ai": {
+    "https://ecobox-media.frankataix.workers.dev/m/photos/S20261012-002/01.jpg": {
+     "lithology": "花岗伟晶岩",
+     "minerals": [
+      "石英",
+      "钠长石",
+      "电气石"
+     ],
+     "texture": "伟晶结构",
+     "pegmatite_confidence": 0.85,
+     "description": "手掌托着两块深灰色至黑色的岩石标本，表面可见明显的粗粒伟晶结构，带有金属光泽或柱状矿物特征。背景为野外土路与植被环境，标本聚焦尚可。",
+     "quality": "良好"
+    },
+    "https://ecobox-media.frankataix.workers.dev/m/photos/S20261012-002/02.jpg": {
+     "lithology": "花岗伟晶岩",
+     "minerals": [
+      "石英",
+      "钠长石",
+      "白云母",
+      "电气石"
+     ],
+     "texture": "伟晶结构",
+     "pegmatite_confidence": 0.95,
+     "description": "手标本呈灰白色，具有典型的伟晶结构。可见粗大的石英、浅色长石基质，其中发育定向排列或书页状的大片白云母集合体，局部可见黑色柱状电气石晶体镶嵌其中，矿物颗粒粗大，界限清晰。",
+     "quality": "良好"
+    },
+    "https://ecobox-media.frankataix.workers.dev/m/photos/S20261012-002/03.jpg": {
+     "lithology": "石英脉",
+     "minerals": [
+      "石英"
+     ],
+     "texture": "块状结构",
+     "pegmatite_confidence": 0.2,
+     "description": "手标本为灰白色至乳白色块状矿石，主要由乳白色粗粒石英组成，表面可见部分裂隙及黄褐色风化斑迹。晶体颗粒较粗大，未见明显的长石或云母等其他矿物相。整体结构单一，推测主要为石英脉片段。",
+     "quality": "良好"
+    },
+    "https://ecobox-media.frankataix.workers.dev/m/photos/S20261012-002/04.jpg": {
+     "lithology": "花岗伟晶岩（白云母团块）",
+     "minerals": [
+      "白云母",
+      "石英"
+     ],
+     "texture": "伟晶结构、巨晶片状构造",
+     "pegmatite_confidence": 0.9,
+     "description": "手标本主体为粗大板状、片状白云母晶体，呈浅银白色至淡黄绿色，具完全解理与珍珠光泽，边缘及表面附着少量细粒石英碎屑与风化泥质粉末。该巨晶云母特征显著指示伟晶岩成因。",
+     "quality": "建议用清水清洗标本表面泥砂以充分暴露解理面和共生矿物，并建议放置标准地质比例尺。"
+    }
+   }
   },
   {
    "sample_id": "S20261010-002",
@@ -314,7 +128,7 @@
    "symbol": "Ta",
    "mineral": "Ta Nb",
    "sample_type": "土壤",
-   "description": "这个是新找到的钽铌矿坑，地表发现一些石英，挖了1米，发现云母，石英，应该是伟晶岩类型。手工挑选的钽铌最高60%，综合混合样通过水洗后，摇床能富集到6%-10%钽铌。",
+   "description": "这个是新找到的钽铌矿坑，地表发现一些石英，工人开始挖；挖了大概1米深度，发现大量的云母，石英，应该是伟晶岩类型。最深挖了3米左右。我们进行了平均取样，大约取了70-100公斤，破碎，然后直接通过摇床富集，大概能生产6%-10%之间的钽铌精粉。形态几乎和1公里的主脉带属于同一类型。\n同时，工人通过手工挑选，挑选出了钽铌颗粒，最高的钽含量在60%。",
    "ta2o5_pct": null,
    "nb2o5_pct": null,
    "li2o_pct": null,
@@ -331,7 +145,21 @@
    "recorder": "frank",
    "license_no": "42881-HQ-LEL",
    "category": "取样",
-   "subtype": "土壤"
+   "subtype": "土壤",
+   "photo_ai": {
+    "https://ecobox-media.frankataix.workers.dev/m/photos/S20261010-002/01.jpg": {
+     "lithology": "花岗伟晶岩",
+     "minerals": [
+      "石英",
+      "长石",
+      "白云母"
+     ],
+     "texture": "伟晶结构",
+     "pegmatite_confidence": 0.7,
+     "description": "手标本置于手掌中，呈现浅黄褐色至红褐色，风化面较明显。可见粗粒状的石英和长石矿物颗粒，表面分布有铁质渲染。整体结构较为粗糙，符合伟晶岩特征，但由于颗粒较小且风化较重，无法清晰辨认更多细节。",
+     "quality": "良好"
+    }
+   }
   },
   {
    "sample_id": "S20261010-001",
@@ -341,7 +169,7 @@
    "symbol": null,
    "mineral": null,
    "sample_type": "土壤",
-   "description": "农民带过来",
+   "description": "农民带过来一些样品，刚才开始发现是大量的高含量铁，出于好奇前往考察。\n发现这个坑里面有白色状的矿石，很像我们1号矿脉的高岭土状泥土，我用光谱枪打了，原矿的Ta含量也有0.04-0.05%。当时取了20-30公斤，拿回去用摇床和淘金盆处理，结果就是没法富集。\n这个地区和我们1号矿脉唯一的区别就是这个地区有很多铁帽，铁含量高达40-50%，其它都一样，也有石英，云母等；\n唯一困惑就是原矿化验有含量，但生产后就是不能富集。",
    "ta2o5_pct": null,
    "nb2o5_pct": null,
    "li2o_pct": null,
@@ -361,60 +189,6 @@
    "subtype": "土壤"
   },
   {
-   "sample_id": "S20261006-002",
-   "area_id": "serenje_1330nw",
-   "lon": 30.207773,
-   "lat": -13.093615,
-   "symbol": null,
-   "mineral": null,
-   "sample_type": "岩石",
-   "description": null,
-   "ta2o5_pct": null,
-   "nb2o5_pct": null,
-   "li2o_pct": null,
-   "cs_ppm": null,
-   "be_ppm": null,
-   "sn_ppm": null,
-   "assays": [],
-   "photos": [
-    "https://ecobox-media.frankataix.workers.dev/m/photos/S20261006-002/01.jpg"
-   ],
-   "source": "ecobox",
-   "datetime": "2026-10-06T09:28:11",
-   "status": "待同步",
-   "recorder": "frank",
-   "license_no": null,
-   "category": "取样",
-   "subtype": "岩石"
-  },
-  {
-   "sample_id": "S20261006-001",
-   "area_id": "serenje_1330nw",
-   "lon": 30.213039,
-   "lat": -13.090836,
-   "symbol": null,
-   "mineral": null,
-   "sample_type": "岩石",
-   "description": null,
-   "ta2o5_pct": null,
-   "nb2o5_pct": null,
-   "li2o_pct": null,
-   "cs_ppm": null,
-   "be_ppm": null,
-   "sn_ppm": null,
-   "assays": [],
-   "photos": [
-    "https://ecobox-media.frankataix.workers.dev/m/photos/S20261006-001/01.jpg"
-   ],
-   "source": "ecobox",
-   "datetime": "2026-10-06T09:23:28",
-   "status": "待同步",
-   "recorder": "frank",
-   "license_no": null,
-   "category": "取样",
-   "subtype": "岩石"
-  },
-  {
    "sample_id": "S20261005-001",
    "area_id": "serenje_1330nw",
    "lon": 30.184764,
@@ -422,7 +196,7 @@
    "symbol": "Ta",
    "mineral": "Ta",
    "sample_type": "岩石",
-   "description": "挖了1-2米，找到明显的云母，石英。也有低品位的钽颗粒，原矿石化验光谱抢有钽铌0.04%-0.06%，但摇床做出来就是没法富集钽！",
+   "description": "伟晶岩，未描述结构构造，矿物组合包含云母和石英。未描述蚀变与矿化。品位 Ta=0.04%至0.06%。其他备注：现场工人曾提供Be矿样品，试挖1米深坑，地质构造与主矿区相似，摇床无法富集钽铌矿。",
    "ta2o5_pct": null,
    "nb2o5_pct": null,
    "li2o_pct": null,
@@ -442,7 +216,55 @@
    "recorder": "frank",
    "license_no": null,
    "category": "取样",
-   "subtype": "岩石"
+   "subtype": "岩石",
+   "photo_ai": {
+    "https://ecobox-media.frankataix.workers.dev/m/photos/S20261005-001/01.jpg": {
+     "lithology": "花岗伟晶岩",
+     "minerals": [
+      "石英",
+      "长石",
+      "白云母"
+     ],
+     "texture": "伟晶结构",
+     "pegmatite_confidence": 0.85,
+     "description": "照片显示手持的一块风化花岗伟晶岩手标本。样品表面可见粗大的石英、长石晶体颗粒以及片状白云母，部分裂隙被红色风化土质充填。背景为红土化野外土壤及植被，整体结构较粗大。",
+     "quality": "良好"
+    },
+    "https://ecobox-media.frankataix.workers.dev/m/photos/S20261005-001/02.jpg": {
+     "lithology": "花岗伟晶岩",
+     "minerals": [
+      "石英",
+      "钠长石",
+      "白云母"
+     ],
+     "texture": "伟晶结构",
+     "pegmatite_confidence": 0.85,
+     "description": "手标本展示了风化严重的块状伟晶岩碎片，矿物颗粒相对粗大。可见乳白色石英、板状长石以及闪光的细小云母鳞片，表面被红褐色土壤和铁质氧化物污染覆盖，结构松散粗粒。",
+     "quality": "良好"
+    },
+    "https://ecobox-media.frankataix.workers.dev/m/photos/S20261005-001/03.jpg": {
+     "lithology": "花岗伟晶岩",
+     "minerals": [
+      "石英",
+      "长石"
+     ],
+     "texture": "伟晶结构",
+     "pegmatite_confidence": 0.8,
+     "description": "手标本展示了一块浅色伟晶岩碎片，主要由乳白色石英和长石组成，局部表面沾染红褐色风化土壤。晶体颗粒较粗，可见明显的伟晶结构特征，背景为红色风化碎石地面。",
+     "quality": "良好"
+    },
+    "https://ecobox-media.frankataix.workers.dev/m/photos/S20261005-001/04.jpg": {
+     "lithology": "手标本",
+     "minerals": [
+      "铌钽铁矿",
+      "石英"
+     ],
+     "texture": "块状",
+     "pegmatite_confidence": 0.8,
+     "description": "照片展示了一块由手指拿着的黑色金属光泽手标本，表面带有部分黄褐色斑块，背景为红土和风化碎屑露头。标本呈不规则粒状，局部可见白色矿物细脉。",
+     "quality": "良好"
+    }
+   }
   },
   {
    "sample_id": "S20261004-004",
@@ -501,33 +323,6 @@
    "subtype": "桥"
   },
   {
-   "sample_id": "S20261004-002",
-   "area_id": "serenje_1330nw",
-   "lon": 30.237362,
-   "lat": -13.191896,
-   "symbol": null,
-   "mineral": null,
-   "sample_type": "其他",
-   "description": "转弯",
-   "ta2o5_pct": null,
-   "nb2o5_pct": null,
-   "li2o_pct": null,
-   "cs_ppm": null,
-   "be_ppm": null,
-   "sn_ppm": null,
-   "assays": [],
-   "photos": [
-    "https://ecobox-media.frankataix.workers.dev/m/photos/S20261004-002/01.jpg"
-   ],
-   "source": "ecobox",
-   "datetime": "2026-10-04T07:45:38",
-   "status": "待同步",
-   "recorder": "frank",
-   "license_no": null,
-   "category": "标记点",
-   "subtype": "路口"
-  },
-  {
    "sample_id": "S20261004-001",
    "area_id": "serenje_1330nw",
    "lon": 30.235011,
@@ -535,7 +330,7 @@
    "symbol": null,
    "mineral": null,
    "sample_type": "其他",
-   "description": "电线结束",
+   "description": "Serenje地区城市电线杆最北端",
    "ta2o5_pct": null,
    "nb2o5_pct": null,
    "li2o_pct": null,
@@ -582,7 +377,7 @@
    "lat": -13.128366,
    "symbol": "Ta",
    "mineral": "Ta Nb",
-   "description": "这是目前最主要的矿脉，表面的覆盖层差不多1-3米左右。大量伟晶岩，钽铌颗粒明显，钽单颗最高60-70%，这些都是手工挑选。通过摇床，基本上可以富集到10-15%左右。但钛铁含量也在30-50%；",
+   "description": "这里是整个1公里矿脉最南端的矿点，也是我们目前生产作业的主要工作点。\n整个矿坑通过手工挑选，已经挖出约700-1000公斤高品位钽铌矿：\n手工挑选矿代表性的化验结果如下：\nTa：60%；\nNb：8%；\nHf：1.4%；\nZr：0.17%；\nAs：0.03%；\nFe：10%；\nMn：0.65%；\nTi：5%\n\n目前，我们现场在做小型试验：一台滚筒洗矿机，一台6s摇床-90槽\n通过一个月的生产，有了一定的基础判断：\n我们取了表面的围岩（应该理解挖掘机早期在挖坑时候，排除的尾矿坑，我们理解为底部的钽铌含量混合在一起。该地区大概挖了有3-5千吨左右尾矿，坑的深度也就在5-10米之间。\n我们做了取样试验，发现底下主要脉带和地表，都含有钽铌，摇床富集后的效果几乎差不多。\n生产情况如下：\n原矿直接进洗矿机，通过4-5毫米孔进行洗刷，出来的细颗粒再通过2mm的网格过滤，剩下2mm的颗粒和泥直接进去摇床（这些含量ta0.06-0.07%），摇床的精矿品位如下：\nta：9.87%；\nnb：10%；\nhf：0.36%\nzr：0.6%；\nbi：0.03%；\nas：0.02%；\nfe：18%；\nti：24%；",
    "ta2o5_pct": null,
    "nb2o5_pct": null,
    "li2o_pct": null,
@@ -594,7 +389,8 @@
    "datetime": null,
    "status": "待化验",
    "category": "取样",
-   "subtype": "其他"
+   "subtype": "其他",
+   "recorder": null
   },
   {
    "sample_id": "SER-005",
