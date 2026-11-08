@@ -29,7 +29,7 @@
 - `sampling_sw.js`：离线缓存。**改任何缓存内容都要同时 bump `CACHE` 版本**，否则老客户端拿不到新文件。
 - `areas.json`：矿区范围（bbox），只用于把记录按坐标自动归到矿区。
 - `licences.json`：矿证 + 地质背景 + 取样要点（未知字段写「待核实」，不要编）。
-- `samples.json`：现场取样结果。由 `devtools/export_samples.py`（python-qgis.bat 跑）从 QGIS `field_samples.gpkg` 导出，并按坐标自动归类 `area_id`（点落哪个 area 的 bbox）；字段 sample_id/area_id/lat/lon/symbol/mineral/description/ta2o5_pct/nb2o5_pct/li2o_pct/cs_ppm/be_ppm/sn_ppm/photos[]/source/datetime/status。品位/照片可后续更新（先图后补）。
+- `samples.json`：现场取样结果（全量）。生成链：`devtools/export_samples.py`（python-qgis.bat）从 QGIS `field_samples.gpkg` 导 7 点 → `devtools/import_ecobox_samples.py`（普通 python）从 `samples_meta.json`（Ecobox D1 全量 36 条）导入并与 QGIS 7 点按坐标就近合并（<200m），按 bbox 自动归类 `area_id`（合并 areas.json + areas.local.json），照片按 `photos/<sid>/<NN>.jpg` 重建 R2 URL；字段 sample_id/area_id/lat/lon/symbol/mineral/sample_type/description/ta2o5_pct/nb2o5_pct/li2o_pct/cs_ppm/be_ppm/sn_ppm/assays[]/photos[]/source/datetime/status/recorder/license_no。发布时 `build_public.py` 只保留 `area_id==serenje_1330nw` 的 24 条。
 - `factory.json`：工厂信息（框架已建；location/equipment/capacity/plan，逐步补充）。
 - `geo_packs/`：离线地图包，`index.json` 列出可用包 id。
 
