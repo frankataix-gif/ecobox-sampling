@@ -1470,9 +1470,11 @@ function sampleCard(s){
 }
 function tabSamples(ls){
   const aid=PROJ;
-  const rows=SAMPLES.filter(s=>!s.area_id||s.area_id===aid);
+  const rows=SAMPLES.filter(s=>s.area_id===aid);
+  const un=SAMPLES.filter(s=>!s.area_id);
+  const unHtml=un.length?`<h4>未归类（${un.length}）· 不在本项目范围</h4>${un.map(sampleCard).join("")}`:"";
   if(!rows.length){
-    return `<div class="pane"><div class="empty">还没有现场取样结果。<br>由 <code>devtools/import_ecobox_samples.py</code> 从 Ecobox 历史记录全量导入，按坐标自动归类到当前项目范围。</div></div>`;
+    return `<div class="pane"><div class="empty">还没有现场取样结果。<br>由 <code>devtools/import_ecobox_samples.py</code> 从 Ecobox 历史记录全量导入，按坐标自动归类到当前项目范围。</div>${unHtml}</div>`;
   }
   const groups={};
   rows.forEach(s=>{const k=s.sample_type||s.mineral||s.symbol||"其他";(groups[k]=groups[k]||[]).push(s);});
@@ -1498,8 +1500,9 @@ function tabSamples(ls){
       </div>
       <span class="gzoomnow">z--</span><span class="gattr"></span>
     </div>
-    <div class="mapmeta">${withCoord} 个点有坐标 · 颜色按类型 · 拖动平移 · 滚轮/双击缩放 · 点标记跳到取样卡</div>`:`<div class="empty" style="font-size:12.5px">这些取样点还没有坐标，无法在地图上定位。</div>`}
+    <div class="mapmeta">本项目 ${rows.length} 个点${withCoord<rows.length?`（${withCoord} 个有坐标）`:""} · 颜色按类型 · 拖动平移 · 滚轮/双击缩放 · 点标记跳到取样卡${un.length?` · 另有 ${un.length} 个未归类点不在图上`:""}</div>`:`<div class="empty" style="font-size:12.5px">这些取样点还没有坐标，无法在地图上定位。</div>`}
     ${gkeys.map(k=>`<h4>${esc(k)}（${groups[k].length}）</h4>${groups[k].map(sampleCard).join("")}`).join("")}
+    ${unHtml}
   </div>`;
 }
 
@@ -1635,7 +1638,7 @@ function render(){
   if(mpick)mpick.querySelectorAll("[data-mpick]").forEach(b=>b.onclick=()=>{MAP_PICK=b.dataset.mpick;render()});
   if(TAB==="map")mapMount(ls);
   if(TAB==="intro"){const b=$("#introUpd");if(b)b.onclick=()=>refreshIntro(b,ls);}
-  if(TAB==="samples"){document.querySelectorAll("#pane [data-upload]").forEach(b=>b.onclick=()=>uploadPhotos(b.dataset.upload,b));mapMountSmap(SAMPLES.filter(s=>!s.area_id||s.area_id===PROJ),ls);}
+  if(TAB==="samples"){document.querySelectorAll("#pane [data-upload]").forEach(b=>b.onclick=()=>uploadPhotos(b.dataset.upload,b));mapMountSmap(SAMPLES.filter(s=>s.area_id===PROJ),ls);}
 }
 
 function wireFeed(ls){
