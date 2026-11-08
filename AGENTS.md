@@ -144,12 +144,22 @@ go/no-go 由人拍板并记 decision log。取样点永不写入矿证归属（�
   模型 ID 会下线（`gemini-2.5-flash` 已废弃并转到 3.5 Flash-Lite），worker 按 `TEXT_MODELS` / `VISION_MODELS`
   顺序自动降级，也可用 `MODEL_TEXT` / `MODEL_VISION` 环境变量钉死。
   实测（2026-11-02 真 key）：两个 ID 都在 `models` 列表内；文本 3~5 s，1024 px / 200 KB 照片约 35 s。
-  热门模型会偶发 503 或 404，`gemini()` 对这两种状态都自动换下一个模型（其余错误直接报回去）。
+  热门模型会偶发 503 / 404 / 70 s 超时；`gemini()` 对 404 和任何 5xx（含超时，统一记 504）都换下一个模型，其余错误直接报回去。
 - **前端**：编辑框 `✨ AI 整理描述`（结果可「撤销」）、每张照片右上角 `AI` 按钮、`AI 解读全部`；
   结果存 `localStorage.samp_photo_ai_v1`（键是照片 URL），卡片多一条 `AI：岩性 · 86%`，导出时并入 `photo_ai`。
-- **部署**：`$env:CLOUDFLARE_API_TOKEN=...; $env:GEMINI_API_KEY=...; python devtools\deploy_media_worker.py`
-  key 会落到 `_deploy/worker/.gemini_key`（不入库）；不设就沿用上次的，都没有则 `/ai/*` 返回 502。
-- **测试**：`node devtools\test_media_worker.mjs`（真跑 worker，只替换 R2 / Gemini 两个外部边界，30 断言）
+- **部署（2026-11-08 实际走通的那条）**：
+  ```powershell
+  cd _deploy\worker
+  npx wrangler login          # 浏览器点 Allow，凭据存 %USERPROFILE%\.wrangler
+  npx wrangler deploy         # 会把 script-API 传的旧代码覆盖掉，secret 保留
+  (Get-Content .media_token -Raw).Trim() | npx wrangler secret put UPLOAD_TOKEN
+  (Get-Content .gemini_key  -Raw).Trim() | npx wrangler secret put GEMINI_KEY
+  ```
+  另有 API token 路径：`python devtools\deploy_media_worker.py`。冒烟脚本 `python devtools\smoke_worker.py`
+  （打线上 `/health` `/ai/desc` `/ai/photo`，只读本地令牌，不打印）。
+- **实测延迟**：文本 3~5 s；**1.3 MB 原图**在 3.8-flash 上会顶到 70 s 超时，自动退到 3.5-flash-lite 才出结果（约 75 s）；
+  同一张图压到 200 KB 后 3.8-flash 约 35 s。**待办：上传前在浏览器里压到 ~1600 px**，否则每张照片要等一分多钟。
+- **测试**：`node devtools\test_media_worker.mjs`（真跑 worker，只替换 R2 / Gemini 两个外部边界，31 断言）
   + `devtools\t_ai.html`（24 断言，只替换 `fetch`，页面解析/落盘/渲染全真跑）。
 
 ## 云端鉴权（2026-11-07 起）
