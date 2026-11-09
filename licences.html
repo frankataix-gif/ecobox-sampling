@@ -440,7 +440,7 @@ const esc=s=>String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>
 let AREAS=[],LICS=[],BASE=[],SEL=null,PROJ=null,TAB="intro",PIMG="",VIEW="lic",MROWS=[],MAP_PICK="",MAP_PICK_AREA=null,SAMPLES=[],FACTORY={};
 let HOLDER_TOUCHED=false;
 const FS_KEY="lic_feed_v1",AU_KEY="lic_author",CACHE_KEY="lic_cache_v1",EDIT_KEY="lic_edit_v1",NOTE_KEY="lic_notes_v1",INFO_KEY="lic_info_v1",SET_KEY="lic_setok";
-const PAGE_VER="20261109-1127";  /* build_public.py 会替换成构建时间戳 */
+const PAGE_VER="20261109-1133";  /* build_public.py 会替换成构建时间戳 */
 const MEDIA_URL="https://ecobox-media.frankataix.workers.dev",SP_KEY="samp_photos_v1",MT_KEY="m_token";
 let EDITS={},ADDED=[],DELETED=[],NOTES={};
 
@@ -514,34 +514,56 @@ function zoneInProj(pid,lon,lat){
 }
 function sampInProj(s,pid){const z=zoneInProj(pid,s.lon,s.lat).zone;return z==="licence"||z==="sheet"}
 function sampUnassigned(){return sampAll().filter(s=>!isSampDeleted(s.sample_id)&&!AREAS.some(a=>sampInProj(s,a.id)))}
-async function geoLoad(a){
-  if(!a||!a.geo)return null;
-  if(GEO[a.id]&&GEO[a.id].ok)return GEO[a.id];
-  try{
-    const r=await fetch(`geo/${a.geo}/licences.geojson`,{cache:"no-cache"});
-    if(!r.ok)throw new Error("geo "+r.status);
-    const j=await r.json();
-    const want=(a.licences||[]).map(no=>String(no).split("-")[0]);
-    const polys=[];let bbox=null;
-    (j.features||[]).forEach(f=>{
-      const no=String((f.properties||{}).no||"").split("-")[0];
-      if(want.length&&want.indexOf(no)<0)return;
-      const g=f.geometry||{};
-      const rings=g.type==="Polygon"?[g.coordinates[0]]
-        :(g.type==="MultiPolygon"?g.coordinates.map(p=>p[0]):[]);
-      rings.forEach(ring=>{
-        if(!Array.isArray(ring)||ring.length<3)return;
-        polys.push({no,ring});
-        ring.forEach(p=>{bbox=bbox?[Math.min(bbox[0],p[0]),Math.min(bbox[1],p[1]),Math.max(bbox[2],p[0]),Math.max(bbox[3],p[1])]:[p[0],p[1],p[0],p[1]];});
-      });
+function polysFromKmlLocal(a){
+  const polys=[];
+  (a.licences||[]).forEach(no=>{
+    const k=kmlSafe(kmlFor(no));
+    if(!k||!k.rings||!k.rings.length)return;
+    k.rings.forEach(ring=>{if(Array.isArray(ring)&&ring.length>=3)polys.push({no:String(no).split("-")[0],ring})});
+  });
+  return polys;
+}
+function parseLicGeo(j,a){
+  const want=(a.licences||[]).map(no=>String(no).split("-")[0]);
+  const polys=[];let bbox=null;
+  (j.features||[]).forEach(f=>{
+    const no=String((f.properties||{}).no||"").split("-")[0];
+    if(want.length&&want.indexOf(no)<0)return;
+    const g=f.geometry||{};
+    const rings=g.type==="Polygon"?[g.coordinates[0]]
+      :(g.type==="MultiPolygon"?g.coordinates.map(p=>p[0]):[]);
+    rings.forEach(ring=>{
+      if(!Array.isArray(ring)||ring.length<3)return;
+      polys.push({no,ring});
+      ring.forEach(p=>{bbox=bbox?[Math.min(bbox[0],p[0]),Math.min(bbox[1],p[1]),Math.max(bbox[2],p[0]),Math.max(bbox[3],p[1])]:[p[0],p[1],p[0],p[1]];});
     });
-    const v={ok:true,polys,bbox:bbox||a.bbox||null};
-    geoSet(a.id,v);geoSave();
-    return v;
-  }catch(e){
-    geoSet(a.id,{ok:false,polys:[],bbox:a.bbox||null});
-    return geoGet(a.id);
+  });
+  return {ok:true,polys,bbox:bbox||a.bbox||null,src:"file"};
+}
+async function geoLoad(a){
+  if(!a)return null;
+  if(GEO[a.id]&&GEO[a.id].ok)return GEO[a.id];
+  const urls=[];
+  if(a.geo){
+    urls.push(`geo/${a.geo}/licences.geojson`);
+    urls.push(`${MEDIA_URL}/m/geo/${a.geo}/licences.geojson`);
   }
+  for(const u of urls){
+    try{
+      const r=await fetch(u,{cache:"no-cache"});
+      if(!r.ok)continue;
+      const v=parseLicGeo(await r.json(),a);
+      if(v.polys.length){geoSet(a.id,v);geoSave();return v}
+    }catch(e){}
+  }
+  const kl=polysFromKmlLocal(a);
+  if(kl.length){
+    const v={ok:true,polys:kl,bbox:null,src:"kml"};
+    geoSet(a.id,v);geoSave();return v;
+  }
+  const v={ok:false,polys:[],bbox:a.bbox||null};
+  geoSet(a.id,v);
+  return v;
 }
 const areaOptions=v=>`<option value="">（未归属）</option>`+
   AREAS.map(a=>`<option value="${esc(a.id)}"${a.id===v?" selected":""}>${esc(a.name)}</option>`).join("");
