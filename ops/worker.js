@@ -401,6 +401,7 @@ async function finApi(req, env, me, seg, url, body) {
   const own = me.login;
   const all = finSeeAll(me);
   const isAdmin = me.role === "admin";
+  const isOwner = me.login === (env.FIN_OWNER || "frank");   // 财务负责人：唯一能改余额/对账/删记录的人
 
   /* 一次性拉全部 */
   if (sub === "bootstrap" && req.method === "GET") {
@@ -420,6 +421,7 @@ async function finApi(req, env, me, seg, url, body) {
       opening: await finCfgGet(env, "opening", { date: "", cash: 0, card: 0 }),
       me: { uid: own, name: me.name, role: me.role },
       canAll: all,
+      owner: isOwner,
     });
   }
 
@@ -473,7 +475,7 @@ async function finApi(req, env, me, seg, url, body) {
   if (sub === "entries" && seg[2] && req.method === "DELETE") {
     const row = await env.DB.prepare("SELECT * FROM fin_entries WHERE id=?").bind(seg[2]).first();
     if (!row) return err("记录不存在", 404);
-    if (!isAdmin && row.uid !== own) return err("只能删自己的记录", 403);
+    if (!isOwner) return err("只有财务负责人能删除记录", 403);
     await env.DB.prepare("DELETE FROM fin_entries WHERE id=?").bind(seg[2]).run();
     await audit(env, me, "fin.del", seg[2], `${row.kind} ${row.amount}`);
     return json({ ok: true });
@@ -482,7 +484,7 @@ async function finApi(req, env, me, seg, url, body) {
   /* 账户 */
   if (sub === "accounts" && seg[2] && req.method === "PUT") {
     const uid = decodeURIComponent(seg[2]);
-    if (!isAdmin && uid !== own) return err("只能改自己的账户", 403);
+    if (!isOwner) return err("只有财务负责人能改余额", 403);
     const b = await body();
     const cur = await env.DB.prepare("SELECT * FROM fin_accounts WHERE uid=?").bind(uid).first();
     await env.DB.prepare(
@@ -513,7 +515,7 @@ async function finApi(req, env, me, seg, url, body) {
     return json({ ok: true });
   }
   if (sub === "opening" && req.method === "PUT") {
-    if (!isAdmin) return err("只有管理员能改期初", 403);
+    if (!isOwner) return err("只有财务负责人能改期初", 403);
     const b = await body();
     await finCfgSet(env, "opening", {
       date: DAY_RE.test(String(b.date || "")) ? b.date : "",

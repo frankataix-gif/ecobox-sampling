@@ -720,7 +720,7 @@ function finHtml() {
         <p>${whoTxt} · ${e.ch === "card" ? "银行" : "现金"}${e.note ? " · " + esc(e.note) : ""}</p>
         ${ph ? `<div class="ph">${ph}</div>` : ""}</div>
       <div class="a">${sign}${finMoney(e.amount)}<small>${esc(label)}</small></div>
-      <button class="ghost" data-findel="${e.id}" title="删除">×</button>
+      ${FIN.owner ? `<button class="ghost" data-findel="${e.id}" title="删除">×</button>` : ""}
     </div>`;
   }).join("");
 
@@ -728,14 +728,16 @@ function finHtml() {
   const acctCard = (p) => {
     const b = finBalance(p.login);
     const row = (FIN.accounts || []).find((x) => x.uid === p.login) || {};
-    const editable = canAll || p.login === FIN.me.uid;
+    const acts = [];
+    if (FIN.owner) acts.push(`<button class="ghost" data-recon="${esc(p.login)}">对账</button>`);
+    if (canAll) acts.push(`<button class="ghost" data-give="${esc(p.login)}">给员工</button>`);
     return `<div class="fin-acct" data-acct="${esc(p.login)}">
       <div class="n">${esc(p.name || p.login)} <span class="mut">${esc(roleLabel(p))}${row.since ? " · 对账 " + esc(row.since) : ""}</span></div>
       <div class="g">
         <div><label>现金</label><b>${finMoney(b.cash)}</b></div>
         <div><label>银行</label><b>${finMoney(b.card)}</b></div>
       </div>
-      ${editable ? `<div class="acts"><button class="ghost" data-recon="${esc(p.login)}">对账</button>${canAll ? `<button class="ghost" data-give="${esc(p.login)}">给员工</button>` : ""}</div>` : ""}
+      ${acts.length ? `<div class="acts">${acts.join("")}</div>` : ""}
     </div>`;
   };
   const meCard = { login: who, name: finNameOf(who), role: FIN.me.role, ghost: false };
@@ -764,7 +766,7 @@ function finHtml() {
     </div>
     <div class="fin-list">${rows || '<div class="empty">这个月还没有记录</div>'}</div>
     <button class="fin-fab" id="fin_add2">＋ 记一笔</button>
-    ${FIN.me.role === "admin" ? `<div class="sec">设置</div>
+    ${FIN.owner ? `<div class="sec">设置</div>
       <div class="fin-acct"><div class="n">期初余额</div>
         <div class="g">
           <div><label>日期</label><input type="date" id="fo_date" value="${esc(FIN.opening.date || "")}"></div>
