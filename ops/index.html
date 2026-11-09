@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#000000">
 <title>ECOBOX 工作台</title>
 <style>
@@ -241,8 +241,11 @@ a{color:#111}
 .fd-menu button:hover{background:#f3f4f5}
 .fd-menu button.dz{color:#b91c1c}
 .fd-dim{position:fixed;inset:0;background:rgba(0,0,0,.42);z-index:65}
+.fd-tile[data-vid]{background:#14161a}
 .fd-view{position:fixed;inset:0;background:rgba(0,0,0,.94);z-index:90;display:flex;align-items:center;justify-content:center;cursor:zoom-out}
-.fd-view img,.fd-view video{max-width:96vw;max-height:92vh}
+.fd-view video{max-width:96vw;max-height:92vh}
+.fd-zoom{display:flex;align-items:center;justify-content:center;max-width:100vw;max-height:100vh;touch-action:none}
+.fd-zoom img{max-width:96vw;max-height:92vh;transition:transform .18s ease;will-change:transform}
 .fd-view-x{position:absolute;top:calc(12px + env(safe-area-inset-top, 0px));right:14px;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.18);color:#fff;border:0;font-size:24px;line-height:1}
 
 #upd_ver{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:120;background:#111;color:#fff;padding:8px 14px;border-radius:999px;box-shadow:0 6px 20px rgba(0,0,0,.32);display:flex;gap:12px;align-items:center;font-size:13px}
@@ -951,7 +954,7 @@ function mediaHtml(p) {
     const src = mediaSrc(m.u);
     const more = i === 8 && list.length > 9 ? `<span class="fd-more-n">+${list.length - 9}</span>` : "";
     return m.t === "v"
-      ? `<button class="fd-tile" data-vid="${esc(src)}"><video src="${esc(src)}" preload="metadata" muted playsinline></video><span class="fd-play">▶</span>${more}</button>`
+      ? `<button class="fd-tile" data-vid="${esc(src)}"><video src="${esc(src)}" preload="none" muted playsinline></video><span class="fd-play">▶</span>${more}</button>`
       : `<button class="fd-tile" data-img="${esc(src)}"><img src="${esc(src)}" loading="lazy" alt=""${fb(m.u)}>${more}</button>`;
   }).join("");
   return `<div class="fd-media ${cls}">${tiles}</div>`;
@@ -1008,11 +1011,24 @@ function bindPost(el) {
   el.querySelectorAll("[data-more]").forEach((b) => (b.onclick = (e) => { e.stopPropagation(); openMenu(b.dataset.more, b); }));
 }
 
+function thumbVideos() {
+  const load = (v) => { if (v.dataset.tried) return; v.dataset.tried = "1"; v.preload = "metadata"; v.load(); };
+  document.querySelectorAll(".fd-tile[data-vid] video").forEach((v) => {
+    if (v.dataset.tried) return;
+    v.addEventListener("loadedmetadata", () => { try { v.currentTime = Math.min(0.1, (v.duration || 1) / 2); } catch (e) {} }, { once: true });
+    if ("IntersectionObserver" in window) {
+      const io = new IntersectionObserver((es) => es.forEach((en) => { if (en.isIntersecting) { load(v); io.disconnect(); } }), { rootMargin: "300px" });
+      io.observe(v.closest(".fd-tile"));
+    } else load(v);
+  });
+}
+
 function drawFeed() {
   const el = $("#fd_list");
   if (!el) return;
   el.innerHTML = (FEED && FEED.length) ? FEED.map(postHtml).join("") : '<div class="empty">还没有动态，点右下角 ＋ 发第一条</div>';
   el.querySelectorAll(".fd-post").forEach(bindPost);
+  thumbVideos();
 }
 
 function refreshPost(id) {
@@ -1023,6 +1039,7 @@ function refreshPost(id) {
   el.outerHTML = postHtml(p);
   const next = document.querySelector(`.fd-post[data-id="${id}"]`);
   if (next) bindPost(next);
+  thumbVideos();
 }
 
 function toggleCmt(id) {
@@ -1168,11 +1185,45 @@ async function sendPost() {
 function fdView(img, vid) {
   const box = document.createElement("div");
   box.className = "fd-view";
-  box.innerHTML = (vid
-    ? `<video src="${esc(vid)}" controls autoplay playsinline></video>`
-    : `<img src="${esc(img)}" alt="">`) + `<button class="fd-view-x">×</button>`;
-  box.onclick = (e) => { if (e.target === box || e.target.classList.contains("fd-view-x")) box.remove(); };
+  if (vid) {
+    box.innerHTML = `<video src="${esc(vid)}" controls autoplay playsinline preload="auto"></video><button class="fd-view-x">×</button>`;
+    box.onclick = (e) => { if (e.target === box || e.target.classList.contains("fd-view-x")) box.remove(); };
+  } else {
+    box.innerHTML = `<div class="fd-zoom"><img src="${esc(img)}" alt=""></div><button class="fd-view-x">×</button>`;
+    box.onclick = (e) => { if (e.target === box || e.target.classList.contains("fd-view-x")) box.remove(); };
+    attachZoom(box.querySelector(".fd-zoom"), box.querySelector(".fd-zoom img"));
+  }
   document.body.appendChild(box);
+}
+
+function attachZoom(wrap, im) {
+  let s = 1, tx = 0, ty = 0, pinch = 0, startS = 1, px = 0, py = 0, start = null, last = 0;
+  const apply = () => { im.style.transform = `translate(${tx}px,${ty}px) scale(${s})`; };
+  const reset = () => { s = 1; tx = ty = 0; apply(); };
+  wrap.onclick = (e) => e.stopPropagation();
+  wrap.addEventListener("touchstart", (e) => {
+    if (e.touches.length === 2) {
+      pinch = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+      startS = s;
+    } else if (e.touches.length === 1) { start = [e.touches[0].clientX, e.touches[0].clientY]; px = tx; py = ty; }
+  }, { passive: false });
+  wrap.addEventListener("touchmove", (e) => {
+    e.preventDefault();
+    if (e.touches.length === 2) {
+      const d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+      if (pinch) { s = Math.min(4, Math.max(1, startS * d / pinch)); apply(); }
+    } else if (e.touches.length === 1 && start && s > 1) {
+      tx = px + (e.touches[0].clientX - start[0]); ty = py + (e.touches[0].clientY - start[1]); apply();
+    }
+  }, { passive: false });
+  wrap.addEventListener("touchend", (e) => {
+    start = null; pinch = 0;
+    const now = Date.now();
+    if (e.touches.length === 0) {
+      if (now - last < 320) { if (s > 1) reset(); else { s = 2.5; tx = ty = 0; apply(); } last = 0; }
+      else last = now;
+    }
+  });
 }
 
 /* ---------- 分组页 ---------- */
