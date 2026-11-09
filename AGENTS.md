@@ -265,6 +265,7 @@ go/no-go 由人拍板并记 decision log。取样点永不写入矿证归属（�
 - 设置页：`#set_user` 显示当前记录人；`#set_stat` 显示本机数据（样品/待同步/照片/行程/里程/离线瓦片）。
 - **云端恢复**：`pullSamples()` 用 `GET {worker}/samples`（`X-App-Token`）把 D1 里已有记录补回本机：本机没有的新增、本机已同步的覆盖、本机未同步的保留；入口在设置页「♻️ 从云端恢复记录」和空列表页的按钮。云端记录的照片只有 R2 `url`（无 blob），缩略图/详情用 url 兜底，`uploadPhoto()` 见到 `key+url` 直接复用不再重传。
 - **备份导入**：设置页 `#btn_import` → `#file_import` 读取「完整备份 JSON」（`{app,samples,trips}` 或裸数组），照片 `data`(base64) 用 `unb64()` 还原成 Blob；合并规则同云端恢复（新增 / 覆盖已同步 / 保留未同步）。导出时照片同时写 `data` 与 `key/url`，保证「导出→导入」可完整往返。
+  导入前每条记录过一遍 `normImported()`，**另一套软件（ecobox / QGIS）导出的 `samples.json` 可以不转换直接导入**：`lat/lon`→`latitude/longitude`、`datetime`→`sample_time`（没时间就从编号 `S20261012-003` 推日期）、`photos` 字符串 URL→带 `key` 的对象（同步时复用，不重传）、中文 `status`（待同步/已同步/失败）→`pending/synced/failed`、`category=标记点`→`kind=marker`、`ta2o5_pct` 等化验列→`assays`、`area_id` 经 `areas.json` 补 `area_name`。命令行批处理用 `devtools/import_legacy_samples.py`。
 - 坐标区 `.gpsrow` 三个按钮（获取定位 / 地图选点 / 定位查看）一行三等宽 36px；改动后要在 320/360/414px 复测不换行。
 
 ## geo_packs 离线地质包（Chitambo 1230SE，2026-11）
