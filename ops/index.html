@@ -223,14 +223,14 @@ a{color:#111}
 .fd-c .x{border:0;background:transparent;color:#9aa3a8;font-size:15px;padding:6px;line-height:1;min-width:28px;flex:0 0 auto}
 .fd-cmore{display:block;border:0;background:transparent;color:#111;font-size:12.5px;font-weight:600;padding:8px 0 4px;margin:0}
 .fd-cin{display:flex;gap:8px;margin-top:8px}
-.fd-cin input{flex:1;padding:11px 13px;border-radius:22px;border:1px solid var(--line);font-size:14px;background:#fff;min-width:0}
+.fd-cin input{flex:1;padding:11px 13px;border-radius:22px;border:1px solid var(--line);font-size:16px;background:#fff;min-width:0}
 .fd-cin input:focus{outline:none;border-color:#111}
 .fd-cin button{padding:10px 16px;font-size:14px;border-radius:22px;flex:0 0 auto;min-height:44px}
 .fd-sheet{position:fixed;left:0;right:0;bottom:0;background:#fff;border-radius:16px 16px 0 0;box-shadow:0 -8px 30px rgba(0,0,0,.2);padding:16px;padding-bottom:calc(16px + env(safe-area-inset-bottom, 0px));z-index:70;max-height:88vh;overflow:auto}
 .fd-sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
 .fd-sh h3{margin:0;font-size:16px}
 .fd-sh button{background:transparent;border:0;color:var(--mut);font-size:14px;padding:8px 4px;min-height:40px}
-.fd-sheet textarea{width:100%;min-height:100px;border:1px solid var(--line);border-radius:12px;padding:11px;font:inherit;font-size:15px;background:#fff;resize:vertical}
+.fd-sheet textarea{width:100%;min-height:100px;border:1px solid var(--line);border-radius:12px;padding:11px;font:inherit;font-size:16px;background:#fff;resize:vertical}
 .fd-cnt{text-align:right;color:var(--mut);font-size:11.5px;margin:4px 2px 0}
 .fd-thumbs{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
 .fd-thumbs .t{position:relative}
@@ -922,6 +922,7 @@ const whenOf = (p) => { const raw = String(p.created_at || ""); return raw.slice
 const ago = (t) => { if (!t) return ""; const d = Date.now() - new Date(t).getTime(); if (d < 60000) return "刚刚"; if (d < 3600000) return Math.floor(d / 60000) + " 分钟前"; if (d < 86400000) return Math.floor(d / 3600000) + " 小时前"; if (d < 604800000) return Math.floor(d / 86400000) + " 天前"; return String(t || "").slice(0, 10); };
 const fb = (u) => (u.startsWith("feed/old/") ? ` onerror="this.onerror=null;this.src='/api/feed/img/${u.slice(9)}'"` : "");
 const FD_EXP = new Set();
+const FD_OPEN = new Set();
 const meId = () => S.user.login || S.user.uid;
 
 function feedHtml() {
@@ -957,6 +958,7 @@ function mediaHtml(p) {
 }
 
 function cmtHtml(p) {
+  if (!FD_OPEN.has(p.id)) return "";
   const list = p.comments || [];
   const me = meId();
   const all = FD_EXP.has(p.id) || list.length <= 3;
@@ -998,7 +1000,7 @@ function bindPost(el) {
   el.querySelectorAll("[data-img]").forEach((b) => (b.onclick = () => fdView(b.dataset.img, "")));
   el.querySelectorAll("[data-vid]").forEach((b) => (b.onclick = () => fdView("", b.dataset.vid)));
   el.querySelectorAll("[data-like]").forEach((b) => (b.onclick = () => likePost(b.dataset.like)));
-  el.querySelectorAll("[data-cmt]").forEach((b) => (b.onclick = () => focusCmt(b.dataset.cmt)));
+  el.querySelectorAll("[data-cmt]").forEach((b) => (b.onclick = () => toggleCmt(b.dataset.cmt)));
   el.querySelectorAll("[data-cmore]").forEach((b) => (b.onclick = () => { FD_EXP.has(b.dataset.cmore) ? FD_EXP.delete(b.dataset.cmore) : FD_EXP.add(b.dataset.cmore); refreshPost(b.dataset.cmore); }));
   el.querySelectorAll("[data-csend]").forEach((b) => (b.onclick = () => sendComment(b.dataset.csend)));
   el.querySelectorAll("[data-cin]").forEach((inp) => (inp.onkeydown = (e) => { if (e.key === "Enter") { e.preventDefault(); sendComment(inp.dataset.cin); } }));
@@ -1023,9 +1025,14 @@ function refreshPost(id) {
   if (next) bindPost(next);
 }
 
+function toggleCmt(id) {
+  if (FD_OPEN.has(id)) FD_OPEN.delete(id); else FD_OPEN.add(id);
+  refreshPost(id);
+  if (FD_OPEN.has(id)) focusCmt(id);
+}
 function focusCmt(id) {
   const inp = document.querySelector(`[data-cin="${id}"]`);
-  if (inp) { inp.focus(); inp.scrollIntoView({ behavior: "smooth", block: "center" }); }
+  if (inp) inp.focus();
 }
 
 async function likePost(id) {
