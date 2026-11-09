@@ -3,6 +3,7 @@
  */
 
 const PAGE = globalThis.__OPS_PAGE__ || "<!doctype html><meta charset=utf-8><p>页面未构建，请运行 ops/build.py";
+const BUILD = (() => { const m = String(globalThis.__OPS_PAGE__ || "").match(/const BUILD = "([^"]+)"/); return m ? m[1] : ""; })();
 const COOKIE = "ops_sess";
 const SESSION_DAYS = 30;
 const ITER = 100000; // Workers WebCrypto 上限就是 10 万，超过会直接抛错
@@ -629,6 +630,9 @@ export default {
         await audit(env, user, "setup", user.login);
         return json({ user: publicUser(user) }, 200, { "set-cookie": sessCookie(token, SESSION_DAYS * 86400) });
       }
+
+      /* 版本号：页面用它判断要不要提示“立即更新” */
+      if (seg[0] === "build" && req.method === "GET") return json({ build: BUILD });
 
       /* 首次打开：库里还没有人，页面据此显示初始化表单 */
       if (seg[0] === "status" && req.method === "GET") {

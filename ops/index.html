@@ -237,6 +237,9 @@ a{color:#111}
 .fd-dim{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:65}
 .fd-view{position:fixed;inset:0;background:rgba(0,0,0,.93);z-index:90;display:flex;align-items:center;justify-content:center;cursor:zoom-out}
 .fd-view img,.fd-view video{max-width:96vw;max-height:92vh}
+
+#upd_ver{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:120;background:#111;color:#fff;padding:8px 14px;border-radius:999px;box-shadow:0 6px 20px rgba(0,0,0,.32);display:flex;gap:12px;align-items:center;font-size:13px}
+#upd_ver button{background:#fff;color:#111;border:0;border-radius:999px;padding:5px 13px;font-size:13px;font-weight:600}
 </style>
 </head>
 <body>
@@ -288,6 +291,28 @@ a{color:#111}
 
 <script>
 const BUILD = "__BUILD__";
+let UPD_SEEN = false;
+async function checkUpdate() {
+  try {
+    const r = await fetch("/api/build", { cache: "no-store" });
+    const j = await r.json();
+    if (j.build && j.build !== BUILD && !UPD_SEEN) {
+      UPD_SEEN = true;
+      const d = document.createElement("div");
+      d.id = "upd_ver";
+      d.innerHTML = "<span>有新版本</span><button>立即更新</button>";
+      d.querySelector("button").onclick = () => {
+        try { caches.keys().then((ks) => ks.forEach((k) => caches.delete(k))); } catch (e) {}
+        location.reload();
+      };
+      document.body.appendChild(d);
+    }
+  } catch (e) {}
+}
+setInterval(checkUpdate, 60000);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) checkUpdate(); });
+window.addEventListener("focus", checkUpdate);
+setTimeout(checkUpdate, 8000);
 const S = { user: null, tab: "status", logs: [], users: [], from: "", to: "", editId: 0 };
 const $ = (s, r = document) => r.querySelector(s);
 const esc = (v) => String(v == null ? "" : v).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
