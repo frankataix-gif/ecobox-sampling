@@ -258,7 +258,7 @@ go/no-go 由人拍板并记 decision log。取样点永不写入矿证归属（�
   `drawList(local, cloud, extra)` 三个来源合并后按时间倒序（`rowTs()`：样品用 `created_at/sample_time`，行程用 `t0`）。
   两个筛选维度：`#chips_rectype`（全部/样品/标记点/行程）与 `#chips_filter`（全部状态/待同步/已同步/☁️ 仅云端）；后者只作用于样品，选「行程」时整行隐藏。
   `#list_stat` 分别计数：`共 N 条 · 样品 a · 标记 b · 行程 c · 云端 d · 待同步 e 条`。
-  云台独有的记录标「☁️ 云端」、只读，点「⋯ 更多」时自动落库再编辑；`#cloudbar` 给「存到本机」批量入口（`pullSamples`）。
+  云端独有的记录标「☁️ 云端」、只读，点「⋯ 更多」时自动落库再编辑；`#cloudbar` 给「存到本机」批量入口（`pullSamples`）。
   云端数据缓存在 `kv.cloud_samples_v1`（60 秒节流、非阻塞：先用缓存画一遍再补刷新，弱网不卡列表），离线时只用缓存。
 - 列表卡片的三个 class 别混：样品/标记/云端用 `.samcard[data-sid]`，行程用 `.samcard[data-tid]`，草稿用 `.draftcard`（**不是** `.samcard`，否则测试里数卡片会多一条）。
 - 行程：记录中在 `#triplive` 显示实时卡片（时长/里程/点数），`#formtabs` 的🧭上有红点；回放轨迹会在切到地图页时自动清除。
