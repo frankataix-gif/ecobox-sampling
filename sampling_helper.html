@@ -214,8 +214,14 @@ progress{width:100%;height:10px;margin-top:8px}
     </div>
     <div id="tab_list" class="hidden">
       <div class="toolbar"><input id="q_list" placeholder="🔍 搜索 编号 / 备注 / 地区 / 元素" inputmode="search"></div>
+      <div class="chips" id="chips_rectype">
+        <button type="button" data-t="all" class="on">全部</button>
+        <button type="button" data-t="sample">样品</button>
+        <button type="button" data-t="marker">标记点</button>
+        <button type="button" data-t="trip">行程</button>
+      </div>
       <div class="chips" id="chips_filter">
-        <button type="button" data-f="all" class="on">全部</button>
+        <button type="button" data-f="all" class="on">全部状态</button>
         <button type="button" data-f="pend">待同步</button>
         <button type="button" data-f="ok">已同步</button>
         <button type="button" data-f="cloud">☁️ 仅云端</button>
@@ -336,10 +342,10 @@ progress{width:100%;height:10px;margin-top:8px}
     <div class="card">
       <h3>🔄 版本更新</h3>
       <button class="btn secondary block" id="btn_update">检查并强制更新到最新版</button>
-      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：20261109-1142</p>
+      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：20261109-1143</p>
     </div>
     <div class="card">
-      <p style="font-size:11px;color:var(--muted);text-align:center">20261109-1142</p>
+      <p style="font-size:11px;color:var(--muted);text-align:center">20261109-1143</p>
       <h3>🗑 危险操作</h3>
       <button class="btn danger block" id="btn_wipe">🔒 清空本机全部数据（需密码）</button>
     </div>
@@ -1024,7 +1030,7 @@ $("btn_clear").onclick=async()=>{
 };
 
 /* ============ 列表 ============ */
-let listQ="",listFilter="all",listRows=[];
+let listQ="",listFilter="all",listType="all",listRows=[];
 /* ---------- 云端全量历史（D1，本地 36 条之外还包含其它手机/旧记录）---------- */
 const CLOUD_KEY="cloud_samples_v1";
 let cloudCache={ts:0,items:null,err:"",loading:false};
@@ -1064,37 +1070,64 @@ async function ensureLocal(s){
 /* 先用缓存画一遍，云端刷新完再重画，弱网时列表不卡住 */
 async function renderList(){
   const local=await S.all();
-  drawList(local,cloudCache.items||[]);
-  if(await hydrateCloud()&&!$("tab_list").classList.contains("hidden"))drawList(await S.all(),cloudCache.items||[]);
+  const extra={
+    trips:await TRIPS.all(),
+    draft:await store.get("draft"),
+    draftPhotos:((await store.get("draft_photos"))||[]).length,
+  };
+  drawList(local,cloudCache.items||[],extra);
+  if(await hydrateCloud()&&!$("tab_list").classList.contains("hidden"))drawList(await S.all(),cloudCache.items||[],extra);
 }
-function drawList(local,cloud){
+/* 排序时间戳：样品用 created_at/sample_time，行程用 t0（都是本机时区） */
+const rowTs=s=>{
+  if(s._type==="trip")return +s.t0||0;
+  const t=Date.parse(String(s.created_at||s.sample_time||"").replace(" ","T"));
+  return isNaN(t)?0:t;
+};
+function drawList(local,cloud,extra={}){
   if(!cloud&&cloudCache.items)cloud=cloudCache.items;
   const bySid=new Map();local.forEach(s=>{if(s.sample_id)bySid.set(s.sample_id,s)});
   const rows=[];
-  local.forEach(s=>rows.push({...s,_src:"local"}));
-  cloud.forEach(c=>{if(c&&c.sample_id&&!bySid.has(c.sample_id))rows.push({...c,status:"synced",id:null,_src:"cloud"})});
-  rows.sort((a,b)=>String(b.created_at||b.sample_time||"").localeCompare(String(a.created_at||a.sample_time||"")));
+  local.forEach(s=>rows.push({...s,_src:"local",_type:s.kind==="marker"?"marker":"sample"}));
+  cloud.forEach(c=>{if(c&&c.sample_id&&!bySid.has(c.sample_id))rows.push({...c,status:"synced",id:null,_src:"cloud",_type:c.kind==="marker"?"marker":"sample"})});
+  (extra.trips||[]).forEach(t=>rows.push({_type:"trip",_src:"trip",id:t.id,name:t.name||"未命名行程",t0:t.t0||0,t1:t.t1||0,pts:t.pts||[]}));
+  rows.sort((a,b)=>rowTs(b)-rowTs(a));
   listRows=rows;
+  const nS=rows.filter(r=>r._type==="sample").length;
+  const nM=rows.filter(r=>r._type==="marker").length;
+  const nT=rows.filter(r=>r._type==="trip").length;
   const pend=local.filter(s=>s.status!=="synced").length;
-  const cloudOnly=rows.length-local.length;
+  const cloudOnly=rows.filter(r=>r._src==="cloud").length;
   const q=listQ.trim().toLowerCase();
   const rows2=rows.filter(s=>{
+    if(listType!=="all"&&s._type!==listType)return false;
+    if(s._type==="trip"){ // 行程没有同步状态，状态筛选下不显示
+      if(listFilter!=="all")return false;
+      return !q||String(s.name).toLowerCase().includes(q)||new Date(s.t0).toLocaleDateString().includes(q);
+    }
     if(listFilter==="pend"&&(s._src==="cloud"||s.status==="synced"))return false;
     if(listFilter==="ok"&&(s._src==="cloud"||s.status!=="synced"))return false;
     if(listFilter==="cloud"&&s._src!=="cloud")return false;
     if(!q)return true;
-    const hay=[s.sample_id,s.remark,s.area_name,s.loc_status,s.recorder,s.sample_time,
+    const hay=[s.sample_id,s.remark,s.area_name,s.loc_status,s.recorder,s.sample_time,s.description,
       (s.assays||[]).map(a=>a.element+" "+a.value).join(" ")].filter(Boolean).join(" ").toLowerCase();
     return hay.includes(q);
   });
-  $("list_stat").textContent=`共 ${rows.length} 条`+(cloudOnly?` · 云端 ${cloudOnly}`:"")+` · 待同步 ${pend} 条`
+  $("list_stat").textContent=`共 ${rows.length} 条 · 样品 ${nS} · 标记 ${nM} · 行程 ${nT}`
+    +(cloudOnly?` · 云端 ${cloudOnly}`:"")+` · 待同步 ${pend} 条`
     +(cloudCache.err?` · 云端暂不可用`:"")+(q?` · 匹配 ${rows2.length} 条`:"");
+  $("chips_rectype").querySelectorAll("button").forEach(b=>b.classList.toggle("on",b.dataset.t===listType));
   $("chips_filter").querySelectorAll("button").forEach(b=>b.classList.toggle("on",b.dataset.f===listFilter));
+  $("chips_filter").style.display=listType==="trip"?"none":"";
   const cb=$("cloudbar");
   if(cb){
     cb.style.display=cloudOnly?"flex":"none";
     if(cloudOnly)$("cloudbar_txt").textContent=`云端另有 ${cloudOnly} 条不在本机（只读，可先存下来再改）`;
   }
+  const draftCard=(extra.draft&&listType!=="trip")?`<div class="card draftcard" id="draftcard" style="border-color:#fcd34d;background:#fffbeb">
+      <div class="info"><div><span class="sid">📝 未保存的输入</span><span class="badge b-pend">草稿</span></div>
+      <div class="meta">${xesc(String(extra.draft).replace(/\s+/g," ").slice(0,70))}${extra.draftPhotos?` · 📷 ${extra.draftPhotos} 张`:""}</div>
+      <div class="meta">点这里回到表单继续，保存后这条自动消失</div></div></div>`:"";
   const empty=$("empty_tip");
   empty.style.display=rows2.length?"none":"";
   if(rows2.length){}else if(!rows.length){
@@ -1103,7 +1136,18 @@ function drawList(local,cloud){
   }else{
     empty.textContent="没有匹配的记录，换个关键词或点「全部」";
   }
-  $("samlist").innerHTML=rows2.map(s=>{
+  $("samlist").innerHTML=draftCard+rows2.map(s=>{
+    if(s._type==="trip"){
+      const pts=s.pts||[],t1=s.t1||(pts.length?pts[pts.length-1].t:s.t0);
+      return`<div class="card samcard" data-tid="${s.id}">
+        <div class="info"><div><span class="sid">🧭 ${xesc(s.name)}</span><span class="badge" style="background:#ede9fe;color:#5b21b6">行程</span></div>
+        <div class="meta">${new Date(s.t0).toLocaleString()}${t1>s.t0?" → "+new Date(t1).toLocaleTimeString():""}</div>
+        <div class="meta">⏱ ${fmtDur(Math.max(0,t1-s.t0))} · 📏 ${(trkDist(pts)/1000).toFixed(2)} km · ${pts.length} 个点</div>
+        <div class="row" style="margin-top:8px">
+          <button class="btn secondary act-replay" style="padding:6px 12px;min-height:36px">🗺 回放轨迹</button>
+          <button class="btn secondary act-tedit" style="padding:6px 12px;min-height:36px">⋯ 编辑</button>
+        </div></div></div>`;
+    }
     const b=s._src==="cloud"?'<span class="badge" style="background:#e0f2fe;color:#075985">☁️ 云端</span>'
       :s.status==="synced"?'<span class="badge b-ok">已同步</span>':s.status==="failed"?'<span class="badge b-fail">同步失败</span>':'<span class="badge b-pend">待同步</span>';
     const as=(s.assays||[]).map(a=>`${a.element} ${a.value}${a.unit}`).join(" · ");
@@ -1119,15 +1163,30 @@ function drawList(local,cloud){
         <button class="btn secondary act-view" style="padding:6px 12px;min-height:36px">详情/照片</button>
         <button class="btn secondary act-edit" style="padding:6px 12px;min-height:36px">⋯ 更多</button>
       </div></div></div>`}).join("");
-  const rowOf=el=>listRows.find(x=>x.sample_id===el.closest(".samcard").dataset.sid);
+  const rowOf=el=>{const sid=el.closest(".samcard").dataset.sid;return sid?listRows.find(x=>x.sample_id===sid):null};
+  const dc=$("draftcard");
+  if(dc)dc.onclick=()=>{document.querySelector('nav button[data-pg="pg-form"]').click();setFormTab("form")};
   document.querySelectorAll("#samlist .samcard").forEach(c=>c.onclick=e=>{
     if(e.target.closest("button"))return;
+    if(c.dataset.tid)return; // 行程卡用下面的专用按钮
     const s=rowOf(c);if(s)viewDetail(s);
   });
-  document.querySelectorAll(".act-view").forEach(b=>b.onclick=e=>{
+  document.querySelectorAll("#samlist .act-replay").forEach(b=>b.onclick=()=>{
+    const t=listRows.find(x=>x._type==="trip"&&x.id===+b.closest(".samcard").dataset.tid);if(!t)return;
+    document.querySelector('nav button[data-pg="pg-map"]').click(); // 先切页（切页会清掉上一次回放）
+    viewTrip=t.pts||[];
+    setTimeout(()=>{if(map&&viewTrip.length){map.cx=lon2x(viewTrip[0].lon,12);map.cy=lat2y(viewTrip[0].lat,12);map.draw()}toast("回放："+t.name)},150);
+  });
+  document.querySelectorAll("#samlist .act-tedit").forEach(b=>b.onclick=()=>{
+    const t=listRows.find(x=>x._type==="trip"&&x.id===+b.closest(".samcard").dataset.tid);if(!t)return;
+    $("tripedit_title").textContent=t.name;
+    $("tripedit").dataset.tid=t.id;
+    $("tripedit").classList.remove("hidden");
+  });
+  document.querySelectorAll("#samlist .act-view").forEach(b=>b.onclick=e=>{
     const s=rowOf(e.target);if(s)viewDetail(s);
   });
-  document.querySelectorAll(".act-edit").forEach(b=>b.onclick=async e=>{
+  document.querySelectorAll("#samlist .act-edit").forEach(b=>b.onclick=async e=>{
     let s=rowOf(e.target);if(!s)return;
     if(s._src==="cloud"){
       b.disabled=true;b.textContent="存到本机…";
@@ -1142,6 +1201,7 @@ function openSamEdit(s){
   $("samedit").classList.remove("hidden");
 }
 $("q_list").addEventListener("input",()=>{listQ=$("q_list").value;renderList()});
+$("chips_rectype").querySelectorAll("button").forEach(b=>b.onclick=()=>{listType=b.dataset.t;renderList()});
 $("chips_filter").querySelectorAll("button").forEach(b=>b.onclick=()=>{listFilter=b.dataset.f;renderList()});
 $("btn_pull_all").onclick=pullSamples;
 /* ---- 记录编辑/删除 ---- */
@@ -2241,7 +2301,7 @@ if(!isStandalone){
 }
 
 /* ============ 版本检查：发布新版本后自动弹「更新」按钮 ============ */
-const APP_VER="20261109-1142";
+const APP_VER="20261109-1143";
 let updateDismissed=false;
 function showUpdateTip(){if(updateDismissed)return;const t=$("update_tip");if(t)t.style.display="flex";}
 async function checkUpdate(){
