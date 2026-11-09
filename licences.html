@@ -440,7 +440,7 @@ const esc=s=>String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>
 let AREAS=[],LICS=[],BASE=[],SEL=null,PROJ=null,TAB="intro",PIMG="",VIEW="lic",MROWS=[],MAP_PICK="",MAP_PICK_AREA=null,SAMPLES=[],FACTORY={};
 let HOLDER_TOUCHED=false;
 const FS_KEY="lic_feed_v1",AU_KEY="lic_author",CACHE_KEY="lic_cache_v1",EDIT_KEY="lic_edit_v1",NOTE_KEY="lic_notes_v1",INFO_KEY="lic_info_v1",SET_KEY="lic_setok";
-const PAGE_VER="20261109-0037";  /* build_public.py 会替换成构建时间戳 */
+const PAGE_VER="20261109-1127";  /* build_public.py 会替换成构建时间戳 */
 const MEDIA_URL="https://ecobox-media.frankataix.workers.dev",SP_KEY="samp_photos_v1",MT_KEY="m_token";
 let EDITS={},ADDED=[],DELETED=[],NOTES={};
 
@@ -475,6 +475,74 @@ async function loadData(){
 }
 const areaById=id=>AREAS.find(a=>a.id===id)||null;
 const areaName=id=>{const a=areaById(id);return a?a.name:""};
+
+/* ---------- 归属判定：矿权多边形（P1）> 图幅范围（P2） ---------- */
+let GEO={};
+const GEO_KEY="lic_geo_v1";
+function geoGet(id){return GEO[id]||null}
+function geoSet(id,v){GEO[id]=v}
+function geoSave(){
+  try{
+    const o={};Object.keys(GEO).forEach(k=>{if(GEO[k]&&GEO[k].ok)o[k]={polys:GEO[k].polys,bbox:GEO[k].bbox}});
+    localStorage.setItem(GEO_KEY,JSON.stringify(o));
+  }catch(e){}
+}
+function geoRestore(){
+  try{
+    const o=JSON.parse(localStorage.getItem(GEO_KEY)||"{}")||{};
+    Object.keys(o).forEach(k=>{if(!GEO[k]&&o[k]&&o[k].polys)GEO[k]={ok:true,polys:o[k].polys,bbox:o[k].bbox};});
+  }catch(e){}
+}
+function ptInRing(x,y,ring){
+  let c=false;
+  for(let i=0,j=ring.length-1;i<ring.length;j=i++){
+    const xi=ring[i][0],yi=ring[i][1],xj=ring[j][0],yj=ring[j][1];
+    if((yi>y)!==(yj>y)&&x<(xj-xi)*(y-yi)/(yj-yi)+xi)c=!c;
+  }
+  return c;
+}
+function bboxHit(bb,x,y){return !!bb&&bb.length===4&&x>=bb[0]&&x<=bb[2]&&y>=bb[1]&&y<=bb[3]}
+function zoneInProj(pid,lon,lat){
+  if(lon==null||lat==null||lon===""||lat==="")return {zone:"none",lics:[]};
+  const x=+lon,y=+lat,g=geoGet(pid),a=areaById(pid)||{};
+  if(g&&g.ok&&g.polys&&g.polys.length){
+    const lics=g.polys.filter(p=>ptInRing(x,y,p.ring)).map(p=>p.no);
+    if(lics.length)return {zone:"licence",lics};
+  }
+  const bb=a.bbox||(g&&g.bbox)||null;
+  return bboxHit(bb,x,y)?{zone:"sheet",lics:[]}:{zone:"outside",lics:[]};
+}
+function sampInProj(s,pid){const z=zoneInProj(pid,s.lon,s.lat).zone;return z==="licence"||z==="sheet"}
+function sampUnassigned(){return sampAll().filter(s=>!isSampDeleted(s.sample_id)&&!AREAS.some(a=>sampInProj(s,a.id)))}
+async function geoLoad(a){
+  if(!a||!a.geo)return null;
+  if(GEO[a.id]&&GEO[a.id].ok)return GEO[a.id];
+  try{
+    const r=await fetch(`geo/${a.geo}/licences.geojson`,{cache:"no-cache"});
+    if(!r.ok)throw new Error("geo "+r.status);
+    const j=await r.json();
+    const want=(a.licences||[]).map(no=>String(no).split("-")[0]);
+    const polys=[];let bbox=null;
+    (j.features||[]).forEach(f=>{
+      const no=String((f.properties||{}).no||"").split("-")[0];
+      if(want.length&&want.indexOf(no)<0)return;
+      const g=f.geometry||{};
+      const rings=g.type==="Polygon"?[g.coordinates[0]]
+        :(g.type==="MultiPolygon"?g.coordinates.map(p=>p[0]):[]);
+      rings.forEach(ring=>{
+        if(!Array.isArray(ring)||ring.length<3)return;
+        polys.push({no,ring});
+        ring.forEach(p=>{bbox=bbox?[Math.min(bbox[0],p[0]),Math.min(bbox[1],p[1]),Math.max(bbox[2],p[0]),Math.max(bbox[3],p[1])]:[p[0],p[1],p[0],p[1]];});
+      });
+    });
+    const v={ok:true,polys,bbox:bbox||a.bbox||null};
+    geoSet(a.id,v);geoSave();
+    return v;
+  }catch(e){
+    geoSet(a.id,{ok:false,polys:[],bbox:a.bbox||null});
+    return geoGet(a.id);
+  }
+}
 const areaOptions=v=>`<option value="">（未归属）</option>`+
   AREAS.map(a=>`<option value="${esc(a.id)}"${a.id===v?" selected":""}>${esc(a.name)}</option>`).join("");
 const licByNo=no=>LICS.find(l=>l.no===no)||null;
@@ -1819,6 +1887,9 @@ function sampleCard(s0){
   const hasTaNb=(s.ta2o5_pct!=null&&s.ta2o5_pct!=="")||(s.nb2o5_pct!=null&&s.nb2o5_pct!=="");
   const sc=sampCat(s);
   const badges=[sc.cat,sc.sub];
+  const z=zoneInProj(PROJ,s.lon,s.lat);
+  if(z.zone==="licence"&&z.lics.length)badges.push("矿权内 "+z.lics.join("/"));
+  else if(z.zone==="sheet")badges.push("图幅内·矿权外");
   if(s.symbol)badges.push(s.symbol);
   if(s.mineral)badges.push(s.mineral);
   const up=photos.length<6?`<button class="upbtn" data-upload="${esc(s.sample_id||"")}">上传照片</button>`:"";
@@ -2151,15 +2222,17 @@ async function exportSamples(){
 function tabSamples(ls){
   const aid=PROJ;
   if(SCAT_PROJ!==aid){SCAT="";SCAT_PROJ=aid;}
-  const all=sampAll().filter(s=>s.area_id===aid&&!isSampDeleted(s.sample_id));
-  const un=sampAll().filter(s=>!s.area_id&&!isSampDeleted(s.sample_id));
+  const all=sampAll().filter(s=>sampInProj(s,aid)&&!isSampDeleted(s.sample_id));
+  const un=sampUnassigned();
   const unRows=SCAT?un.filter(s=>sampCat(s).cat===SCAT):un;
-  const unHtml=unRows.length?`<h3 class="scat">未归类（${unRows.length}）· 不在本项目范围</h3>${unRows.map(sampleCard).join("")}`:"";
+  const unHtml=unRows.length?`<h3 class="scat">未归属（${unRows.length}）· 不在任何项目范围</h3>${unRows.map(sampleCard).join("")}`:"";
   if(!all.length){
-    return `<div class="pane"><div class="empty">还没有现场取样结果。<br>由 <code>devtools/import_ecobox_samples.py</code> 从 Ecobox 历史记录全量导入，按坐标自动归类到当前项目范围。</div>${unHtml}</div>`;
+    return `<div class="pane"><div class="empty">本项目还没有取样记录。<br>取样在「矿区考察记录本」录入，这里按坐标自动归类（矿权内优先，其次图幅范围）。</div>${unHtml}</div>`;
   }
   const catCount={"取样":0,"标记点":0};
   all.forEach(s=>{const c=sampCat(s).cat;catCount[c]=(catCount[c]||0)+1;});
+  const zoneCount={licence:0,sheet:0};
+  all.forEach(s=>{const z=zoneInProj(aid,s.lon,s.lat);if(z.zone==="licence")zoneCount.licence++;else if(z.zone==="sheet")zoneCount.sheet++;});
   const rows=SCAT?all.filter(s=>sampCat(s).cat===SCAT):all;
   const byCat={};
   rows.forEach(s=>{const c=sampCat(s);const g=byCat[c.cat]||(byCat[c.cat]={});(g[c.sub]=g[c.sub]||[]).push(s);});
@@ -2178,7 +2251,7 @@ function tabSamples(ls){
       <div class="liccards">
         <div class="liccard">
           <div class="lch"><b>取样统计</b><span class="pill">${all.length} 个点</span></div>
-          <dl>${SAMP_CATEGORIES.map(c=>row(c,(catCount[c]||0)+" 个点")).join("")}</dl>
+          <dl>${row("矿权内",zoneCount.licence+" 个点")}${row("图幅内·矿权外",zoneCount.sheet+" 个点")}${SAMP_CATEGORIES.map(c=>row(c,(catCount[c]||0)+" 个点")).join("")}</dl>
         </div>
       </div>
       ${seg}
@@ -2362,7 +2435,7 @@ function render(){
         smapFocus(card.dataset.card);
       });
     });
-    mapMountSmap(sampAll().filter(s=>s.area_id===PROJ&&!isSampDeleted(s.sample_id)).filter(s=>!SCAT||sampCat(s).cat===SCAT),ls);
+    mapMountSmap(sampAll().filter(s=>sampInProj(s,PROJ)&&!isSampDeleted(s.sample_id)).filter(s=>!SCAT||sampCat(s).cat===SCAT),ls);
   }
 }
 
@@ -3133,6 +3206,7 @@ async function start(){
   notesLoad();
   infoLoad();
   kmlLoad();
+  geoRestore();
   try{await loadData()}catch(e){
     $("#view").innerHTML=`<div class="empty">${esc(e.message)}<br>请确认 areas.json / licences.json 与页面在同一目录。</div>`;
     return;
@@ -3140,6 +3214,7 @@ async function start(){
   if(fsSupported())fsGetDir().then(dir=>{if(dir&&FS_DIR_NAME!==(dir.name||"")){FS_DIR_NAME=dir.name||"";if(TAB==="samples")render()}}).catch(()=>{});
   verCheck();setInterval(verCheck,300000);
   document.addEventListener("visibilitychange",()=>{if(!document.hidden)verCheck()});
+  Promise.all(AREAS.map(geoLoad)).then(()=>{if(TAB==="samples")render()}).catch(()=>{});
   feedLoad();
   $("#who").value=author()==="ecobox"?"":author();
   const pm=location.hash.match(/^#\/?(?:set|mgr)\/(.+)$/);

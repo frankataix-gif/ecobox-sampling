@@ -20,24 +20,8 @@
     "42881-HQ-LEL",
     "36413-HQ-SEL"
    ],
-   "map_pack": "serenje"
-  },
-  {
-   "id": "chitambo_1230se",
-   "code": "CHT",
-   "name": "Chitambo 1230SE",
-   "bbox": [
-    30.4,
-    -13.05,
-    31.25,
-    -12.35
-   ],
-   "center": [
-    30.82,
-    -12.7
-   ],
-   "licences": [],
-   "map_pack": "chitambo"
+   "map_pack": "serenje",
+   "geo": "serenje-1330nw"
   }
  ]
 }
