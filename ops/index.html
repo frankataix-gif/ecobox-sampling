@@ -107,6 +107,10 @@ td.n{text-align:right;font-variant-numeric:tabular-nums}
 .fin-acts button{flex:1;padding:12px;border:1px solid var(--line);background:var(--card);border-radius:12px;font-size:14px;font-weight:600}
 .fin-acts button.pri{background:var(--teal);color:#fff;border-color:var(--teal)}
 .fin-move .a{color:var(--ink)}
+.fin-ptab{display:flex;gap:6px;overflow-x:auto;margin:0 0 12px;padding-bottom:2px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.fin-ptab::-webkit-scrollbar{display:none}
+.fin-ptab button{flex:0 0 auto;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:8px 14px;font-size:13px;font-weight:600;color:var(--ink);white-space:nowrap}
+.fin-ptab button.on{background:var(--teal);color:#fff;border-color:var(--teal)}
 
 /* ---------- 手机适配 ---------- */
 .fin-fab{display:none;position:fixed;right:16px;bottom:calc(18px + env(safe-area-inset-bottom));z-index:50;align-items:center;gap:6px;background:var(--teal);color:#fff;border:none;border-radius:999px;padding:14px 20px;font-weight:600;font-size:15px;box-shadow:0 8px 24px rgba(15,118,110,.35)}
@@ -690,6 +694,8 @@ async function loadFin() {
 function finHtml() {
   const who = FINWHO || FIN.me.uid;
   const isAll = FINWHO === "ALL";
+  const isMe = !FINWHO;                 // 空 = 我自己
+  const ro = !isMe && !isAll;           // 点某个人 = 只读（只看看，不能改）
   const canAll = FIN.canAll;
   const mine = (e) => e.uid === who || e.to_uid === who;   // 自己的账本：自己花的 + 收到的备用金
   const scoped = isAll ? FIN.entries : FIN.entries.filter(mine);
@@ -740,22 +746,27 @@ function finHtml() {
       ${acts.length ? `<div class="acts">${acts.join("")}</div>` : ""}
     </div>`;
   };
-  const meCard = { login: who, name: finNameOf(who), role: FIN.me.role, ghost: false };
-  const accts = isAll ? finPeople().map(acctCard).join("") : acctCard(meCard);
+  const people = finPeople();
+  const accts = isAll ? people.map(acctCard).join("")
+    : acctCard(people.find((p) => p.login === who) || { login: who, name: finNameOf(who), role: "", ghost: false });
 
   const tabs = `<div class="fin-seg">
-    <button data-fscope="" class="${!isAll ? "on" : ""}">我</button>
+    <button data-fscope="" class="${isMe ? "on" : ""}">我</button>
     ${canAll ? `<button data-fscope="ALL" class="${isAll ? "on" : ""}">全部</button>` : ""}
   </div>`;
 
-  const actions = `<div class="fin-acts">
+  const peopleTabs = (canAll && !isMe) ? `<div class="fin-ptab">${people.filter((p) => (FIN.accounts || []).some((a) => a.uid === p.login) || FIN.entries.some((e) => e.uid === p.login || e.to_uid === p.login)).map((p) => `<button data-fscope="${esc(p.login)}" class="${FINWHO === p.login ? "on" : ""}">${esc(p.name || p.login)}</button>`).join("")}</div>` : "";
+
+  const actions = !ro ? `<div class="fin-acts">
     <button id="fin_add" class="pri">＋ 记一笔</button>
     <button id="fin_move">🔁 取现</button>
     ${canAll ? `<button id="fin_give">🤝 给员工</button>` : ""}
-  </div>`;
+  </div>` : "";
 
-  return `${tabs}
-    <div class="sec">${isAll ? "账户余额（全部）" : "我的账户"}</div>${accts}
+  const roHint = ro ? `<div class="mut" style="margin:0 0 8px">🔒 只读 · ${esc(finNameOf(who))}</div>` : "";
+
+  return `${tabs}${peopleTabs}${roHint}
+    <div class="sec">${isAll ? "账户余额（全部）" : isMe ? "我的账户" : esc(finNameOf(who)) + " 账户"}</div>${accts}
     ${actions}
     <div class="fin-bar"><select id="fin_m"><option value="">全部月份</option>${months.map((m) => `<option value="${m}" ${m === FINM ? "selected" : ""}>${m}</option>`).join("")}</select></div>
     <div class="fin-kpi">
@@ -765,8 +776,8 @@ function finHtml() {
       <div><span>笔数</span><b>${list.length}</b></div>
     </div>
     <div class="fin-list">${rows || '<div class="empty">这个月还没有记录</div>'}</div>
-    <button class="fin-fab" id="fin_add2">＋ 记一笔</button>
-    ${FIN.owner ? `<div class="sec">设置</div>
+    ${!ro ? `<button class="fin-fab" id="fin_add2">＋ 记一笔</button>` : ""}
+    ${FIN.owner && !ro ? `<div class="sec">设置</div>
       <div class="fin-acct"><div class="n">期初余额</div>
         <div class="g">
           <div><label>日期</label><input type="date" id="fo_date" value="${esc(FIN.opening.date || "")}"></div>
