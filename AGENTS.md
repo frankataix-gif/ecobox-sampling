@@ -276,3 +276,11 @@ go/no-go 由人拍板并记 decision log。取样点永不写入矿证归属（�
 - **缺字段会崩**：早期包没有 `geo.abc`，`selectRegion()` 直接赋值会报 `GEO.abc is not iterable`。现在页面用 `{litho:[],bounds:[],abc:[],faults:[],veins:[],occs:[],...p.geo}` 归一化，包里也应显式写空数组。
 - 校验：`validate_pack_against_sheet.py` 把每个顶点投到 `1230SE_Chitambo_georef.tif` 取灰度；界线和岩性环约 91% 落在印刷线条上（中位灰度 38）即对齐正常。`render_pack_preview.py` 输出叠加预览 PNG。
 - 前端：`AREAS` 的 `chitambo_1230se`（bbox `30.4,-13.05,31.25,-12.35`，`map_pack:"chitambo"`）；`LITHO_COLOR` 必须含 `G2/G3/G4`；`geo.bounds` 与 `rights` 仅在选中该图幅时绘制。
+
+## ops/ 运营工作台（ecobox-ops）
+
+- 源码 `ops/index.html` + `ops/worker.js`，`python ops/build.py` 生成 `ops/dist/worker.js`（页面内联进 worker），部署到 Cloudflare Worker `ecobox-ops`（D1 + R2 `PHOTOS`）。
+- 状态页 = 公司动态 feed：表 `posts(id,uid,name,body,photos,kind,likes,comments,created_at)`，`photos` 是 `[{t:"i"|"v", u:key|url}]`（绝对地址直连、其他走 `/api/fin/photo/<key>`）。
+- 接口：`GET/POST /api/feed`、`PATCH/DELETE /api/feed/<id>`、`POST /api/feed/<id>/like`、`POST /api/feed/<id>/comment`、`DELETE /api/feed/<id>/comment/<i>`。
+- 老「动态」来自 docs App 的 `frank_data/exports.json`（PBKDF2+AES-GCM，口令 987963）；`feed` 里 15 条 = 生产 App 镜像 13 + 公司手写 2，媒体走 mine-sync 公网地址。
+- 老图 10 张原本存在私有仓库 `frank_data/files/`，压缩后内联进 worker，首次请求时由 worker 自己 `PHOTOS.put("feed/old/…")`；`/api/feed/img/<name>` 是兜底。
