@@ -20,6 +20,16 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
 #update_tip button.ghost{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.75);font-weight:500}
 #off_tip{position:fixed;left:0;right:0;bottom:56px;z-index:300;background:#b91c1c;color:#fff;padding:10px 14px;text-align:center;font-size:13px;display:none;gap:10px;justify-content:center;align-items:center;line-height:1.5}
 #off_tip button{background:#fff;color:#b91c1c;border:none;border-radius:6px;padding:8px 14px;font-size:13px;font-weight:600;min-height:34px;flex:0 0 auto}
+.prep{display:flex;flex-direction:column;gap:8px;margin:6px 0 10px}
+.prepitem{display:flex;align-items:center;gap:10px;border:1px solid var(--border);border-radius:10px;padding:9px 10px;background:#f8fafc}
+.prepitem.ok{background:#f0fdf4;border-color:#bbf7d0}
+.prepitem.bad{background:#fef2f2;border-color:#fecaca}
+.prepitem .pi{font-size:17px;flex:0 0 auto}
+.prepitem .pt{flex:1;min-width:0}
+.prepitem .pt b{display:block;font-size:14px;line-height:1.5}
+.prepitem .pt span{display:block;font-size:12px;color:var(--muted);line-height:1.5;word-break:break-word}
+.prepitem button{border:none;border-radius:8px;background:var(--primary);color:#fff;padding:9px 13px;font-size:13px;min-height:36px;flex:0 0 auto}
+.prepitem button:disabled{opacity:.6}
 header{position:sticky;top:0;z-index:50;background:#111;color:#fff;padding:10px 14px;display:flex;align-items:center;gap:10px}
 header h1{font-size:17px;flex:1}
 .netdot{width:10px;height:10px;border-radius:50%;background:var(--ok)}
@@ -317,18 +327,19 @@ progress{width:100%;height:10px;margin-top:8px}
       </p>
     </div>
     <div class="card">
-      <h3>📥 离线可用（出发前看这里）</h3>
-      <p id="off_stat" style="font-size:13px;line-height:1.7;color:var(--muted)">检查中…</p>
-      <button class="btn primary block" id="btn_off_cache">📥 立即缓存到本机（联网时）</button>
-      <p style="font-size:12px;color:var(--muted);margin-top:6px;line-height:1.6">缓好之后，关掉软件、飞行模式、完全没信号都能直接打开。换手机/清过浏览器数据后要重新缓存一次。</p>
+      <h3>🚦 出发前检查</h3>
+      <div class="prep" id="prep_list"></div>
+      <p id="prep_sum" style="font-size:13px;margin:0 0 10px"></p>
+      <button class="btn primary block" id="btn_prep_all">一键准备（缓存页面 + 下载地图）</button>
+      <p style="font-size:12px;color:var(--muted);margin-top:6px;line-height:1.6">四项全绿再出门：关掉软件、飞行模式、完全没信号都能打开，地图也还在。换手机或清过浏览器数据后要重新准备。</p>
     </div>
     <div class="card">
       <h3>🔄 版本更新</h3>
       <button class="btn secondary block" id="btn_update">检查并强制更新到最新版</button>
-      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：20261109-1141</p>
+      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：20261109-1142</p>
     </div>
     <div class="card">
-      <p style="font-size:11px;color:var(--muted);text-align:center">20261109-1141</p>
+      <p style="font-size:11px;color:var(--muted);text-align:center">20261109-1142</p>
       <h3>🗑 危险操作</h3>
       <button class="btn danger block" id="btn_wipe">🔒 清空本机全部数据（需密码）</button>
     </div>
@@ -2230,7 +2241,7 @@ if(!isStandalone){
 }
 
 /* ============ 版本检查：发布新版本后自动弹「更新」按钮 ============ */
-const APP_VER="20261109-1141";
+const APP_VER="20261109-1142";
 let updateDismissed=false;
 function showUpdateTip(){if(updateDismissed)return;const t=$("update_tip");if(t)t.style.display="flex";}
 async function checkUpdate(){
@@ -2285,24 +2296,54 @@ async function offState(){
   }catch(e){}
   return st;
 }
-async function renderOffStat(){
+/* 出发前检查：页面 / 地图 / 定位 / 待同步 */
+async function renderPrep(){
   const st=await offState();
-  const el=$("off_stat"),tip=$("off_tip");
+  let tiles=0,zm={},gps="unknown",pend=0;
+  try{[tiles,zm]=await Promise.all([T.count(),T.byZoom()])}catch(e){}
+  try{const p=await navigator.permissions.query({name:"geolocation"});gps=p.state}catch(e){}
+  try{pend=(await S.all()).filter(s=>s.status!=="synced").length}catch(e){}
   const kb=Math.round(st.bytes/1024);
   const when=st.at?new Date(st.at).toLocaleString("zh-CN",{month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"}):"";
-  if(el)el.innerHTML=st.bytes>20000
-    ? `✅ <b style="color:var(--ok)">离线已就绪</b>：页面 ${kb} KB 存在本机${when?`（更新于 ${when}）`:""}。关掉软件、飞行模式、没信号都能直接打开。`
-    : st.supported
-      ? `⚠️ <b style="color:var(--danger)">离线未就绪</b>：本机还没有页面副本，现在断网打不开。请联网点下面的按钮。`
-      : `⚠️ 当前环境不支持离线缓存（要用 https 打开，或从主屏幕图标进入）。`;
-  if(tip&&st.bytes>20000)tip.style.display="none";
-  return st;
+  const pageOk=st.bytes>20000,mapOk=tiles>=100,gpsOk=gps==="granted",syncOk=pend===0;
+  const rows=[
+    {act:"page",ok:pageOk,icon:"📱",t:"离线页面",
+     s:pageOk?`离线已就绪：${kb} KB 存在本机${when?`（更新于 ${when}）`:""}（断网可直接打开）`
+             :(st.supported?"还没有页面副本，断网会打不开":"这个浏览器不支持离线缓存，需 https 打开"),
+     b:pageOk?"重存":"缓存"},
+    {act:"map",ok:mapOk,icon:"🗺",t:"离线地图",
+     s:tiles>=100?`${tiles} 张瓦片 · ${zoomSummary(zm)}`
+                 :(tiles?`只有 ${tiles} 张瓦片 · ${zoomSummary(zm)}，可能不够看`:"还没下载，野外地图页会空白"),
+     b:tiles?"补下载":"下载"},
+    {act:"gps",ok:gpsOk,icon:"📍",t:"定位权限",
+     s:gpsOk?"已允许，可以正常取坐标":(gps==="denied"?"已被拒绝：到手机设置里允许本页定位":"还没授权，出发前先点一次"),
+     b:"试定位"},
+    {act:"sync",ok:syncOk,icon:"☁️",t:"待同步记录",
+     s:syncOk?"没有待同步记录":`${pend} 条还没传到云端（不影响离线记录）`,
+     b:syncOk?"":"同步"},
+  ];
+  const bad=rows.filter(r=>!r.ok).length;
+  const el=$("prep_list");
+  if(el)el.innerHTML=rows.map(r=>`
+    <div class="prepitem ${r.ok?"ok":"bad"}">
+      <span class="pi">${r.ok?"✅":"⚠️"}</span>
+      <div class="pt"><b>${r.icon} ${r.t}</b><span>${xesc(r.s)}</span></div>
+      ${r.b?`<button data-prep="${r.act}">${xesc(r.b)}</button>`:""}
+    </div>`).join("");
+  const sum=$("prep_sum");
+  if(sum)sum.innerHTML=bad
+    ?`<span style="color:var(--danger)">还有 ${bad} 项没准备好，建议处理后再出发</span>`
+    :`<span style="color:var(--ok)">全部就绪，可以出发 ✅</span>`;
+  const tip=$("off_tip");
+  if(tip&&pageOk)tip.style.display="none";
+  return {page:st,rows,bad};
 }
+async function renderOffStat(){const r=await renderPrep();return r.page}
 async function cacheAllNow(quiet){
-  const b=$("btn_off_cache");
+  const b=$("prep_list")&&$("prep_list").querySelector('button[data-prep="page"]');
   if(!SW_OK){if(!quiet)toast("这个浏览器不支持离线缓存（需 https 打开）",6000);return false}
   if(!navigator.onLine){if(!quiet)toast("现在没网：先联网再点一次",6000);return false}
-  if(b){b.disabled=true;b.textContent="⏳ 缓存中…"}
+  if(b){b.disabled=true;b.textContent="缓存中…"}
   try{
     try{if(navigator.storage&&navigator.storage.persist)await navigator.storage.persist()}catch(e){}
     const reg=await navigator.serviceWorker.ready;
@@ -2323,7 +2364,7 @@ async function cacheAllNow(quiet){
   }catch(e){
     if(!quiet)toast("缓存失败："+(e&&e.message||e),7000);
     return false;
-  }finally{if(b){b.disabled=false;b.textContent="📥 立即缓存到本机（联网时）"}}
+  }finally{if(b){b.disabled=false;b.textContent="缓存"}}
 }
 if(SW_OK){
   const hadSWController=!!navigator.serviceWorker.controller; // 首次安装不算「有新版本」
@@ -2352,7 +2393,41 @@ if(SW_OK){
   addEventListener("offline",renderOffStat);
 }
 $("off_fix").onclick=()=>cacheAllNow(false);
-$("btn_off_cache").onclick=()=>cacheAllNow(false);
+/* 检查表的四个动作 */
+$("prep_list").onclick=async e=>{
+  const b=e.target.closest("button[data-prep]");if(!b)return;
+  const act=b.dataset.prep;
+  if(act==="page"){await cacheAllNow(false);await renderPrep();return}
+  if(act==="map"){
+    document.querySelector('nav button[data-pg="pg-map"]').click();
+    setTimeout(()=>{try{openDl()}catch(err){}},400);
+    return;
+  }
+  if(act==="gps"){
+    b.disabled=true;b.textContent="定位中…";
+    const back=()=>{b.disabled=false;b.textContent="试定位";renderPrep()};
+    navigator.geolocation.getCurrentPosition(
+      ()=>{toast("定位成功 ✔ 卫星信号正常",4000);back()},
+      err=>{toast(err&&err.code===1?"定位被拒绝：到手机设置里允许本页定位":"定位失败："+((err&&err.message)||"超时，找开阔地重试"),7000);back()},
+      {enableHighAccuracy:true,timeout:20000,maximumAge:30000});
+    setTimeout(back,22000);
+    return;
+  }
+  if(act==="sync"){b.disabled=true;b.textContent="同步中…";$("syncbtn").click();setTimeout(()=>renderPrep(),3000)}
+};
+$("btn_prep_all").onclick=async()=>{
+  const btn=$("btn_prep_all");btn.disabled=true;btn.textContent="准备中…";
+  try{
+    const r=await renderPrep();
+    if(r.page.bytes<=20000&&!await cacheAllNow(true)){toast("页面还没缓存好：保持联网再试一次",7000);return}
+    if(r.rows.find(x=>x.act==="map"&&!x.ok)){
+      document.querySelector('nav button[data-pg="pg-map"]').click();
+      setTimeout(()=>{try{openDl()}catch(err){}},400);
+    }else{
+      toast("页面和地图都齐了：断网也能打开",5000);
+    }
+  }finally{btn.disabled=false;btn.textContent="一键准备（缓存页面 + 下载地图）";renderPrep()}
+};
 
 /* ============ 记录人（一次登录，之后自动带入） ============ */
 const ACCOUNTS={frank:"123456",supeichang:"123456"};
