@@ -77,9 +77,9 @@
 - 导航是**缓存优先**（断网秒开），后台 30 秒一次悄悄 `fetchShell()` 刷新；不再走「网络优先 + 8 秒超时」，因为弱网/热点环境下网络优先等于打不开。新版本靠 `version.txt` 探针 + 「立即更新」提示落地。
 - `MAIN_PAGE` 和裸目录 `BASE`（`/ecobox-sampling/`）都存同一份页面，`?r=`/`?t=` 之类参数用 `ignoreSearch:true` 匹配，任何入口都能打开。
 - 实在没缓存时返回一张内置的「还没存好离线副本」页（200），不是 503 纯文本——至少能看懂、能点重试。
-- 页面侧：`offState()` 扫所有缓存确认页面本体在不在，设置页「📥 离线可用」显示「已就绪（xx KB，更新时间）」/「未就绪」；未就绪时启动自动补一次，补不上在底部导航上方亮**红条**「离线副本未就绪」+「现在缓存」按钮；`cacheAllNow()` 走 `postMessage("CACHE_ALL")` → SW 回 `CACHE_ALL_DONE`，先请求 `navigator.storage.persist()` 降低被回收概率。
+- 页面侧：`offState()` 扫所有缓存确认页面本体在不在；设置页顶部 **🚦 出发前检查**（`renderPrep()`）四项：离线页面（大小/更新时间 + 重存）、离线地图（瓦片数 + 级别，点「下载」跳地图页并弹 `#dlmodal`）、定位权限（`navigator.permissions` 三态 + 试定位）、待同步记录（不影响离线用）；总结句 + 「一键准备」= 缓存页面 + 打开地图下载。未就绪时启动自动补一次，补不上在底部导航上方亮**红条**「离线副本未就绪」+「现在缓存」按钮；`cacheAllNow()` 走 `postMessage("CACHE_ALL")` → SW 回 `CACHE_ALL_DONE`，先请求 `navigator.storage.persist()` 降低被回收概率。
 - `forceAppUpdate()`（设置页「强制更新」）与 `clear.html` 都会清空缓存 + 注销 SW，**离线时一律拒绝执行**；`clear.html` 清完还要先确认能重新下载到页面才跳转。
-- 回归测试：`t_offline_guard.py`（联网装机 → 断网冷启动带参数/裸目录 → 删掉主缓存只留 shell → 回网一键修复 → 再断网），`t_offline_cold.py` 可直接打线上地址复核。
+- 回归测试：`t_offline_guard.py`（联网装机 → 断网冷启动带参数/裸目录 → 删掉主缓存只留 shell → 回网一键修复 → 再断网）、`t_prep.py`（四项检查 + 一键准备弹下载面板 + 重存），`t_offline_cold.py` 可直接打线上地址复核。
 
 ## 地质图层（QGIS → 网页，2026-11）
 
