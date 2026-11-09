@@ -1,6 +1,9 @@
-// 野外取样工具 Service Worker — 页面本体+静态文件离线可用
-// v30：矿权边界支持「粘贴坐标」直接生成（DMS/十进制/ArcGIS 表）
-const CACHE = "sampling-v48";
+// 野外取样工具 Service Worker
+// 唯一目标：**页面本体一定要留在本机**，断网冷启动（关掉再打开）必须能进。
+// 做法：安装时抓一份页面并校验内容后写进 sampling-shell（activate 不清它），
+// 导航请求缓存优先（不等网络），新缓存没拿到页面之前绝不删除旧缓存。
+const CACHE = "sampling-v50";
+const SHELL_CACHE = "sampling-shell"; // 只放校验过的页面本体
 const BASE = new URL(self.registration.scope).pathname; // /ecobox-sampling/
 const BASE_ROOT = BASE.endsWith("/") ? BASE.slice(0, -1) : BASE;
 const MAIN_PAGE = BASE + "sampling_helper.html";
@@ -8,39 +11,121 @@ const PAGES = [MAIN_PAGE, BASE + "licences.html", BASE + "index.html", BASE + "c
 const STATIC = [BASE + "manifest.json", BASE + "icon.svg", BASE + "geo_1230se.jpg"];
 // 矿区配置：网络优先，离线回退缓存（改配置刷新即生效，不必等新版本）
 const CONFIG = [BASE + "areas.json", BASE + "licences.json"];
+const SHELL_MARKS = ['id="pg-form"', 'id="list_stat"'];
+const abs = (p) => new URL(p, self.location.origin).href;
 
 async function tryCache(c, f) {
   try {
-    const r = await fetch(new Request(f, { cache: "no-store" }));
-    if (r.ok) await c.put(f, r);
+    const r = await fetch(new Request(abs(f), { cache: "no-store" }));
+    if (r.ok) await c.put(abs(f), r);
     return true;
   } catch (e) {
-    return false; // 单个文件失败不阻塞安装（关键改动）
+    return false; // 单个文件失败不阻塞安装
   }
+}
+
+const looksLikeShell = (t) => !!t && SHELL_MARKS.every((m) => t.includes(m));
+
+async function fetchShell() {
+  for (let i = 0; i < 3; i++) {
+    try {
+      const r = await fetch(abs(MAIN_PAGE) + "?_sw=" + Date.now(), { cache: "no-store" });
+      if (r.ok) {
+        const t = await r.text();
+        // 只认自己的页面：热点登录页 / 运营商劫持页不能写进缓存
+        if (looksLikeShell(t)) return t;
+      }
+    } catch (e) { /* 离线/抖动 → 重试 */ }
+    await new Promise((s) => setTimeout(s, 600 * (i + 1)));
+  }
+  return null;
+}
+
+async function putShell(c, text) {
+  const mk = () => new Response(text, {
+    status: 200,
+    headers: {
+      "Content-Type": "text/html; charset=utf-8",
+      "X-Cached-At": String(Date.now()),
+    },
+  });
+  // 主页面 + 裸目录（/ecobox-sampling/）都存一份，任何入口都能打开
+  for (const key of [MAIN_PAGE, BASE]) await c.put(abs(key), mk());
 }
 
 self.addEventListener("install", (e) => {
   e.waitUntil((async () => {
     const c = await caches.open(CACHE);
-    // 页面逐个缓存：一个失败不影响其余，更不影响安装本身
     for (const f of PAGES) await tryCache(c, f);
-    // 静态大文件后台补缓存，绝不阻塞安装完成
-    Promise.all(STATIC.concat(CONFIG).map((f) => tryCache(c, f)));
+    const t = await fetchShell();
+    if (!t) throw new Error("shell-cache-failed"); // 页面没抓到就别激活，旧缓存继续顶着
+    await putShell(c, t);
+    await putShell(await caches.open(SHELL_CACHE), t);
+    Promise.all(STATIC.concat(CONFIG).map((f) => tryCache(c, f))); // 大文件后台补
     await self.skipWaiting();
   })());
 });
 
 self.addEventListener("message", (e) => {
-  if (e.data === "SKIP_WAITING") self.skipWaiting();
+  const d = e.data;
+  if (d === "SKIP_WAITING") self.skipWaiting();
+  if (d === "CACHE_ALL") {
+    e.waitUntil((async () => {
+      const c = await caches.open(CACHE);
+      for (const f of PAGES) await tryCache(c, f);
+      const t = await fetchShell();
+      if (t) {
+        await putShell(c, t);
+        await putShell(await caches.open(SHELL_CACHE), t);
+      }
+      await Promise.all(STATIC.concat(CONFIG).map((f) => tryCache(c, f)));
+      const hit = await caches.match(abs(MAIN_PAGE), { ignoreSearch: true });
+      const size = hit ? (await hit.clone().text()).length : 0;
+      if (e.source && e.source.postMessage) e.source.postMessage({ type: "CACHE_ALL_DONE", ok: size > 20000, bytes: size });
+    })());
+  }
 });
 
 self.addEventListener("activate", (e) => {
   e.waitUntil((async () => {
     const ks = await caches.keys();
-    await Promise.all(ks.filter((k) => k !== CACHE).map((k) => caches.delete(k)));
+    // 只清本应用的旧版本缓存；sampling-shell 留着（那是离线保命的那份）
+    await Promise.all(ks.filter((k) => /^sampling-v\d+$/.test(k) && k !== CACHE).map((k) => caches.delete(k)));
     await self.clients.claim();
   })());
 });
+
+async function readCachedShell() {
+  // 先用当前版本缓存（最新），再用 sampling-shell 兜底（保命）
+  for (const name of [CACHE, SHELL_CACHE]) {
+    try {
+      const c = await caches.open(name);
+      const hit = (await c.match(abs(MAIN_PAGE), { ignoreSearch: true })) ||
+                  (await c.match(abs(BASE), { ignoreSearch: true }));
+      if (hit) return hit;
+    } catch (e) { /* 缓存被清 → 试下一个 */ }
+  }
+  return null;
+}
+
+let refreshing = false, lastRefresh = 0;
+async function refreshShell() {
+  const t = await fetchShell();
+  if (!t) return;
+  await putShell(await caches.open(CACHE), t);
+  await putShell(await caches.open(SHELL_CACHE), t);
+}
+
+const OFFLINE_HTML = `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>离线缓存未就绪</title>
+<style>body{font-family:-apple-system,"PingFang SC",sans-serif;background:#f4f6f9;color:#1e293b;margin:0;
+display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px;text-align:center}
+.b{background:#fff;border-radius:14px;padding:26px 22px;max-width:340px;box-shadow:0 2px 10px rgba(0,0,0,.08)}
+h1{font-size:18px;margin:0 0 10px}p{font-size:14px;color:#64748b;line-height:1.7;margin:0 0 18px}
+button{border:none;border-radius:10px;padding:13px 22px;font-size:15px;background:#1668dc;color:#fff;width:100%}</style>
+</head><body><div class="b"><h1>还没存好离线副本</h1>
+<p>这台手机还没有下载到页面本体，所以现在断网打不开。<br>请连上网络（手机流量也行）打开一次，等页面正常显示后停留 30 秒，再断网就一定能打开。</p>
+<button onclick="location.reload()">重新加载</button></div></body></html>`;
 
 self.addEventListener("fetch", (e) => {
   const u = new URL(e.request.url);
@@ -50,11 +135,9 @@ self.addEventListener("fetch", (e) => {
   const isStatic = STATIC.includes(u.pathname);
   const isCfg = CONFIG.includes(u.pathname);
   const isGeo = u.pathname.startsWith(BASE + "geo/");
-  // 任意同域导航请求都算页面（覆盖裸目录、奇怪参数等入口）
-  const isNav = e.request.mode === "navigate" &&
-    (u.pathname === BASE_ROOT || u.pathname.startsWith(BASE));
+  const isNav = e.request.mode === "navigate" && (u.pathname === BASE_ROOT || u.pathname.startsWith(BASE));
+
   if (isGeo) {
-    // 地质包（GeoJSON / 磁异常图）：缓存优先 + 后台更新，离线也能看图
     e.respondWith((async () => {
       const hit = await caches.match(u.pathname);
       const net = fetch(e.request).then((r) => {
@@ -69,12 +152,9 @@ self.addEventListener("fetch", (e) => {
   }
   if (!isPage && !isNav && !isStatic && !isCfg) return;
 
-  e.respondWith((async () => {
-    const cacheKey = isPage || isStatic ? u.pathname : MAIN_PAGE;
-    const cachedHit = (await caches.match(cacheKey)) || (await caches.match(MAIN_PAGE));
-
-    // 矿区配置：网络优先，离线回退缓存
-    if (isCfg) {
+  // 矿区配置：网络优先，离线回退缓存
+  if (isCfg) {
+    e.respondWith((async () => {
       try {
         const r = await fetch(e.request, { cache: "no-store" });
         if (r.ok) {
@@ -86,39 +166,39 @@ self.addEventListener("fetch", (e) => {
       const hit = await caches.match(u.pathname);
       if (hit) return hit;
       return new Response("{}", { status: 503, headers: { "Content-Type": "application/json" } });
-    }
+    })());
+    return;
+  }
 
-    // 静态资源：缓存优先，联网成功顺手补缓存（懒修复安装期失败文件）
-    if (isStatic && !isNav) {
-      if (cachedHit) return cachedHit;
+  // 静态资源：缓存优先，联网成功顺手补缓存
+  if (isStatic && !isNav) {
+    e.respondWith((async () => {
+      const hit = await caches.match(u.pathname);
+      if (hit) return hit;
       try {
         const r = await fetch(e.request);
-        if (r.ok) {
-          const c = await caches.open(CACHE);
-          c.put(u.pathname, r.clone());
-        }
+        if (r.ok) caches.open(CACHE).then((c) => c.put(u.pathname, r.clone()));
         return r;
       } catch (err) {
         return new Response("", { status: 404 });
       }
-    }
+    })());
+    return;
+  }
 
-    // 页面/导航：网络优先（8s 超时），失败回退缓存主页面——离线必能打开
+  // 页面/导航：缓存优先（断网秒开），后台悄悄刷新，刷新时校验内容不被劫持
+  if (!refreshing && Date.now() - lastRefresh > 30000) {
+    refreshing = true;
+    lastRefresh = Date.now();
+    e.waitUntil(refreshShell().catch(() => {}).finally(() => { refreshing = false; }));
+  }
+  e.respondWith((async () => {
+    const hit = await readCachedShell();
+    if (hit) return hit;
     try {
-      const r = await Promise.race([
-        fetch(e.request, { cache: "no-store" }),
-        new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 8000)),
-      ]);
-      if (r.ok) {
-        const copy = r.clone();
-        caches.open(CACHE).then((c) => c.put(MAIN_PAGE, copy));
-        return r;
-      }
-    } catch (err) { /* 离线或超时 → 走缓存 */ }
-    if (cachedHit) return cachedHit;
-    return new Response("离线且页面未缓存：请联网打开一次后再试", {
-      status: 503,
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-    });
+      const r = await fetch(e.request);
+      if (r.ok) return r;
+    } catch (err) { /* 没网也没缓存 */ }
+    return new Response(OFFLINE_HTML, { status: 200, headers: { "Content-Type": "text/html; charset=utf-8" } });
   })());
 });

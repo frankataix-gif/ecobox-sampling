@@ -18,6 +18,8 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
 #update_tip{position:fixed;left:0;right:0;bottom:56px;z-index:300;background:var(--warn);color:#fff;padding:10px 14px;text-align:center;font-size:14px;display:none;gap:10px;justify-content:center;align-items:center;box-shadow:0 -2px 12px rgba(0,0,0,.18)}
 #update_tip button{background:#fff;color:var(--warn);border:none;border-radius:6px;padding:8px 14px;font-size:13px;font-weight:600;min-height:34px}
 #update_tip button.ghost{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.75);font-weight:500}
+#off_tip{position:fixed;left:0;right:0;bottom:56px;z-index:300;background:#b91c1c;color:#fff;padding:10px 14px;text-align:center;font-size:13px;display:none;gap:10px;justify-content:center;align-items:center;line-height:1.5}
+#off_tip button{background:#fff;color:#b91c1c;border:none;border-radius:6px;padding:8px 14px;font-size:13px;font-weight:600;min-height:34px;flex:0 0 auto}
 header{position:sticky;top:0;z-index:50;background:#111;color:#fff;padding:10px 14px;display:flex;align-items:center;gap:10px}
 header h1{font-size:17px;flex:1}
 .netdot{width:10px;height:10px;border-radius:50%;background:var(--ok)}
@@ -102,6 +104,7 @@ progress{width:100%;height:10px;margin-top:8px}
 </head>
 <body>
 <div id="update_tip">🔄 有新版本 <button id="update_now">立即更新</button><button id="update_later" class="ghost">稍后</button></div>
+<div id="off_tip">⚠️ 离线副本未就绪，断网会打不开 <button id="off_fix">现在缓存</button></div>
 <header>
   <span class="netdot" id="netdot" title="网络状态"></span>
   <h1>ECOBOX矿区考察记录本</h1>
@@ -314,12 +317,18 @@ progress{width:100%;height:10px;margin-top:8px}
       </p>
     </div>
     <div class="card">
-      <h3>🔄 版本更新</h3>
-      <button class="btn secondary block" id="btn_update">检查并强制更新到最新版</button>
-      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：20261109-1140</p>
+      <h3>📥 离线可用（出发前看这里）</h3>
+      <p id="off_stat" style="font-size:13px;line-height:1.7;color:var(--muted)">检查中…</p>
+      <button class="btn primary block" id="btn_off_cache">📥 立即缓存到本机（联网时）</button>
+      <p style="font-size:12px;color:var(--muted);margin-top:6px;line-height:1.6">缓好之后，关掉软件、飞行模式、完全没信号都能直接打开。换手机/清过浏览器数据后要重新缓存一次。</p>
     </div>
     <div class="card">
-      <p style="font-size:11px;color:var(--muted);text-align:center">20261109-1140</p>
+      <h3>🔄 版本更新</h3>
+      <button class="btn secondary block" id="btn_update">检查并强制更新到最新版</button>
+      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：20261109-1141</p>
+    </div>
+    <div class="card">
+      <p style="font-size:11px;color:var(--muted);text-align:center">20261109-1141</p>
       <h3>🗑 危险操作</h3>
       <button class="btn danger block" id="btn_wipe">🔒 清空本机全部数据（需密码）</button>
     </div>
@@ -646,7 +655,7 @@ document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
   store.set("cur_page",b.dataset.pg); // 刷新后回到当前页
   if(b.dataset.pg!=="pg-map"){pickMode=false;pickPreview=null;if(map)map.draw();$("picktip").classList.add("hidden");$("pickbar").classList.add("hidden")}
   if(b.dataset.pg==="pg-map"){viewTrip=null;initMap()}
-  if(b.dataset.pg==="pg-set")renderSetStats();
+      if(b.dataset.pg==="pg-set"){renderSetStats();renderOffStat();}
   window.scrollTo(0,0);
 });
 
@@ -1418,6 +1427,7 @@ $("btn_synctest").onclick=async()=>{
     else toast("连接失败 "+r.status)}catch(e){toast("连接失败："+e.message)}
 };
 async function forceAppUpdate(){
+  if(!navigator.onLine){toast("现在没网：清完缓存就打不开了，请连网再点",7000);return}
   toast("正在清理缓存并更新…");
   try{const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)));
     const rs=await navigator.serviceWorker.getRegistrations();await Promise.all(rs.map(r=>r.unregister()));}catch(e){}
@@ -2220,7 +2230,7 @@ if(!isStandalone){
 }
 
 /* ============ 版本检查：发布新版本后自动弹「更新」按钮 ============ */
-const APP_VER="20261109-1140";
+const APP_VER="20261109-1141";
 let updateDismissed=false;
 function showUpdateTip(){if(updateDismissed)return;const t=$("update_tip");if(t)t.style.display="flex";}
 async function checkUpdate(){
@@ -2254,8 +2264,68 @@ setInterval(checkUpdate,5*60*1000);
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")checkUpdate()});
 addEventListener("online",checkUpdate);
 
-/* ============ Service Worker：缓存页面本体，离线可打开 ============ */
-if("serviceWorker" in navigator&&location.protocol==="https:"){
+/* ============ Service Worker：页面本体缓存到本机，断网必开 ============ */
+const SW_OK="serviceWorker" in navigator&&(location.protocol==="https:"||["localhost","127.0.0.1"].includes(location.hostname));
+async function offState(){
+  const st={supported:SW_OK,active:false,ctrl:false,bytes:0,at:0};
+  if(!SW_OK)return st;
+  try{
+    const reg=await navigator.serviceWorker.getRegistration();
+    st.active=!!(reg&&reg.active);st.ctrl=!!navigator.serviceWorker.controller;
+  }catch(e){}
+  try{
+    for(const name of await caches.keys()){
+      const c=await caches.open(name);
+      const hit=await c.match("sampling_helper.html",{ignoreSearch:true});
+      if(!hit)continue;
+      const at=+(hit.headers.get("X-Cached-At")||0)||0;
+      const size=(await hit.clone().text()).length;
+      if(size>st.bytes&&at>=st.at){st.bytes=size;st.at=at}
+    }
+  }catch(e){}
+  return st;
+}
+async function renderOffStat(){
+  const st=await offState();
+  const el=$("off_stat"),tip=$("off_tip");
+  const kb=Math.round(st.bytes/1024);
+  const when=st.at?new Date(st.at).toLocaleString("zh-CN",{month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"}):"";
+  if(el)el.innerHTML=st.bytes>20000
+    ? `✅ <b style="color:var(--ok)">离线已就绪</b>：页面 ${kb} KB 存在本机${when?`（更新于 ${when}）`:""}。关掉软件、飞行模式、没信号都能直接打开。`
+    : st.supported
+      ? `⚠️ <b style="color:var(--danger)">离线未就绪</b>：本机还没有页面副本，现在断网打不开。请联网点下面的按钮。`
+      : `⚠️ 当前环境不支持离线缓存（要用 https 打开，或从主屏幕图标进入）。`;
+  if(tip&&st.bytes>20000)tip.style.display="none";
+  return st;
+}
+async function cacheAllNow(quiet){
+  const b=$("btn_off_cache");
+  if(!SW_OK){if(!quiet)toast("这个浏览器不支持离线缓存（需 https 打开）",6000);return false}
+  if(!navigator.onLine){if(!quiet)toast("现在没网：先联网再点一次",6000);return false}
+  if(b){b.disabled=true;b.textContent="⏳ 缓存中…"}
+  try{
+    try{if(navigator.storage&&navigator.storage.persist)await navigator.storage.persist()}catch(e){}
+    const reg=await navigator.serviceWorker.ready;
+    const sw=reg.active||navigator.serviceWorker.controller;
+    if(!sw)throw new Error("后台服务未就绪");
+    const done=new Promise(res=>{
+      const t=setTimeout(()=>res(false),30000);
+      navigator.serviceWorker.addEventListener("message",ev=>{
+        if(ev.data&&ev.data.type==="CACHE_ALL_DONE"){clearTimeout(t);res(!!ev.data.ok)}
+      },{once:true});
+    });
+    sw.postMessage("CACHE_ALL");
+    await done;
+    const st=await renderOffStat();
+    const ok=st.bytes>20000;
+    if(!quiet)toast(ok?`✅ 离线已就绪（${Math.round(st.bytes/1024)} KB）：现在断网也能打开`:"⚠️ 还没缓存好，请保持联网再等一会儿",6000);
+    return ok;
+  }catch(e){
+    if(!quiet)toast("缓存失败："+(e&&e.message||e),7000);
+    return false;
+  }finally{if(b){b.disabled=false;b.textContent="📥 立即缓存到本机（联网时）"}}
+}
+if(SW_OK){
   const hadSWController=!!navigator.serviceWorker.controller; // 首次安装不算「有新版本」
   navigator.serviceWorker.register("sampling_sw.js",{updateViaCache:"none"}).then(reg=>{
     reg.addEventListener('updatefound',()=>{
@@ -2265,17 +2335,24 @@ if("serviceWorker" in navigator&&location.protocol==="https:"){
         if(w.state==='installed'&&hadSWController)showUpdateTip();
       });
     });
-    // 进入页面后主动检查一次更新
     setTimeout(()=>reg.update(),2000);
     setInterval(()=>reg.update(),5*60*1000);
   }).catch(()=>{});
-  // 离线就绪自检：6 秒后 SW 还没激活，说明离线缓存没装上（离线打不开）
-  setTimeout(()=>{
-    navigator.serviceWorker.getRegistration().then(r=>{
-      if(!r||!r.active)toast("⚠️ 离线缓存还没装好：请联网保持本页打开约30秒，之后没网也能打开",9000);
-    }).catch(()=>{});
-  },6000);
+  // 启动自检：没缓存就自动补一次；补不上就亮红条，别让人到野外才发现打不开
+  const offCheck=async()=>{
+    const st=await renderOffStat();
+    if(st.bytes>20000)return;
+    if(navigator.onLine&&await cacheAllNow(true))return;
+    const tip=$("off_tip"),up=$("update_tip");
+    if(tip&&(!up||up.style.display!=="flex"))tip.style.display="flex";
+  };
+  setTimeout(offCheck,5000);
+  setTimeout(offCheck,25000);
+  addEventListener("online",()=>{renderOffStat();offCheck()});
+  addEventListener("offline",renderOffStat);
 }
+$("off_fix").onclick=()=>cacheAllNow(false);
+$("btn_off_cache").onclick=()=>cacheAllNow(false);
 
 /* ============ 记录人（一次登录，之后自动带入） ============ */
 const ACCOUNTS={frank:"123456",supeichang:"123456"};

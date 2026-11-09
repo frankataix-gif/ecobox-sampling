@@ -68,6 +68,19 @@
 
 版本号现在由 `build_public.py` 生成 `YYYYMMDD-NNNN`（`licences.html` 的 `PAGE_VER` 就是这种），`bump_version.py` 两种写法（`bYYYYMMDD-NNN` / `YYYYMMDD-NNNN`）都能识别并保持原格式；`version.txt` 与页面 `APP_VER` 必须一字不差，否则每次打开都误报「有新版本」。
 
+## 离线可用（2026-11 重构，动 SW 前必读）
+
+目标：**关掉软件、飞行模式、完全没信号，点图标就能进**。为达成这点，几条硬规则：
+
+- `sampling_sw.js` 的 `install` 必须真的把页面抓到：`fetchShell()` 用 `?_sw=` 拉一次，校验内容里有 `id="pg-form"` 和 `id="list_stat"`（防热点登录页/运营商劫持页被当成页面缓存），抓到才写缓存；**抓不到就 `throw`**，让新 SW 装不上、旧的继续顶着——宁可旧版本，也不能变成「没缓存」。
+- 页面本体存两份：当前版本缓存 `CACHE`（`sampling-vNN`）+ `sampling-shell`。`activate` 只删 `/^sampling-v\d+$/` 且不是当前的键，**永远不删 `sampling-shell`**；导航先读 `CACHE`、再读 `sampling-shell`，两边都丢才算没缓存。
+- 导航是**缓存优先**（断网秒开），后台 30 秒一次悄悄 `fetchShell()` 刷新；不再走「网络优先 + 8 秒超时」，因为弱网/热点环境下网络优先等于打不开。新版本靠 `version.txt` 探针 + 「立即更新」提示落地。
+- `MAIN_PAGE` 和裸目录 `BASE`（`/ecobox-sampling/`）都存同一份页面，`?r=`/`?t=` 之类参数用 `ignoreSearch:true` 匹配，任何入口都能打开。
+- 实在没缓存时返回一张内置的「还没存好离线副本」页（200），不是 503 纯文本——至少能看懂、能点重试。
+- 页面侧：`offState()` 扫所有缓存确认页面本体在不在，设置页「📥 离线可用」显示「已就绪（xx KB，更新时间）」/「未就绪」；未就绪时启动自动补一次，补不上在底部导航上方亮**红条**「离线副本未就绪」+「现在缓存」按钮；`cacheAllNow()` 走 `postMessage("CACHE_ALL")` → SW 回 `CACHE_ALL_DONE`，先请求 `navigator.storage.persist()` 降低被回收概率。
+- `forceAppUpdate()`（设置页「强制更新」）与 `clear.html` 都会清空缓存 + 注销 SW，**离线时一律拒绝执行**；`clear.html` 清完还要先确认能重新下载到页面才跳转。
+- 回归测试：`t_offline_guard.py`（联网装机 → 断网冷启动带参数/裸目录 → 删掉主缓存只留 shell → 回网一键修复 → 再断网），`t_offline_cold.py` 可直接打线上地址复核。
+
 ## 地质图层（QGIS → 网页，2026-11）
 
 - 导出脚本：`devtools/export_qgis.py`，用 `"C:\Program Files\QGIS 4.2.2\bin\python-qgis.bat"` 跑，**只读** gpkg，不碰 `.qgz`。

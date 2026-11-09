@@ -23,6 +23,10 @@
   <script>
     document.getElementById("go").onclick = async () => {
       const st = document.getElementById("status");
+      if (!navigator.onLine) {
+        st.textContent = "现在没网：清完就打不开了，请连网后再点。";
+        return;
+      }
       st.textContent = "正在清理…";
       try {
         if ("caches" in window) {
@@ -36,6 +40,13 @@
         st.textContent = "清理完成，正在跳转…";
       } catch (e) {
         st.textContent = "清理出错，请手动删除 App 后重装";
+        return;
+      }
+      // 清完必须确认还能重新下载到页面，否则断网就彻底打不开了
+      const ok = await fetch("./sampling_helper.html?_=" + Date.now(), { cache: "no-store" })
+        .then(r => r.ok).catch(() => false);
+      if (!ok) {
+        st.textContent = "缓存已清理，但网络不稳定：请保持联网重新打开页面并停留 30 秒。";
         return;
       }
       setTimeout(() => {
