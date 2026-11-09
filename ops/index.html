@@ -1,0 +1,1275 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<title>ECOBOX 工作台</title>
+<style>
+:root{--bg:#f4f5f6;--card:#fff;--card2:#fafbfb;--chip:#eceeef;--ink:#111827;--mut:#6b7280;--line:#e2e5e8;--teal:#111111;--teal2:#111111;--tealsoft:#111111;--tealborder:#111111;--bar:#000;--good:#047857;--blue:#1d4ed8;--warn:#b45309;--bad:#b91c1c}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans SC",sans-serif}
+a{color:var(--teal)}
+.wrap{max-width:980px;margin:0 auto;padding:0 12px 90px}
+.bar{position:sticky;top:0;z-index:9;background:var(--card);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;padding:10px 12px;margin:0 -12px 12px}
+.bar b{font-size:16px}
+.bar .sp{flex:1}
+.chip{font-size:12px;color:var(--mut);background:var(--chip);border-radius:999px;padding:3px 9px}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--card);border-radius:9px;padding:8px 12px}
+button.pri{background:var(--teal);border-color:var(--teal);color:#fff}
+button.ghost{background:transparent}
+button.danger{color:var(--bad);border-color:var(--bad)}
+button:disabled{opacity:.55;cursor:default}
+nav{display:flex;gap:6px;overflow:auto;margin-bottom:12px}
+nav button{flex:0 0 auto;border-radius:999px;padding:7px 14px;color:var(--mut)}
+nav button.on{background:var(--tealsoft);border-color:var(--tealborder);color:var(--teal2);font-weight:600}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+.card h3{margin:0 0 10px;font-size:15px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px}
+.kpi i{display:block;font-style:normal;font-size:12px;color:var(--mut)}
+.kpi b{font-size:22px;letter-spacing:.5px}
+label{display:block;font-size:12px;color:var(--mut);margin:10px 0 4px}
+input,select,textarea{width:100%;font:inherit;padding:9px 10px;border:1px solid var(--line);border-radius:9px;background:var(--card)}
+textarea{min-height:64px;resize:vertical}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+@media(max-width:560px){.row3{grid-template-columns:1fr 1fr}}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th,td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--mut);font-weight:600;font-size:12px}
+td.n{text-align:right;font-variant-numeric:tabular-nums}
+.mut{color:var(--mut);font-size:12.5px}
+.pill{display:inline-block;font-size:11.5px;padding:2px 8px;border-radius:999px;background:var(--chip);color:var(--ink)}
+.pill.me{background:var(--tealsoft);color:var(--teal2)}
+.hide{display:none!important}
+#setup,#login{max-width:380px;margin:8vh auto;padding:0 12px}
+#setup .card,#login .card{padding:20px}
+#setup h1,#login h1{font-size:19px;margin:0 0 4px}
+.err{color:var(--bad);font-size:13px;min-height:18px;margin-top:8px}
+.ok{color:var(--teal2);font-size:13px;min-height:18px}
+.acts{display:flex;gap:8px;flex-wrap:wrap}
+.empty{color:var(--mut);text-align:center;padding:18px 0}
+
+.mods{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:10px}
+.mod{display:block;width:100%;text-align:left;font:inherit;text-decoration:none;color:inherit;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px 12px}
+.mod:hover{border-color:var(--tealborder)}
+.mod:active{background:var(--card2)}
+.mod i{font-style:normal;font-size:21px;display:block;margin-bottom:6px;line-height:1}
+.mod b{display:block;font-size:14.5px;font-weight:600}
+.mod span{display:block;font-size:11.5px;color:var(--mut);margin-top:3px;line-height:1.35}
+.sec{margin:18px 0 8px;font-size:12px;color:var(--mut);font-weight:700;letter-spacing:.6px}
+.hello{margin:4px 0 2px;font-size:15px}
+/* 目录磁贴：未开放的模块 */
+.mod.soon{opacity:.55;cursor:default;position:relative}
+.mod.soon em{position:absolute;top:8px;right:8px;font-style:normal;font-size:11px;padding:2px 6px;border-radius:6px;background:var(--chip);color:var(--mut)}
+.mod.soon b,.mod.soon span{color:var(--mut)}
+
+/* ---------- 财务 ---------- */
+.fin-kpi{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:10px}
+.fin-kpi>div{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.fin-kpi b{display:block;font-size:17px;margin-top:2px}
+.fin-kpi span{font-size:12px;color:var(--mut)}
+.fin-bar{display:flex;gap:8px;align-items:center;margin:10px 0}
+.fin-bar select{flex:1;padding:8px;border:1px solid var(--line);border-radius:10px;background:var(--card)}
+.fin-list{display:flex;flex-direction:column;gap:8px}
+.fin-row{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;gap:10px;align-items:flex-start}
+.fin-row .d{font-size:12px;color:var(--mut);min-width:44px}
+.fin-row .m{flex:1;min-width:0}
+.fin-row .m b{font-size:15px}
+.fin-row .m p{margin:2px 0 0;font-size:12px;color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fin-row .a{text-align:right;font-weight:700;white-space:nowrap}
+.fin-row .a small{display:block;font-weight:400;font-size:11px;color:var(--mut)}
+.fin-row img{width:38px;height:38px;object-fit:cover;border-radius:8px;margin-top:4px;border:1px solid var(--line)}
+.fin-out .a{color:var(--bad)}.fin-in .a{color:var(--good)}.fin-float .a{color:var(--blue)}
+.fin-sheet{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-radius:16px 16px 0 0;box-shadow:0 -8px 30px rgba(0,0,0,.18);padding:14px;z-index:60;max-height:88vh;overflow:auto}
+.fin-sheet h3{margin:0 0 10px;font-size:15px}
+.fin-sheet label{display:block;font-size:12px;color:var(--mut);margin:8px 0 3px}
+.fin-sheet input,.fin-sheet select,.fin-sheet textarea{width:100%;padding:9px;border:1px solid var(--line);border-radius:10px;font:inherit;background:var(--card)}
+.fin-sheet .r{display:flex;gap:8px}
+.fin-sheet .r>*{flex:1}
+.fin-sheet .ph{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.fin-sheet .ph img{width:56px;height:56px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
+.fin-dim{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:55}
+.fin-acct{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:8px}
+.fin-acct .n{font-weight:600}
+.fin-acct .g{display:flex;gap:8px;margin-top:6px}
+.fin-acct .g>div{flex:1}
+.fin-acct input{width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:8px;font:inherit}
+
+/* ---------- 手机适配 ---------- */
+.fin-fab{display:none;position:fixed;right:16px;bottom:calc(18px + env(safe-area-inset-bottom));z-index:50;align-items:center;gap:6px;background:var(--teal);color:#fff;border:none;border-radius:999px;padding:14px 20px;font-weight:600;font-size:15px;box-shadow:0 8px 24px rgba(15,118,110,.35)}
+@media(max-width:640px){
+  .wrap{padding:0 10px calc(96px + env(safe-area-inset-bottom))}
+  .bar{padding:calc(10px + env(safe-area-inset-top)) 10px 10px;margin:0 -10px 10px;gap:8px;flex-wrap:wrap}
+  .bar b{font-size:15px}
+  nav{gap:4px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:2px 10px;margin:0 -10px 10px}
+  nav::-webkit-scrollbar{display:none}
+  nav button{padding:9px 15px;font-size:14px}
+  input,select,textarea{font-size:16px;padding:11px 10px}
+  button{min-height:42px}
+  .row,.row3{grid-template-columns:1fr}
+  .grid{grid-template-columns:1fr 1fr;gap:8px}
+  .kpi b{font-size:19px}
+  .mods{grid-template-columns:1fr 1fr;gap:8px}
+  .mod{padding:12px 10px}
+  .mod i{font-size:19px}
+  .mod b{font-size:14px}
+  .card{padding:12px;border-radius:12px}
+  #pane table{display:block;overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch}
+  #pane th,#pane td{padding:8px 6px}
+  .fin-kpi{gap:8px}
+  .fin-kpi b{font-size:16px}
+  .fin-bar{flex-wrap:wrap;gap:8px}
+  .fin-bar select{font-size:16px;padding:10px}
+  #fin_addbar{display:none}
+  .fin-fab{display:flex}
+  .fin-row{padding:11px 10px;gap:8px}
+  .fin-row .m b{font-size:15px}
+  .fin-row .a{font-size:15px}
+  .fin-row img{width:46px;height:46px}
+  .fin-row .d{min-width:40px;font-size:12px}
+  .fin-acct{padding:12px}
+  .fin-acct .g{gap:10px}
+  .fin-sheet{padding:14px 14px calc(16px + env(safe-area-inset-bottom));border-radius:18px 18px 0 0;max-height:92vh}
+  .fin-sheet button{min-height:46px}
+  .fin-sheet input,.fin-sheet select,.fin-sheet textarea{font-size:16px;padding:11px 10px}
+  .fin-dim img{max-width:100%}
+}
+@media(max-width:380px){.fin-kpi{grid-template-columns:1fr}.mods{grid-template-columns:1fr}}
+
+#back{margin:0 2px 0 -4px;padding:6px 10px;font-size:18px;line-height:1;border-color:transparent}
+button.chip{border:1px solid var(--line);background:var(--chip);color:var(--mut);max-width:46vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+button.chip:active{background:var(--tealsoft);color:var(--teal2)}
+@media(max-width:640px){#back{min-width:42px;min-height:42px;font-size:20px;border:none;background:transparent}}
+
+/* ---------- 操作提示（常驻，不自动消失） ---------- */
+.toastbar{position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom));transform:translate(-50%,14px);z-index:90;background:#0f766e;color:#fff;padding:14px 22px;border-radius:14px;font-size:15px;font-weight:600;line-height:1.35;box-shadow:0 14px 40px rgba(0,0,0,.35);opacity:0;transition:opacity .18s,transform .18s;width:min(92vw,420px);text-align:center;cursor:pointer;user-select:none;border:2px solid rgba(255,255,255,.35)}
+.toastbar:before{content:"✓ ";font-weight:700}
+.toastbar.on{opacity:1;transform:translate(-50%,0)}
+.toastbar.bad{background:var(--bad)}
+.toastbar.bad:before{content:"! "}
+@media(max-width:640px){.toastbar{bottom:calc(86px + env(safe-area-inset-bottom))}}
+
+/* ---------- 更新提示（浮在表面，不进布局） ---------- */
+.updbar{display:none;position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom));transform:translate(-50%,16px);z-index:95;background:#0f766e;color:#fff;border:2px solid rgba(255,255,255,.35);border-radius:999px;padding:12px 20px;font:inherit;font-size:14px;font-weight:600;line-height:1.25;box-shadow:0 12px 34px rgba(0,0,0,.32);max-width:92vw;text-align:center;opacity:0;transition:opacity .16s,transform .16s;pointer-events:none}
+.updbar.show{display:block;pointer-events:auto}
+.updbar.in{opacity:1;transform:translate(-50%,0)}
+.updbar.bad{background:var(--bad)}
+@media(max-width:640px){.updbar{bottom:calc(86px + env(safe-area-inset-bottom))}}
+
+/* ---------- 动态 ---------- */
+#fd_body{width:100%;box-sizing:border-box;border:1px solid var(--line,var(--line));border-radius:11px;padding:10px 12px;font:inherit;font-size:16px;line-height:1.5;resize:vertical;background:var(--card);color:inherit}
+.fd-post{margin:0 0 10px}
+.fd-h{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.fd-h b{font-size:14.5px}
+.fd-h .mut{font-size:12px}
+.fd-h .ghost{margin-left:auto;font-size:18px;line-height:1}
+.fd-b{font-size:15px;line-height:1.55;white-space:pre-wrap;word-break:break-word}
+.fd-post .ph{margin-top:8px;display:flex;flex-wrap:wrap;gap:6px}
+.fd-post .ph img,.fd-new .ph img{width:auto;height:104px;border-radius:9px;object-fit:cover;background:var(--card2)}
+
+/* ---------- 黑白：顶部黑 / 内容白 / 按钮黑白 ---------- */
+.bar{background:var(--bar);border-bottom:1px solid #000;color:#fff}
+.bar b{color:#fff}
+.bar #back{color:#fff}
+.bar .chip{background:rgba(255,255,255,.14);color:#e9edf0}
+nav button{background:#fff;color:#4b5563;border-color:var(--line)}
+nav button.on{background:#111;border-color:#111;color:#fff;font-weight:600}
+button.pri{background:#111;border-color:#111;color:#fff}
+button.pri:hover{background:#000}
+.mod:hover{border-color:#111}
+.pill{background:var(--chip);color:#374151}
+.pill.me{background:#111;color:#fff}
+.updbar{background:#111;color:#fff;border-color:#000}
+.updbar.ok{background:#047857;color:#fff}
+.updbar.bad{background:#b91c1c;color:#fff}
+.fin-fab{background:#111;color:#fff}
+.fin-dim{background:rgba(0,0,0,.45)}
+.ok{color:var(--good)}
+a{color:#111}
+/* ---------- 动态卡片流（参考 docs App） ---------- */
+.fd-top{display:flex;align-items:baseline;justify-content:space-between;margin:2px 0 10px}
+.fd-title{font-size:16px;font-weight:700}
+.fd-fab{position:fixed;right:16px;bottom:26px;width:54px;height:54px;border-radius:50%;background:#111;color:#fff;font-size:26px;line-height:1;border:0;box-shadow:0 8px 22px rgba(0,0,0,.28);z-index:40}
+.fd-fab:active{background:#000;transform:scale(.96)}
+.fd-post{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:10px}
+.fd-h{display:flex;align-items:center;gap:10px}
+.fd-av{width:36px;height:36px;border-radius:50%;background:#111;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex:0 0 auto}
+.fd-meta{flex:1;min-width:0}
+.fd-meta b{display:block;font-size:14.5px}
+.fd-meta span{font-size:11.5px;color:var(--mut)}
+.fd-more{background:transparent;border:0;color:#6b7280;font-size:17px;padding:0 4px;letter-spacing:1px;line-height:1}
+.fd-b{margin-top:8px;white-space:pre-wrap;word-break:break-word;font-size:14.5px;line-height:1.62}
+.fd-media{display:grid;gap:4px;margin-top:8px}
+.fd-media.g1{grid-template-columns:1fr}
+.fd-media.g2{grid-template-columns:1fr 1fr}
+.fd-media.g3{grid-template-columns:repeat(3,1fr)}
+.fd-tile{position:relative;padding:0;border:0;background:#eef1f2;border-radius:8px;overflow:hidden;cursor:pointer;aspect-ratio:1/1;display:block;width:100%}
+.fd-media.g1 .fd-tile{aspect-ratio:4/3}
+.fd-tile img,.fd-tile video{width:100%;height:100%;object-fit:cover;display:block}
+.fd-play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;background:rgba(0,0,0,.22)}
+.fd-more-n{position:absolute;inset:0;background:rgba(0,0,0,.45);color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600}
+.fd-acts{display:flex;gap:16px;margin-top:10px;border-top:1px solid var(--line);padding-top:8px}
+.fd-acts button{background:transparent;border:0;color:#4b5563;font-size:13px;padding:0}
+.fd-acts button.on{color:#e11d48;font-weight:600}
+.fd-comments{margin-top:8px;background:#f7f8f8;border-radius:10px;padding:8px}
+.fd-c{font-size:13px;line-height:1.55;padding:2px 0;display:flex;gap:6px;align-items:flex-start}
+.fd-c b{color:#111;flex:0 0 auto}
+.fd-c span{flex:1;word-break:break-word}
+.fd-c .x{margin-left:auto;border:0;background:transparent;color:#9aa3a8;font-size:13px;padding:0 2px;flex:0 0 auto}
+.fd-cin{display:flex;gap:6px;margin-top:6px}
+.fd-cin input{flex:1;padding:7px 9px;border-radius:8px;border:1px solid var(--line);font-size:13px;background:#fff}
+.fd-cin button{padding:6px 10px;font-size:13px}
+.fd-sheet{position:fixed;left:0;right:0;bottom:0;background:#fff;border-radius:16px 16px 0 0;box-shadow:0 -8px 30px rgba(0,0,0,.2);padding:14px;z-index:70;max-height:88vh;overflow:auto}
+.fd-sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.fd-sh h3{margin:0;font-size:15px}
+.fd-sh button{background:transparent;border:0;color:var(--mut);font-size:13px}
+.fd-sheet textarea{width:100%;min-height:92px;border:1px solid var(--line);border-radius:10px;padding:9px;font:inherit;background:#fff;resize:vertical}
+.fd-thumbs{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.fd-thumbs .t{position:relative}
+.fd-thumbs img,.fd-thumbs video{width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
+.fd-thumbs .x{position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:#111;color:#fff;border:0;font-size:12px;line-height:18px;padding:0}
+.fd-menu{position:fixed;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 10px 26px rgba(0,0,0,.16);padding:6px;z-index:80;min-width:120px}
+.fd-menu button{display:block;width:100%;text-align:left;border:0;background:transparent;padding:8px 10px;font-size:14px;border-radius:8px}
+.fd-menu button:hover{background:#f3f4f5}
+.fd-menu button.dz{color:#b91c1c}
+.fd-dim{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:65}
+.fd-view{position:fixed;inset:0;background:rgba(0,0,0,.93);z-index:90;display:flex;align-items:center;justify-content:center;cursor:zoom-out}
+.fd-view img,.fd-view video{max-width:96vw;max-height:92vh}
+</style>
+</head>
+<body>
+
+<div id="setup" class="hide">
+  <div class="card">
+    <h1>ecobox 初始化</h1>
+    <p class="mut">第一次使用：用部署时给出的「初始化口令」建第一个管理员账号。</p>
+    <form id="sf">
+      <label>初始化口令</label><input id="s_token" autocomplete="off" required>
+      <div class="row"><div><label>姓名</label><input id="s_name" required></div><div><label>账号（可留空，默认用姓名）</label><input id="s_login" autocomplete="username" placeholder="邮箱 / 手机号 / 姓名"></div></div>
+      <label>密码（≥8 位）</label><input id="s_pass" type="password" autocomplete="new-password" required>
+      <div class="err" id="s_err"></div>
+      <button class="pri" style="width:100%;margin-top:6px">创建管理员</button>
+    </form>
+  </div>
+</div>
+
+<div id="login" class="hide">
+  <div class="card">
+    <h1>ecobox 经营台账</h1>
+    <p class="mut">赞比亚公司日常经营管理 · 每人一个账号</p>
+    <form id="lf">
+      <label>账号</label><input id="l_login" type="text" autocomplete="username" required placeholder="邮箱 / 手机号 / 姓名">
+      <label>密码</label><input id="l_pass" type="password" autocomplete="current-password" required>
+      <div class="err" id="l_err"></div>
+      <button class="pri" style="width:100%;margin-top:6px">登录</button>
+    </form>
+    <p class="mut" style="margin:12px 0 0">还没有账号？找管理员开通。</p>
+  </div>
+</div>
+
+<div id="app" class="hide">
+  <div class="wrap">
+    <div class="bar">
+      <button class="ghost hide" id="back" aria-label="返回目录">←</button>
+      <b id="ttl">ECOBOX</b><span class="chip" id="who"></span><span class="sp"></span>
+    </div>
+    <nav id="tabs"></nav>
+    <div id="pane"></div>
+  </div>
+</div>
+
+<div id="moddlg" class="hide" style="position:fixed;inset:0;background:rgba(15,23,42,.45);display:flex;align-items:center;justify-content:center;padding:16px;z-index:50">
+  <div class="card" id="modbox" style="max-width:460px;width:100%;max-height:85vh;overflow:auto;margin:0"></div>
+</div>
+
+<button id="updbar" class="updbar" type="button"></button>
+
+<script>
+const BUILD = "__BUILD__";
+const S = { user: null, tab: "status", logs: [], users: [], from: "", to: "", editId: 0 };
+const $ = (s, r = document) => r.querySelector(s);
+const esc = (v) => String(v == null ? "" : v).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const iso = (d) => d.toISOString().slice(0, 10);
+const money = (v) => (v == null ? "-" : (+v).toLocaleString("en-US", { maximumFractionDigits: 2 }));
+const num = (v, d = 3) => (v == null ? "-" : (+v).toLocaleString("en-US", { maximumFractionDigits: d }));
+const SITES = ["Serenje 1330NW", "Chitambo 1230SE", "Kalomo", "Lusaka 办公室"];
+
+/* ---------- 操作提示 ---------- */
+function showUpd(msg, kind) {
+  const b = document.getElementById("updbar");
+  if (!b) return;
+  b.textContent = (kind === "bad" ? "✗ " : "✓ ") + msg;
+  b.className = "updbar show " + (kind === "bad" ? "bad" : "ok");
+  requestAnimationFrame(() => b.classList.add("in"));
+}
+
+function hideUpd() {
+  const b = document.getElementById("updbar");
+  if (!b) return;
+  b.classList.remove("in");
+  setTimeout(() => { if (!b.classList.contains("in")) b.classList.remove("show"); }, 200);
+}
+
+function toast(msg, kind = "good") {
+  showUpd(msg, kind);
+}
+
+function resetUpdbar() { hideUpd(); }
+
+async function api(path, opts = {}) {
+  const r = await fetch("/api" + path, {
+    method: opts.method || "GET",
+    headers: { ...(opts.body ? { "content-type": "application/json" } : {}), ...(opts.headers || {}) },
+    body: opts.body ? JSON.stringify(opts.body) : undefined,
+    credentials: "same-origin",
+  });
+  let data = {};
+  try { data = await r.json(); } catch {}
+  if (r.status === 401 && path !== "/me") { showLogin(); throw new Error(data.error || "请先登录"); }
+  if (!r.ok) throw new Error(data.error || "请求失败 " + r.status);
+  if (opts.method && opts.method !== "GET" && !opts.quiet && !/^\/(login|logout|setup)\b/.test(path)) {
+    const txt = opts.toast || (opts.method === "DELETE" ? "已删除" : "已保存");
+    toast(txt + " · " + new Date().toTimeString().slice(0, 5));
+  }
+  return data;
+}
+
+function showLogin() {
+  S.user = null;
+  $("#setup").classList.add("hide");
+  $("#app").classList.add("hide");
+  $("#login").classList.remove("hide");
+  $("#l_pass").value = "";
+}
+function showSetup() {
+  $("#login").classList.add("hide");
+  $("#app").classList.add("hide");
+  $("#setup").classList.remove("hide");
+}
+async function showApp() {
+  $("#login").classList.add("hide");
+  $("#app").classList.remove("hide");
+  $("#who").textContent = S.user.name + (S.user.role === "admin" ? " · 管理员" : S.user.role === "manager" ? " · 负责人" : "");
+  try { MODS = (await api("/modules")).modules || []; } catch (e) { if (!MODS.length) MODS = []; }
+  const tabs = [["status", "状态"], ["home", "目录"]];
+  for (const g of GROUPS) {
+    const ms = groupMods(g);
+    if (g !== "系统" && !ms.length) continue;
+    tabs.push(["g:" + g, g]);
+  }
+  $("#tabs").innerHTML = tabs.map(([k, t]) => `<button data-tab="${k}" class="${S.tab === k ? "on" : ""}">${t}</button>`).join("");
+  $("#tabs").onclick = (e) => {
+    const b = e.target.closest("[data-tab]");
+    if (!b) return;
+    enterApp(b.dataset.tab);
+  };
+  $("#updbar").onclick = async () => {
+    const b = $("#updbar");
+    b.textContent = "刷新中…";
+    b.className = "updbar show in";
+    try { await render(); showUpd("已刷新到最新"); }
+    catch (e) { showUpd(e.message, "bad"); }
+    setTimeout(hideUpd, 1000);
+  };
+  resetUpdbar();
+  render();
+}
+
+
+/* ---------- 目录 ---------- */
+let MODS = []; // 服务器 /api/modules 下发的模块目录
+const allowed = (k) =>
+  !!k && !!S.user && (S.user.role === "admin" || (S.user.modules || []).includes(k));
+const TAB_KEY = { board: "board", log: "log", users: "users", mine: "mine", fin: "finance" };
+
+function homeHtml() {
+  const hour = new Date().getHours();
+  const hi = hour < 11 ? "早上好" : hour < 14 ? "中午好" : hour < 18 ? "下午好" : "晚上好";
+  const groups = [];
+  const byG = {};
+  for (const m of MODS) {
+    if (!allowed(m.k) || m.navOnly) continue;
+    if (m.soon && S.user.role !== "admin") continue; // 还没做的先别给员工看
+    if (!byG[m.g]) { byG[m.g] = []; groups.push(m.g); }
+    byG[m.g].push(m);
+  }
+  const secs = groups.map((g) => {
+    const cards = byG[g].map((x) => {
+      if (x.soon) return `<div class="mod soon"><i>${x.i}</i><b>${esc(x.t)}</b><span>${esc(x.d)}</span><em>待开放</em></div>`;
+      return x.tab
+        ? `<button class="mod" data-go="${x.tab}"><i>${x.i}</i><b>${esc(x.t)}</b><span>${esc(x.d)}</span></button>`
+        : `<a class="mod" href="${x.u}"><i>${x.i}</i><b>${esc(x.t)}</b><span>${esc(x.d)}</span></a>`;
+    }).join("");
+    return `<div class="sec">${esc(g)}</div><div class="mods">${cards}</div>`;
+  }).join("");
+  return `<div class="hello">${hi}，${esc(S.user.name)}</div>
+    <div class="mut" style="margin-bottom:4px">选一个模块进去；手机可加到主屏，一个图标就是全部。</div>
+    ${secs || '<div class="empty">还没有可用模块，找管理员开通</div>'}`;
+}
+
+/* 管理员给某人勾模块 */
+function openModPicker(u) {
+  const has = u.modules || [];
+  const box = $("#modbox");
+  box.innerHTML = `<h3 style="margin:0 0 4px">${esc(u.name)} · 可用模块</h3>
+    <p class="mut" style="margin:0 0 8px">勾上的才会出现在这个人的目录里。${u.role === "admin" ? "管理员默认全开。" : ""}</p>
+    ${MODS.map((m) => `<label style="display:flex;align-items:center;gap:8px;margin:7px 0;font-size:14px;color:inherit">
+        <input type="checkbox" data-k="${m.k}" style="width:auto" ${has.includes(m.k) ? "checked" : ""} ${m.adminOnly || m.soon ? "disabled" : ""}>
+        <span>${m.i} ${esc(m.t)}</span><span class="mut" style="margin-left:auto;text-align:right">${m.soon ? "待开放" : esc(m.d)}</span>
+      </label>`).join("")}
+    <div class="err" id="mod_err"></div>
+    <div class="acts" style="margin-top:12px"><button class="pri" id="mod_save">保存</button><button class="ghost" id="mod_close">关闭</button></div>`;
+  $("#moddlg").classList.remove("hide");
+  $("#mod_close").onclick = () => $("#moddlg").classList.add("hide");
+  $("#mod_save").onclick = async () => {
+    $("#mod_err").textContent = "";
+    const keys = [...box.querySelectorAll("input[data-k]")].filter((x) => x.checked).map((x) => x.dataset.k);
+    try {
+      await patchUser(u.id, { modules: keys });
+      if (u.id === S.user.id) S.user = (await api("/me")).user;
+      S.users = (await api("/users")).users;
+      $("#moddlg").classList.add("hide");
+      await showApp();
+    } catch (e) { $("#mod_err").textContent = e.message; }
+  };
+}
+
+/* ---------- 看板 ---------- */
+async function loadBoard() {
+  if (!S.from) { const d = new Date(); S.from = iso(new Date(d.getFullYear(), d.getMonth(), 1)); S.to = iso(d); }
+  const [sum, ls] = await Promise.all([
+    api(`/summary?from=${S.from}&to=${S.to}`),
+    api(`/logs?from=${S.from}&to=${S.to}`),
+  ]);
+  S.logs = ls.logs;
+  return sum;
+}
+
+function boardHtml(sum) {
+  const t = sum.totals || {};
+  const siteRows = (sum.by_site || []).map((r) => `<tr><td>${esc(r.site)}</td><td class="n">${r.entries}</td><td class="n">${num(r.man_days, 0)}</td><td class="n">${num(r.ore_t, 1)}</td><td class="n">${money(r.cost_usd)}</td></tr>`).join("");
+  const recent = S.logs.slice(0, 12).map((l) => `<tr><td>${esc(l.day)}</td><td>${esc(l.site)}</td><td class="n">${num(l.ore_t, 1)}</td><td class="n">${num(l.headcount, 0)}</td><td>${esc(l.user_name)}</td></tr>`).join("");
+  return `<div class="card">
+    <div class="row" style="align-items:end">
+      <div><label>从</label><input type="date" id="f_from" value="${S.from}"></div>
+      <div><label>到</label><input type="date" id="f_to" value="${S.to}"></div>
+    </div>
+  </div>
+  <div class="grid">
+    <div class="kpi"><i>记录天数</i><b>${num(t.days, 0)}</b></div>
+    <div class="kpi"><i>人·天</i><b>${num(t.man_days, 0)}</b></div>
+    <div class="kpi"><i>矿石（吨）</i><b>${num(t.ore_t, 1)}</b></div>
+    <div class="kpi"><i>支出（USD）</i><b>${money(t.cost_usd)}</b></div>
+  </div>
+  <div class="card" style="margin-top:12px"><h3>按矿区</h3>
+    ${siteRows ? `<table><tr><th>矿区/项目</th><th>记录</th><th>人·天</th><th>矿石吨</th><th>USD</th></tr>${siteRows}</table>` : `<div class="empty">这段时间还没有记录</div>`}
+  </div>
+  <div class="card"><h3>最近记录</h3>
+    ${recent ? `<table><tr><th>日期</th><th>矿区</th><th>矿石</th><th>人数</th><th>录入</th></tr>${recent}</table>` : `<div class="empty">还没有记录</div>`}
+  </div>`;
+}
+
+/* ---------- 日报 ---------- */
+function logForm(l) {
+  const d = l || { day: iso(new Date()), site: S.user.site || SITES[0], shift: "白班", crew: "", headcount: "", ore_t: "", waste_t: "", grade: "", cost_usd: "", note: "" };
+  return `<div class="card">
+    <h3>${l ? "修改记录 #" + l.id : "新增日报"}</h3>
+    <div class="row">
+      <div><label>日期</label><input type="date" id="d_day" value="${esc(d.day)}"></div>
+      <div><label>矿区/项目</label><input id="d_site" list="sites" value="${esc(d.site)}"></div>
+    </div>
+    <datalist id="sites">${SITES.map((s) => `<option>${esc(s)}</option>`).join("")}</datalist>
+    <div class="row3">
+      <div><label>班次</label><select id="d_shift">${["白班", "夜班", "全天"].map((x) => `<option${x === d.shift ? " selected" : ""}>${x}</option>`).join("")}</select></div>
+      <div><label>班组</label><input id="d_crew" value="${esc(d.crew)}" placeholder="选填"></div>
+      <div><label>出勤人数</label><input id="d_people" type="number" min="0" step="1" value="${esc(d.headcount)}"></div>
+    </div>
+    <div class="row3">
+      <div><label>矿石（吨）</label><input id="d_ore" type="number" min="0" step="0.1" value="${esc(d.ore_t)}"></div>
+      <div><label>废石（吨）</label><input id="d_waste" type="number" min="0" step="0.1" value="${esc(d.waste_t)}"></div>
+      <div><label>支出（USD）</label><input id="d_cost" type="number" min="0" step="0.01" value="${esc(d.cost_usd)}"></div>
+    </div>
+    <label>品位 / 品级</label><input id="d_grade" value="${esc(d.grade)}" placeholder="例：Ta2O5 180 ppm">
+    <label>备注</label><textarea id="d_note" placeholder="今天做了什么、有什么问题">${esc(d.note)}</textarea>
+    <div class="err" id="d_err"></div>
+    <div class="acts" style="margin-top:10px">
+      <button class="pri" id="d_save">${l ? "保存修改" : "提交"}</button>
+      ${l ? `<button id="d_cancel">取消</button>` : ""}
+    </div>
+  </div>`;
+}
+
+function logListHtml() {
+  if (!S.logs.length) return `<div class="card"><div class="empty">这段时间还没有记录</div></div>`;
+  const rows = S.logs.slice(0, 60).map((l) => {
+    const mine = l.user_id === S.user.id;
+    return `<tr>
+      <td>${esc(l.day)}<div class="mut">${esc(l.site)} · ${esc(l.shift)}</div></td>
+      <td class="n">${num(l.ore_t, 1)}<div class="mut">${num(l.headcount, 0)} 人</div></td>
+      <td>${esc(l.note || "").slice(0, 40)}<div class="mut">${esc(l.user_name)}${mine ? ' <span class="pill me">我</span>' : ""}</div></td>
+      <td class="n" style="white-space:nowrap">
+        ${(mine || S.user.role !== "staff") ? `<button data-edit="${l.id}" style="padding:4px 8px">改</button> <button class="danger" data-del="${l.id}" style="padding:4px 8px">删</button>` : ""}
+      </td></tr>`;
+  }).join("");
+  return `<div class="card"><h3>记录（${S.logs.length}）</h3><table>
+    <tr><th>日期 / 矿区</th><th>矿石 / 人数</th><th>内容 / 录入</th><th></th></tr>${rows}</table></div>`;
+}
+
+/* ---------- 人员 ---------- */
+function usersHtml() {
+  const rows = S.users.map((u) => `<tr>
+    <td>${esc(u.name)}${u.active ? "" : ' <span class="pill">停用</span>'}<div class="mut">${esc(u.login)}</div></td>
+    <td><select data-role="${u.id}">${[["staff", "员工"], ["manager", "负责人"], ["admin", "管理员"]].map(([v, t]) => `<option value="${v}"${u.role === v ? " selected" : ""}>${t}</option>`).join("")}</select></td>
+    <td><input data-site="${u.id}" value="${esc(u.site)}" placeholder="矿区" style="padding:6px 8px"></td>
+    <td style="white-space:nowrap">
+      <button data-mods="${u.id}" style="padding:4px 8px">权限</button>
+      <button data-pwd="${u.id}" style="padding:4px 8px">改密码</button>
+      <button data-active="${u.id}" style="padding:4px 8px">${u.active ? "停用" : "启用"}</button>
+    </td></tr>`).join("");
+  return `<div class="card"><h3>新增账号</h3>
+    <div class="row"><div><label>姓名</label><input id="u_name"></div><div><label>账号</label><input id="u_login" placeholder="可留空，默认用姓名"></div></div>
+    <div class="row"><div><label>初始密码（≥8 位）</label><input id="u_pass" type="text"></div><div><label>角色</label><select id="u_role"><option value="staff">员工</option><option value="manager">负责人</option><option value="admin">管理员</option></select></div></div>
+    <div class="row"><div><label>矿区</label><input id="u_site" list="sites" placeholder="选填"></div><div><label>电话</label><input id="u_phone" placeholder="选填"></div></div>
+    <div class="ok" id="u_ok"></div><div class="err" id="u_err"></div>
+    <button class="pri" id="u_add" style="margin-top:8px">开通账号</button>
+  </div>
+  <div class="card"><h3>账号（${S.users.length}）</h3>
+    <table><tr><th>姓名</th><th>角色</th><th>矿区</th><th></th></tr>${rows}</table>
+    <p class="mut">员工只能改自己录的日报；负责人和管理员能改全部；只有管理员能管账号。</p>
+  </div>`;
+}
+
+/* ---------- 我的 ---------- */
+function mineHtml() {
+  return `<div class="card"><h3>我的账号</h3>
+    <table>
+      <tr><th>姓名</th><td>${esc(S.user.name)}</td></tr>
+      <tr><th>账号</th><td>${esc(S.user.login)}</td></tr>
+      <tr><th>角色</th><td>${S.user.role === "admin" ? "管理员" : S.user.role === "manager" ? "负责人" : "员工"}</td></tr>
+      <tr><th>矿区</th><td>${esc(S.user.site || "—")}</td></tr>
+      <tr><th>上次登录</th><td>${esc((S.user.last_login || "").slice(0, 16).replace("T", " ") || "—")}</td></tr>
+    </table></div>
+  <div class="card"><h3>改密码</h3>
+    <label>原密码</label><input id="p_old" type="password">
+    <label>新密码（≥8 位）</label><input id="p_new" type="password">
+    <div class="err" id="p_err"></div><div class="ok" id="p_ok"></div>
+    <button class="pri" id="p_save" style="margin-top:8px">保存</button>
+    <p class="mut">改完其它设备上的登录会失效，需要用新密码重登。</p>
+  </div>
+  <div class="card"><h3>关于</h3><p class="mut" style="margin:0">页面版本 ${esc(BUILD)}</p></div>
+  <div class="card"><h3>退出</h3>
+    <p class="mut" style="margin:0 0 8px">退出后需要重新用账号密码登录。</p>
+    <button class="danger" id="p_out" style="width:100%">退出登录</button>
+  </div>`;
+}
+
+
+/* ---------- 财务 ---------- */
+let FIN = null;
+let FINM = "";
+let FINPH = [];
+let FINWHO = ""; // "" = 我自己；"ALL" = 全部汇总；其它 = 某个人的账本
+try {
+  const v = JSON.parse(localStorage.getItem("ops_fin_view") || "{}");
+  if (v.month) FINM = v.month;
+  if (v.who) FINWHO = v.who;
+} catch (e) {}
+const saveFinView = () => {
+  try { localStorage.setItem("ops_fin_view", JSON.stringify({ who: FINWHO, month: FINM })); } catch (e) {}
+};
+const FIN_CAT_ZH = { transport: "交通", daily: "日常", postage: "邮费", office: "办公", tip: "小费", loan: "借款",
+  serenje: "塞伦杰项目", meal: "餐费", fuel: "加油", lodging: "住宿", comms: "通讯", misc: "杂费", pliving: "生活用品", other: "其它" };
+const finMoney = (n) => (Number(n) || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const finCatName = (k) => {
+  if (!k) return "未分类";
+  if (String(k).startsWith("u:")) return String(k).slice(2);
+  return (FIN && FIN.cats && FIN.cats.names && FIN.cats.names[k]) || FIN_CAT_ZH[k] || k;
+};
+const finKindName = (k) => (k === "in" ? "收入" : k === "float" ? "备用金" : "支出");
+
+/* 余额 = 对账快照 + 之后的流入 - 流出（备用金：出的那边减，收的那边加） */
+function finBalance(uid) {
+  const a = (FIN.accounts || []).find((x) => x.uid === uid) || { cash: 0, card: 0, since: "" };
+  let cash = Number(a.cash) || 0, card = Number(a.card) || 0;
+  const since = a.since || "";
+  const add = (ch, v) => { if (ch === "card") card += v; else cash += v; };
+  for (const e of FIN.entries) {
+    if (since && String(e.date) <= since) continue;
+    const amt = Number(e.amount) || 0;
+    if (e.kind === "float") {
+      if (e.uid === uid) add(e.ch, -amt);
+      if (e.to_uid === uid) add(e.ch, amt);
+    } else if (e.uid === uid) {
+      add(e.ch, e.kind === "in" ? amt : -amt);
+    }
+  }
+  return { cash, card };
+}
+
+const finPeople = () => {
+  const us = (FIN.users || []).map((u) => ({ login: u.login, name: u.name, role: u.role, ghost: false }));
+  const known = new Set(us.map((u) => u.login));
+  for (const a of FIN.accounts || []) {
+    if (!known.has(a.uid)) us.push({ login: a.uid, name: a.name || a.uid, role: "", ghost: true });
+  }
+  return us.length ? us : [{ login: FIN.me.uid, name: FIN.me.name, role: FIN.me.role }];
+};
+const finNameOf = (uid) => {
+  const u = (FIN.users || []).find((x) => x.login === uid);
+  return (u && u.name) || uid;
+};
+
+function finView(src) {
+  const box = document.createElement("div");
+  box.className = "fin-dim";
+  box.style.display = "flex";
+  box.style.alignItems = "center";
+  box.style.justifyContent = "center";
+  box.innerHTML = `<img src="${src}" style="max-width:94%;max-height:92%;border-radius:10px;box-shadow:0 10px 40px rgba(0,0,0,.4)">`;
+  box.onclick = () => box.remove();
+  document.body.appendChild(box);
+}
+
+async function loadFin() {
+  FIN = await api("/fin/bootstrap");
+  if (!FINM) FINM = new Date().toISOString().slice(0, 7);
+}
+
+function finHtml() {
+  const who = FINWHO || FIN.me.uid;
+  const isAll = FINWHO === "ALL";
+  const mine = (e) => e.uid === who || e.to_uid === who;   // 自己的账本：自己花的 + 收到的备用金
+  const scoped = isAll ? FIN.entries : FIN.entries.filter(mine);
+  const months = [...new Set(scoped.map((e) => String(e.date).slice(0, 7)))].sort().reverse();
+  const list = scoped.filter((e) => !FINM || String(e.date).startsWith(FINM));
+  const sum = { out: 0, in: 0, float: 0 };
+  for (const e of list) sum[e.kind] = (sum[e.kind] || 0) + (Number(e.amount) || 0);
+
+  const rows = list.map((e) => {
+    const ph = (e.photos || []).slice(0, 3).map((k) => `<img src="/api/fin/photo/${k}" data-finview="/api/fin/photo/${k}" alt="">`).join("");
+    const who = e.kind === "float" ? `${esc(e.by_name || e.uid)} → ${esc(e.to_uid || "")}` : esc(e.uid);
+    return `<div class="fin-row fin-${e.kind}">
+      <div class="d">${esc(String(e.date).slice(5))}</div>
+      <div class="m"><b>${esc(finCatName(e.cat))}</b>
+        <p>${who} · ${e.ch === "card" ? "银行" : "现金"}${e.note ? " · " + esc(e.note) : ""}</p>
+        ${ph ? `<div class="ph">${ph}</div>` : ""}</div>
+      <div class="a">${e.kind === "in" || (e.kind === "float" && e.to_uid === who) ? "+" : "-"}${finMoney(e.amount)}<small>${e.kind === "float" ? (e.to_uid === who ? "收到备用金" : "发出备用金") : finKindName(e.kind)}</small></div>
+      <button class="ghost" data-findel="${e.id}" title="删除">×</button>
+    </div>`;
+  }).join("");
+
+  const people = isAll ? finPeople() : finPeople().filter((p) => p.login === who);
+  const accts = people.map((p) => {
+    const b = finBalance(p.login);
+    const row = (FIN.accounts || []).find((x) => x.uid === p.login) || {};
+    return `<div class="fin-acct" data-acct="${esc(p.login)}">
+      <div class="n">${esc(p.name || p.login)} <span class="mut">${esc(p.ghost ? "历史账户" : p.role === "admin" ? "管理员" : p.role === "manager" ? "负责人" : "员工")}${row.since ? " · 对账 " + esc(row.since) : ""}</span></div>
+      <div class="g">
+        <div><label>现金</label><b style="font-size:16px">${finMoney(b.cash)}</b></div>
+        <div><label>银行</label><b style="font-size:16px">${finMoney(b.card)}</b></div>
+      </div>
+      ${(FIN.canAll || p.login === FIN.me.uid) ? `<div style="margin-top:6px"><button class="ghost" data-recon="${esc(p.login)}">对账</button>
+        <button class="ghost" data-give="${esc(p.login)}">发备用金</button></div>` : ""}
+    </div>`;
+  }).join("");
+
+  return `<div class="fin-kpi">
+      <div><span>${isAll ? "全部" : esc(finNameOf(who))} · ${FINM || "全部月份"} 支出</span><b>${finMoney(sum.out)}</b></div>
+      <div><span>收入</span><b>${finMoney(sum.in)}</b></div>
+      <div><span>备用金流转</span><b>${finMoney(sum.float)}</b></div>
+      <div><span>笔数</span><b>${list.length}</b></div>
+    </div>
+    <div class="fin-bar">
+      ${FIN.canAll ? `<select id="fin_who">
+        <option value="" ${FINWHO === "" ? "selected" : ""}>我的账目</option>
+        <option value="ALL" ${isAll ? "selected" : ""}>全部（汇总）</option>
+        ${finPeople().filter((p) => p.login !== FIN.me.uid).map((p) => `<option value="${esc(p.login)}" ${FINWHO === p.login ? "selected" : ""}>${esc(p.name || p.login)}</option>`).join("")}
+      </select>` : ""}
+      <select id="fin_m"><option value="">全部月份</option>${months.map((m) => `<option value="${m}" ${m === FINM ? "selected" : ""}>${m}</option>`).join("")}</select>
+    </div>
+    <div class="fin-bar" id="fin_addbar"><button id="fin_add" style="flex:1">＋ 记一笔${isAll ? "" : "（" + esc(finNameOf(who)) + "）"}</button></div>
+    <div class="fin-list">${rows || '<div class="empty">这个月还没有记录</div>'}</div>
+    <button class="fin-fab" id="fin_add2">＋ 记一笔${isAll ? "" : "（" + esc(finNameOf(who)) + "）"}</button>
+    <div class="sec">账户余额（自动算）</div>${accts}
+    ${FIN.me.role === "admin" ? `<div class="sec">设置</div>
+      <div class="fin-acct"><div class="n">期初余额</div>
+        <div class="g">
+          <div><label>日期</label><input type="date" id="fo_date" value="${esc(FIN.opening.date || "")}"></div>
+          <div><label>现金</label><input type="number" id="fo_cash" value="${FIN.opening.cash || 0}"></div>
+          <div><label>银行</label><input type="number" id="fo_card" value="${FIN.opening.card || 0}"></div>
+        </div>
+        <div style="margin-top:6px"><button class="ghost" id="fo_save">保存期初</button>
+        <button class="ghost" id="fin_cats">改分类</button></div>
+      </div>` : ""}`;
+}
+
+function finSheet(forceGiver) {
+  const canAll = FIN.canAll;
+  const viewUid = FINWHO && FINWHO !== "ALL" ? FINWHO : FIN.me.uid;
+  const people = canAll ? finPeople().map((u) => u.login) : [FIN.me.uid];
+  const cats = [...(FIN.cats.life || []), ...(FIN.cats.project || [])];
+  const builtin = Object.keys(FIN_CAT_ZH).map((k) => `${k}`);
+  const opts = [...new Set([...cats, ...builtin, "u:员工工资", "u:员工补贴"])]
+    .map((k) => `<option value="${esc(k)}">${esc(finCatName(k))}</option>`).join("");
+  const box = document.createElement("div");
+  box.className = "fin-dim";
+  box.innerHTML = `<div class="fin-sheet">
+    <h3>记一笔</h3>
+    <label>类型</label>
+    <select id="ff_kind"><option value="out">支出</option><option value="in">收入</option><option value="float">发备用金</option></select>
+    <div class="r" style="margin-top:8px">
+      <div><label>金额 ZMW</label><input id="ff_amt" type="number" step="0.01" inputmode="decimal"></div>
+      <div><label>日期</label><input id="ff_date" type="date" value="${new Date().toISOString().slice(0, 10)}"></div>
+    </div>
+    <div id="ff_out">
+      <label>分类</label><select id="ff_cat">${opts}</select>
+      <div class="r" style="margin-top:8px">
+        <div><label>归属</label><select id="ff_ft"><option value="life">生活</option><option value="project">项目</option></select></div>
+        <div><label>渠道</label><select id="ff_ch"><option value="cash">现金</option><option value="card">银行</option></select></div>
+      </div>
+      ${canAll ? `<label>记在谁名下</label><select id="ff_uid">${people.map((p) => `<option value="${esc(p)}" ${p === viewUid ? "selected" : ""}>${esc(finNameOf(p))}</option>`).join("")}</select>` : ""}
+    </div>
+    <div id="ff_fl" class="hide">
+      <div class="r"><div><label>从谁出</label><select id="ff_giver">${people.map((p) => `<option value="${esc(p)}" ${p === viewUid ? "selected" : ""}>${esc(finNameOf(p))}</option>`).join("")}</select></div>
+      <div><label>从哪个口</label><select id="ff_from"><option value="cash">现金</option><option value="card">银行</option></select></div></div>
+      <label>发给谁</label><select id="ff_to">${people.filter((p) => p !== viewUid).map((p) => `<option value="${esc(p)}">${esc(finNameOf(p))}</option>`).join("")}</select>
+    </div>
+    <label>备注</label><input id="ff_note" placeholder="比如：去矿区打车">
+    <label>单据照片（最多 6 张）</label>
+    <input id="ff_file" type="file" accept="image/*" capture="environment" multiple>
+    <div class="ph" id="ff_ph"></div>
+    <p class="mut" id="ff_msg" style="min-height:1em;margin:8px 0 0"></p>
+    <div class="r" style="margin-top:8px"><button class="ghost" id="ff_x">取消</button><button id="ff_save">保存</button></div>
+  </div>`;
+  document.body.appendChild(box);
+  const close = () => box.remove();
+  box.onclick = (e) => { if (e.target === box) close(); };
+  $("#ff_x", box).onclick = close;
+  if (forceGiver) { $("#ff_kind", box).value = "float"; $("#ff_out", box).classList.add("hide"); $("#ff_fl", box).classList.remove("hide");
+    if ($("#ff_giver", box)) $("#ff_giver", box).value = forceGiver; }
+  $("#ff_kind", box).onchange = (e) => {
+    const fl = e.target.value === "float";
+    $("#ff_out", box).classList.toggle("hide", fl);
+    $("#ff_fl", box).classList.toggle("hide", !fl);
+  };
+  FINPH = [];
+  $("#ff_file", box).onchange = async (e) => {
+    for (const f of [...e.target.files].slice(0, 6 - FINPH.length)) {
+      const key = await finUpload(f, $("#ff_msg", box));
+      if (key) FINPH.push(key);
+    }
+    $("#ff_ph", box).innerHTML = FINPH.map((k) => `<img src="/api/fin/photo/${k}">`).join("");
+  };
+  $("#ff_save", box).onclick = async () => {
+    const kind = $("#ff_kind", box).value;
+    const b = {
+      kind,
+      amount: +$("#ff_amt", box).value,
+      date: $("#ff_date", box).value,
+      note: $("#ff_note", box).value,
+      photos: FINPH,
+      cat: kind === "float" ? "" : $("#ff_cat", box).value,
+      ft: kind === "float" ? "life" : $("#ff_ft", box).value,
+      ch: kind === "float" ? $("#ff_from", box).value : $("#ff_ch", box).value,
+      to_uid: kind === "float" ? $("#ff_to", box).value : "",
+      uid: kind === "float" ? ($("#ff_giver", box) ? $("#ff_giver", box).value : viewUid)
+        : (canAll && $("#ff_uid", box) ? $("#ff_uid", box).value : viewUid),
+    };
+    try {
+      await api("/fin/entries", { method: "POST", body: b, toast: kind === "float" ? "备用金已记录" : "已记账 " + finMoney(b.amount) + " ZMW" });
+      close(); await loadFin(); render();
+    } catch (err) { $("#ff_msg", box).textContent = err.message; }
+  };
+}
+
+async function finUpload(file, msgEl, dir) {
+  const data = await new Promise((res) => {
+    const img = new Image();
+    img.onload = () => {
+      const max = 1280, sc = Math.min(1, max / Math.max(img.width, img.height));
+      const c = document.createElement("canvas");
+      c.width = Math.round(img.width * sc); c.height = Math.round(img.height * sc);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      res(c.toDataURL("image/jpeg", 0.82));
+    };
+    img.onerror = () => res("");
+    img.src = URL.createObjectURL(file);
+  });
+  if (!data) return "";
+  try {
+    return (await api("/fin/photo", { method: "POST", body: { data, dir: dir || "" }, quiet: true })).key;
+  } catch (e) { if (msgEl) msgEl.textContent = "照片没传上：" + e.message; return ""; }
+}
+
+async function finRecon(uid) {
+  const b = finBalance(uid);
+  const c = prompt(finNameOf(uid) + " 实际现金余额（ZMW）", String(b.cash.toFixed(2)));
+  if (c === null) return;
+  const k = prompt(finNameOf(uid) + " 实际银行余额（ZMW）", String(b.card.toFixed(2)));
+  if (k === null) return;
+  const row = (FIN.accounts || []).find((x) => x.uid === uid) || {};
+  await api("/fin/accounts/" + encodeURIComponent(uid), { method: "PUT", body: {
+    name: finNameOf(uid), bank: row.bank || "", card_no: row.card_no || "",
+    cash: Number(c) || 0, card: Number(k) || 0, since: new Date().toISOString().slice(0, 10),
+  }, toast: "余额已更新" });
+  await loadFin(); render();
+}
+
+async function finSaveAcct(uid) {
+  const el = document.querySelector(`[data-acct="${uid}"]`);
+  const v = (f) => el.querySelector(`[data-f="${f}"]`).value;
+  await api("/fin/accounts/" + encodeURIComponent(uid), {
+    method: "PUT",
+    body: { cash: +v("cash"), card: +v("card"), since: v("since"), name: (FIN.accounts.find((a) => a.uid === uid) || {}).name || uid },
+  });
+  await loadFin(); render();
+}
+
+function bindFin() {
+  const pane = $("#pane");
+  const w = $("#fin_who");
+  if (w) w.onchange = (e) => { FINWHO = e.target.value; saveFinView(); S.editId = 0; render(); };
+  const m = $("#fin_m");
+  if (m) m.onchange = (e) => { FINM = e.target.value; saveFinView(); render(); };
+  $("#fin_add").onclick = () => finSheet();
+  const fab = $("#fin_add2");
+  if (fab) fab.onclick = () => finSheet();
+  pane.querySelectorAll("[data-finview]").forEach((img) => img.onclick = () => finView(img.dataset.finview));
+  pane.querySelectorAll("[data-recon]").forEach((b) => b.onclick = () => finRecon(b.dataset.recon).catch((e) => toast(e.message, "bad")));
+  pane.querySelectorAll("[data-give]").forEach((b) => b.onclick = () => finSheet(b.dataset.give));
+  pane.querySelectorAll("[data-findel]").forEach((b) => b.onclick = async () => {
+    if (!confirm("删除这条记录？")) return;
+    await api("/fin/entries/" + b.dataset.findel, { method: "DELETE", toast: "记录已删除" });
+    await loadFin(); render();
+  });
+  const fo = $("#fo_save");
+  if (fo) fo.onclick = async () => {
+    await api("/fin/opening", { method: "PUT", toast: "期初已保存", body: { date: $("#fo_date").value, cash: +$("#fo_cash").value, card: +$("#fo_card").value } });
+    await loadFin(); render();
+  };
+  const fc = $("#fin_cats");
+  if (fc) fc.onclick = async () => {
+    const life = prompt("生活类分类（逗号分隔）", (FIN.cats.life || []).join(","));
+    if (life === null) return;
+    const project = prompt("项目类分类（逗号分隔）", (FIN.cats.project || []).join(","));
+    if (project === null) return;
+    await api("/fin/cats", { method: "PUT", body: {
+      life: life.split(",").map((x) => x.trim()).filter(Boolean),
+      project: project.split(",").map((x) => x.trim()).filter(Boolean),
+      names: FIN.cats.names || {},
+    }, toast: "分类已更新" });
+    await loadFin(); render();
+  };
+}
+
+
+/* ---------- 导航 ---------- */
+const GROUPS = ["财务", "日常协同", "业务现场", "项目资料", "资产", "系统"];
+function groupMods(g) {
+  return MODS.filter((m) => m.g === g && allowed(m.k) && (!m.soon || S.user.role === "admin"));
+}
+
+function enterApp(k) { S.tab = k; S.editId = 0; render(); }
+function goHome() { enterApp("home"); }
+function syncChrome() {
+  const tabs = $("#tabs"); if (tabs) tabs.classList.remove("hide");
+  const back = $("#back"); if (back) back.classList.add("hide");
+  const ttl = $("#ttl"); if (ttl) ttl.textContent = "ECOBOX";
+}
+
+
+let FEED = null;
+
+/* ---------- 动态：卡片流 + 右下角 + / 点赞 / 留言 / 编辑删除 ---------- */
+function feedHtml() {
+  return `<div class="fd-top">
+      <div class="fd-title">公司动态</div>
+      <span class="mut">全体可见</span>
+    </div>
+    <div id="fd_list"><div class="empty">加载中…</div></div>
+    <button id="fd_fab" class="fd-fab" title="添加动态">＋</button>`;
+}
+
+function bindFeed() {
+  const fab = $("#fd_fab");
+  if (fab) fab.onclick = () => openComposer();
+  loadFeed();
+}
+
+const mediaSrc = (u) => (/^https?:\/\//.test(u) ? u : "/api/fin/photo/" + u);
+const mediaList = (p) => (p.photos || [])
+  .map((m) => (typeof m === "string" ? { t: "i", u: m } : m))
+  .filter((m) => m && m.u);
+const whenOf = (p) => {
+  const raw = String(p.created_at || "");
+  return raw.slice(11, 16) === "00:00" ? raw.slice(0, 10) : raw.replace("T", " ").slice(0, 16);
+};
+const KIND = { company: "🏢 公司", prod: "⛏ 生产", export: "🚢 出口" };
+
+function loadFeed() {
+  return api("/feed", { quiet: true })
+    .then((r) => { FEED = r.posts || []; drawFeed(); })
+    .catch((e) => { const el = $("#fd_list"); if (el) el.innerHTML = `<div class="empty">${esc(e.message)}</div>`; });
+}
+
+const fb = (u) => (u.startsWith("feed/old/")
+  ? ` onerror="this.onerror=null;this.src='/api/feed/img/${u.slice(9)}'"`
+  : "");
+
+function mediaHtml(p) {
+  const list = mediaList(p);
+  if (!list.length) return "";
+  const cls = list.length === 1 ? "g1" : list.length === 2 ? "g2" : "g3";
+  const tiles = list.slice(0, 9).map((m, i) => {
+    const src = mediaSrc(m.u);
+    const more = i === 8 && list.length > 9 ? `<span class="fd-more-n">+${list.length - 9}</span>` : "";
+    return m.t === "v"
+      ? `<button class="fd-tile" data-vid="${esc(src)}"><video src="${esc(src)}" preload="metadata" muted playsinline></video><span class="fd-play">▶</span>${more}</button>`
+      : `<button class="fd-tile" data-img="${esc(src)}"><img src="${esc(src)}" loading="lazy" alt=""${fb(m.u)}>${more}</button>`;
+  }).join("");
+  return `<div class="fd-media ${cls}">${tiles}</div>`;
+}
+
+function cmtHtml(p) {
+  const list = p.comments || [];
+  const me = S.user.login || S.user.uid;
+  const rows = list.map((c, i) => `<div class="fd-c"><b>${esc(c.by || "")}</b><span>${esc(c.text || "")}</span>${
+    c.uid === me || S.user.role === "admin" ? `<button class="x" data-cdel="${esc(p.id)}:${i}">×</button>` : ""}</div>`).join("");
+  return `<div class="fd-comments">
+    ${rows}
+    <div class="fd-cin"><input data-cin="${esc(p.id)}" maxlength="300" placeholder="留言…"><button data-csend="${esc(p.id)}">发送</button></div>
+  </div>`;
+}
+
+function postHtml(p) {
+  const me = S.user.login || S.user.uid;
+  const mine = p.uid === me || S.user.role === "admin";
+  const liked = (p.likes || []).includes(me);
+  return `<article class="fd-post" data-id="${esc(p.id)}">
+    <div class="fd-h">
+      <div class="fd-av">${esc((p.name || "?").slice(0, 1).toUpperCase())}</div>
+      <div class="fd-meta"><b>${esc(p.name || p.uid)}</b><span>${esc(KIND[p.kind] || KIND.company)} · ${esc(whenOf(p))}</span></div>
+      ${mine ? `<button class="fd-more" data-more="${esc(p.id)}" title="更多">⋯</button>` : ""}
+    </div>
+    ${p.body ? `<div class="fd-b">${esc(p.body)}</div>` : ""}
+    ${mediaHtml(p)}
+    <div class="fd-acts">
+      <button class="${liked ? "on" : ""}" data-like="${esc(p.id)}">${liked ? "❤" : "♡"} ${(p.likes || []).length || ""}</button>
+      <button data-cmt="${esc(p.id)}">💬 ${(p.comments || []).length || ""}</button>
+    </div>
+    ${cmtHtml(p)}
+  </article>`;
+}
+
+function drawFeed() {
+  const el = $("#fd_list");
+  if (!el) return;
+  el.innerHTML = (FEED && FEED.length) ? FEED.map(postHtml).join("") : '<div class="empty">还没有动态，点右下角 ＋ 发第一条</div>';
+  el.querySelectorAll("[data-img]").forEach((b) => (b.onclick = () => fdView(b.dataset.img, "")));
+  el.querySelectorAll("[data-vid]").forEach((b) => (b.onclick = () => fdView("", b.dataset.vid)));
+  el.querySelectorAll("[data-like]").forEach((b) => (b.onclick = () => likePost(b.dataset.like)));
+  el.querySelectorAll("[data-csend]").forEach((b) => (b.onclick = () => sendComment(b.dataset.csend)));
+  el.querySelectorAll("[data-cin]").forEach((inp) => (inp.onkeydown = (e) => { if (e.key === "Enter") sendComment(inp.dataset.cin); }));
+  el.querySelectorAll("[data-cdel]").forEach((b) => (b.onclick = () => delComment(b.dataset.cdel)));
+  el.querySelectorAll("[data-more]").forEach((b) => (b.onclick = (e) => { e.stopPropagation(); openMenu(b.dataset.more, b); }));
+}
+
+async function likePost(id) {
+  const p = (FEED || []).find((x) => x.id === id);
+  if (!p) return;
+  await api("/feed/" + encodeURIComponent(id) + "/like", { method: "POST", quiet: true }).catch(() => {});
+  await loadFeed();
+}
+
+async function sendComment(id) {
+  const inp = document.querySelector(`[data-cin="${id}"]`);
+  const text = (inp && inp.value || "").trim();
+  if (!text) return;
+  await api("/feed/" + encodeURIComponent(id) + "/comment", { method: "POST", body: { text }, quiet: true }).catch(() => {});
+  await loadFeed();
+}
+
+async function delComment(spec) {
+  const [id, i] = spec.split(":");
+  await api(`/feed/${encodeURIComponent(id)}/comment/${i}`, { method: "DELETE", quiet: true }).catch(() => {});
+  await loadFeed();
+}
+
+function openMenu(id, btn) {
+  closeMenu();
+  const p = (FEED || []).find((x) => x.id === id);
+  if (!p) return;
+  const r = btn.getBoundingClientRect();
+  const m = document.createElement("div");
+  m.className = "fd-menu";
+  m.id = "fd_menu";
+  m.style.top = Math.round(r.bottom + 6) + "px";
+  m.style.right = Math.max(8, Math.round(window.innerWidth - r.right)) + "px";
+  m.innerHTML = `<button data-act="edit">编辑</button><button data-act="del" class="dz">删除</button>`;
+  document.body.appendChild(m);
+  m.querySelector('[data-act="edit"]').onclick = () => { closeMenu(); openComposer(p); };
+  m.querySelector('[data-act="del"]').onclick = async () => {
+    closeMenu();
+    if (!confirm("删除这条动态？")) return;
+    await api("/feed/" + encodeURIComponent(id), { method: "DELETE", toast: "已删除" });
+    await loadFeed();
+  };
+  setTimeout(() => document.addEventListener("click", closeMenu, { once: true }), 0);
+}
+function closeMenu() {
+  const m = $("#fd_menu");
+  if (m) m.remove();
+}
+
+let FD_EDIT = null, FD_DRAFT = [];
+function openComposer(post) {
+  FD_EDIT = post || null;
+  FD_DRAFT = post ? mediaList(post).slice() : [];
+  closeSheet();
+  const dim = document.createElement("div");
+  dim.className = "fd-dim";
+  dim.id = "fd_dim";
+  dim.onclick = closeSheet;
+  const s = document.createElement("div");
+  s.className = "fd-sheet";
+  s.id = "fd_sheet";
+  s.innerHTML = `<div class="fd-sh"><h3>${post ? "编辑动态" : "添加动态"}</h3><button id="fd_x">取消</button></div>
+    <textarea id="fd_body" maxlength="2000" placeholder="说点什么…">${esc(post ? post.body : "")}</textarea>
+    <div id="fd_ph" class="fd-thumbs"></div>
+    <div class="row"><button id="fd_pick">＋ 照片</button><button class="pri" id="fd_send">${post ? "保存" : "发布"}</button></div>
+    <input id="fd_file" type="file" accept="image/*" multiple hidden>`;
+  document.body.appendChild(dim);
+  document.body.appendChild(s);
+  $("#fd_x").onclick = closeSheet;
+  $("#fd_pick").onclick = () => $("#fd_file").click();
+  $("#fd_file").onchange = async (e) => {
+    const files = [...e.target.files].slice(0, Math.max(0, 9 - FD_DRAFT.length));
+    e.target.value = "";
+    const btn = $("#fd_send");
+    if (!files.length) return;
+    btn.disabled = true; btn.textContent = "上传中…";
+    for (const f of files) {
+      const key = await finUpload(f, null, "feed");
+      if (key) FD_DRAFT.push({ t: "i", u: key });
+      drawDraft();
+    }
+    btn.disabled = false; btn.textContent = FD_EDIT ? "保存" : "发布";
+  };
+  $("#fd_send").onclick = sendPost;
+  drawDraft();
+  $("#fd_body").focus();
+}
+
+function drawDraft() {
+  const box = $("#fd_ph");
+  if (!box) return;
+  box.innerHTML = FD_DRAFT.map((m, i) => `<div class="t">${
+    m.t === "v" ? `<video src="${esc(mediaSrc(m.u))}" muted></video>` : `<img src="${esc(mediaSrc(m.u))}" alt="">`
+  }<button class="x" data-rm="${i}">×</button></div>`).join("");
+  box.querySelectorAll("[data-rm]").forEach((b) => (b.onclick = () => { FD_DRAFT.splice(+b.dataset.rm, 1); drawDraft(); }));
+}
+
+function closeSheet() {
+  ["fd_dim", "fd_sheet"].forEach((id) => { const el = document.getElementById(id); if (el) el.remove(); });
+}
+
+async function sendPost() {
+  const t = ($("#fd_body").value || "").trim();
+  if (!t && !FD_DRAFT.length) { toast("写点内容再发", "bad"); return; }
+  const btn = $("#fd_send");
+  btn.disabled = true;
+  try {
+    if (FD_EDIT) {
+      await api("/feed/" + encodeURIComponent(FD_EDIT.id), { method: "PATCH", body: { body: t, photos: FD_DRAFT }, toast: "已保存" });
+    } else {
+      await api("/feed", { method: "POST", body: { body: t, photos: FD_DRAFT }, toast: "已发布" });
+    }
+    closeSheet();
+    FD_DRAFT = []; FD_EDIT = null;
+    await loadFeed();
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function fdView(img, vid) {
+  const box = document.createElement("div");
+  box.className = "fd-view";
+  box.onclick = () => box.remove();
+  box.innerHTML = vid
+    ? `<video src="${esc(vid)}" controls autoplay playsinline></video>`
+    : `<img src="${esc(img)}" alt="">`;
+  document.body.appendChild(box);
+}
+
+/* ---------- 分组页 ---------- */
+function groupHtml(g) {
+  const mods = groupMods(g);
+  const cards = mods.map((x) => {
+    if (x.soon) return `<div class="mod soon"><i>${x.i}</i><b>${esc(x.t)}</b><span>${esc(x.d)}</span><em>待开放</em></div>`;
+    return x.tab
+      ? `<button class="mod" data-go="${x.tab}"><i>${x.i}</i><b>${esc(x.t)}</b><span>${esc(x.d)}</span></button>`
+      : `<a class="mod" href="${x.u}"><i>${x.i}</i><b>${esc(x.t)}</b><span>${esc(x.d)}</span></a>`;
+  }).join("");
+  return `<div class="sec">${esc(g)}</div><div class="mods">${cards || '<div class="empty">这个分类还没有模块</div>'}</div>`;
+}
+
+/* ---------- 渲染 ---------- */
+async function render() {
+  const pane = $("#pane");
+  syncChrome();
+  if (!["home", "status", "mine"].includes(S.tab) && !S.tab.startsWith("g:") && !allowed(TAB_KEY[S.tab])) S.tab = "home";
+  [...$("#tabs").children].forEach((b) => b.classList.toggle("on", b.dataset.tab === S.tab));
+  if (S.tab === "home") {
+    pane.innerHTML = homeHtml();
+    pane.querySelectorAll("[data-go]").forEach((b) => b.onclick = () => enterApp(b.dataset.go));
+    return;
+  }
+  if (S.tab === "status") {
+    pane.innerHTML = feedHtml();
+    bindFeed();
+    return;
+  }
+  if (S.tab.startsWith("g:")) {
+    pane.innerHTML = groupHtml(S.tab.slice(2));
+    pane.querySelectorAll("[data-go]").forEach((b) => b.onclick = () => enterApp(b.dataset.go));
+    return;
+  }
+  if (S.tab === "board") {
+    pane.innerHTML = `<div class="empty">加载中…</div>`;
+    const sum = await loadBoard();
+    pane.innerHTML = boardHtml(sum);
+    $("#f_from").onchange = (e) => { S.from = e.target.value; render(); };
+    $("#f_to").onchange = (e) => { S.to = e.target.value; render(); };
+  } else if (S.tab === "log") {
+    await loadBoard();
+    const editing = S.editId ? S.logs.find((l) => l.id === S.editId) : null;
+    pane.innerHTML = logForm(editing) + logListHtml();
+    $("#d_save").onclick = saveLog;
+    if (editing) $("#d_cancel").onclick = () => { S.editId = 0; render(); };
+    pane.querySelectorAll("[data-edit]").forEach((b) => b.onclick = () => { S.editId = +b.dataset.edit; render(); });
+    pane.querySelectorAll("[data-del]").forEach((b) => b.onclick = () => delLog(+b.dataset.del));
+  } else if (S.tab === "fin") {
+    pane.innerHTML = `<div class="empty">加载中…</div>`;
+    try { await loadFin(); } catch (e) { pane.innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
+    if (!FIN.canAll && FINWHO) FINWHO = "";
+    pane.innerHTML = finHtml();
+    bindFin();
+  } else if (S.tab === "users") {
+    S.users = (await api("/users")).users;
+    pane.innerHTML = usersHtml();
+    $("#u_add").onclick = addUser;
+    pane.querySelectorAll("[data-role]").forEach((el) => el.onchange = () => patchUser(el.dataset.role, { role: el.value }).catch(alert));
+    pane.querySelectorAll("[data-site]").forEach((el) => el.onchange = () => patchUser(el.dataset.site, { site: el.value }).catch(alert));
+    pane.querySelectorAll("[data-mods]").forEach((b) => b.onclick = () => {
+      const u = S.users.find((x) => x.id === +b.dataset.mods);
+      if (u) openModPicker(u);
+    });
+    pane.querySelectorAll("[data-pwd]").forEach((b) => b.onclick = () => {
+      const pw = prompt("新的密码（至少 8 位）");
+      if (pw) patchUser(b.dataset.pwd, { password: pw }).then(() => toast("已改，对方需要用新密码重登")).catch((e) => toast(e.message, "bad"));
+    });
+    pane.querySelectorAll("[data-active]").forEach((b) => b.onclick = () => {
+      const u = S.users.find((x) => x.id === +b.dataset.active);
+      patchUser(u.id, { active: u.active ? 0 : 1 }).then(render).catch((e) => toast(e.message, "bad"));
+    });
+  } else {
+    pane.innerHTML = mineHtml();
+    $("#p_out").onclick = async () => {
+      if (!confirm("退出登录？")) return;
+      try { await api("/logout", { method: "POST" }); } catch (e) {}
+      showLogin();
+    };
+    $("#p_save").onclick = async () => {
+      $("#p_err").textContent = ""; $("#p_ok").textContent = "";
+      try {
+        await api("/password", { method: "POST", body: { old: $("#p_old").value, new: $("#p_new").value } });
+        $("#p_ok").textContent = "已改。下次用新密码登录。";
+        $("#p_old").value = $("#p_new").value = "";
+      } catch (e) { $("#p_err").textContent = e.message; }
+    };
+  }
+}
+
+/* ---------- 动作 ---------- */
+function numOf(id) { const v = $(id).value.trim(); return v === "" ? 0 : +v; }
+
+async function saveLog() {
+  $("#d_err").textContent = "";
+  const body = {
+    day: $("#d_day").value, site: $("#d_site").value, shift: $("#d_shift").value,
+    crew: $("#d_crew").value, headcount: numOf("#d_people"),
+    ore_t: numOf("#d_ore"), waste_t: numOf("#d_waste"), cost_usd: numOf("#d_cost"),
+    grade: $("#d_grade").value, note: $("#d_note").value,
+  };
+  const btn = $("#d_save"); btn.disabled = true;
+  try {
+    if (S.editId) await api("/logs/" + S.editId, { method: "PATCH", body, toast: "生产记录已更新" });
+    else await api("/logs", { method: "POST", body, toast: "生产记录已保存" });
+    S.editId = 0; S.tab = "log"; await render();
+  } catch (e) { $("#d_err").textContent = e.message; btn.disabled = false; }
+}
+
+async function delLog(id) {
+  if (!confirm("删掉这条记录？不能撤销。")) return;
+  try { await api("/logs/" + id, { method: "DELETE", toast: "生产记录已删除" }); S.editId = 0; render(); }
+  catch (e) { toast(e.message, "bad"); }
+}
+
+async function addUser() {
+  $("#u_err").textContent = ""; $("#u_ok").textContent = "";
+  try {
+    const r = await api("/users", { method: "POST", body: {
+      name: $("#u_name").value, login: $("#u_login").value, password: $("#u_pass").value,
+      role: $("#u_role").value, site: $("#u_site").value, phone: $("#u_phone").value,
+    }, toast: "人员已添加" });
+    $("#u_ok").textContent = "已开通。下面勾一下这个人能用哪些模块。";
+    ["#u_name", "#u_login", "#u_pass", "#u_phone"].forEach((s) => ($(s).value = ""));
+    S.users = (await api("/users")).users;
+    await render();
+    const nu = S.users.find((x) => x.id === r.id);
+    if (nu) openModPicker(nu);
+  } catch (e) { $("#u_err").textContent = e.message; }
+}
+
+async function patchUser(id, patch) {
+  const t = patch.password ? "密码已修改" : patch.active != null ? (patch.active ? "已启用" : "已停用") : "已更新";
+  await api("/users/" + id, { method: "PATCH", body: patch, toast: t });
+}
+
+/* ---------- 启动 ---------- */
+$("#lf").onsubmit = async (e) => {
+  e.preventDefault();
+  $("#l_err").textContent = "";
+  try {
+    const r = await api("/login", { method: "POST", body: { login: $("#l_login").value, password: $("#l_pass").value } });
+    S.user = r.user; await showApp();
+  } catch (e2) { $("#l_err").textContent = e2.message; }
+};
+
+
+$("#sf").onsubmit = async (e) => {
+  e.preventDefault();
+  $("#s_err").textContent = "";
+  try {
+    const r = await api("/setup", { method: "POST", headers: { "x-setup-token": $("#s_token").value.trim() },
+      body: { login: $("#s_login").value, name: $("#s_name").value, password: $("#s_pass").value } });
+    S.user = r.user; await showApp();
+  } catch (e2) { $("#s_err").textContent = e2.message; }
+};
+
+(async () => {
+  try {
+    const st = await api("/status");
+    if (st.setup_needed) return showSetup();
+  } catch {}
+  try {
+    const r = await api("/me");
+    if (r.user) { S.user = r.user; await showApp(); } else showLogin();
+  } catch { showLogin(); }
+})();
+</script>
+</body>
+</html>
