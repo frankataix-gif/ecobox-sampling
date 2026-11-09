@@ -342,10 +342,10 @@ progress{width:100%;height:10px;margin-top:8px}
     <div class="card">
       <h3>🔄 版本更新</h3>
       <button class="btn secondary block" id="btn_update">检查并强制更新到最新版</button>
-      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：20261109-1143</p>
+      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：20261109-1144</p>
     </div>
     <div class="card">
-      <p style="font-size:11px;color:var(--muted);text-align:center">20261109-1143</p>
+      <p style="font-size:11px;color:var(--muted);text-align:center">20261109-1144</p>
       <h3>🗑 危险操作</h3>
       <button class="btn danger block" id="btn_wipe">🔒 清空本机全部数据（需密码）</button>
     </div>
@@ -1460,6 +1460,40 @@ async function pullSamples(){
 $("btn_pull").onclick=pullSamples;
 /* 从备份 JSON 恢复：本机没有的新增，本机未同步的修改保留 */
 $("btn_import").onclick=()=>$("file_import").click();
+/* 兼容别家软件（ecobox / QGIS 导出的 samples.json）的字段：lat/lon、URL 照片、中文状态、datetime、化验列 */
+function normImported(rs){
+  const o={...rs};
+  if(o.latitude==null&&o.lat!=null&&o.lat!=="")o.latitude=+o.lat;
+  if(o.longitude==null&&o.lon!=null&&o.lon!=="")o.longitude=+o.lon;
+  if(o.kind!=="marker"&&o.category==="标记点")o.kind="marker";
+  if(!o.sample_time){
+    const t=o.datetime||o.created_at||"";
+    if(t)o.sample_time=String(t).replace("T"," ").slice(0,19);
+    else{
+      const m=/^[A-Za-z]{1,3}(\d{4})(\d{2})(\d{2})-/.exec(o.sample_id||"");
+      if(m)o.sample_time=`${m[1]}-${m[2]}-${m[3]} 00:00:00`;
+    }
+  }
+  if(!o.created_at&&o.sample_time)o.created_at=String(o.sample_time).replace(" ","T");
+  if(!o.area_name&&o.area_id)o.area_name=areaName(o.area_id)||"";
+  o.photos=(o.photos||[]).map((p,i)=>{
+    if(typeof p==="string"){const url=p.trim(),key=url.split("/m/")[1]||"";
+      return{name:key.split("/").pop()||`photo-${i+1}`,kind:"field",key,url,external:true}}
+    if(p&&p.blob)return p;
+    if(p&&p.data)return{name:p.name,kind:p.kind||"field",blob:unb64(p.data),key:p.key,url:p.url,size:p.size};
+    return{name:p.name||`photo-${i+1}`,kind:p.kind||"field",key:p.key||((p.url||"").split("/m/")[1]||""),url:p.url,size:p.size};
+  }).filter(Boolean);
+  if(!Array.isArray(o.assays))o.assays=[];
+  [["ta2o5_pct","Ta2O5","%"],["nb2o5_pct","Nb2O5","%"],["li2o_pct","Li2O","%"],
+   ["cs_ppm","Cs","ppm"],["be_ppm","Be","ppm"],["sn_ppm","Sn","ppm"]].forEach(([col,el,unit])=>{
+    const v=o[col];
+    if(v==null||v===""||o.assays.some(a=>a.element===el))return;
+    const n=Number(v);if(isFinite(n))o.assays.push({element:el,value:n,unit});
+  });
+  const s0=String(o.status||"");
+  o.status=(s0==="synced"||s0==="已同步"||s0==="已上传")?"synced":((s0==="failed"||s0==="失败")?"failed":"pending");
+  return o;
+}
 $("file_import").onchange=async e=>{
   const f=e.target.files&&e.target.files[0];e.target.value="";
   if(!f)return;
@@ -1470,17 +1504,17 @@ $("file_import").onchange=async e=>{
     const arr=Array.isArray(j)?j:(j.samples||[]);
     if(!arr.length)throw new Error("这个文件里没有记录");
     const local=await S.all();const byId=new Map();local.forEach(s=>{if(s.sample_id)byId.set(s.sample_id,s)});
-    let add=0,upd=0,keep=0;
-    for(const rs of arr){
-      if(!rs||!rs.sample_id)continue;
+    let add=0,upd=0,keep=0,skip=0;
+    for(const raw of arr){
+      if(!raw||!raw.sample_id){skip++;continue}
+      const rs=normImported(raw);
       const rec={...rs};
-      rec.photos=(rs.photos||[]).map(p=>p.blob?p:(p.data?{name:p.name,kind:p.kind,blob:unb64(p.data),key:p.key,url:p.url,size:p.size}:p));
       const l=byId.get(rs.sample_id);
       if(!l){delete rec.id;if(!rec.status)rec.status="pending";await S.put(rec);byId.set(rs.sample_id,rec);add++}
       else if(l.status==="synced"||!l.status){rec.id=l.id;await S.put(rec);upd++}
       else keep++;
     }
-    const msg=`备份 ${arr.length} 条：新增 ${add}，更新 ${upd}`+(keep?`，保留本机未同步 ${keep}`:"");
+    const msg=`备份 ${arr.length} 条：新增 ${add}，更新 ${upd}`+(keep?`，保留本机未同步 ${keep}`:"")+(skip?`，跳过无编号 ${skip}`:"");
     if(info)info.textContent=msg;toast(msg,8000);
     await refreshSampleCache();await refreshPend();await renderList();
     if($("set_stat")&&!$("pg-set").classList.contains("hidden"))renderSetStats();
@@ -2301,7 +2335,7 @@ if(!isStandalone){
 }
 
 /* ============ 版本检查：发布新版本后自动弹「更新」按钮 ============ */
-const APP_VER="20261109-1143";
+const APP_VER="20261109-1144";
 let updateDismissed=false;
 function showUpdateTip(){if(updateDismissed)return;const t=$("update_tip");if(t)t.style.display="flex";}
 async function checkUpdate(){
