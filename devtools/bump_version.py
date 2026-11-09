@@ -20,7 +20,8 @@ HTML = ROOT / "sampling_helper.html"
 SW = ROOT / "sampling_sw.js"
 VER_FILE = ROOT / "version.txt"
 
-PATTERN = re.compile(r"b(\d{8})-(\d+)")
+# 两种写法都接受：b20261107-120（旧的手工 bump）与 20261109-1133（build_public.py 生成）
+PATTERN = re.compile(r"(b?)(\d{8})-(\d+)")
 
 
 def current_version():
@@ -31,15 +32,18 @@ def current_version():
     found = PATTERN.findall(HTML.read_text(encoding="utf-8"))
     if not found:
         sys.exit("找不到当前版本号")
-    date, build = max((d, int(b)) for d, b in found)
-    return f"b{date}-{build}"
+    pre, date, build = max(found, key=lambda m: (m[1], int(m[2])))
+    return f"{pre}{date}-{build}"
 
 
 def next_version(cur):
-    date, build = PATTERN.fullmatch(cur).groups()
+    pre, date, build = PATTERN.fullmatch(cur).groups()
+    width = len(build)
     build = int(build)
     today = dt.date.today().strftime("%Y%m%d")
-    return f"b{today}-{build + 1}" if today == date else f"b{today}-101"
+    if today != date:
+        return f"{pre}{today}-{'1' + '0' * (width - 1)}"
+    return f"{pre}{date}-{str(build + 1).zfill(width)}"
 
 
 def main(argv):
@@ -52,6 +56,11 @@ def main(argv):
 
     html = HTML.read_text(encoding="utf-8")
     hits = html.count(cur)
+    if hits == 0:  # version.txt 与页面不一致时，以页面里的版本为准
+        seen = [m.group(0) for m in PATTERN.finditer(html)]
+        if seen:
+            cur = max(set(seen), key=seen.count)
+            hits = html.count(cur)
     if hits == 0:
         sys.exit(f"sampling_helper.html 里找不到 {cur}")
 

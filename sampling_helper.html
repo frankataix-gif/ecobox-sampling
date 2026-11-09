@@ -205,8 +205,13 @@ progress{width:100%;height:10px;margin-top:8px}
         <button type="button" data-f="all" class="on">全部</button>
         <button type="button" data-f="pend">待同步</button>
         <button type="button" data-f="ok">已同步</button>
+        <button type="button" data-f="cloud">☁️ 仅云端</button>
       </div>
       <div class="hint" id="list_stat" style="margin:0 2px 10px"></div>
+      <div class="card" id="cloudbar" style="display:none;gap:8px;align-items:center">
+        <span id="cloudbar_txt" style="flex:1;font-size:13px;color:var(--muted)"></span>
+        <button class="btn secondary" id="btn_pull_all" style="padding:6px 10px;min-height:34px">存到本机</button>
+      </div>
       <div id="samlist"></div>
       <div class="card" id="empty_tip" style="text-align:center;color:var(--muted)">暂无记录，在「取样」录入并保存后会出现在这里</div>
     </div>
@@ -311,17 +316,17 @@ progress{width:100%;height:10px;margin-top:8px}
     <div class="card">
       <h3>🔄 版本更新</h3>
       <button class="btn secondary block" id="btn_update">检查并强制更新到最新版</button>
-      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：b20261107-120</p>
+      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：20261109-1140</p>
     </div>
     <div class="card">
-      <p style="font-size:11px;color:var(--muted);text-align:center">b20261107-120</p>
+      <p style="font-size:11px;color:var(--muted);text-align:center">20261109-1140</p>
       <h3>🗑 危险操作</h3>
       <button class="btn danger block" id="btn_wipe">🔒 清空本机全部数据（需密码）</button>
     </div>
   </section>
 </main>
 <nav>
-  <button data-pg="pg-form" class="on">✏️ 记录</button>
+        <button data-pg="pg-form" class="on">✏️ 取样</button>
   <button data-pg="pg-map">🗺 地图</button>
   <button data-pg="pg-set">⚙️ 设置</button>
 </nav>
@@ -999,34 +1004,91 @@ $("btn_clear").onclick=async()=>{
 };
 
 /* ============ 列表 ============ */
-let listQ="",listFilter="all";
+let listQ="",listFilter="all",listRows=[];
+/* ---------- 云端全量历史（D1，本地 36 条之外还包含其它手机/旧记录）---------- */
+const CLOUD_KEY="cloud_samples_v1";
+let cloudCache={ts:0,items:null,err:"",loading:false};
+async function fetchCloud(){
+  const w=((await store.get("worker_url"))||DEF_WORKER||"").replace(/\/$/,"");
+  const tok=(await store.get("app_token"))||"";
+  if(!w)throw new Error("还没有配置 Worker 地址");
+  const r=await fetch(w+"/samples",{headers:tok?{"X-App-Token":tok}:{}});
+  if(r.status===401)throw new Error("访问令牌不对");
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok||!j.ok)throw new Error(j.error||("HTTP "+r.status));
+  const items=Array.isArray(j.samples)?j.samples:[];
+  cloudCache={ts:Date.now(),items,err:"",loading:false};
+  try{await store.set(CLOUD_KEY,{ts:cloudCache.ts,samples:items})}catch(e){}
+  return items;
+}
+async function hydrateCloud(){
+  if(cloudCache.items==null){
+    const c=await store.get(CLOUD_KEY);
+    if(c&&Array.isArray(c.samples))cloudCache={ts:c.ts||0,items:c.samples,err:"",loading:false};
+  }
+  const stale=!cloudCache.ts||Date.now()-cloudCache.ts>60000;
+  if(!stale||!navigator.onLine||cloudCache.loading)return false;
+  cloudCache.loading=true;
+  try{await fetchCloud()}
+  catch(e){cloudCache.err=e.message||String(e)}
+  finally{cloudCache.loading=false}
+  return true;
+}
+async function ensureLocal(s){
+  if(s.id!=null)return s;
+  const rec={...s,status:"synced"};delete rec.id;delete rec._src;
+  await S.put(rec);
+  await refreshSampleCache();refreshPend();
+  return rec;
+}
+/* 先用缓存画一遍，云端刷新完再重画，弱网时列表不卡住 */
 async function renderList(){
-  const all=(await S.all()).sort((a,b)=>(b.created_at||"").localeCompare(a.created_at||""));
-  const pend=all.filter(s=>s.status!=="synced").length;
+  const local=await S.all();
+  drawList(local,cloudCache.items||[]);
+  if(await hydrateCloud()&&!$("tab_list").classList.contains("hidden"))drawList(await S.all(),cloudCache.items||[]);
+}
+function drawList(local,cloud){
+  if(!cloud&&cloudCache.items)cloud=cloudCache.items;
+  const bySid=new Map();local.forEach(s=>{if(s.sample_id)bySid.set(s.sample_id,s)});
+  const rows=[];
+  local.forEach(s=>rows.push({...s,_src:"local"}));
+  cloud.forEach(c=>{if(c&&c.sample_id&&!bySid.has(c.sample_id))rows.push({...c,status:"synced",id:null,_src:"cloud"})});
+  rows.sort((a,b)=>String(b.created_at||b.sample_time||"").localeCompare(String(a.created_at||a.sample_time||"")));
+  listRows=rows;
+  const pend=local.filter(s=>s.status!=="synced").length;
+  const cloudOnly=rows.length-local.length;
   const q=listQ.trim().toLowerCase();
-  const rows=all.filter(s=>{
-    if(listFilter==="pend"&&s.status==="synced")return false;
-    if(listFilter==="ok"&&s.status!=="synced")return false;
+  const rows2=rows.filter(s=>{
+    if(listFilter==="pend"&&(s._src==="cloud"||s.status==="synced"))return false;
+    if(listFilter==="ok"&&(s._src==="cloud"||s.status!=="synced"))return false;
+    if(listFilter==="cloud"&&s._src!=="cloud")return false;
     if(!q)return true;
     const hay=[s.sample_id,s.remark,s.area_name,s.loc_status,s.recorder,s.sample_time,
       (s.assays||[]).map(a=>a.element+" "+a.value).join(" ")].filter(Boolean).join(" ").toLowerCase();
     return hay.includes(q);
   });
-  $("list_stat").textContent=`共 ${all.length} 条 · 待同步 ${pend} 条`+(q?` · 匹配 ${rows.length} 条`:"");
+  $("list_stat").textContent=`共 ${rows.length} 条`+(cloudOnly?` · 云端 ${cloudOnly}`:"")+` · 待同步 ${pend} 条`
+    +(cloudCache.err?` · 云端暂不可用`:"")+(q?` · 匹配 ${rows2.length} 条`:"");
   $("chips_filter").querySelectorAll("button").forEach(b=>b.classList.toggle("on",b.dataset.f===listFilter));
+  const cb=$("cloudbar");
+  if(cb){
+    cb.style.display=cloudOnly?"flex":"none";
+    if(cloudOnly)$("cloudbar_txt").textContent=`云端另有 ${cloudOnly} 条不在本机（只读，可先存下来再改）`;
+  }
   const empty=$("empty_tip");
-  empty.style.display=rows.length?"none":"";
-  if(rows.length){}else if(!all.length){
+  empty.style.display=rows2.length?"none":"";
+  if(rows2.length){}else if(!rows.length){
     empty.innerHTML='暂无记录。换手机或清过浏览器数据？<br><button class="btn secondary" id="btn_pull2" style="margin-top:10px">☁️ 从云端恢复记录</button>';
     const b=$("btn_pull2");if(b)b.onclick=pullSamples;
   }else{
     empty.textContent="没有匹配的记录，换个关键词或点「全部」";
   }
-  $("samlist").innerHTML=rows.map(s=>{
-    const b=s.status==="synced"?'<span class="badge b-ok">已同步</span>':s.status==="failed"?'<span class="badge b-fail">同步失败</span>':'<span class="badge b-pend">待同步</span>';
+  $("samlist").innerHTML=rows2.map(s=>{
+    const b=s._src==="cloud"?'<span class="badge" style="background:#e0f2fe;color:#075985">☁️ 云端</span>'
+      :s.status==="synced"?'<span class="badge b-ok">已同步</span>':s.status==="failed"?'<span class="badge b-fail">同步失败</span>':'<span class="badge b-pend">待同步</span>';
     const as=(s.assays||[]).map(a=>`${a.element} ${a.value}${a.unit}`).join(" · ");
     const gps=(s.latitude!=null&&s.longitude!=null)?`<div class="meta">🧭 ${(+s.latitude).toFixed(5)}, ${(+s.longitude).toFixed(5)}</div>`:"";
-    return`<div class="card samcard" data-id="${s.id}">
+    return`<div class="card samcard" data-sid="${xesc(s.sample_id)}">
       <div class="info"><div><span class="sid">${xesc(s.sample_id)}</span>${b}${s.kind==="marker"?"<span class=\"badge\" style=\"background:#dbeafe;color:#1e40af\">标记点</span>":""}</div>
       <div class="meta">${s.kind==="marker"?"🚩 ":""}${xesc(s.sample_time||"")}${s.sample_type?" · "+xesc(s.sample_type):""}${s.loc_status?" · ⛏"+xesc(s.loc_status):""}${s.area_name?" · 📍"+xesc(s.area_name):""}</div>
       ${gps}
@@ -1037,20 +1099,31 @@ async function renderList(){
         <button class="btn secondary act-view" style="padding:6px 12px;min-height:36px">详情/照片</button>
         <button class="btn secondary act-edit" style="padding:6px 12px;min-height:36px">⋯ 更多</button>
       </div></div></div>`}).join("");
+  const rowOf=el=>listRows.find(x=>x.sample_id===el.closest(".samcard").dataset.sid);
   document.querySelectorAll("#samlist .samcard").forEach(c=>c.onclick=e=>{
     if(e.target.closest("button"))return;
-    viewDetail(+c.dataset.id,all);
+    const s=rowOf(c);if(s)viewDetail(s);
   });
-  document.querySelectorAll(".act-edit").forEach(b=>b.onclick=e=>{
-    const s=all.find(x=>x.id===+e.target.closest(".samcard").dataset.id);if(!s)return;
-    editingSample=s;
-    $("samedit_title").textContent=s.sample_id;
-    $("samedit").classList.remove("hidden");
+  document.querySelectorAll(".act-view").forEach(b=>b.onclick=e=>{
+    const s=rowOf(e.target);if(s)viewDetail(s);
   });
-  document.querySelectorAll(".act-view").forEach(b=>b.onclick=e=>viewDetail(+e.target.closest(".samcard").dataset.id,all));
+  document.querySelectorAll(".act-edit").forEach(b=>b.onclick=async e=>{
+    let s=rowOf(e.target);if(!s)return;
+    if(s._src==="cloud"){
+      b.disabled=true;b.textContent="存到本机…";
+      s=await ensureLocal(s);toast("已存到本机，可以直接编辑",4000);
+    }
+    openSamEdit(s);
+  });
+}
+function openSamEdit(s){
+  editingSample=s;
+  $("samedit_title").textContent=s.sample_id;
+  $("samedit").classList.remove("hidden");
 }
 $("q_list").addEventListener("input",()=>{listQ=$("q_list").value;renderList()});
 $("chips_filter").querySelectorAll("button").forEach(b=>b.onclick=()=>{listFilter=b.dataset.f;renderList()});
+$("btn_pull_all").onclick=pullSamples;
 /* ---- 记录编辑/删除 ---- */
 let editingSample=null;
 const closeSamEdit=()=>{editingSample=null;$("samedit").classList.add("hidden")}; // 取消时务必清掉，否则下一条保存会覆盖旧记录
@@ -1088,13 +1161,14 @@ function exitEdit(){
   $("btn_gps").disabled=$("btn_pick").disabled=$("btn_viewpos").disabled=false;
   $("btn_save").textContent="💾 保存记录";
 }
-function viewDetail(id,all){
-  const s=all.find(x=>x.id===id);if(!s)return;
+function viewDetail(s){
+  if(!s)return;
   const m=document.createElement("div");m.className="modal";
   const urls=[];
   const row=(k,v)=>v?`<div style="display:flex;gap:8px;font-size:14px;margin-bottom:5px"><span style="color:var(--muted);min-width:64px">${k}</span><span>${v}</span></div>`:"";
   const coord=s.latitude!=null?`${(+s.latitude).toFixed(6)}, ${(+s.longitude).toFixed(6)}`:"";
-  m.innerHTML=`<div class="box"><h3>${xesc(s.sample_id)}</h3>
+  const fromCloud=s._src==="cloud";
+  m.innerHTML=`<div class="box"><h3>${xesc(s.sample_id)}${fromCloud?' <span class="badge" style="background:#e0f2fe;color:#075985">☁️ 云端</span>':""}</h3>
     <div class="thumbs">${(s.photos||[]).map(p=>{
       const u=p.blob?URL.createObjectURL(p.blob):(p.url||"");if(p.blob&&u)urls.push(u);
       return u?`<img src="${u}" style="max-width:100px;border-radius:8px;cursor:pointer">`:"";
@@ -1114,7 +1188,8 @@ function viewDetail(id,all){
     ${row("备注",xesc(s.remark))}
     ${row("同步错误",xesc(s.sync_err))}
     ${coord?`<button class="btn secondary block" data-copy style="margin-top:10px">📋 复制坐标</button>`:""}
-    ${s.status!=="synced"?`<button class="btn primary block" data-sync style="margin-top:8px">🔄 立即同步这条</button>`:""}
+    ${fromCloud?`<button class="btn primary block" data-save style="margin-top:8px">📥 存到本机（可编辑）</button>`:""}
+    ${s.status!=="synced"&&!fromCloud?`<button class="btn primary block" data-sync style="margin-top:8px">🔄 立即同步这条</button>`:""}
     <button class="btn secondary block" data-close style="margin-top:8px">关闭</button></div>`;
   const close=()=>{urls.forEach(u=>URL.revokeObjectURL(u));$("viewer").classList.add("hidden");m.remove()};
   m.querySelectorAll("[data-close]").forEach(b=>b.onclick=close);
@@ -1123,6 +1198,12 @@ function viewDetail(id,all){
   if(cp)cp.onclick=async()=>{
     try{await navigator.clipboard.writeText(coord);toast("坐标已复制")}
     catch(e){toast("复制失败：请长按坐标手动复制",3500)}
+  };
+  const dv=m.querySelector("[data-save]");
+  if(dv)dv.onclick=async()=>{
+    dv.disabled=true;dv.textContent="保存中…";
+    await ensureLocal(s);toast("已存到本机，可以编辑了",3000);
+    close();await renderList();
   };
   const sb=m.querySelector("[data-sync]");
   if(sb)sb.onclick=async()=>{
@@ -1260,19 +1341,17 @@ async function renderSetStats(){
 $("btn_stat_refresh").onclick=renderSetStats;
 /* 从云端（D1）拉回记录：补齐本机没有的，不删除本机记录 */
 async function pullSamples(){
-  const btns=[$("btn_pull"),$("btn_pull2")].filter(Boolean);
+  const btns=[$("btn_pull"),$("btn_pull2"),$("btn_pull_all")].filter(Boolean);
   const info=$("pull_info");
   btns.forEach(b=>{b.disabled=true;b.textContent="⏳ 拉取中…"});
   try{
     if(!navigator.onLine)throw new Error("当前无网络");
-    const w=((await store.get("worker_url"))||DEF_WORKER||"").replace(/\/$/,"");
-    if(!w)throw new Error("还没有配置 Worker 地址");
-    const tok=(await store.get("app_token"))||"";
-    const r=await fetch(w+"/samples",{headers:tok?{"X-App-Token":tok}:{}});
-    if(r.status===401)throw new Error("访问令牌不对：请用带 ?t= 的链接打开一次，或在上面填令牌");
-    const j=await r.json().catch(()=>({}));
-    if(!r.ok||!j.ok)throw new Error(j.error||("HTTP "+r.status));
-    const remote=Array.isArray(j.samples)?j.samples:[];
+    let remote;
+    try{remote=await fetchCloud()}
+    catch(e){
+      if(e.message==="访问令牌不对")throw new Error("访问令牌不对：请用带 ?t= 的链接打开一次，或在上面填令牌");
+      throw e;
+    }
     const local=await S.all();
     const byId=new Map();local.forEach(s=>{if(s.sample_id)byId.set(s.sample_id,s)});
     let add=0,upd=0,keep=0;
@@ -1295,6 +1374,7 @@ async function pullSamples(){
   }finally{
     if($("btn_pull")){$("btn_pull").disabled=false;$("btn_pull").textContent="☁️ 从云端恢复记录"}
     if($("btn_pull2")){$("btn_pull2").disabled=false;$("btn_pull2").textContent="☁️ 从云端恢复记录"}
+    if($("btn_pull_all")){$("btn_pull_all").disabled=false;$("btn_pull_all").textContent="存到本机"}
   }
 }
 $("btn_pull").onclick=pullSamples;
@@ -2140,7 +2220,7 @@ if(!isStandalone){
 }
 
 /* ============ 版本检查：发布新版本后自动弹「更新」按钮 ============ */
-const APP_VER="b20261107-120";
+const APP_VER="20261109-1140";
 let updateDismissed=false;
 function showUpdateTip(){if(updateDismissed)return;const t=$("update_tip");if(t)t.style.display="flex";}
 async function checkUpdate(){

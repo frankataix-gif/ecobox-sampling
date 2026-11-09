@@ -66,6 +66,8 @@
 「立即更新」优先走 `SW.postMessage("SKIP_WAITING")` + `controllerchange` 重载，没有 waiting SW 时退回 `forceAppUpdate()`（清缓存 + 注销 SW + 带 `?r=` 重载）。
 `version.txt` 必须发布（不能进 `.gitignore`）；漏传时探针 404，横幅永远不弹。
 
+版本号现在由 `build_public.py` 生成 `YYYYMMDD-NNNN`（`licences.html` 的 `PAGE_VER` 就是这种），`bump_version.py` 两种写法（`bYYYYMMDD-NNN` / `YYYYMMDD-NNNN`）都能识别并保持原格式；`version.txt` 与页面 `APP_VER` 必须一字不差，否则每次打开都误报「有新版本」。
+
 ## 地质图层（QGIS → 网页，2026-11）
 
 - 导出脚本：`devtools/export_qgis.py`，用 `"C:\Program Files\QGIS 4.2.2\bin\python-qgis.bat"` 跑，**只读** gpkg，不碰 `.qgz`。
@@ -232,14 +234,14 @@ go/no-go 由人拍板并记 decision log。取样点永不写入矿证归属（�
 - 测试：`t_multilic.html`（侧栏只列项目、加证后计数变 2、两张边界卡、地图画两条环）。
 ## 采集页（sampling_helper.html）页面结构
 
-- 底部导航 3 项：`pg-form`（记录）/ `pg-map`（地图）/ `pg-set`（设置）。独立的 `pg-list`（取样）与 `pg-track`（行程）都已删掉。
+- 底部导航 3 项：`pg-form`（取样）/ `pg-map`（地图）/ `pg-set`（设置）。独立的 `pg-list`（取样）与 `pg-track`（行程）都已删掉。
 - `pg-form` 内三个视图，用 `#formtabs` 切换：`tab_cur`（取样，录入表单）、`tab_list`（取样历史，已保存列表）、`tab_trip`（行程，轨迹记录 + 历史行程）。
   切换函数 `setFormTab("cur"|"list"|"trip")`；进列表视图才 `renderList()`，进行程视图才 `updTrk()/renderTrips()`。
   老客户端 `kv.cur_page === "pg-list"` / `"pg-track"` 由启动逻辑映射到对应视图；`kv.form_tab` 记住上次停留的视图。
 - 记录人由登录锁定：`openLogin()` / `submitLogin()`，账号 `ACCOUNTS` 写在 HTML 里（离线无后端，已知取舍）；
   `#f_recorder` 只读，值取登录身份，保存时 `recorder` 直接取该字段，软件内无「切换」入口。
 - 取样视图有**草稿自动保存**：`kv.draft`（文字/含量）+ `kv.draft_photos`（照片 Blob），切页/切后台/刷新后自动恢复，保存或「清空本次输入」后清除；半天以上视为过期。编辑旧记录期间不写草稿（避免被当成新记录）。
-- 取样历史：`#q_list` 本地搜索（编号/备注/地区/记录人/元素）+ `#chips_filter`（全部/待同步/已同步）+ `#list_stat` 计数；卡片整卡可点开详情，详情里有「复制坐标」「立即同步这条」。
+- 取样历史：`#q_list` 本地搜索（编号/备注/地区/记录人/元素）+ `#chips_filter`（全部/待同步/已同步/☁️ 仅云端）+ `#list_stat` 计数；卡片整卡可点开详情，详情里有「复制坐标」「立即同步这条」。**列表是全量历史**：`drawList(local, cloud)` 合并本机 IndexedDB 与云端 `GET /samples`（按 `sample_id` 去重，本机未同步的版本优先），云端独有的记录标「☁️ 云端」、只读，点详情可「📥 存到本机」或「⋯ 更多」时自动落库后再编辑；`#cloudbar` 给「存到本机」批量入口（走 `pullSamples`）。云端数据缓存在 `kv.cloud_samples_v1`（60 秒节流、非阻塞：先用缓存画一遍再补刷新，弱网不卡列表），离线时只用缓存。
 - 行程：记录中在 `#triplive` 显示实时卡片（时长/里程/点数），`#formtabs` 的🧭上有红点；回放轨迹会在切到地图页时自动清除。
 - 设置页：`#set_user` 显示当前记录人；`#set_stat` 显示本机数据（样品/待同步/照片/行程/里程/离线瓦片）。
 - **云端恢复**：`pullSamples()` 用 `GET {worker}/samples`（`X-App-Token`）把 D1 里已有记录补回本机：本机没有的新增、本机已同步的覆盖、本机未同步的保留；入口在设置页「♻️ 从云端恢复记录」和空列表页的按钮。云端记录的照片只有 R2 `url`（无 blob），缩略图/详情用 url 兜底，`uploadPhoto()` 见到 `key+url` 直接复用不再重传。
