@@ -188,55 +188,62 @@ button.pri:hover{background:#000}
 .fin-dim{background:rgba(0,0,0,.45)}
 .ok{color:var(--good)}
 a{color:#111}
-/* ---------- 动态卡片流（参考 docs App） ---------- */
+/* ---------- 动态卡片流（适配移动端：触控 ≥44px / 安全区 / 留言体验） ---------- */
 .fd-top{display:flex;align-items:baseline;justify-content:space-between;margin:2px 0 10px}
-.fd-title{font-size:16px;font-weight:700}
-.fd-fab{position:fixed;right:16px;bottom:26px;width:54px;height:54px;border-radius:50%;background:#111;color:#fff;font-size:26px;line-height:1;border:0;box-shadow:0 8px 22px rgba(0,0,0,.28);z-index:40}
-.fd-fab:active{background:#000;transform:scale(.96)}
-.fd-post{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:10px}
-.fd-h{display:flex;align-items:center;gap:10px}
-.fd-av{width:36px;height:36px;border-radius:50%;background:#111;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex:0 0 auto}
+.fd-title{font-size:17px;font-weight:700}
+.fd-fab{position:fixed;right:16px;bottom:calc(24px + env(safe-area-inset-bottom, 0px));width:56px;height:56px;border-radius:50%;background:#111;color:#fff;font-size:28px;line-height:1;border:0;box-shadow:0 10px 24px rgba(0,0,0,.3);z-index:40;display:flex;align-items:center;justify-content:center}
+.fd-fab:active{background:#000;transform:scale(.95)}
+.fd-post{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+.fd-h{display:flex;align-items:center;gap:12px}
+.fd-av{width:42px;height:42px;border-radius:50%;background:#111;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:17px;flex:0 0 auto}
 .fd-meta{flex:1;min-width:0}
-.fd-meta b{display:block;font-size:14.5px}
-.fd-meta span{font-size:11.5px;color:var(--mut)}
-.fd-more{background:transparent;border:0;color:#6b7280;font-size:17px;padding:0 4px;letter-spacing:1px;line-height:1}
-.fd-b{margin-top:8px;white-space:pre-wrap;word-break:break-word;font-size:14.5px;line-height:1.62}
-.fd-media{display:grid;gap:4px;margin-top:8px}
+.fd-meta b{display:block;font-size:15.5px;line-height:1.3}
+.fd-meta span{font-size:12px;color:var(--mut)}
+.fd-more{background:transparent;border:0;color:#6b7280;font-size:20px;padding:10px 8px;letter-spacing:2px;line-height:1;min-height:44px;min-width:44px}
+.fd-b{margin-top:10px;white-space:pre-wrap;word-break:break-word;font-size:15px;line-height:1.65}
+.fd-media{display:grid;gap:4px;margin-top:10px}
 .fd-media.g1{grid-template-columns:1fr}
 .fd-media.g2{grid-template-columns:1fr 1fr}
 .fd-media.g3{grid-template-columns:repeat(3,1fr)}
 .fd-tile{position:relative;padding:0;border:0;background:#eef1f2;border-radius:8px;overflow:hidden;cursor:pointer;aspect-ratio:1/1;display:block;width:100%}
-.fd-media.g1 .fd-tile{aspect-ratio:4/3}
+.fd-media.g1 .fd-tile{aspect-ratio:4/3;max-height:440px}
 .fd-tile img,.fd-tile video{width:100%;height:100%;object-fit:cover;display:block}
-.fd-play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;background:rgba(0,0,0,.22)}
+.fd-play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:26px;background:rgba(0,0,0,.22)}
 .fd-more-n{position:absolute;inset:0;background:rgba(0,0,0,.45);color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600}
-.fd-acts{display:flex;gap:16px;margin-top:10px;border-top:1px solid var(--line);padding-top:8px}
-.fd-acts button{background:transparent;border:0;color:#4b5563;font-size:13px;padding:0}
+.fd-acts{display:flex;gap:8px;margin-top:12px;border-top:1px solid var(--line);padding-top:4px}
+.fd-acts button{display:flex;align-items:center;justify-content:center;gap:7px;background:transparent;border:0;color:#4b5563;font-size:14px;min-height:44px;min-width:72px;padding:4px 10px}
+.fd-acts button i{font-style:normal;font-size:17px}
 .fd-acts button.on{color:#e11d48;font-weight:600}
-.fd-comments{margin-top:8px;background:#f7f8f8;border-radius:10px;padding:8px}
-.fd-c{font-size:13px;line-height:1.55;padding:2px 0;display:flex;gap:6px;align-items:flex-start}
-.fd-c b{color:#111;flex:0 0 auto}
-.fd-c span{flex:1;word-break:break-word}
-.fd-c .x{margin-left:auto;border:0;background:transparent;color:#9aa3a8;font-size:13px;padding:0 2px;flex:0 0 auto}
-.fd-cin{display:flex;gap:6px;margin-top:6px}
-.fd-cin input{flex:1;padding:7px 9px;border-radius:8px;border:1px solid var(--line);font-size:13px;background:#fff}
-.fd-cin button{padding:6px 10px;font-size:13px}
-.fd-sheet{position:fixed;left:0;right:0;bottom:0;background:#fff;border-radius:16px 16px 0 0;box-shadow:0 -8px 30px rgba(0,0,0,.2);padding:14px;z-index:70;max-height:88vh;overflow:auto}
-.fd-sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
-.fd-sh h3{margin:0;font-size:15px}
-.fd-sh button{background:transparent;border:0;color:var(--mut);font-size:13px}
-.fd-sheet textarea{width:100%;min-height:92px;border:1px solid var(--line);border-radius:10px;padding:9px;font:inherit;background:#fff;resize:vertical}
-.fd-thumbs{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.fd-acts button.on i{transform:scale(1.1)}
+.fd-comments{margin-top:8px;background:#f7f8f8;border-radius:12px;padding:10px 12px}
+.fd-c{font-size:13.5px;line-height:1.6;padding:3px 0;display:flex;gap:6px;align-items:baseline}
+.fd-c b{color:#111;flex:0 0 auto;font-weight:600}
+.fd-c span{flex:1;word-break:break-word;color:#1f2937}
+.fd-c em{flex:0 0 auto;font-style:normal;color:#9aa3a8;font-size:11px}
+.fd-c .x{border:0;background:transparent;color:#9aa3a8;font-size:15px;padding:6px;line-height:1;min-width:28px;flex:0 0 auto}
+.fd-cmore{display:block;border:0;background:transparent;color:#111;font-size:12.5px;font-weight:600;padding:8px 0 4px;margin:0}
+.fd-cin{display:flex;gap:8px;margin-top:8px}
+.fd-cin input{flex:1;padding:11px 13px;border-radius:22px;border:1px solid var(--line);font-size:14px;background:#fff;min-width:0}
+.fd-cin input:focus{outline:none;border-color:#111}
+.fd-cin button{padding:10px 16px;font-size:14px;border-radius:22px;flex:0 0 auto;min-height:44px}
+.fd-sheet{position:fixed;left:0;right:0;bottom:0;background:#fff;border-radius:16px 16px 0 0;box-shadow:0 -8px 30px rgba(0,0,0,.2);padding:16px;padding-bottom:calc(16px + env(safe-area-inset-bottom, 0px));z-index:70;max-height:88vh;overflow:auto}
+.fd-sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.fd-sh h3{margin:0;font-size:16px}
+.fd-sh button{background:transparent;border:0;color:var(--mut);font-size:14px;padding:8px 4px;min-height:40px}
+.fd-sheet textarea{width:100%;min-height:100px;border:1px solid var(--line);border-radius:12px;padding:11px;font:inherit;font-size:15px;background:#fff;resize:vertical}
+.fd-cnt{text-align:right;color:var(--mut);font-size:11.5px;margin:4px 2px 0}
+.fd-thumbs{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
 .fd-thumbs .t{position:relative}
-.fd-thumbs img,.fd-thumbs video{width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
-.fd-thumbs .x{position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:#111;color:#fff;border:0;font-size:12px;line-height:18px;padding:0}
-.fd-menu{position:fixed;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 10px 26px rgba(0,0,0,.16);padding:6px;z-index:80;min-width:120px}
-.fd-menu button{display:block;width:100%;text-align:left;border:0;background:transparent;padding:8px 10px;font-size:14px;border-radius:8px}
+.fd-thumbs img,.fd-thumbs video{width:68px;height:68px;object-fit:cover;border-radius:10px;border:1px solid var(--line)}
+.fd-thumbs .x{position:absolute;top:-7px;right:-7px;width:22px;height:22px;border-radius:50%;background:#111;color:#fff;border:0;font-size:13px;line-height:20px;padding:0}
+.fd-menu{position:fixed;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 30px rgba(0,0,0,.18);padding:6px;z-index:80;min-width:140px}
+.fd-menu button{display:block;width:100%;text-align:left;border:0;background:transparent;padding:11px 12px;font-size:14px;border-radius:9px;min-height:44px}
 .fd-menu button:hover{background:#f3f4f5}
 .fd-menu button.dz{color:#b91c1c}
-.fd-dim{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:65}
-.fd-view{position:fixed;inset:0;background:rgba(0,0,0,.93);z-index:90;display:flex;align-items:center;justify-content:center;cursor:zoom-out}
+.fd-dim{position:fixed;inset:0;background:rgba(0,0,0,.42);z-index:65}
+.fd-view{position:fixed;inset:0;background:rgba(0,0,0,.94);z-index:90;display:flex;align-items:center;justify-content:center;cursor:zoom-out}
 .fd-view img,.fd-view video{max-width:96vw;max-height:92vh}
+.fd-view-x{position:absolute;top:calc(12px + env(safe-area-inset-top, 0px));right:14px;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.18);color:#fff;border:0;font-size:24px;line-height:1}
 
 #upd_ver{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:120;background:#111;color:#fff;padding:8px 14px;border-radius:999px;box-shadow:0 6px 20px rgba(0,0,0,.32);display:flex;gap:12px;align-items:center;font-size:13px}
 #upd_ver button{background:#fff;color:#111;border:0;border-radius:999px;padding:5px 13px;font-size:13px;font-weight:600}
@@ -907,41 +914,33 @@ function syncChrome() {
 
 let FEED = null;
 
-/* ---------- 动态：卡片流 + 右下角 + / 点赞 / 留言 / 编辑删除 ---------- */
+/* ---------- 动态：卡片流 ---------- */
+const mediaSrc = (u) => (/^https?:\/\//.test(u) ? u : "/api/fin/photo/" + u);
+const mediaList = (p) => (p.photos || []).map((m) => (typeof m === "string" ? { t: "i", u: m } : m)).filter((m) => m && m.u);
+const KIND = { company: "🏢 公司", prod: "⛏ 生产", export: "🚢 出口" };
+const whenOf = (p) => { const raw = String(p.created_at || ""); return raw.slice(11, 16) === "00:00" ? raw.slice(0, 10) : raw.replace("T", " ").slice(0, 16); };
+const ago = (t) => { if (!t) return ""; const d = Date.now() - new Date(t).getTime(); if (d < 60000) return "刚刚"; if (d < 3600000) return Math.floor(d / 60000) + " 分钟前"; if (d < 86400000) return Math.floor(d / 3600000) + " 小时前"; if (d < 604800000) return Math.floor(d / 86400000) + " 天前"; return String(t || "").slice(0, 10); };
+const fb = (u) => (u.startsWith("feed/old/") ? ` onerror="this.onerror=null;this.src='/api/feed/img/${u.slice(9)}'"` : "");
+const FD_EXP = new Set();
+const meId = () => S.user.login || S.user.uid;
+
 function feedHtml() {
-  return `<div class="fd-top">
-      <div class="fd-title">公司动态</div>
-      <span class="mut">全体可见</span>
-    </div>
+  return `<div class="fd-top"><div class="fd-title">公司动态</div><span class="mut">全体可见</span></div>
     <div id="fd_list"><div class="empty">加载中…</div></div>
     <button id="fd_fab" class="fd-fab" title="添加动态">＋</button>`;
 }
 
 function bindFeed() {
-  const fab = $("#fd_fab");
-  if (fab) fab.onclick = () => openComposer();
+  const f = $("#fd_fab");
+  if (f) f.onclick = () => openComposer();
   loadFeed();
 }
-
-const mediaSrc = (u) => (/^https?:\/\//.test(u) ? u : "/api/fin/photo/" + u);
-const mediaList = (p) => (p.photos || [])
-  .map((m) => (typeof m === "string" ? { t: "i", u: m } : m))
-  .filter((m) => m && m.u);
-const whenOf = (p) => {
-  const raw = String(p.created_at || "");
-  return raw.slice(11, 16) === "00:00" ? raw.slice(0, 10) : raw.replace("T", " ").slice(0, 16);
-};
-const KIND = { company: "🏢 公司", prod: "⛏ 生产", export: "🚢 出口" };
 
 function loadFeed() {
   return api("/feed", { quiet: true })
     .then((r) => { FEED = r.posts || []; drawFeed(); })
     .catch((e) => { const el = $("#fd_list"); if (el) el.innerHTML = `<div class="empty">${esc(e.message)}</div>`; });
 }
-
-const fb = (u) => (u.startsWith("feed/old/")
-  ? ` onerror="this.onerror=null;this.src='/api/feed/img/${u.slice(9)}'"`
-  : "");
 
 function mediaHtml(p) {
   const list = mediaList(p);
@@ -959,19 +958,26 @@ function mediaHtml(p) {
 
 function cmtHtml(p) {
   const list = p.comments || [];
-  const me = S.user.login || S.user.uid;
-  const rows = list.map((c, i) => `<div class="fd-c"><b>${esc(c.by || "")}</b><span>${esc(c.text || "")}</span>${
-    c.uid === me || S.user.role === "admin" ? `<button class="x" data-cdel="${esc(p.id)}:${i}">×</button>` : ""}</div>`).join("");
-  return `<div class="fd-comments">
-    ${rows}
-    <div class="fd-cin"><input data-cin="${esc(p.id)}" maxlength="300" placeholder="留言…"><button data-csend="${esc(p.id)}">发送</button></div>
+  const me = meId();
+  const all = FD_EXP.has(p.id) || list.length <= 3;
+  const pairs = list.map((c, i) => [c, i]);
+  const vis = all ? pairs : pairs.slice(0, 3);
+  const rows = vis.map(([c, i]) => `<div class="fd-c"><b>${esc(c.by || "")}</b><span>${esc(c.text || "")}</span><em>${esc(ago(c.at))}</em>${
+    (c.uid === me || S.user.role === "admin") ? `<button class="x" data-cdel="${esc(p.id)}:${i}" title="删除">×</button>` : ""}</div>`).join("");
+  const moreBtn = list.length > 3
+    ? (all ? `<button class="fd-cmore" data-cmore="${esc(p.id)}">收起留言</button>` : `<button class="fd-cmore" data-cmore="${esc(p.id)}">查看全部 ${list.length} 条留言</button>`)
+    : "";
+  return `<div class="fd-comments">${rows}${moreBtn}
+    <div class="fd-cin"><input data-cin="${esc(p.id)}" maxlength="300" placeholder="写留言…"><button data-csend="${esc(p.id)}">发送</button></div>
   </div>`;
 }
 
 function postHtml(p) {
-  const me = S.user.login || S.user.uid;
+  const me = meId();
   const mine = p.uid === me || S.user.role === "admin";
   const liked = (p.likes || []).includes(me);
+  const nLike = (p.likes || []).length;
+  const nCmt = (p.comments || []).length;
   return `<article class="fd-post" data-id="${esc(p.id)}">
     <div class="fd-h">
       <div class="fd-av">${esc((p.name || "?").slice(0, 1).toUpperCase())}</div>
@@ -981,45 +987,78 @@ function postHtml(p) {
     ${p.body ? `<div class="fd-b">${esc(p.body)}</div>` : ""}
     ${mediaHtml(p)}
     <div class="fd-acts">
-      <button class="${liked ? "on" : ""}" data-like="${esc(p.id)}">${liked ? "❤" : "♡"} ${(p.likes || []).length || ""}</button>
-      <button data-cmt="${esc(p.id)}">💬 ${(p.comments || []).length || ""}</button>
+      <button class="fd-like${liked ? " on" : ""}" data-like="${esc(p.id)}" aria-label="点赞"><i>${liked ? "❤" : "♡"}</i><span>${nLike || "赞"}</span></button>
+      <button class="fd-cmtb" data-cmt="${esc(p.id)}" aria-label="评论"><i>💬</i><span>${nCmt || "评论"}</span></button>
     </div>
     ${cmtHtml(p)}
   </article>`;
+}
+
+function bindPost(el) {
+  el.querySelectorAll("[data-img]").forEach((b) => (b.onclick = () => fdView(b.dataset.img, "")));
+  el.querySelectorAll("[data-vid]").forEach((b) => (b.onclick = () => fdView("", b.dataset.vid)));
+  el.querySelectorAll("[data-like]").forEach((b) => (b.onclick = () => likePost(b.dataset.like)));
+  el.querySelectorAll("[data-cmt]").forEach((b) => (b.onclick = () => focusCmt(b.dataset.cmt)));
+  el.querySelectorAll("[data-cmore]").forEach((b) => (b.onclick = () => { FD_EXP.has(b.dataset.cmore) ? FD_EXP.delete(b.dataset.cmore) : FD_EXP.add(b.dataset.cmore); refreshPost(b.dataset.cmore); }));
+  el.querySelectorAll("[data-csend]").forEach((b) => (b.onclick = () => sendComment(b.dataset.csend)));
+  el.querySelectorAll("[data-cin]").forEach((inp) => (inp.onkeydown = (e) => { if (e.key === "Enter") { e.preventDefault(); sendComment(inp.dataset.cin); } }));
+  el.querySelectorAll("[data-cdel]").forEach((b) => (b.onclick = () => delComment(b.dataset.cdel)));
+  el.querySelectorAll("[data-more]").forEach((b) => (b.onclick = (e) => { e.stopPropagation(); openMenu(b.dataset.more, b); }));
 }
 
 function drawFeed() {
   const el = $("#fd_list");
   if (!el) return;
   el.innerHTML = (FEED && FEED.length) ? FEED.map(postHtml).join("") : '<div class="empty">还没有动态，点右下角 ＋ 发第一条</div>';
-  el.querySelectorAll("[data-img]").forEach((b) => (b.onclick = () => fdView(b.dataset.img, "")));
-  el.querySelectorAll("[data-vid]").forEach((b) => (b.onclick = () => fdView("", b.dataset.vid)));
-  el.querySelectorAll("[data-like]").forEach((b) => (b.onclick = () => likePost(b.dataset.like)));
-  el.querySelectorAll("[data-csend]").forEach((b) => (b.onclick = () => sendComment(b.dataset.csend)));
-  el.querySelectorAll("[data-cin]").forEach((inp) => (inp.onkeydown = (e) => { if (e.key === "Enter") sendComment(inp.dataset.cin); }));
-  el.querySelectorAll("[data-cdel]").forEach((b) => (b.onclick = () => delComment(b.dataset.cdel)));
-  el.querySelectorAll("[data-more]").forEach((b) => (b.onclick = (e) => { e.stopPropagation(); openMenu(b.dataset.more, b); }));
+  el.querySelectorAll(".fd-post").forEach(bindPost);
+}
+
+function refreshPost(id) {
+  const p = (FEED || []).find((x) => x.id === id);
+  if (!p) return;
+  const el = document.querySelector(`.fd-post[data-id="${id}"]`);
+  if (!el) return;
+  el.outerHTML = postHtml(p);
+  const next = document.querySelector(`.fd-post[data-id="${id}"]`);
+  if (next) bindPost(next);
+}
+
+function focusCmt(id) {
+  const inp = document.querySelector(`[data-cin="${id}"]`);
+  if (inp) { inp.focus(); inp.scrollIntoView({ behavior: "smooth", block: "center" }); }
 }
 
 async function likePost(id) {
   const p = (FEED || []).find((x) => x.id === id);
   if (!p) return;
-  await api("/feed/" + encodeURIComponent(id) + "/like", { method: "POST", quiet: true }).catch(() => {});
-  await loadFeed();
+  const me = meId();
+  const liked = (p.likes || []).includes(me);
+  p.likes = liked ? p.likes.filter((x) => x !== me) : (p.likes || []).concat([me]);
+  refreshPost(id);
+  try { await api("/feed/" + encodeURIComponent(id) + "/like", { method: "POST", quiet: true }); }
+  catch (e) { toast("点赞失败", "bad"); await loadFeed(); }
 }
 
 async function sendComment(id) {
   const inp = document.querySelector(`[data-cin="${id}"]`);
   const text = (inp && inp.value || "").trim();
-  if (!text) return;
-  await api("/feed/" + encodeURIComponent(id) + "/comment", { method: "POST", body: { text }, quiet: true }).catch(() => {});
-  await loadFeed();
+  if (!text) { if (inp) inp.focus(); return; }
+  const p = (FEED || []).find((x) => x.id === id);
+  const me = meId();
+  if (p) { p.comments = (p.comments || []).concat([{ uid: me, by: S.user.name || me, text, at: new Date().toISOString() }]); FD_EXP.add(id); refreshPost(id); }
+  if (inp) inp.value = "";
+  try { await api("/feed/" + encodeURIComponent(id) + "/comment", { method: "POST", body: { text }, quiet: true }); }
+  catch (e) { toast("留言没发出去，重试一下", "bad"); await loadFeed(); }
 }
 
 async function delComment(spec) {
   const [id, i] = spec.split(":");
-  await api(`/feed/${encodeURIComponent(id)}/comment/${i}`, { method: "DELETE", quiet: true }).catch(() => {});
-  await loadFeed();
+  const p = (FEED || []).find((x) => x.id === id);
+  if (!p) return;
+  p.comments.splice(+i, 1);
+  refreshPost(id);
+  try { await api(`/feed/${encodeURIComponent(id)}/comment/${i}`, { method: "DELETE", quiet: true }); }
+  catch (e) { await loadFeed(); }
 }
 
 function openMenu(id, btn) {
@@ -1032,21 +1071,25 @@ function openMenu(id, btn) {
   m.id = "fd_menu";
   m.style.top = Math.round(r.bottom + 6) + "px";
   m.style.right = Math.max(8, Math.round(window.innerWidth - r.right)) + "px";
-  m.innerHTML = `<button data-act="edit">编辑</button><button data-act="del" class="dz">删除</button>`;
+  m.innerHTML = `<button data-act="edit">编辑</button><button data-act="copy">复制内容</button><button data-act="del" class="dz">删除</button>`;
   document.body.appendChild(m);
   m.querySelector('[data-act="edit"]').onclick = () => { closeMenu(); openComposer(p); };
+  m.querySelector('[data-act="copy"]').onclick = () => {
+    closeMenu();
+    const t = p.body || "";
+    if (!t) { toast("没有文字可复制", "bad"); return; }
+    if (navigator.clipboard) navigator.clipboard.writeText(t).then(() => toast("已复制", "good")).catch(() => toast("复制失败", "bad"));
+    else toast("复制失败", "bad");
+  };
   m.querySelector('[data-act="del"]').onclick = async () => {
     closeMenu();
     if (!confirm("删除这条动态？")) return;
-    await api("/feed/" + encodeURIComponent(id), { method: "DELETE", toast: "已删除" });
-    await loadFeed();
+    try { await api("/feed/" + encodeURIComponent(id), { method: "DELETE", toast: "已删除" }); await loadFeed(); }
+    catch (e) {}
   };
   setTimeout(() => document.addEventListener("click", closeMenu, { once: true }), 0);
 }
-function closeMenu() {
-  const m = $("#fd_menu");
-  if (m) m.remove();
-}
+function closeMenu() { const m = $("#fd_menu"); if (m) m.remove(); }
 
 let FD_EDIT = null, FD_DRAFT = [];
 function openComposer(post) {
@@ -1054,14 +1097,12 @@ function openComposer(post) {
   FD_DRAFT = post ? mediaList(post).slice() : [];
   closeSheet();
   const dim = document.createElement("div");
-  dim.className = "fd-dim";
-  dim.id = "fd_dim";
-  dim.onclick = closeSheet;
+  dim.className = "fd-dim"; dim.id = "fd_dim"; dim.onclick = closeSheet;
   const s = document.createElement("div");
-  s.className = "fd-sheet";
-  s.id = "fd_sheet";
+  s.className = "fd-sheet"; s.id = "fd_sheet";
   s.innerHTML = `<div class="fd-sh"><h3>${post ? "编辑动态" : "添加动态"}</h3><button id="fd_x">取消</button></div>
     <textarea id="fd_body" maxlength="2000" placeholder="说点什么…">${esc(post ? post.body : "")}</textarea>
+    <div class="fd-cnt"><span id="fd_cnt">0</span>/2000</div>
     <div id="fd_ph" class="fd-thumbs"></div>
     <div class="row"><button id="fd_pick">＋ 照片</button><button class="pri" id="fd_send">${post ? "保存" : "发布"}</button></div>
     <input id="fd_file" type="file" accept="image/*" multiple hidden>`;
@@ -1082,7 +1123,9 @@ function openComposer(post) {
     }
     btn.disabled = false; btn.textContent = FD_EDIT ? "保存" : "发布";
   };
+  $("#fd_body").oninput = () => { const c = $("#fd_cnt"); if (c) c.textContent = ($("#fd_body").value || "").length; };
   $("#fd_send").onclick = sendPost;
+  const c = $("#fd_cnt"); if (c) c.textContent = (post ? post.body : "").length;
   drawDraft();
   $("#fd_body").focus();
 }
@@ -1096,9 +1139,7 @@ function drawDraft() {
   box.querySelectorAll("[data-rm]").forEach((b) => (b.onclick = () => { FD_DRAFT.splice(+b.dataset.rm, 1); drawDraft(); }));
 }
 
-function closeSheet() {
-  ["fd_dim", "fd_sheet"].forEach((id) => { const el = document.getElementById(id); if (el) el.remove(); });
-}
+function closeSheet() { ["fd_dim", "fd_sheet"].forEach((id) => { const el = document.getElementById(id); if (el) el.remove(); }); }
 
 async function sendPost() {
   const t = ($("#fd_body").value || "").trim();
@@ -1114,18 +1155,16 @@ async function sendPost() {
     closeSheet();
     FD_DRAFT = []; FD_EDIT = null;
     await loadFeed();
-  } finally {
-    btn.disabled = false;
-  }
+  } finally { btn.disabled = false; }
 }
 
 function fdView(img, vid) {
   const box = document.createElement("div");
   box.className = "fd-view";
-  box.onclick = () => box.remove();
-  box.innerHTML = vid
+  box.innerHTML = (vid
     ? `<video src="${esc(vid)}" controls autoplay playsinline></video>`
-    : `<img src="${esc(img)}" alt="">`;
+    : `<img src="${esc(img)}" alt="">`) + `<button class="fd-view-x">×</button>`;
+  box.onclick = (e) => { if (e.target === box || e.target.classList.contains("fd-view-x")) box.remove(); };
   document.body.appendChild(box);
 }
 
