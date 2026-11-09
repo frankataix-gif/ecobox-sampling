@@ -747,8 +747,8 @@ function finHtml() {
     </div>`;
   };
   const people = finPeople();
-  const accts = isAll ? people.map(acctCard).join("")
-    : acctCard(people.find((p) => p.login === who) || { login: who, name: finNameOf(who), role: "", ghost: false });
+  const personCard = () => acctCard(people.find((p) => p.login === who) || { login: who, name: finNameOf(who), role: "", ghost: false });
+  const acctHtml = isAll ? "" : `<div class="sec">${isMe ? "我的账户" : esc(finNameOf(who)) + " 账户"}</div>` + personCard();
 
   const tabs = `<div class="fin-seg">
     <button data-fscope="" class="${isMe ? "on" : ""}">我</button>
@@ -758,7 +758,7 @@ function finHtml() {
   const peopleTabs = (canAll && !isMe) ? `<div class="fin-ptab">${people.filter((p) => (FIN.accounts || []).some((a) => a.uid === p.login) || FIN.entries.some((e) => e.uid === p.login || e.to_uid === p.login)).map((p) => `<button data-fscope="${esc(p.login)}" class="${FINWHO === p.login ? "on" : ""}">${esc(p.name || p.login)}</button>`).join("")}</div>` : "";
 
   const actions = !ro ? `<div class="fin-acts">
-    <button id="fin_add" class="pri">＋ 记一笔</button>
+    ${!isAll ? `<button id="fin_add" class="pri">＋ 记一笔</button>` : ""}
     <button id="fin_move">🔁 取现</button>
     ${canAll ? `<button id="fin_give">🤝 给员工</button>` : ""}
   </div>` : "";
@@ -766,7 +766,7 @@ function finHtml() {
   const roHint = ro ? `<div class="mut" style="margin:0 0 8px">🔒 只读 · ${esc(finNameOf(who))}</div>` : "";
 
   return `${tabs}${peopleTabs}${roHint}
-    <div class="sec">${isAll ? "账户余额（全部）" : isMe ? "我的账户" : esc(finNameOf(who)) + " 账户"}</div>${accts}
+    ${acctHtml}
     ${actions}
     <div class="fin-bar"><select id="fin_m"><option value="">全部月份</option>${months.map((m) => `<option value="${m}" ${m === FINM ? "selected" : ""}>${m}</option>`).join("")}</select></div>
     <div class="fin-kpi">
@@ -776,7 +776,7 @@ function finHtml() {
       <div><span>笔数</span><b>${list.length}</b></div>
     </div>
     <div class="fin-list">${rows || '<div class="empty">这个月还没有记录</div>'}</div>
-    ${!ro ? `<button class="fin-fab" id="fin_add2">＋ 记一笔</button>` : ""}
+    ${!ro && !isAll ? `<button class="fin-fab" id="fin_add2">＋ 记一笔</button>` : ""}
     ${FIN.owner && !ro ? `<div class="sec">设置</div>
       <div class="fin-acct"><div class="n">期初余额</div>
         <div class="g">
