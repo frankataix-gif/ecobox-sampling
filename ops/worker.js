@@ -380,7 +380,7 @@ function normMedia(list) {
 }
 
 /* ---------- 财务：接口 ---------- */
-const FIN_KINDS = ["out", "in", "float"];
+const FIN_KINDS = ["out", "in", "float", "move"];
 const finSeeAll = (u) => u.role === "admin" || u.role === "manager";
 const FIN_DEFAULT_CATS = { life: [], project: [], names: {} };
 
@@ -430,7 +430,8 @@ async function finApi(req, env, me, seg, url, body) {
     const kind = FIN_KINDS.includes(b.kind) ? b.kind : "out";
     const amount = Math.round(num(b.amount) * 100) / 100;
     if (!(amount > 0)) return err("金额要大于 0");
-    const uid = all && b.uid ? String(b.uid) : own;
+    let uid = all && b.uid ? String(b.uid) : own;
+    if (kind === "move") uid = own;   // 取现/存现只动自己账户
     const toUid = kind === "float" ? String(b.to_uid || "") : "";
     if (kind === "float" && !toUid) return err("备用金要选发给谁");
     const photos = Array.isArray(b.photos) ? b.photos.slice(0, 6).map(String) : [];

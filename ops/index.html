@@ -96,6 +96,17 @@ td.n{text-align:right;font-variant-numeric:tabular-nums}
 .fin-acct .g{display:flex;gap:8px;margin-top:6px}
 .fin-acct .g>div{flex:1}
 .fin-acct input{width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:8px;font:inherit}
+.fin-acct label{font-size:11px;color:var(--mut);display:block}
+.fin-acct b{display:block;font-size:17px;margin-top:1px}
+.fin-acct .acts{display:flex;gap:8px;margin-top:8px}
+.fin-acct .acts button{flex:1;min-height:40px}
+.fin-seg{display:flex;background:var(--chip);border-radius:12px;padding:3px;margin:0 0 12px}
+.fin-seg button{flex:1;border:0;background:transparent;padding:10px;font-size:15px;font-weight:600;color:var(--mut);border-radius:9px}
+.fin-seg button.on{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.fin-acts{display:flex;gap:8px;margin:10px 0}
+.fin-acts button{flex:1;padding:12px;border:1px solid var(--line);background:var(--card);border-radius:12px;font-size:14px;font-weight:600}
+.fin-acts button.pri{background:var(--teal);color:#fff;border-color:var(--teal)}
+.fin-move .a{color:var(--ink)}
 
 /* ---------- 手机适配 ---------- */
 .fin-fab{display:none;position:fixed;right:16px;bottom:calc(18px + env(safe-area-inset-bottom));z-index:50;align-items:center;gap:6px;background:var(--teal);color:#fff;border:none;border-radius:999px;padding:14px 20px;font-weight:600;font-size:15px;box-shadow:0 8px 24px rgba(15,118,110,.35)}
@@ -131,6 +142,8 @@ td.n{text-align:right;font-variant-numeric:tabular-nums}
   .fin-row .d{min-width:40px;font-size:12px}
   .fin-acct{padding:12px}
   .fin-acct .g{gap:10px}
+  .fin-seg button{font-size:16px}
+  .fin-acts button{font-size:15px;min-height:46px}
   .fin-sheet{padding:14px 14px calc(16px + env(safe-area-inset-bottom));border-radius:18px 18px 0 0;max-height:92vh}
   .fin-sheet button{min-height:46px}
   .fin-sheet input,.fin-sheet select,.fin-sheet textarea{font-size:16px;padding:11px 10px}
@@ -622,7 +635,7 @@ const finCatName = (k) => {
   if (String(k).startsWith("u:")) return String(k).slice(2);
   return (FIN && FIN.cats && FIN.cats.names && FIN.cats.names[k]) || FIN_CAT_ZH[k] || k;
 };
-const finKindName = (k) => (k === "in" ? "收入" : k === "float" ? "备用金" : "支出");
+const finKindName = (k) => (k === "in" ? "收入" : k === "float" ? "备用金" : k === "move" ? "内部转账" : "支出");
 
 /* 余额 = 对账快照 + 之后的流入 - 流出（备用金：出的那边减，收的那边加） */
 function finBalance(uid) {
@@ -636,6 +649,8 @@ function finBalance(uid) {
     if (e.kind === "float") {
       if (e.uid === uid) add(e.ch, -amt);
       if (e.to_uid === uid) add(e.ch, amt);
+    } else if (e.kind === "move") {
+      if (e.uid === uid) { if (e.ch === "card") { card -= amt; cash += amt; } else { cash -= amt; card += amt; } }
     } else if (e.uid === uid) {
       add(e.ch, e.kind === "in" ? amt : -amt);
     }
@@ -675,6 +690,7 @@ async function loadFin() {
 function finHtml() {
   const who = FINWHO || FIN.me.uid;
   const isAll = FINWHO === "ALL";
+  const canAll = FIN.canAll;
   const mine = (e) => e.uid === who || e.to_uid === who;   // 自己的账本：自己花的 + 收到的备用金
   const scoped = isAll ? FIN.entries : FIN.entries.filter(mine);
   const months = [...new Set(scoped.map((e) => String(e.date).slice(0, 7)))].sort().reverse();
@@ -684,50 +700,70 @@ function finHtml() {
 
   const rows = list.map((e) => {
     const ph = (e.photos || []).slice(0, 3).map((k) => `<img src="/api/fin/photo/${k}" data-finview="/api/fin/photo/${k}" alt="">`).join("");
-    const who = e.kind === "float" ? `${esc(e.by_name || e.uid)} → ${esc(e.to_uid || "")}` : esc(e.uid);
+    let whoTxt = esc(e.uid), sign = "-", label = finKindName(e.kind), title = esc(finCatName(e.cat));
+    if (e.kind === "float") {
+      whoTxt = `${esc(e.by_name || e.uid)} → ${esc(e.to_uid || "")}`;
+      sign = e.to_uid === who ? "+" : "-";
+      label = e.to_uid === who ? "收到备用金" : "发出备用金";
+      title = "备用金";
+    } else if (e.kind === "move") {
+      sign = "⇄";
+      const out = e.ch === "card";
+      title = out ? "取现" : "存现";
+      label = out ? "银行 → 现金" : "现金 → 银行";
+    } else {
+      sign = e.kind === "in" ? "+" : "-";
+    }
     return `<div class="fin-row fin-${e.kind}">
       <div class="d">${esc(String(e.date).slice(5))}</div>
-      <div class="m"><b>${esc(finCatName(e.cat))}</b>
-        <p>${who} · ${e.ch === "card" ? "银行" : "现金"}${e.note ? " · " + esc(e.note) : ""}</p>
+      <div class="m"><b>${title}</b>
+        <p>${whoTxt} · ${e.ch === "card" ? "银行" : "现金"}${e.note ? " · " + esc(e.note) : ""}</p>
         ${ph ? `<div class="ph">${ph}</div>` : ""}</div>
-      <div class="a">${e.kind === "in" || (e.kind === "float" && e.to_uid === who) ? "+" : "-"}${finMoney(e.amount)}<small>${e.kind === "float" ? (e.to_uid === who ? "收到备用金" : "发出备用金") : finKindName(e.kind)}</small></div>
+      <div class="a">${sign}${finMoney(e.amount)}<small>${esc(label)}</small></div>
       <button class="ghost" data-findel="${e.id}" title="删除">×</button>
     </div>`;
   }).join("");
 
-  const people = isAll ? finPeople() : finPeople().filter((p) => p.login === who);
-  const accts = people.map((p) => {
+  const roleLabel = (p) => (p.ghost ? "历史账户" : p.role === "admin" ? "管理员" : p.role === "manager" ? "负责人" : "员工");
+  const acctCard = (p) => {
     const b = finBalance(p.login);
     const row = (FIN.accounts || []).find((x) => x.uid === p.login) || {};
+    const editable = canAll || p.login === FIN.me.uid;
     return `<div class="fin-acct" data-acct="${esc(p.login)}">
-      <div class="n">${esc(p.name || p.login)} <span class="mut">${esc(p.ghost ? "历史账户" : p.role === "admin" ? "管理员" : p.role === "manager" ? "负责人" : "员工")}${row.since ? " · 对账 " + esc(row.since) : ""}</span></div>
+      <div class="n">${esc(p.name || p.login)} <span class="mut">${esc(roleLabel(p))}${row.since ? " · 对账 " + esc(row.since) : ""}</span></div>
       <div class="g">
-        <div><label>现金</label><b style="font-size:16px">${finMoney(b.cash)}</b></div>
-        <div><label>银行</label><b style="font-size:16px">${finMoney(b.card)}</b></div>
+        <div><label>现金</label><b>${finMoney(b.cash)}</b></div>
+        <div><label>银行</label><b>${finMoney(b.card)}</b></div>
       </div>
-      ${(FIN.canAll || p.login === FIN.me.uid) ? `<div style="margin-top:6px"><button class="ghost" data-recon="${esc(p.login)}">对账</button>
-        <button class="ghost" data-give="${esc(p.login)}">发备用金</button></div>` : ""}
+      ${editable ? `<div class="acts"><button class="ghost" data-recon="${esc(p.login)}">对账</button>${canAll ? `<button class="ghost" data-give="${esc(p.login)}">给员工</button>` : ""}</div>` : ""}
     </div>`;
-  }).join("");
+  };
+  const meCard = { login: who, name: finNameOf(who), role: FIN.me.role, ghost: false };
+  const accts = isAll ? finPeople().map(acctCard).join("") : acctCard(meCard);
 
-  return `<div class="fin-kpi">
+  const tabs = `<div class="fin-seg">
+    <button data-fscope="" class="${!isAll ? "on" : ""}">我</button>
+    ${canAll ? `<button data-fscope="ALL" class="${isAll ? "on" : ""}">全部</button>` : ""}
+  </div>`;
+
+  const actions = `<div class="fin-acts">
+    <button id="fin_add" class="pri">＋ 记一笔</button>
+    <button id="fin_move">🔁 取现</button>
+    ${canAll ? `<button id="fin_give">🤝 给员工</button>` : ""}
+  </div>`;
+
+  return `${tabs}
+    <div class="sec">${isAll ? "账户余额（全部）" : "我的账户"}</div>${accts}
+    ${actions}
+    <div class="fin-bar"><select id="fin_m"><option value="">全部月份</option>${months.map((m) => `<option value="${m}" ${m === FINM ? "selected" : ""}>${m}</option>`).join("")}</select></div>
+    <div class="fin-kpi">
       <div><span>${isAll ? "全部" : esc(finNameOf(who))} · ${FINM || "全部月份"} 支出</span><b>${finMoney(sum.out)}</b></div>
       <div><span>收入</span><b>${finMoney(sum.in)}</b></div>
       <div><span>备用金流转</span><b>${finMoney(sum.float)}</b></div>
       <div><span>笔数</span><b>${list.length}</b></div>
     </div>
-    <div class="fin-bar">
-      ${FIN.canAll ? `<select id="fin_who">
-        <option value="" ${FINWHO === "" ? "selected" : ""}>我的账目</option>
-        <option value="ALL" ${isAll ? "selected" : ""}>全部（汇总）</option>
-        ${finPeople().filter((p) => p.login !== FIN.me.uid).map((p) => `<option value="${esc(p.login)}" ${FINWHO === p.login ? "selected" : ""}>${esc(p.name || p.login)}</option>`).join("")}
-      </select>` : ""}
-      <select id="fin_m"><option value="">全部月份</option>${months.map((m) => `<option value="${m}" ${m === FINM ? "selected" : ""}>${m}</option>`).join("")}</select>
-    </div>
-    <div class="fin-bar" id="fin_addbar"><button id="fin_add" style="flex:1">＋ 记一笔${isAll ? "" : "（" + esc(finNameOf(who)) + "）"}</button></div>
     <div class="fin-list">${rows || '<div class="empty">这个月还没有记录</div>'}</div>
-    <button class="fin-fab" id="fin_add2">＋ 记一笔${isAll ? "" : "（" + esc(finNameOf(who)) + "）"}</button>
-    <div class="sec">账户余额（自动算）</div>${accts}
+    <button class="fin-fab" id="fin_add2">＋ 记一笔</button>
     ${FIN.me.role === "admin" ? `<div class="sec">设置</div>
       <div class="fin-acct"><div class="n">期初余额</div>
         <div class="g">
@@ -735,12 +771,12 @@ function finHtml() {
           <div><label>现金</label><input type="number" id="fo_cash" value="${FIN.opening.cash || 0}"></div>
           <div><label>银行</label><input type="number" id="fo_card" value="${FIN.opening.card || 0}"></div>
         </div>
-        <div style="margin-top:6px"><button class="ghost" id="fo_save">保存期初</button>
+        <div class="acts"><button class="ghost" id="fo_save">保存期初</button>
         <button class="ghost" id="fin_cats">改分类</button></div>
       </div>` : ""}`;
 }
 
-function finSheet(forceGiver) {
+function finSheet(forceGiver, presetKind) {
   const canAll = FIN.canAll;
   const viewUid = FINWHO && FINWHO !== "ALL" ? FINWHO : FIN.me.uid;
   const people = canAll ? finPeople().map((u) => u.login) : [FIN.me.uid];
@@ -782,8 +818,9 @@ function finSheet(forceGiver) {
   const close = () => box.remove();
   box.onclick = (e) => { if (e.target === box) close(); };
   $("#ff_x", box).onclick = close;
-  if (forceGiver) { $("#ff_kind", box).value = "float"; $("#ff_out", box).classList.add("hide"); $("#ff_fl", box).classList.remove("hide");
-    if ($("#ff_giver", box)) $("#ff_giver", box).value = forceGiver; }
+  const setKind = (k) => { const fl = k === "float"; $("#ff_kind", box).value = k; $("#ff_out", box).classList.toggle("hide", fl); $("#ff_fl", box).classList.toggle("hide", !fl); };
+  if (forceGiver || presetKind) { setKind(forceGiver ? "float" : presetKind);
+    if ($("#ff_giver", box)) $("#ff_giver", box).value = forceGiver || viewUid; }
   $("#ff_kind", box).onchange = (e) => {
     const fl = e.target.value === "float";
     $("#ff_out", box).classList.toggle("hide", fl);
@@ -816,6 +853,36 @@ function finSheet(forceGiver) {
       await api("/fin/entries", { method: "POST", body: b, toast: kind === "float" ? "备用金已记录" : "已记账 " + finMoney(b.amount) + " ZMW" });
       close(); await loadFin(); render();
     } catch (err) { $("#ff_msg", box).textContent = err.message; }
+  };
+}
+
+function finMoveSheet() {
+  const box = document.createElement("div");
+  box.className = "fin-dim";
+  box.innerHTML = `<div class="fin-sheet">
+    <h3>取现 / 存现（内部转账 · 不算花费）</h3>
+    <label>方向</label>
+    <select id="fm_dir"><option value="card2cash">取现 · 银行 → 现金</option><option value="cash2card">存现 · 现金 → 银行</option></select>
+    <div class="r" style="margin-top:8px">
+      <div><label>金额 ZMW</label><input id="fm_amt" type="number" step="0.01" inputmode="decimal"></div>
+      <div><label>日期</label><input id="fm_date" type="date" value="${new Date().toISOString().slice(0, 10)}"></div>
+    </div>
+    <label>备注</label><input id="fm_note" placeholder="比如：ATM 取现">
+    <p class="mut" id="fm_msg" style="min-height:1em;margin:8px 0 0"></p>
+    <div class="r" style="margin-top:8px"><button class="ghost" id="fm_x">取消</button><button id="fm_save">保存</button></div>
+  </div>`;
+  document.body.appendChild(box);
+  const close = () => box.remove();
+  box.onclick = (e) => { if (e.target === box) close(); };
+  $("#fm_x", box).onclick = close;
+  $("#fm_save", box).onclick = async () => {
+    const dir = $("#fm_dir", box).value;
+    const b = { kind: "move", amount: +$("#fm_amt", box).value, date: $("#fm_date", box).value,
+      note: $("#fm_note", box).value, ch: dir === "card2cash" ? "card" : "cash", cat: "", ft: "life", photos: [], to_uid: "" };
+    try {
+      await api("/fin/entries", { method: "POST", body: b, toast: dir === "card2cash" ? "已取现" : "已存现" });
+      close(); await loadFin(); render();
+    } catch (err) { $("#fm_msg", box).textContent = err.message; }
   };
 }
 
@@ -864,11 +931,15 @@ async function finSaveAcct(uid) {
 
 function bindFin() {
   const pane = $("#pane");
-  const w = $("#fin_who");
-  if (w) w.onchange = (e) => { FINWHO = e.target.value; saveFinView(); S.editId = 0; render(); };
+  pane.querySelectorAll("[data-fscope]").forEach((b) => b.onclick = () => { FINWHO = b.dataset.fscope; saveFinView(); S.editId = 0; render(); });
   const m = $("#fin_m");
   if (m) m.onchange = (e) => { FINM = e.target.value; saveFinView(); render(); };
-  $("#fin_add").onclick = () => finSheet();
+  const add = $("#fin_add");
+  if (add) add.onclick = () => finSheet();
+  const mv = $("#fin_move");
+  if (mv) mv.onclick = () => finMoveSheet();
+  const gv = $("#fin_give");
+  if (gv) gv.onclick = () => finSheet(undefined, "float");
   const fab = $("#fin_add2");
   if (fab) fab.onclick = () => finSheet();
   pane.querySelectorAll("[data-finview]").forEach((img) => img.onclick = () => finView(img.dataset.finview));
