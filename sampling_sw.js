@@ -2,7 +2,7 @@
 // 唯一目标：**页面本体一定要留在本机**，断网冷启动（关掉再打开）必须能进。
 // 做法：安装时抓一份页面并校验内容后写进 sampling-shell（activate 不清它），
 // 导航请求缓存优先（不等网络），新缓存没拿到页面之前绝不删除旧缓存。
-const CACHE = "sampling-v53";
+const CACHE = "sampling-v54";
 const SHELL_CACHE = "sampling-shell"; // 只放校验过的页面本体
 const BASE = new URL(self.registration.scope).pathname; // /ecobox-sampling/
 const BASE_ROOT = BASE.endsWith("/") ? BASE.slice(0, -1) : BASE;
@@ -127,6 +127,17 @@ button{border:none;border-radius:10px;padding:13px 22px;font-size:15px;backgroun
 <p>这台手机还没有下载到页面本体，所以现在断网打不开。<br>请连上网络（手机流量也行）打开一次，等页面正常显示后停留 30 秒，再断网就一定能打开。</p>
 <button onclick="location.reload()">重新加载</button></div></body></html>`;
 
+const PAGE_OFFLINE_HTML = `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>这一页还没存到本机</title>
+<style>body{font-family:-apple-system,"PingFang SC",sans-serif;background:#f4f6f9;color:#1e293b;margin:0;
+display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px;text-align:center}
+.b{background:#fff;border-radius:14px;padding:26px 22px;max-width:340px;box-shadow:0 2px 10px rgba(0,0,0,.08)}
+h1{font-size:18px;margin:0 0 10px}p{font-size:14px;color:#64748b;line-height:1.7;margin:0 0 18px}
+a{display:block;border-radius:10px;padding:13px 22px;font-size:15px;background:#1668dc;color:#fff;text-decoration:none}</style>
+</head><body><div class="b"><h1>这一页还没存到本机</h1>
+<p>现在没网，这个页面之前也没打开过，所以打不开。<br>联网打开一次之后，断网也能进来。</p>
+<a href="sampling_helper.html">先回记录本</a></div></body></html>`;
+
 self.addEventListener("fetch", (e) => {
   const u = new URL(e.request.url);
   if (u.origin !== location.origin || e.request.method !== "GET") return;
@@ -186,7 +197,23 @@ self.addEventListener("fetch", (e) => {
     return;
   }
 
-  // 页面/导航：缓存优先（断网秒开），后台悄悄刷新，刷新时校验内容不被劫持
+  // 其它内页（矿证资料、清空页…）：各自独立缓存，网络优先，离线回退自己那份
+  const isShellPath = u.pathname === MAIN_PAGE || u.pathname === BASE || u.pathname === BASE_ROOT;
+  if (isPage && !isShellPath) {
+    e.respondWith((async () => {
+      try {
+        const r = await fetch(e.request, { cache: "no-store" });
+        if (r.ok) caches.open(CACHE).then((c) => c.put(abs(u.pathname), r.clone()));
+        return r;
+      } catch (err) { /* 离线 → 走这一页自己的缓存 */ }
+      const hit = await caches.match(abs(u.pathname), { ignoreSearch: true });
+      if (hit) return hit;
+      return new Response(PAGE_OFFLINE_HTML, { status: 200, headers: { "Content-Type": "text/html; charset=utf-8" } });
+    })());
+    return;
+  }
+
+  // 主页面/裸目录/其它导航：缓存优先（断网秒开），后台悄悄刷新，刷新时校验内容不被劫持
   if (!refreshing && Date.now() - lastRefresh > 30000) {
     refreshing = true;
     lastRefresh = Date.now();

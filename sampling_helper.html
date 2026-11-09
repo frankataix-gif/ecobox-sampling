@@ -1084,6 +1084,18 @@ const rowTs=s=>{
   const t=Date.parse(String(s.created_at||s.sample_time||"").replace(" ","T"));
   return isNaN(t)?0:t;
 };
+/* 草稿卡摘要：draft 是个对象，直接 String() 会变成 [object Object] */
+function draftSummary(d){
+  if(!d)return "未填内容";
+  if(typeof d==="string")return d.replace(/\s+/g," ").slice(0,70)||"未填内容";
+  const bits=[];
+  if(d.kind==="marker")bits.push("标记"+(d.mark?"："+d.mark:""));
+  if(d.loc)bits.push(String(d.loc));
+  if(d.lat&&d.lon)bits.push("GPS "+(+d.lat).toFixed(5)+","+(+d.lon).toFixed(5));
+  const n=(d.assays||[]).length;if(n)bits.push(n+" 项含量");
+  if(d.remark)bits.push(String(d.remark).replace(/\s+/g," "));
+  return bits.join(" · ").slice(0,70)||"未填内容";
+}
 function drawList(local,cloud,extra={}){
   if(!cloud&&cloudCache.items)cloud=cloudCache.items;
   const bySid=new Map();local.forEach(s=>{if(s.sample_id)bySid.set(s.sample_id,s)});
@@ -1126,7 +1138,7 @@ function drawList(local,cloud,extra={}){
   }
   const draftCard=(extra.draft&&listType!=="trip")?`<div class="card draftcard" id="draftcard" style="border-color:#fcd34d;background:#fffbeb">
       <div class="info"><div><span class="sid">📝 未保存的输入</span><span class="badge b-pend">草稿</span></div>
-      <div class="meta">${xesc(String(extra.draft).replace(/\s+/g," ").slice(0,70))}${extra.draftPhotos?` · 📷 ${extra.draftPhotos} 张`:""}</div>
+      <div class="meta">${xesc(draftSummary(extra.draft))}${extra.draftPhotos?` · 📷 ${extra.draftPhotos} 张`:""}</div>
       <div class="meta">点这里回到表单继续，保存后这条自动消失</div></div></div>`:"";
   const empty=$("empty_tip");
   empty.style.display=rows2.length?"none":"";
