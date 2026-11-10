@@ -745,7 +745,7 @@ function finHtml() {
         <p>${whoTxt} · ${e.ch === "card" ? "银行" : "现金"}${e.note ? " · " + esc(e.note) : ""}</p>
         ${ph ? `<div class="ph">${ph}</div>` : ""}</div>
       <div class="a">${sign}${finMoney(e.amount)}<small>${esc(label)}</small></div>
-      ${FIN.owner ? `<button class="ghost" data-findel="${e.id}" title="删除">×</button>` : ""}
+      ${FIN.owner ? `<button class="ghost fin-more" data-finmore="${e.id}" title="更多">⋯</button>` : ""}
     </div>`;
   }).join("");
 
@@ -821,7 +821,7 @@ function finHtml() {
       </div>` : ""}`;
 }
 
-function finSheet(forceGiver, presetKind) {
+function finSheet(forceGiver, presetKind, editEntry) {
   const canAll = FIN.canAll;
   const viewUid = FINWHO && FINWHO !== "ALL" ? FINWHO : FIN.me.uid;
   const people = canAll ? finPeople().map((u) => u.login) : [FIN.me.uid];
@@ -829,15 +829,18 @@ function finSheet(forceGiver, presetKind) {
   const builtin = Object.keys(FIN_CAT_ZH).map((k) => `${k}`);
   const opts = [...new Set([...cats, ...builtin, "u:员工工资", "u:员工补贴"])]
     .map((k) => `<option value="${esc(k)}">${esc(finCatName(k))}</option>`).join("");
+  const edit = editEntry || null;
+  const d = edit || {};
+  const initKind = edit ? edit.kind : (forceGiver || presetKind === "float" ? "float" : "out");
   const box = document.createElement("div");
   box.className = "fin-dim";
   box.innerHTML = `<div class="fin-sheet">
-    <h3>记一笔</h3>
+    <h3>${edit ? "修改记录" : "记一笔"}</h3>
     <label>类型</label>
-    <select id="ff_kind"><option value="out">支出</option><option value="in">收入</option>${FIN.owner ? `<option value="float">发备用金</option>` : ""}</select>
+    <select id="ff_kind"${edit ? " disabled" : ""}><option value="out">支出</option><option value="in">收入</option>${FIN.owner ? `<option value="float">发备用金</option>` : ""}</select>
     <div class="r" style="margin-top:8px">
-      <div><label>金额 ZMW</label><input id="ff_amt" type="number" step="0.01" inputmode="decimal"></div>
-      <div><label>日期</label><input id="ff_date" type="date" value="${new Date().toISOString().slice(0, 10)}"></div>
+      <div><label>金额 ZMW</label><input id="ff_amt" type="number" step="0.01" inputmode="decimal" value="${edit ? d.amount : ""}"></div>
+      <div><label>日期</label><input id="ff_date" type="date" value="${esc(edit ? d.date : new Date().toISOString().slice(0, 10))}"></div>
     </div>
     <div id="ff_out">
       <label>分类</label><select id="ff_cat">${opts}</select>
@@ -845,33 +848,44 @@ function finSheet(forceGiver, presetKind) {
         <div><label>归属</label><select id="ff_ft"><option value="life">生活</option><option value="project">项目</option></select></div>
         <div><label>渠道</label><select id="ff_ch"><option value="cash">现金</option><option value="card">银行</option></select></div>
       </div>
-      ${canAll ? `<label>记在谁名下</label><select id="ff_uid">${people.map((p) => `<option value="${esc(p)}" ${p === viewUid ? "selected" : ""}>${esc(finNameOf(p))}</option>`).join("")}</select>` : ""}
+      ${canAll ? `<label>记在谁名下</label><select id="ff_uid">${people.map((p) => `<option value="${esc(p)}" ${p === (edit ? d.uid : viewUid) ? "selected" : ""}>${esc(finNameOf(p))}</option>`).join("")}</select>` : ""}
     </div>
     <div id="ff_fl" class="hide">
-      <div class="r"><div><label>从谁出</label><select id="ff_giver">${people.map((p) => `<option value="${esc(p)}" ${p === viewUid ? "selected" : ""}>${esc(finNameOf(p))}</option>`).join("")}</select></div>
+      <div class="r"><div><label>从谁出</label><select id="ff_giver">${people.map((p) => `<option value="${esc(p)}" ${p === (edit ? d.uid : viewUid) ? "selected" : ""}>${esc(finNameOf(p))}</option>`).join("")}</select></div>
       <div><label>从哪个口</label><select id="ff_from"><option value="cash">现金</option><option value="card">银行</option></select></div></div>
-      <label>发给谁</label><select id="ff_to">${people.filter((p) => p !== viewUid).map((p) => `<option value="${esc(p)}">${esc(finNameOf(p))}</option>`).join("")}</select>
+      <label>发给谁</label><select id="ff_to">${people.filter((p) => p !== (edit ? d.uid : viewUid)).map((p) => `<option value="${esc(p)}">${esc(finNameOf(p))}</option>`).join("")}</select>
     </div>
-    <label>备注</label><input id="ff_note" placeholder="比如：去矿区打车">
+    <label>备注</label><input id="ff_note" placeholder="比如：去矿区打车" value="${esc(d.note || "")}">
     <label>单据照片（最多 6 张）</label>
     <input id="ff_file" type="file" accept="image/*" capture="environment" multiple>
     <div class="ph" id="ff_ph"></div>
     <p class="mut" id="ff_msg" style="min-height:1em;margin:8px 0 0"></p>
-    <div class="r" style="margin-top:8px"><button class="ghost" id="ff_x">取消</button><button id="ff_save">保存</button></div>
+    <div class="r" style="margin-top:8px"><button class="ghost" id="ff_x">取消</button><button id="ff_save">${edit ? "保存修改" : "保存"}</button></div>
   </div>`;
   document.body.appendChild(box);
   const close = () => box.remove();
   box.onclick = (e) => { if (e.target === box) close(); };
   $("#ff_x", box).onclick = close;
   const setKind = (k) => { const fl = k === "float"; $("#ff_kind", box).value = k; $("#ff_out", box).classList.toggle("hide", fl); $("#ff_fl", box).classList.toggle("hide", !fl); };
-  if (forceGiver || presetKind) { setKind(forceGiver ? "float" : presetKind);
-    if ($("#ff_giver", box)) $("#ff_giver", box).value = forceGiver || viewUid; }
+  setKind(initKind);
+  if (edit) {
+    $("#ff_cat", box).value = d.cat || "";
+    $("#ff_ft", box).value = d.ft || "life";
+    $("#ff_ch", box).value = d.ch || "cash";
+    $("#ff_from", box).value = d.ch || "cash";
+    if ($("#ff_to", box)) $("#ff_to", box).value = d.to_uid || "";
+    if ($("#ff_uid", box)) $("#ff_uid", box).value = d.uid || viewUid;
+    if ($("#ff_giver", box)) $("#ff_giver", box).value = d.uid || viewUid;
+  } else if (forceGiver) {
+    if ($("#ff_giver", box)) $("#ff_giver", box).value = forceGiver;
+  }
   $("#ff_kind", box).onchange = (e) => {
     const fl = e.target.value === "float";
     $("#ff_out", box).classList.toggle("hide", fl);
     $("#ff_fl", box).classList.toggle("hide", !fl);
   };
-  FINPH = [];
+  FINPH = edit ? (Array.isArray(d.photos) ? d.photos.slice() : []) : [];
+  $("#ff_ph", box).innerHTML = FINPH.map((k) => `<img src="/api/fin/photo/${k}">`).join("");
   $("#ff_file", box).onchange = async (e) => {
     for (const f of [...e.target.files].slice(0, 6 - FINPH.length)) {
       const key = await finUpload(f, $("#ff_msg", box));
@@ -882,7 +896,6 @@ function finSheet(forceGiver, presetKind) {
   $("#ff_save", box).onclick = async () => {
     const kind = $("#ff_kind", box).value;
     const b = {
-      kind,
       amount: +$("#ff_amt", box).value,
       date: $("#ff_date", box).value,
       note: $("#ff_note", box).value,
@@ -891,11 +904,16 @@ function finSheet(forceGiver, presetKind) {
       ft: kind === "float" ? "life" : $("#ff_ft", box).value,
       ch: kind === "float" ? $("#ff_from", box).value : $("#ff_ch", box).value,
       to_uid: kind === "float" ? $("#ff_to", box).value : "",
-      uid: kind === "float" ? ($("#ff_giver", box) ? $("#ff_giver", box).value : viewUid)
-        : (canAll && $("#ff_uid", box) ? $("#ff_uid", box).value : viewUid),
     };
     try {
-      await api("/fin/entries", { method: "POST", body: b, toast: kind === "float" ? "备用金已记录" : "已记账 " + finMoney(b.amount) + " ZMW" });
+      if (edit) {
+        await api("/fin/entries/" + encodeURIComponent(edit.id), { method: "PATCH", body: b, toast: "记录已修改" });
+      } else {
+        b.kind = kind;
+        b.uid = kind === "float" ? ($("#ff_giver", box) ? $("#ff_giver", box).value : viewUid)
+          : (canAll && $("#ff_uid", box) ? $("#ff_uid", box).value : viewUid);
+        await api("/fin/entries", { method: "POST", body: b, toast: kind === "float" ? "备用金已记录" : "已记账 " + finMoney(b.amount) + " ZMW" });
+      }
       close(); await loadFin(); render();
     } catch (err) { $("#ff_msg", box).textContent = err.message; }
   };
@@ -974,6 +992,29 @@ async function finSaveAcct(uid) {
   await loadFin(); render();
 }
 
+function closeFinMenu() { const m = $("#fin_menu"); if (m) m.remove(); }
+function openFinMenu(id, btn) {
+  closeFinMenu();
+  const e = (FIN.entries || []).find((x) => x.id === id);
+  if (!e) return;
+  const r = btn.getBoundingClientRect();
+  const m = document.createElement("div");
+  m.className = "fd-menu";
+  m.id = "fin_menu";
+  m.style.top = Math.round(r.bottom + 6) + "px";
+  m.style.right = Math.max(8, Math.round(window.innerWidth - r.right)) + "px";
+  m.innerHTML = `<button data-act="edit">编辑</button><button data-act="del" class="dz">删除</button>`;
+  document.body.appendChild(m);
+  m.querySelector('[data-act="edit"]').onclick = () => { closeFinMenu(); finSheet(null, null, e); };
+  m.querySelector('[data-act="del"]').onclick = async () => {
+    closeFinMenu();
+    if (!confirm("删除这条记录？")) return;
+    try { await api("/fin/entries/" + encodeURIComponent(e.id), { method: "DELETE", toast: "记录已删除" }); await loadFin(); render(); }
+    catch (err) { toast(err.message, "bad"); }
+  };
+  setTimeout(() => document.addEventListener("click", closeFinMenu, { once: true }), 0);
+}
+
 function bindFin() {
   const pane = $("#pane");
   pane.querySelectorAll("[data-fscope]").forEach((b) => b.onclick = () => { FINWHO = b.dataset.fscope; saveFinView(); S.editId = 0; render(); });
@@ -990,11 +1031,7 @@ function bindFin() {
   pane.querySelectorAll("[data-finview]").forEach((img) => img.onclick = () => finView(img.dataset.finview));
   pane.querySelectorAll("[data-recon]").forEach((b) => b.onclick = () => finRecon(b.dataset.recon).catch((e) => toast(e.message, "bad")));
   pane.querySelectorAll("[data-give]").forEach((b) => b.onclick = () => finSheet(b.dataset.give));
-  pane.querySelectorAll("[data-findel]").forEach((b) => b.onclick = async () => {
-    if (!confirm("删除这条记录？")) return;
-    await api("/fin/entries/" + b.dataset.findel, { method: "DELETE", toast: "记录已删除" });
-    await loadFin(); render();
-  });
+  pane.querySelectorAll("[data-finmore]").forEach((b) => (b.onclick = (ev) => { ev.stopPropagation(); openFinMenu(b.dataset.finmore, b); }));
   const fo = $("#fo_save");
   if (fo) fo.onclick = async () => {
     await api("/fin/opening", { method: "PUT", toast: "期初已保存", body: { date: $("#fo_date").value, cash: +$("#fo_cash").value, card: +$("#fo_card").value } });

@@ -472,6 +472,27 @@ async function finApi(req, env, me, seg, url, body) {
     return json({ ok: true, photos: photos.length });
   }
 
+  /* 改一笔（仅财务负责人；kind / uid 保持不变） */
+  if (sub === "entries" && seg[2] && req.method === "PATCH") {
+    const row = await env.DB.prepare("SELECT * FROM fin_entries WHERE id=?").bind(seg[2]).first();
+    if (!row) return err("记录不存在", 404);
+    if (!isOwner) return err("只有财务负责人能改记录", 403);
+    const b = await body();
+    if (!DAY_RE.test(String(b.date || ""))) return err("日期要 YYYY-MM-DD");
+    const amount = Math.round(num(b.amount) * 100) / 100;
+    if (!(amount > 0)) return err("金额要大于 0");
+    const photos = Array.isArray(b.photos) ? b.photos.slice(0, 6).map(String) : JSON.parse(row.photos || "[]");
+    const cat = row.kind === "float" ? "" : String(b.cat || "");
+    const ft = row.kind === "float" ? "life" : String(b.ft || "life");
+    const ch = String(b.ch || "cash") === "card" ? "card" : "cash";
+    const toUid = row.kind === "float" ? String(b.to_uid || "") : "";
+    await env.DB.prepare(
+      `UPDATE fin_entries SET date=?,cat=?,ft=?,ch=?,amount=?,note=?,photos=?,to_uid=? WHERE id=?`
+    ).bind(String(b.date), cat, ft, ch, amount, String(b.note || ""), JSON.stringify(photos), toUid, row.id).run();
+    await audit(env, me, "fin.edit", row.id, `${row.kind} ${amount}`);
+    return json({ ok: true });
+  }
+
   /* 删（管理员或本人） */
   if (sub === "entries" && seg[2] && req.method === "DELETE") {
     const row = await env.DB.prepare("SELECT * FROM fin_entries WHERE id=?").bind(seg[2]).first();
