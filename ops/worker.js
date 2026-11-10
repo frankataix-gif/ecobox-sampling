@@ -5,6 +5,61 @@
 const PAGE = globalThis.__OPS_PAGE__ || "<!doctype html><meta charset=utf-8><p>页面未构建，请运行 ops/build.py";
 const BUILD = (() => { const m = String(globalThis.__OPS_PAGE__ || "").match(/const BUILD = "([^"]+)"/); return m ? m[1] : ""; })();
 const COOKIE = "ops_sess";
+/* 未登录时只返回这个最小登录页：不含任何框架 / 数据 */
+const LOGIN_PAGE = `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ecobox 登录</title>
+<style>
+:root{--bg:#f4f5f6;--card:#fff;--ink:#111827;--mut:#6b7280;--line:#e2e5e8}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans SC",sans-serif}
+body{display:flex;align-items:center;justify-content:center;padding:20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:26px 22px;width:100%;max-width:360px;box-shadow:0 6px 24px rgba(17,24,39,.06)}
+h1{font-size:19px;margin:0 0 4px}
+.mut{color:var(--mut);font-size:13px;margin:0 0 16px}
+label{display:block;font-size:13px;color:var(--mut);margin:10px 0 5px}
+input{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;font-size:15px;background:#fff}
+input:focus{outline:none;border-color:#111}
+button{width:100%;margin-top:16px;padding:11px;border:0;border-radius:10px;background:#111;color:#fff;font-size:15px;font-weight:600;cursor:pointer}
+button:disabled{opacity:.6}
+.err{color:#c0392b;font-size:13px;margin-top:8px;min-height:18px}
+.hide{display:none}
+</style></head><body>
+<div class="card">
+  <h1>ecobox 经营台账</h1>
+  <p class="mut" id="sub">赞比亚公司日常经营管理 · 每人一个账号</p>
+  <form id="lf" autocomplete="on">
+    <label>账号</label><input id="l_login" type="text" autocomplete="username" required placeholder="邮箱 / 手机号 / 姓名">
+    <label>密码</label><input id="l_pass" type="password" autocomplete="current-password" required>
+    <div class="err" id="err"></div>
+    <button id="l_btn" type="submit">登录</button>
+  </form>
+  <form id="sf" class="hide" autocomplete="on">
+    <label>初始化口令</label><input id="s_token" autocomplete="off" required>
+    <label>姓名</label><input id="s_name" required>
+    <label>账号（可留空，默认用姓名）</label><input id="s_login" autocomplete="username" placeholder="邮箱 / 手机号 / 姓名">
+    <label>密码（≥8 位）</label><input id="s_pass" type="password" autocomplete="new-password" required>
+    <div class="err" id="err2"></div>
+    <button id="s_btn" type="submit">创建管理员</button>
+  </form>
+  <p class="mut" style="margin:14px 0 0">还没有账号？找管理员开通。</p>
+</div>
+<script>
+(function(){
+  var q=function(s){return document.querySelector(s)};
+  var post=function(url,body,headers){return fetch(url,{method:"POST",credentials:"same-origin",headers:Object.assign({"content-type":"application/json"},headers||{}),body:JSON.stringify(body)}).then(function(r){return r.json().then(function(d){if(!r.ok)throw new Error(d.error||"操作失败");return d})})};
+  q("#lf").onsubmit=function(e){e.preventDefault();q("#err").textContent="";q("#l_btn").disabled=true;
+    post("/api/login",{login:q("#l_login").value,password:q("#l_pass").value}).then(function(){location.reload()}).catch(function(x){q("#err").textContent=x.message;q("#l_btn").disabled=false})};
+  q("#sf").onsubmit=function(e){e.preventDefault();q("#err2").textContent="";q("#s_btn").disabled=true;
+    post("/api/setup",{login:q("#s_login").value,name:q("#s_name").value,password:q("#s_pass").value},{"x-setup-token":q("#s_token").value.trim()}).then(function(){location.reload()}).catch(function(x){q("#err2").textContent=x.message;q("#s_btn").disabled=false})};
+  fetch("/api/status").then(function(r){return r.json()}).then(function(st){
+    if(st.setup_needed){q("#lf").classList.add("hide");q("#sf").classList.remove("hide");q("#sub").textContent="第一次使用：用部署时给出的初始化口令建第一个管理员";q("#s_token").focus();}
+    else{q("#l_login").focus();}
+  }).catch(function(){});
+})();
+</script>
+</body></html>`;
+
 const SESSION_DAYS = 30;
 const ITER = 100000; // Workers WebCrypto 上限就是 10 万，超过会直接抛错
 const ROLES = ["admin", "manager", "staff"];
@@ -611,13 +666,41 @@ async function finApi(req, env, me, seg, url, body) {
   return err("not found", 404);
 }
 
+/* ---------- 每日备份：D1 全表导出为 JSON 存 R2，保留最近 30 天 ---------- */
+const BACKUP_TABLES = ["users", "sessions", "logs", "audit", "posts", "fin_entries", "fin_accounts", "fin_cfg"];
+const BACKUP_KEEP = 30;
+
+async function runBackup(env) {
+  if (!env.PHOTOS) throw new Error("未配置 R2（PHOTOS）");
+  const out = { at: new Date().toISOString(), build: BUILD || "", tables: {} };
+  for (const t of BACKUP_TABLES) {
+    try {
+      const r = await env.DB.prepare("SELECT * FROM " + t).all();
+      out.tables[t] = r.results;
+    } catch (e) {
+      out.tables[t] = { error: String((e && e.message) || e) };
+    }
+  }
+  const body = JSON.stringify(out);
+  const key = "backups/" + out.at.slice(0, 10) + ".json";
+  await env.PHOTOS.put(key, body, { httpMetadata: { contentType: "application/json" } });
+  const list = await env.PHOTOS.list({ prefix: "backups/" });
+  const keys = list.objects.map(function (o) { return o.key; }).sort();
+  const drop = keys.slice(0, Math.max(0, keys.length - BACKUP_KEEP));
+  for (const k of drop) await env.PHOTOS.delete(k);
+  return { key: key, bytes: body.length, kept: keys.length - drop.length };
+}
+
 export default {
   async fetch(req, env) {
     const url = new URL(req.url);
     const path = url.pathname;
 
     if (req.method === "GET" && (path === "/" || path === "/index.html")) {
-      return new Response(PAGE, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } });
+      let u = null;
+      try { await ensureSchema(env); u = await currentUser(req, env); } catch (e) {}
+      const html = u ? PAGE : LOGIN_PAGE;
+      return new Response(html, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } });
     }
     if (!path.startsWith("/api/")) return err("not found", 404);
 
@@ -692,6 +775,21 @@ export default {
       }
 
       if (!me) return err("请先登录", 401);
+
+      /* ---------- 备份（每日自动 + 管理员手动） ---------- */
+      if (seg[0] === "backup" && req.method === "POST") {
+        if (me.role !== "admin") return err("只有管理员能备份", 403);
+        return json(await runBackup(env));
+      }
+      if (seg[0] === "backup" && req.method === "GET") {
+        if (me.role !== "admin") return err("只有管理员能看备份", 403);
+        const list = await env.PHOTOS.list({ prefix: "backups/" });
+        return json({
+          backups: list.objects
+            .map(function (o) { return { key: o.key, size: o.size, uploaded: o.uploaded }; })
+            .sort(function (a, b) { return a.key < b.key ? 1 : -1; })
+        });
+      }
 
       if (seg[0] === "modules" && req.method === "GET") return json({ modules: MODULES });
 
@@ -829,6 +927,16 @@ export default {
       return err("not found", 404);
     } catch (e) {
       return err("服务器出错：" + (e && e.message ? e.message : e), 500);
+    }
+  },
+
+  /* 每日定时备份（Cloudflare Cron Trigger） */
+  async scheduled(event, env, ctx) {
+    try {
+      await ensureSchema(env);
+      await runBackup(env);
+    } catch (e) {
+      console.error("backup failed", e);
     }
   },
 };
