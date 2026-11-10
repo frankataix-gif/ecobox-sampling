@@ -821,7 +821,7 @@ function finHtml() {
       </div>` : ""}`;
 }
 
-function finSheet(forceGiver, presetKind, editEntry) {
+function finSheet(presetTo, presetKind, editEntry) {
   const canAll = FIN.canAll;
   const viewUid = FINWHO && FINWHO !== "ALL" ? FINWHO : FIN.me.uid;
   const people = canAll ? finPeople().map((u) => u.login) : [FIN.me.uid];
@@ -831,7 +831,7 @@ function finSheet(forceGiver, presetKind, editEntry) {
     .map((k) => `<option value="${esc(k)}">${esc(finCatName(k))}</option>`).join("");
   const edit = editEntry || null;
   const d = edit || {};
-  const initKind = edit ? edit.kind : (forceGiver || presetKind === "float" ? "float" : "out");
+  const initKind = edit ? edit.kind : (presetTo || presetKind === "float" ? "float" : "out");
   const box = document.createElement("div");
   box.className = "fin-dim";
   box.innerHTML = `<div class="fin-sheet">
@@ -851,13 +851,13 @@ function finSheet(forceGiver, presetKind, editEntry) {
       ${canAll ? `<label>记在谁名下</label><select id="ff_uid">${people.map((p) => `<option value="${esc(p)}" ${p === (edit ? d.uid : viewUid) ? "selected" : ""}>${esc(finNameOf(p))}</option>`).join("")}</select>` : ""}
     </div>
     <div id="ff_fl" class="hide">
-      <div class="r"><div><label>从谁出</label><select id="ff_giver">${people.map((p) => `<option value="${esc(p)}" ${p === (edit ? d.uid : viewUid) ? "selected" : ""}>${esc(finNameOf(p))}</option>`).join("")}</select></div>
+      <div class="r"><div><label>从谁出</label><select id="ff_giver">${people.map((p) => `<option value="${esc(p)}" ${p === (edit ? d.uid : FIN.me.uid) ? "selected" : ""}>${esc(finNameOf(p))}</option>`).join("")}</select></div>
       <div><label>从哪个口</label><select id="ff_from"><option value="cash">现金</option><option value="card">银行</option></select></div></div>
-      <label>发给谁</label><select id="ff_to">${people.filter((p) => p !== (edit ? d.uid : viewUid)).map((p) => `<option value="${esc(p)}">${esc(finNameOf(p))}</option>`).join("")}</select>
+      <label>发给谁</label><select id="ff_to">${people.filter((p) => p !== (edit ? d.uid : FIN.me.uid)).map((p) => `<option value="${esc(p)}">${esc(finNameOf(p))}</option>`).join("")}</select>
     </div>
     <label>备注</label><input id="ff_note" placeholder="比如：去矿区打车" value="${esc(d.note || "")}">
     <label>单据照片（最多 6 张）</label>
-    <input id="ff_file" type="file" accept="image/*" capture="environment" multiple>
+    <input id="ff_file" type="file" accept="image/*" multiple>
     <div class="ph" id="ff_ph"></div>
     <p class="mut" id="ff_msg" style="min-height:1em;margin:8px 0 0"></p>
     <div class="r" style="margin-top:8px"><button class="ghost" id="ff_x">取消</button><button id="ff_save">${edit ? "保存修改" : "保存"}</button></div>
@@ -876,8 +876,8 @@ function finSheet(forceGiver, presetKind, editEntry) {
     if ($("#ff_to", box)) $("#ff_to", box).value = d.to_uid || "";
     if ($("#ff_uid", box)) $("#ff_uid", box).value = d.uid || viewUid;
     if ($("#ff_giver", box)) $("#ff_giver", box).value = d.uid || viewUid;
-  } else if (forceGiver) {
-    if ($("#ff_giver", box)) $("#ff_giver", box).value = forceGiver;
+  } else if (presetTo) {
+    if ($("#ff_to", box)) $("#ff_to", box).value = presetTo;
   }
   $("#ff_kind", box).onchange = (e) => {
     const fl = e.target.value === "float";
@@ -910,7 +910,7 @@ function finSheet(forceGiver, presetKind, editEntry) {
         await api("/fin/entries/" + encodeURIComponent(edit.id), { method: "PATCH", body: b, toast: "记录已修改" });
       } else {
         b.kind = kind;
-        b.uid = kind === "float" ? ($("#ff_giver", box) ? $("#ff_giver", box).value : viewUid)
+        b.uid = kind === "float" ? ($("#ff_giver", box) ? $("#ff_giver", box).value : FIN.me.uid)
           : (canAll && $("#ff_uid", box) ? $("#ff_uid", box).value : viewUid);
         await api("/fin/entries", { method: "POST", body: b, toast: kind === "float" ? "备用金已记录" : "已记账 " + finMoney(b.amount) + " ZMW" });
       }
