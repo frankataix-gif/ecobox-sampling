@@ -98,6 +98,7 @@ td.n{text-align:right;font-variant-numeric:tabular-nums}
 .fin-acct input{width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:8px;font:inherit}
 .fin-acct label{font-size:11px;color:var(--mut);display:block}
 .fin-acct b{display:block;font-size:17px;margin-top:1px}
+.fin-acct small{display:block;font-size:11px;color:var(--mut);margin-top:2px}
 .fin-acct .acts{display:flex;gap:8px;margin-top:8px}
 .fin-acct .acts button{flex:1;min-height:40px}
 .fin-seg{display:flex;background:var(--chip);border-radius:12px;padding:3px;margin:0 0 12px}
@@ -417,6 +418,7 @@ async function showApp() {
     if (!b) return;
     enterApp(b.dataset.tab);
   };
+  $("#back").onclick = () => goHome();
   $("#updbar").onclick = async () => {
     const b = $("#updbar");
     b.textContent = "刷新中…";
@@ -452,7 +454,7 @@ function homeHtml() {
       if (x.soon) return `<div class="mod soon"><i>${x.i}</i><b>${esc(x.t)}</b><span>${esc(x.d)}</span><em>待开放</em></div>`;
       return x.tab
         ? `<button class="mod" data-go="${x.tab}"><i>${x.i}</i><b>${esc(x.t)}</b><span>${esc(x.d)}</span></button>`
-        : `<a class="mod" href="${x.u}"><i>${x.i}</i><b>${esc(x.t)}</b><span>${esc(x.d)}</span></a>`;
+        : `<a class="mod" href="${x.u}" target="_blank" rel="noopener"><i>${x.i}</i><b>${esc(x.t)}</b><span>${esc(x.d)}</span></a>`;
     }).join("");
     return `<div class="sec">${esc(g)}</div><div class="mods">${cards}</div>`;
   }).join("");
@@ -580,7 +582,8 @@ function usersHtml() {
       <button data-pwd="${u.id}" style="padding:4px 8px">改密码</button>
       <button data-active="${u.id}" style="padding:4px 8px">${u.active ? "停用" : "启用"}</button>
     </td></tr>`).join("");
-  return `<div class="card"><h3>新增账号</h3>
+  return `<datalist id="sites">${SITES.map((s) => `<option>${esc(s)}</option>`).join("")}</datalist>
+  <div class="card"><h3>新增账号</h3>
     <div class="row"><div><label>姓名</label><input id="u_name"></div><div><label>账号</label><input id="u_login" placeholder="可留空，默认用姓名"></div></div>
     <div class="row"><div><label>初始密码（≥8 位）</label><input id="u_pass" type="text"></div><div><label>角色</label><select id="u_role"><option value="staff">员工</option><option value="manager">负责人</option><option value="admin">管理员</option></select></div></div>
     <div class="row"><div><label>矿区</label><input id="u_site" list="sites" placeholder="选填"></div><div><label>电话</label><input id="u_phone" placeholder="选填"></div></div>
@@ -641,25 +644,41 @@ const finCatName = (k) => {
 };
 const finKindName = (k) => (k === "in" ? "收入" : k === "float" ? "备用金" : k === "move" ? "内部转账" : "支出");
 
-/* 余额 = 对账快照 + 之后的流入 - 流出（备用金：出的那边减，收的那边加） */
-function finBalance(uid) {
-  const a = (FIN.accounts || []).find((x) => x.uid === uid) || { cash: 0, card: 0, since: "" };
-  let cash = Number(a.cash) || 0, card = Number(a.card) || 0;
+/* 账户：对账余额 + 之后的流入/流出，拆成「来源 − 花费 = 剩余」 */
+function finAcct(uid) {
+  const a = (FIN.accounts || []).find((x) => x.uid === uid) || {};
   const since = a.since || "";
-  const add = (ch, v) => { if (ch === "card") card += v; else cash += v; };
+  const src = { cash: Number(a.cash) || 0, card: Number(a.card) || 0 };
+  const out = { cash: 0, card: 0 };
+  const chOf = (ch) => (ch === "card" ? "card" : "cash");
   for (const e of FIN.entries) {
     if (since && String(e.date) <= since) continue;
     const amt = Number(e.amount) || 0;
+    const ch = chOf(e.ch);
     if (e.kind === "float") {
-      if (e.uid === uid) add(e.ch, -amt);
-      if (e.to_uid === uid) add(e.ch, amt);
+      if (e.to_uid === uid) src[ch] += amt;      // 收到备用金 → 现金来源
+      if (e.uid === uid) out[ch] += amt;         // 发出备用金 → 花费
     } else if (e.kind === "move") {
-      if (e.uid === uid) { if (e.ch === "card") { card -= amt; cash += amt; } else { cash -= amt; card += amt; } }
+      if (e.uid === uid) { const to = ch === "card" ? "cash" : "card"; out[ch] += amt; src[to] += amt; }
     } else if (e.uid === uid) {
-      add(e.ch, e.kind === "in" ? amt : -amt);
+      if (e.kind === "in") src[ch] += amt; else out[ch] += amt;
     }
   }
-  return { cash, card };
+  return { cash: src.cash - out.cash, card: src.card - out.card, src, out, since, name: a.name };
+}
+const finBalance = (uid) => { const a = finAcct(uid); return { cash: a.cash, card: a.card }; };
+
+/* 某人手上还有多少备用金：收到的备用金 − 收到之后他自己的支出（备用金本身不算花费） */
+function finFloatOf(uid) {
+  const got = (FIN.entries || []).filter((e) => e.kind === "float" && e.to_uid === uid);
+  if (!got.length) return null;
+  const since = got.map((e) => String(e.date || "")).sort()[0] || "";
+  const used = (FIN.entries || []).filter((e) => e.uid === uid && e.kind === "out" && String(e.date || "") >= since);
+  return {
+    got: got.reduce((s, e) => s + (Number(e.amount) || 0), 0),
+    used: used.reduce((s, e) => s + (Number(e.amount) || 0), 0),
+    giver: got[0].uid, since,
+  };
 }
 
 const finPeople = () => {
@@ -732,16 +751,16 @@ function finHtml() {
 
   const roleLabel = (p) => (p.ghost ? "历史账户" : p.role === "admin" ? "管理员" : p.role === "manager" ? "负责人" : "员工");
   const acctCard = (p) => {
-    const b = finBalance(p.login);
+    const a = finAcct(p.login);
     const row = (FIN.accounts || []).find((x) => x.uid === p.login) || {};
     const acts = [];
     if (FIN.owner) acts.push(`<button class="ghost" data-recon="${esc(p.login)}">对账</button>`);
-    if (canAll) acts.push(`<button class="ghost" data-give="${esc(p.login)}">给员工</button>`);
+    if (FIN.owner) acts.push(`<button class="ghost" data-give="${esc(p.login)}">给员工</button>`);
     return `<div class="fin-acct" data-acct="${esc(p.login)}">
       <div class="n">${esc(p.name || p.login)} <span class="mut">${esc(roleLabel(p))}${row.since ? " · 对账 " + esc(row.since) : ""}</span></div>
       <div class="g">
-        <div><label>现金</label><b>${finMoney(b.cash)}</b></div>
-        <div><label>银行</label><b>${finMoney(b.card)}</b></div>
+        <div><label>现金</label><b>${finMoney(a.cash)}</b><small>来源 ${finMoney(a.src.cash)} − 花费 ${finMoney(a.out.cash)}</small></div>
+        <div><label>银行</label><b>${finMoney(a.card)}</b><small>来源 ${finMoney(a.src.card)} − 花费 ${finMoney(a.out.card)}</small></div>
       </div>
       ${acts.length ? `<div class="acts">${acts.join("")}</div>` : ""}
     </div>`;
@@ -750,23 +769,36 @@ function finHtml() {
   const personCard = () => acctCard(people.find((p) => p.login === who) || { login: who, name: finNameOf(who), role: "", ghost: false });
   const acctHtml = isAll ? "" : `<div class="sec">${isMe ? "我的账户" : esc(finNameOf(who)) + " 账户"}</div>` + personCard();
 
-  const tabs = `<div class="fin-seg">
-    <button data-fscope="" class="${isMe ? "on" : ""}">我</button>
-    ${canAll ? `<button data-fscope="ALL" class="${isAll ? "on" : ""}">全部</button>` : ""}
-  </div>`;
-
-  const peopleTabs = (canAll && !isMe) ? `<div class="fin-ptab">${people.filter((p) => (FIN.accounts || []).some((a) => a.uid === p.login) || FIN.entries.some((e) => e.uid === p.login || e.to_uid === p.login)).map((p) => `<button data-fscope="${esc(p.login)}" class="${FINWHO === p.login ? "on" : ""}">${esc(p.name || p.login)}</button>`).join("")}</div>` : "";
+  const withAcct = (FIN.accounts || []).filter((a) => Number(a.cash) || Number(a.card));
+  const scopeChips = [`<button data-fscope="" class="${isMe ? "on" : ""}">我</button>`];
+  if (canAll) {
+    scopeChips.push(`<button data-fscope="ALL" class="${isAll ? "on" : ""}">全部</button>`);
+    for (const a of withAcct) {
+      const p = people.find((x) => x.login === a.uid) || { login: a.uid, name: a.name || a.uid, role: "", ghost: true };
+      scopeChips.push(`<button data-fscope="${esc(p.login)}" class="${FINWHO === p.login ? "on" : ""}">${esc(p.name || p.login)}</button>`);
+    }
+  }
+  const tabs = `<div class="fin-ptab">${scopeChips.join("")}</div>`;
 
   const actions = !ro ? `<div class="fin-acts">
     ${!isAll ? `<button id="fin_add" class="pri">＋ 记一笔</button>` : ""}
     <button id="fin_move">🔁 取现</button>
-    ${canAll ? `<button id="fin_give">🤝 给员工</button>` : ""}
+    ${FIN.owner ? `<button id="fin_give">🤝 给员工</button>` : ""}
   </div>` : "";
 
   const roHint = ro ? `<div class="mut" style="margin:0 0 8px">🔒 只读 · ${esc(finNameOf(who))}</div>` : "";
 
-  return `${tabs}${peopleTabs}${roHint}
+  const floatUids = isAll ? people.map((p) => p.login) : [who];
+  const floats = floatUids.map((uid) => [uid, finFloatOf(uid)]).filter(([, f]) => f);
+  const floatHtml = floats.length ? `<div class="fin-acct">
+    <div class="n">🧾 员工往来（备用金）</div>
+    ${floats.map(([uid, f]) => `<div class="g" style="margin-top:8px"><div><label>${esc(finNameOf(uid))}</label><b>${finMoney(f.got - f.used)}</b><small>收到 ${finMoney(f.got)}（来自 ${esc(finNameOf(f.giver))}） − 已花 ${finMoney(f.used)}</small></div></div>`).join("")}
+    <div class="mut" style="margin-top:6px">收到备用金 − 之后的支出 = 手上还剩多少；备用金本身不算花费。</div>
+  </div>` : "";
+
+  return `${tabs}${roHint}
     ${acctHtml}
+    ${floatHtml}
     ${actions}
     <div class="fin-bar"><select id="fin_m"><option value="">全部月份</option>${months.map((m) => `<option value="${m}" ${m === FINM ? "selected" : ""}>${m}</option>`).join("")}</select></div>
     <div class="fin-kpi">
@@ -802,7 +834,7 @@ function finSheet(forceGiver, presetKind) {
   box.innerHTML = `<div class="fin-sheet">
     <h3>记一笔</h3>
     <label>类型</label>
-    <select id="ff_kind"><option value="out">支出</option><option value="in">收入</option><option value="float">发备用金</option></select>
+    <select id="ff_kind"><option value="out">支出</option><option value="in">收入</option>${FIN.owner ? `<option value="float">发备用金</option>` : ""}</select>
     <div class="r" style="margin-top:8px">
       <div><label>金额 ZMW</label><input id="ff_amt" type="number" step="0.01" inputmode="decimal"></div>
       <div><label>日期</label><input id="ff_date" type="date" value="${new Date().toISOString().slice(0, 10)}"></div>
@@ -993,9 +1025,14 @@ function groupMods(g) {
 function enterApp(k) { S.tab = k; S.editId = 0; render(); }
 function goHome() { enterApp("home"); }
 function syncChrome() {
-  const tabs = $("#tabs"); if (tabs) tabs.classList.remove("hide");
-  const back = $("#back"); if (back) back.classList.add("hide");
-  const ttl = $("#ttl"); if (ttl) ttl.textContent = "ECOBOX";
+  const isFin = S.tab === "fin";
+  const tabs = $("#tabs"); if (tabs) tabs.classList.toggle("hide", isFin);
+  const back = $("#back"); if (back) back.classList.toggle("hide", !isFin);
+  const ttl = $("#ttl");
+  if (ttl) {
+    const names = { status: "动态", home: "目录", board: "看板", log: "日报", users: "人员", mine: "我的", fin: "财务" };
+    ttl.textContent = names[S.tab] || (S.tab.startsWith("g:") ? S.tab.slice(2) : "ECOBOX");
+  }
 }
 
 
@@ -1317,7 +1354,7 @@ function groupHtml(g) {
     if (x.soon) return `<div class="mod soon"><i>${x.i}</i><b>${esc(x.t)}</b><span>${esc(x.d)}</span><em>待开放</em></div>`;
     return x.tab
       ? `<button class="mod" data-go="${x.tab}"><i>${x.i}</i><b>${esc(x.t)}</b><span>${esc(x.d)}</span></button>`
-      : `<a class="mod" href="${x.u}"><i>${x.i}</i><b>${esc(x.t)}</b><span>${esc(x.d)}</span></a>`;
+      : `<a class="mod" href="${x.u}" target="_blank" rel="noopener"><i>${x.i}</i><b>${esc(x.t)}</b><span>${esc(x.d)}</span></a>`;
   }).join("");
   return `<div class="sec">${esc(g)}</div><div class="mods">${cards || '<div class="empty">这个分类还没有模块</div>'}</div>`;
 }

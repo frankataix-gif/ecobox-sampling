@@ -432,6 +432,7 @@ async function finApi(req, env, me, seg, url, body) {
     const kind = FIN_KINDS.includes(b.kind) ? b.kind : "out";
     const amount = Math.round(num(b.amount) * 100) / 100;
     if (!(amount > 0)) return err("金额要大于 0");
+    if (kind === "float" && !isOwner) return err("只有财务负责人能发备用金", 403);
     let uid = all && b.uid ? String(b.uid) : own;
     if (kind === "move") uid = own;   // 取现/存现只动自己账户
     const toUid = kind === "float" ? String(b.to_uid || "") : "";
@@ -675,7 +676,9 @@ export default {
 
       /* ---------- 财务 ---------- */
       if (seg[0] === "fin") return await finApi(req, env, me, seg, url, body);
-  if (seg[0] === "feed") return await feedApi(req, env, me, seg, body);
+
+      /* ---------- 动态 ---------- */
+      if (seg[0] === "feed") return await feedApi(req, env, me, seg, body);
 
       if (seg[0] === "password" && req.method === "POST") {
         const b = await body();
