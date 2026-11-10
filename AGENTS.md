@@ -97,3 +97,5 @@
 4. jsdom 测**真实需求**（不只 happy path）。
 5. 部署 + `check_deploy.py` 核对 BUILD。
 6. 复制到镜像仓库 `_repo/ecobox-sampling` → commit → push。
+
+> **推送坑**：直接 `git push origin main` 走本机 git 凭据管理器即可；**不要**用 `GITHUB_TOKEN` 拼进 URL（只读，403），也别用 `GITHUB_PUSH_TOKEN`（可能为空导致卡住）。
