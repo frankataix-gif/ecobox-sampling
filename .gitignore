@@ -6,3 +6,10 @@ backups/
 # 系统文件
 .DS_Store
 Thumbs.db
+
+__pycache__/
+*.pyc
+
+# ops 构建产物（python ops/build.py 生成，页面内联进 worker）
+ops/dist/
+

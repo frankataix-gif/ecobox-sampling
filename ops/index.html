@@ -1,0 +1,2887 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<title>ECOBOX 工作台</title>
+<style>
+:root{--bg:#f4f5f6;--card:#fff;--card2:#fafbfb;--chip:#eceeef;--ink:#111827;--mut:#6b7280;--line:#e2e5e8;--teal:#111111;--teal2:#111111;--tealsoft:#111111;--tealborder:#111111;--bar:#000;--good:#047857;--blue:#1d4ed8;--warn:#b45309;--bad:#b91c1c}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans SC",sans-serif}
+a{color:var(--teal)}
+.wrap{max-width:980px;margin:0 auto;padding:0 12px 90px}
+.bar{position:sticky;top:0;z-index:9;background:var(--card);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;padding:10px 12px;margin:0 -12px 12px}
+.bar b{font-size:16px}
+.bar .sp{flex:1}
+.chip{font-size:12px;color:var(--mut);background:var(--chip);border-radius:999px;padding:3px 9px}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--card);border-radius:9px;padding:8px 12px}
+button.pri{background:var(--teal);border-color:var(--teal);color:#fff}
+button.ghost{background:transparent}
+button.danger{color:var(--bad);border-color:var(--bad)}
+button:disabled{opacity:.55;cursor:default}
+nav{display:flex;gap:6px;overflow:auto;margin-bottom:12px}
+nav button{flex:0 0 auto;border-radius:999px;padding:7px 14px;color:var(--mut)}
+nav button.on{background:var(--tealsoft);border-color:var(--tealborder);color:var(--teal2);font-weight:600}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+.card h3{margin:0 0 10px;font-size:15px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px}
+.kpi i{display:block;font-style:normal;font-size:12px;color:var(--mut)}
+.kpi b{font-size:22px;letter-spacing:.5px}
+label{display:block;font-size:12px;color:var(--mut);margin:10px 0 4px}
+input,select,textarea{width:100%;font:inherit;padding:9px 10px;border:1px solid var(--line);border-radius:9px;background:var(--card)}
+textarea{min-height:64px;resize:vertical}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+@media(max-width:560px){.row3{grid-template-columns:1fr 1fr}}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th,td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--mut);font-weight:600;font-size:12px}
+td.n{text-align:right;font-variant-numeric:tabular-nums}
+.mut{color:var(--mut);font-size:12.5px}
+.pill{display:inline-block;font-size:11.5px;padding:2px 8px;border-radius:999px;background:var(--chip);color:var(--ink)}
+.pill.me{background:var(--tealsoft);color:var(--teal2)}
+.pill.fin{background:#fff4e5;color:var(--warn)}
+.hide{display:none!important}
+#setup,#login{max-width:380px;margin:8vh auto;padding:0 12px}
+#setup .card,#login .card{padding:20px}
+#setup h1,#login h1{font-size:19px;margin:0 0 4px}
+.err{color:var(--bad);font-size:13px;min-height:18px;margin-top:8px}
+.ok{color:var(--teal2);font-size:13px;min-height:18px}
+.acts{display:flex;gap:8px;flex-wrap:wrap}
+.empty{color:var(--mut);text-align:center;padding:18px 0}
+
+/* 待办：卡片列表，手机上单列不横向滚 */
+.td-head{margin-bottom:10px}
+.td-headrow{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.td-filters{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.td-chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:5px 11px;font-size:12.5px;color:var(--mut);cursor:pointer}
+.td-chip.on{background:var(--ink);border-color:var(--ink);color:#fff}
+.td-sec{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--mut);margin:14px 0 6px}
+.td-sec i{font-style:normal;background:var(--chip);border-radius:999px;padding:0 6px;font-weight:600;color:var(--ink)}
+.td-sec.late{color:var(--bad)}
+.td-card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:8px}
+.td-card.late{border-left:3px solid var(--bad)}
+.td-card.done{opacity:.62}
+.td-row{display:flex;align-items:flex-start;gap:10px}
+.td-check{flex:none;width:22px;height:22px;border:2px solid #cbd5e1;border-radius:6px;background:#fff;color:#fff;font-size:12px;line-height:1;padding:0;cursor:pointer}
+.td-check.on{background:var(--good);border-color:var(--good)}
+.td-mid{flex:1;min-width:0}
+.td-title{font-size:14.5px;font-weight:600;overflow-wrap:anywhere}
+.td-card.done .td-title{text-decoration:line-through;color:var(--mut)}
+.td-meta{font-size:12px;color:var(--mut);margin-top:2px}
+.td-late{color:var(--bad)}
+.td-body{font-size:13px;color:#374151;margin-top:4px;white-space:pre-wrap;overflow-wrap:anywhere}
+.td-ops{display:flex;flex:none;gap:2px}
+.td-ops button{background:transparent;border:0;color:var(--mut);font-size:12px;padding:4px 5px;cursor:pointer}
+.td-ops button.on{color:#f59e0b}
+.td-ops button.danger{color:var(--bad)}
+.td-foot{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px;margin-top:6px}
+.td-foot button{font-size:12px;padding:4px 10px}
+.td-log{margin-top:6px;border-top:1px dashed var(--line);padding-top:6px}
+.td-note-line{font-size:12.5px;color:#374151;margin-bottom:3px;overflow-wrap:anywhere}
+.td-note-line b{margin-right:4px}
+.td-cin{display:flex;gap:6px;margin-top:6px}
+.td-cin input{flex:1;min-width:0}
+.td-cin button{font-size:12px;padding:4px 10px}
+.td-imp{background:#fef3c7;color:#b45309}
+.td-co{background:#e0e7ff;color:#1d4ed8}
+.td-doing{background:#ffedd5;color:#c2410c}
+.td-impbox{display:flex;align-items:center;gap:6px;font-size:13px;margin-top:6px}
+#td_sheet .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+#td_sheet label{display:block;font-size:12px;color:var(--mut);margin:8px 0 4px}
+#td_sheet input,#td_sheet select,#td_sheet textarea{width:100%;font-size:16px}
+/* 逾期：顶部红条 + 首页卡片红点 + 每日弹窗 */
+.td-alert{display:flex;align-items:center;flex-wrap:wrap;gap:8px;background:#fef2f2;border:1px solid #fecaca;color:var(--bad);font-weight:600;font-size:13.5px;border-radius:12px;padding:10px 12px;margin-bottom:10px}
+.td-alert button{margin-left:auto;background:var(--bad);color:#fff;border:0;border-radius:999px;padding:5px 11px;font-size:12.5px;cursor:pointer}
+.td-dot{display:inline-block;margin-left:6px;background:var(--bad);color:#fff;border-radius:999px;font-size:11px;font-weight:700;line-height:1.5;padding:0 6px;vertical-align:middle}
+.td-go{color:#b45309;font-style:normal;font-weight:600}
+.td-fb{margin:4px 0 2px;background:#fffbeb;border-left:3px solid #f59e0b;border-radius:0 8px 8px 0;padding:6px 9px;font-size:12.5px;color:#3f3f46;white-space:pre-wrap;overflow-wrap:anywhere}
+.td-al-list{margin-top:10px;border-top:1px dashed var(--line);padding-top:8px}
+.td-al-line{display:flex;align-items:flex-start;gap:8px;font-size:13.5px;padding:4px 0}
+.td-al-line b{font-weight:600;overflow-wrap:anywhere}
+.td-al-line .td-late{margin-left:auto;flex:none;font-weight:700}
+#td_report textarea,#td_alert{min-height:0}
+#td_report textarea{width:100%;min-height:96px;font-size:16px}
+
+/* 人员：卡片式列表，桌面多列、手机单列（不吃表格横向滚动） */
+.ulist{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
+.ucard{border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--card)}
+.ucard .uhead{display:flex;gap:8px;align-items:flex-start;justify-content:space-between}
+.ucard .uname{font-weight:600;font-size:14.5px}
+.ucard .uacts{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.ucard .uacts>button{flex:0 0 auto;padding:6px 10px;font-size:13px}
+@media(max-width:640px){
+  .ulist{grid-template-columns:1fr}
+  .ucard .uacts>button{flex:1 1 40%;min-height:38px}
+}
+
+.mods{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:10px}
+.mod{display:block;width:100%;text-align:left;font:inherit;text-decoration:none;color:inherit;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px 12px}
+.mod:hover{border-color:var(--tealborder)}
+.mod:active{background:var(--card2)}
+.mod i{font-style:normal;font-size:21px;display:block;margin-bottom:6px;line-height:1}
+.mod b{display:block;font-size:14.5px;font-weight:600}
+.mod span{display:block;font-size:11.5px;color:var(--mut);margin-top:3px;line-height:1.35}
+.sec{margin:18px 0 8px;font-size:12px;color:var(--mut);font-weight:700;letter-spacing:.6px}
+.hello{margin:4px 0 2px;font-size:15px}
+/* 目录磁贴：未开放的模块 */
+.mod.soon{opacity:.55;cursor:default;position:relative}
+.mod.soon em{position:absolute;top:8px;right:8px;font-style:normal;font-size:11px;padding:2px 6px;border-radius:6px;background:var(--chip);color:var(--mut)}
+.mod.soon b,.mod.soon span{color:var(--mut)}
+/* 目录磁贴：右上角 ☆ 设/取消快捷（置顶） */
+.mod.pinable{position:relative}
+.mod.pinable b{padding-right:22px}
+.mod>.pin{position:absolute;top:3px;right:3px;width:30px;height:30px;display:flex;align-items:center;justify-content:center;margin:0;font-size:15px;line-height:1;color:var(--mut);opacity:.5;border-radius:8px;cursor:pointer;user-select:none;-webkit-user-select:none}
+.mod>.pin:hover{opacity:1;background:var(--chip)}
+.mod>.pin.on{color:#e8a33d;opacity:1}
+
+/* ---------- 财务 ---------- */
+.fin-kpi{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:10px}
+.fin-kpi>div{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.fin-kpi b{display:block;font-size:17px;margin-top:2px}
+.fin-kpi span{font-size:12px;color:var(--mut)}
+.fin-bar{display:flex;gap:8px;align-items:center;margin:10px 0}
+.fin-bar select{flex:1;padding:8px;border:1px solid var(--line);border-radius:10px;background:var(--card)}
+.fin-list{display:flex;flex-direction:column;gap:8px}
+.fin-row{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;gap:10px;align-items:flex-start}
+.fin-row .d{font-size:12px;color:var(--mut);min-width:44px}
+.fin-row .m{flex:1;min-width:0}
+.fin-row .m b{font-size:15px}
+.fin-row .m p{margin:2px 0 0;font-size:12px;color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fin-row .a{text-align:right;font-weight:700;white-space:nowrap}
+.fin-row .a small{display:block;font-weight:400;font-size:11px;color:var(--mut)}
+.fin-row img{width:38px;height:38px;object-fit:cover;border-radius:8px;margin-top:4px;border:1px solid var(--line)}
+.fin-out .a{color:var(--bad)}.fin-in .a{color:var(--good)}.fin-float .a{color:var(--blue)}
+.fin-transfer .a{color:var(--blue)}
+.fin-sheet{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-radius:16px 16px 0 0;box-shadow:0 -8px 30px rgba(0,0,0,.18);padding:14px;z-index:60;max-height:88vh;overflow:auto}
+.fin-sheet h3{margin:0 0 10px;font-size:15px}
+.fin-sheet label{display:block;font-size:12px;color:var(--mut);margin:8px 0 3px}
+.fin-sheet input,.fin-sheet select,.fin-sheet textarea{width:100%;padding:9px;border:1px solid var(--line);border-radius:10px;font:inherit;background:var(--card)}
+.fin-sheet .r{display:flex;gap:8px}
+.fin-sheet .r>*{flex:1}
+.fin-sheet .ph{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.fin-sheet .ph img{width:56px;height:56px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
+.fin-sheet .ph .pht{position:relative;display:inline-block;line-height:0}
+.fin-sheet .ph .pht b{position:absolute;top:-7px;right:-7px;width:22px;height:22px;line-height:20px;text-align:center;border-radius:50%;background:#111;color:#fff;font-size:15px;font-weight:400;cursor:pointer;border:1px solid #fff}
+.fin-dim{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:55}
+.fin-acct{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:8px}
+.fin-orph{background:#fff6f4;border:1px solid #f3c6bb;border-radius:12px;padding:10px 12px;margin-bottom:8px;color:#8a2b12}
+.fin-orph .acts{display:flex;gap:8px;margin-top:8px}
+.fin-orph .acts button{flex:1;min-height:40px}
+.fin-acct .n{font-weight:600}
+.fin-acct .g{display:flex;gap:8px;margin-top:6px}
+.fin-acct .g>div{flex:1}
+.fin-acct input{width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:8px;font:inherit}
+.fin-acct label{font-size:11px;color:var(--mut);display:block}
+.fin-acct b{display:block;font-size:17px;margin-top:1px}
+.fin-acct small{display:block;font-size:11px;color:var(--mut);margin-top:2px}
+.fin-acct .acts{display:flex;gap:8px;margin-top:8px}
+.fin-acct .acts button{flex:1;min-height:40px}
+.fin-seg{display:flex;background:var(--chip);border-radius:12px;padding:3px;margin:0 0 12px}
+.fin-seg button{flex:1;border:0;background:transparent;padding:10px;font-size:15px;font-weight:600;color:var(--mut);border-radius:9px}
+.fin-seg button.on{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.fin-acts{display:flex;gap:8px;margin:10px 0}
+.fin-acts button{flex:1;padding:12px;border:1px solid var(--line);background:var(--card);border-radius:12px;font-size:14px;font-weight:600}
+.fin-acts button.pri{background:var(--teal);color:#fff;border-color:var(--teal)}
+.fin-move .a{color:var(--ink)}
+.fin-ptab{display:flex;gap:6px;overflow-x:auto;margin:0 0 12px;padding-bottom:2px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.fin-ptab::-webkit-scrollbar{display:none}
+.fin-ptab button{flex:0 0 auto;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:8px 14px;font-size:13px;font-weight:600;color:var(--ink);white-space:nowrap}
+.fin-ptab button.on{background:var(--teal);color:#fff;border-color:var(--teal)}
+.req{color:#c62828;font-style:normal;font-weight:700}
+.fin-inv{font-style:normal;font-size:11px;font-weight:700;padding:1px 6px;border-radius:6px;margin-left:6px;vertical-align:1px}
+.fin-inv.y{background:#dcfce7;color:#166534}
+.fin-inv.n{background:#eef2f6;color:#64748b}
+.fin-inv.w{background:#fef3c7;color:#92400e}
+.fin-inv.p{background:#ede9fe;color:#6d28d9}
+.fin-inv.l{background:#e0f2fe;color:#075985}
+.fin-mark{display:flex;gap:6px;margin-top:8px}
+.fin-mark button{flex:0 0 auto;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:5px 14px;font-size:12px;font-weight:600;color:var(--ink)}
+.fin-mark button.on{background:var(--teal);color:#fff;border-color:var(--teal)}
+.fin-mark button.on[data-inv="0"]{background:#94a3b8;border-color:#94a3b8}
+.fin-fr{display:grid;grid-template-columns:1fr auto 78px 78px;gap:6px;align-items:center;padding:7px 0;border-top:1px solid var(--line);font-size:13px}
+.fin-fr>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fin-fr>b,.fin-fr>i{text-align:right;font-style:normal;font-variant-numeric:tabular-nums}
+.fin-fr>i{color:var(--mut);font-weight:500;font-size:12px}
+.fin-fr.hd{border-top:none;padding-top:2px;color:var(--mut);font-size:11px}
+.fin-fr.tot{border-top:2px solid var(--ink);font-weight:700}
+.fin-fr.tot>i{color:var(--ink)}
+.fin-anabar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 10px}
+.fin-anabar button{padding:6px 12px;font-size:12px;border-radius:999px}
+.fin-anabar .mut{font-size:11px}
+.row3{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:8px}
+
+/* ---------- 手机适配 ---------- */
+.fin-fab{display:flex;position:fixed;right:16px;bottom:calc(18px + env(safe-area-inset-bottom));z-index:50;align-items:center;gap:6px;background:var(--teal);color:#fff;border:none;border-radius:999px;padding:14px 20px;font-weight:600;font-size:15px;box-shadow:0 8px 24px rgba(15,118,110,.35)}
+@media(max-width:640px){
+  .wrap{padding:0 10px calc(96px + env(safe-area-inset-bottom))}
+  .bar{padding:calc(10px + env(safe-area-inset-top)) 10px 10px;margin:0 -10px 10px;gap:8px;flex-wrap:wrap}
+  .bar b{font-size:15px}
+  nav{gap:4px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:2px 10px;margin:0 -10px 10px}
+  nav::-webkit-scrollbar{display:none}
+  nav button{padding:9px 15px;font-size:14px}
+  input,select,textarea{font-size:16px;padding:11px 10px}
+  button{min-height:42px}
+  .row,.row3{grid-template-columns:1fr}
+  .grid{grid-template-columns:1fr 1fr;gap:8px}
+  .kpi b{font-size:19px}
+  .mods{grid-template-columns:1fr 1fr;gap:8px}
+  .mod{padding:12px 10px}
+  .mod i{font-size:19px}
+  .mod b{font-size:14px}
+  .card{padding:12px;border-radius:12px}
+  #pane table{display:block;overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch}
+  #pane th,#pane td{padding:8px 6px}
+  .fin-kpi{gap:8px}
+  .fin-acts{flex-wrap:wrap}
+  .fin-acts button{flex:1 1 44%}
+  .fin-fr{grid-template-columns:1fr 62px 60px 60px;font-size:12px}
+  .fin-kpi b{font-size:16px}
+  .fin-bar{flex-wrap:wrap;gap:8px}
+  .fin-bar select{font-size:16px;padding:10px}
+  #fin_addbar{display:none}
+  .fin-fab{display:flex}
+  .fin-row{padding:11px 10px;gap:8px}
+  .fin-row .m b{font-size:15px}
+  .fin-row .a{font-size:15px}
+  .fin-row img{width:46px;height:46px}
+  .fin-row .d{min-width:40px;font-size:12px}
+  .fin-acct{padding:12px}
+  .fin-acct .g{gap:10px}
+  .fin-seg button{font-size:16px}
+  .fin-acts button{font-size:15px;min-height:46px}
+  .fin-sheet{padding:14px 14px calc(16px + env(safe-area-inset-bottom));border-radius:18px 18px 0 0;max-height:92vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+  .fin-sheet button{min-height:46px}
+  .fin-sheet input,.fin-sheet select,.fin-sheet textarea{font-size:16px;padding:11px 10px}
+  .fin-dim img{max-width:100%}
+}
+@media(max-width:380px){.fin-kpi{grid-template-columns:1fr}.mods{grid-template-columns:1fr}}
+
+#back{margin:0 2px 0 -4px;padding:6px 10px;font-size:18px;line-height:1;border-color:transparent}
+button.chip{border:1px solid var(--line);background:var(--chip);color:var(--mut);max-width:46vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+button.chip:active{background:var(--tealsoft);color:var(--teal2)}
+@media(max-width:640px){#back{min-width:42px;min-height:42px;font-size:20px;border:none;background:transparent}}
+
+/* ---------- 操作提示（常驻，不自动消失） ---------- */
+.toastbar{position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom));transform:translate(-50%,14px);z-index:90;background:#0f766e;color:#fff;padding:14px 22px;border-radius:14px;font-size:15px;font-weight:600;line-height:1.35;box-shadow:0 14px 40px rgba(0,0,0,.35);opacity:0;transition:opacity .18s,transform .18s;width:min(92vw,420px);text-align:center;cursor:pointer;user-select:none;border:2px solid rgba(255,255,255,.35)}
+.toastbar:before{content:"✓ ";font-weight:700}
+.toastbar.on{opacity:1;transform:translate(-50%,0)}
+.toastbar.bad{background:var(--bad)}
+.toastbar.bad:before{content:"! "}
+@media(max-width:640px){.toastbar{bottom:calc(86px + env(safe-area-inset-bottom))}}
+
+/* ---------- 更新提示（浮在表面，不进布局） ---------- */
+.updbar{display:none;position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom));transform:translate(-50%,16px);z-index:95;background:#0f766e;color:#fff;border:2px solid rgba(255,255,255,.35);border-radius:999px;padding:12px 20px;font:inherit;font-size:14px;font-weight:600;line-height:1.25;box-shadow:0 12px 34px rgba(0,0,0,.32);max-width:92vw;text-align:center;opacity:0;transition:opacity .16s,transform .16s;pointer-events:none}
+.updbar.show{display:block;pointer-events:auto}
+.updbar.in{opacity:1;transform:translate(-50%,0)}
+.updbar.bad{background:var(--bad)}
+@media(max-width:640px){.updbar{bottom:calc(86px + env(safe-area-inset-bottom))}}
+
+/* ---------- 动态 ---------- */
+#fd_body{width:100%;box-sizing:border-box;border:1px solid var(--line,var(--line));border-radius:11px;padding:10px 12px;font:inherit;font-size:16px;line-height:1.5;resize:vertical;background:var(--card);color:inherit}
+.fd-post{margin:0 0 10px}
+.fd-h{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.fd-h b{font-size:14.5px}
+.fd-h .mut{font-size:12px}
+.fd-h .ghost{margin-left:auto;font-size:18px;line-height:1}
+.fd-b{font-size:15px;line-height:1.55;white-space:pre-wrap;word-break:break-word}
+.fd-post .ph{margin-top:8px;display:flex;flex-wrap:wrap;gap:6px}
+.fd-post .ph img,.fd-new .ph img{width:auto;height:104px;border-radius:9px;object-fit:cover;background:var(--card2)}
+
+/* ---------- 黑白：顶部黑 / 内容白 / 按钮黑白 ---------- */
+.bar{background:var(--bar);border-bottom:1px solid #000;color:#fff}
+.bar b{color:#fff}
+.bar #back{color:#fff}
+.bar .chip{background:rgba(255,255,255,.14);color:#e9edf0}
+nav button{background:#fff;color:#4b5563;border-color:var(--line)}
+nav button.on{background:#111;border-color:#111;color:#fff;font-weight:600}
+button.pri{background:#111;border-color:#111;color:#fff}
+button.pri:hover{background:#000}
+.mod:hover{border-color:#111}
+.pill{background:var(--chip);color:#374151}
+.pill.me{background:#111;color:#fff}
+.updbar{background:#111;color:#fff;border-color:#000}
+.updbar.ok{background:#047857;color:#fff}
+.updbar.bad{background:#b91c1c;color:#fff}
+.fin-fab{background:#111;color:#fff}
+.fin-dim{background:rgba(0,0,0,.45)}
+.ok{color:var(--good)}
+a{color:#111}
+/* ---------- 动态卡片流（适配移动端：触控 ≥44px / 安全区 / 留言体验） ---------- */
+.fd-top{display:flex;align-items:baseline;justify-content:space-between;margin:2px 0 10px}
+.fd-title{font-size:17px;font-weight:700}
+.fd-fab{position:fixed;right:16px;bottom:calc(24px + env(safe-area-inset-bottom, 0px));width:56px;height:56px;border-radius:50%;background:#111;color:#fff;font-size:28px;line-height:1;border:0;box-shadow:0 10px 24px rgba(0,0,0,.3);z-index:40;display:flex;align-items:center;justify-content:center}
+.fd-fab:active{background:#000;transform:scale(.95)}
+.fd-post{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+.fd-h{display:flex;align-items:center;gap:12px}
+.fd-av{width:42px;height:42px;border-radius:50%;background:#111;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:17px;flex:0 0 auto}
+.fd-meta{flex:1;min-width:0}
+.fd-meta b{display:block;font-size:15.5px;line-height:1.3}
+.fd-meta span{font-size:12px;color:var(--mut)}
+.fd-more{background:transparent;border:0;color:#6b7280;font-size:20px;padding:10px 8px;letter-spacing:2px;line-height:1;min-height:44px;min-width:44px}
+.fd-b{margin-top:10px;white-space:pre-wrap;word-break:break-word;font-size:15px;line-height:1.65}
+.fd-media{display:grid;gap:4px;margin-top:10px}
+.fd-media.g1{grid-template-columns:1fr}
+.fd-media.g2{grid-template-columns:1fr 1fr}
+.fd-media.g3{grid-template-columns:repeat(3,1fr)}
+.fd-tile{position:relative;padding:0;border:0;background:#eef1f2;border-radius:8px;overflow:hidden;cursor:pointer;aspect-ratio:1/1;display:block;width:100%}
+.fd-media.g1 .fd-tile{aspect-ratio:4/3;max-height:440px}
+.fd-tile img,.fd-tile video{width:100%;height:100%;object-fit:cover;display:block}
+.fd-play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:26px;background:rgba(0,0,0,.22)}
+.fd-more-n{position:absolute;inset:0;background:rgba(0,0,0,.45);color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600}
+.fd-acts{display:flex;gap:8px;margin-top:12px;border-top:1px solid var(--line);padding-top:4px}
+.fd-acts button{display:flex;align-items:center;justify-content:center;gap:7px;background:transparent;border:0;color:#4b5563;font-size:14px;min-height:44px;min-width:72px;padding:4px 10px}
+.fd-acts button i{font-style:normal;font-size:17px}
+.fd-acts button.on{color:#e11d48;font-weight:600}
+.fd-acts button.on i{transform:scale(1.1)}
+.fd-comments{margin-top:8px;background:#f7f8f8;border-radius:12px;padding:10px 12px}
+.fd-c{font-size:13.5px;line-height:1.6;padding:3px 0;display:flex;gap:6px;align-items:baseline}
+.fd-c b{color:#111;flex:0 0 auto;font-weight:600}
+.fd-c span{flex:1;word-break:break-word;color:#1f2937}
+.fd-c em{flex:0 0 auto;font-style:normal;color:#9aa3a8;font-size:11px}
+.fd-c .x{border:0;background:transparent;color:#9aa3a8;font-size:15px;padding:6px;line-height:1;min-width:28px;flex:0 0 auto}
+.fd-cmore{display:block;border:0;background:transparent;color:#111;font-size:12.5px;font-weight:600;padding:8px 0 4px;margin:0}
+.fd-cin{display:flex;gap:8px;margin-top:8px}
+.fd-cin input{flex:1;padding:11px 13px;border-radius:22px;border:1px solid var(--line);font-size:16px;background:#fff;min-width:0}
+.fd-cin input:focus{outline:none;border-color:#111}
+.fd-cin button{padding:10px 16px;font-size:14px;border-radius:22px;flex:0 0 auto;min-height:44px}
+.fd-sheet{position:fixed;left:0;right:0;bottom:0;background:#fff;border-radius:16px 16px 0 0;box-shadow:0 -8px 30px rgba(0,0,0,.2);padding:16px;padding-bottom:calc(16px + env(safe-area-inset-bottom, 0px));z-index:70;max-height:88vh;overflow:auto}
+.fd-sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.fd-sh h3{margin:0;font-size:16px}
+.fd-sh button{background:transparent;border:0;color:var(--mut);font-size:14px;padding:8px 4px;min-height:40px}
+.fd-sheet textarea{width:100%;min-height:100px;border:1px solid var(--line);border-radius:12px;padding:11px;font:inherit;font-size:16px;background:#fff;resize:vertical}
+.fd-cnt{text-align:right;color:var(--mut);font-size:11.5px;margin:4px 2px 0}
+.fd-thumbs{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.fd-thumbs .t{position:relative}
+.fd-thumbs img,.fd-thumbs video{width:68px;height:68px;object-fit:cover;border-radius:10px;border:1px solid var(--line)}
+.fd-thumbs .x{position:absolute;top:-7px;right:-7px;width:22px;height:22px;border-radius:50%;background:#111;color:#fff;border:0;font-size:13px;line-height:20px;padding:0}
+.fd-menu{position:fixed;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 30px rgba(0,0,0,.18);padding:6px;z-index:80;min-width:140px}
+.fd-menu button{display:block;width:100%;text-align:left;border:0;background:transparent;padding:11px 12px;font-size:14px;border-radius:9px;min-height:44px}
+.fd-menu button:hover{background:#f3f4f5}
+.fd-menu button.dz{color:#b91c1c}
+.fd-dim{position:fixed;inset:0;background:rgba(0,0,0,.42);z-index:65}
+.fd-tile[data-vid]{background:#14161a}
+.fd-view{position:fixed;inset:0;background:rgba(0,0,0,.94);z-index:90;display:flex;align-items:center;justify-content:center;cursor:zoom-out}
+.fd-view video{max-width:96vw;max-height:92vh}
+.fd-zoom{display:flex;align-items:center;justify-content:center;max-width:100vw;max-height:100vh;touch-action:none}
+.fd-zoom img{max-width:96vw;max-height:92vh;transition:transform .18s ease;will-change:transform}
+.fd-view-x{position:absolute;top:calc(12px + env(safe-area-inset-top, 0px));right:14px;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.18);color:#fff;border:0;font-size:24px;line-height:1}
+
+#upd_ver{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:120;background:#111;color:#fff;padding:8px 14px;border-radius:999px;box-shadow:0 6px 20px rgba(0,0,0,.32);display:flex;gap:12px;align-items:center;font-size:13px}
+#upd_ver button{background:#fff;color:#111;border:0;border-radius:999px;padding:5px 13px;font-size:13px;font-weight:600}
+
+.langopts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}
+.langopt{position:relative;text-align:left;padding:14px;border-radius:12px;border:1px solid var(--line,#2a3550);background:transparent;color:inherit;cursor:pointer;display:flex;flex-direction:column;gap:4px}
+.langopt b{font-size:16px}
+.langopt span{font-size:12px;opacity:.7}
+.langopt.on{border-color:#3b82f6;box-shadow:0 0 0 1px #3b82f6 inset}
+.langopt em{position:absolute;right:12px;top:12px;font-style:normal;color:#3b82f6}
+@media(max-width:520px){.langopts{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div id="setup" class="hide">
+  <div class="card">
+    <h1>ecobox 初始化</h1>
+    <p class="mut">第一次使用：用部署时给出的「初始化口令」建第一个管理员账号。</p>
+    <form id="sf">
+      <label>初始化口令</label><input id="s_token" autocomplete="off" required>
+      <div class="row"><div><label>姓名</label><input id="s_name" required></div><div><label>账号（可留空，默认用姓名）</label><input id="s_login" autocomplete="username" placeholder="邮箱 / 手机号 / 姓名"></div></div>
+      <label>密码（≥8 位）</label><input id="s_pass" type="password" autocomplete="new-password" required>
+      <div class="err" id="s_err"></div>
+      <button class="pri" style="width:100%;margin-top:6px">创建管理员</button>
+    </form>
+  </div>
+</div>
+
+<div id="login" class="hide">
+  <div class="card">
+    <h1>ecobox 经营台账</h1>
+    <p class="mut">赞比亚公司日常经营管理 · 每人一个账号</p>
+    <form id="lf">
+      <label>账号</label><input id="l_login" type="text" autocomplete="username" required placeholder="邮箱 / 手机号 / 姓名">
+      <label>密码</label><input id="l_pass" type="password" autocomplete="current-password" required>
+      <div class="err" id="l_err"></div>
+      <button class="pri" style="width:100%;margin-top:6px">登录</button>
+    </form>
+    <p class="mut" style="margin:12px 0 0">还没有账号？找管理员开通。</p>
+  </div>
+</div>
+
+<div id="app" class="hide">
+  <div class="wrap">
+    <div class="bar">
+      <button class="ghost hide" id="back" aria-label="返回目录">←</button>
+      <b id="ttl">ECOBOX</b><span class="chip" id="who"></span><span class="sp"></span>
+    </div>
+    <nav id="tabs"></nav>
+    <div id="pane"></div>
+  </div>
+</div>
+
+<div id="moddlg" class="hide" style="position:fixed;inset:0;background:rgba(15,23,42,.45);display:flex;align-items:center;justify-content:center;padding:16px;z-index:50">
+  <div class="card" id="modbox" style="max-width:460px;width:100%;max-height:85vh;overflow:auto;margin:0"></div>
+</div>
+
+<button id="updbar" class="updbar" type="button"></button>
+
+<script>
+const BUILD = "__BUILD__";
+let UPD_SEEN = false;
+let UPD_AT = 0;
+async function checkUpdate(force) {
+  if (document.hidden && !force) return;
+  const now = Date.now();
+  if (now - UPD_AT < 55000) return;
+  UPD_AT = now;
+  try {
+    const r = await fetch("/api/build", { cache: "no-store" });
+    const j = await r.json();
+    if (j.build && j.build !== BUILD && !UPD_SEEN) {
+      UPD_SEEN = true;
+      const d = document.createElement("div");
+      d.id = "upd_ver";
+      d.innerHTML = "<span>有新版本</span><button>立即更新</button>";
+      d.querySelector("button").onclick = () => {
+        try { caches.keys().then((ks) => ks.forEach((k) => caches.delete(k))); } catch (e) {}
+        location.reload();
+      };
+      document.body.appendChild(d);
+    }
+  } catch (e) {}
+}
+setInterval(checkUpdate, 300000);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) checkUpdate(); });
+window.addEventListener("focus", () => checkUpdate());
+setTimeout(() => checkUpdate(1), 8000);
+const S = { user: null, tab: "status", logs: [], users: [], from: "", to: "", editId: 0, editUid: 0 };
+let pinBound = false;
+const $ = (s, r = document) => r.querySelector(s);
+const esc = (v) => String(v == null ? "" : v).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const iso = (d) => d.toISOString().slice(0, 10);
+const money = (v) => (v == null ? "-" : (+v).toLocaleString("en-US", { maximumFractionDigits: 2 }));
+const num = (v, d = 3) => (v == null ? "-" : (+v).toLocaleString("en-US", { maximumFractionDigits: d }));
+const SITES = ["Serenje 1330NW", "Chitambo 1230SE", "Kalomo", "Lusaka 办公室"];
+
+/* ---------- 语言：中文 / English ---------- */
+const LANG_KEY = "ops_lang";
+let LANG = "zh";
+try { if (localStorage.getItem(LANG_KEY) === "en") LANG = "en"; } catch (e) {}
+const isEN = () => LANG === "en";
+
+/* 界面文案：中文原文 → 英文。只在英文模式下走这里；查不到就保留中文。 */
+const EN = {
+  /* 导航 / 分组 / 模块 */
+  "状态": "Activity", "目录": "Home", "看板": "Board", "日报": "Daily log", "人员": "Members",
+  "我的": "Account", "费用记录": "Expenses", "会员设置": "Membership", "语言": "Language",
+  "语言 / Language": "Language", "设置": "Settings", "财务": "Finance", "日常协同": "Daily",
+  "业务现场": "Field", "项目资料": "Project docs", "资产": "Assets", "系统": "System",
+  "动态": "Feed", "打卡": "Attendance", "生产": "Production", "生产统计": "Output stats",
+  "项目管理": "Projects", "出口": "Exports", "客户": "Customers", "矿区考察记录本": "Sampling log",
+  "现场相册": "Field album", "矿山项目介绍": "Project intro", "矿证": "Licences",
+  "公司": "Company", "雇主": "Employers", "待开放": "Coming soon", "工作台": "Workspace",
+  "待办": "To-do", "目录磁贴：未开放的模块": "Home tiles: modules not yet open",
+  /* 问候 / 首页 */
+  "选一个模块进去；手机可加到主屏，一个图标就是全部。": "Pick a module. Add it to your home screen — one icon is everything.",
+  "还没有可用模块，找管理员开通": "No modules yet — ask an admin to enable them.",
+  "这个分类还没有模块": "No modules in this section yet.",
+  "公司动态": "Company feed", "全体可见": "Visible to all", "添加动态": "Add post",
+  "还没有动态，点右下角": "No posts yet — tap the button at the bottom right",
+  "加载中…": "Loading…", "刷新中…": "Refreshing…", "上传中…": "Uploading…",
+  /* 通用按钮 */
+  "保存": "Save", "保存修改": "Save changes", "取消": "Cancel", "删除": "Delete", "编辑": "Edit",
+  "关闭": "Close", "提交": "Submit", "发送": "Send", "发布": "Post", "已发布": "Posted",
+  "返回目录": "Back to home", "更多": "More", "查看全部": "View all", "全部": "All",
+  "启用": "Enable", "停用": "Disable", "移除": "Remove", "补票": "Attach invoice",
+  "复制内容": "Copy", "已复制": "Copied", "复制失败": "Copy failed", "没有文字可复制": "Nothing to copy",
+  "拍照": "Take photo", "从相册选": "Choose from album", "照片": "Photos",
+  "状态": "Status", "日期": "Date", "备注": "Note", "金额": "Amount", "类型": "Type",
+  "分类": "Category", "渠道": "Channel", "归属": "Bucket", "用途": "Purpose", "来源": "Source",
+  "角色": "Role", "姓名": "Name", "账号": "Login", "密码": "Password", "电话": "Phone",
+  "电话（选填）": "Phone (optional)", "权限": "Permissions", "可用模块": "Modules",
+  "我的账号": "My account", "我的账户": "My account", "退出登录": "Sign out", "退出": "Sign out",
+  "登录": "Sign in", "初始化": "Set up", "创建管理员": "Create admin",
+  "建第一个管理员账号。": "Create the first admin account.",
+  "第一次使用：用部署时给出的": "First time here? Use the",
+  "初始化口令": "setup code",
+  "还没有账号？找管理员开通。": "No account yet? Ask an admin to create one.",
+  "邮箱 / 手机号 / 姓名": "Email / phone / name", "上次登录": "Last sign-in",
+  /* 角色 */
+  "管理员": "Admin", "负责人": "Manager", "财务": "Finance", "员工": "Staff",
+  /* 日报 */
+  "新增日报": "New daily log", "矿区/项目": "Site / project", "班次": "Shift", "班组": "Crew",
+  "出勤人数": "Headcount", "矿石（吨）": "Ore (t)", "废石（吨）": "Waste (t)",
+  "品位 / 品级": "Grade", "成本（USD）": "Cost (USD)", "今天做了什么、有什么问题": "What was done today — any issues?",
+  "白班": "Day shift", "夜班": "Night shift", "全天": "Full day",
+  "记录（": "Records (", "日期 / 矿区": "Date / site", "矿石 / 人数": "Ore / crew",
+  "内容 / 录入": "Note / by", "这段时间还没有记录": "No records in this period",
+  "我": "me", "改": "Edit", "删": "Del", "矿石吨": "Ore (t)", "矿石": "Ore",
+  "生产记录已保存": "Log saved", "生产记录已更新": "Log updated", "生产记录已删除": "Log deleted",
+  "记录已修改": "Record updated", "记录已删除": "Record deleted", "记录天数": "Days logged",
+  /* 待办 */
+  "待办": "To-do", "全部": "All", "我负责": "Assigned to me", "我发起": "Created by me",
+  "公司事项": "Company", "已完成": "Done", "重要": "Important", "指派": "Assigned",
+  "进行中": "In progress", "未指派": "Unassigned", "发起": "by", "今天": "Today",
+  "天": "days", "已逾期": "Overdue", "今天到期": "Due today", "接下来": "Upcoming",
+  "无截止": "No due date", "新待办": "New task", "修改待办": "Edit task",
+  "要做什么": "What needs doing", "谁来做": "Who does it", "我自己": "Myself",
+  "派给同事": "Assign to a colleague", "公司事项（大家跟）": "Company task (everyone tracks)",
+  "执行人": "Assignee", "选一个人": "Pick a person", "截止日期": "Due date", "标记": "Tag",
+  "说明（给同事看的具体要求）": "Details for the assignee",
+  "做到什么程度算完、要找谁、注意什么": "What done looks like, who to ask, what to watch out for",
+  "例：把 1330NW 的取样照片传完": "e.g. Upload the 1330NW sample photos",
+  "开始执行": "Start", "完成": "Finish", "留言": "Comments", "写留言…": "Write a comment…",
+  "还没有留言": "No comments yet", "标记完成": "Mark done", "重新打开": "Reopen",
+  "删除这条待办？": "Delete this task?", "请填标题": "Please add a title",
+  "请选执行人": "Please pick an assignee", "写点内容再发": "Write something first",
+  "没有待办。点右上角「+ 新待办」记一条。": "No tasks yet. Tap “+ New task” above.",
+  "条已逾期": "overdue", "最久": "longest", "看已逾期": "Show overdue", "写进展": "Update progress",
+  "反馈内容（必填）": "Progress note (required)", "提交": "Submit",
+  "做了什么、卡在哪、预计什么时候能完": "What you did, what is blocking you, when it will be done",
+  "提交后会记下几月几日几点，发起人和同事都能看到。": "The date and time are recorded, visible to the requester and colleagues.",
+  "反馈是必填的，写一句也行": "A progress note is required — one sentence is enough",
+  "已开始执行，进度已记下": "Started, progress logged", "进展已记下": "Progress logged",
+  "这些过了截止日期还没交，今天处理一下；已经开始做的，记得写进展。": "These are past their due date. Handle them today; if already started, add a progress note.",
+  "去处理": "Open", "知道了": "Got it",
+  /* 人员 */
+  "新增账号": "New member", "初始密码（": "Initial password (", "开通账号": "Create account",
+  "账号（": "Members (", "还没有账号": "No members yet",
+  "可留空，默认用姓名": "Leave blank to use the name", "改密码": "Change password",
+  "已开通。下面勾一下这个人能用哪些模块。": "Created. Now tick which modules this person can use.",
+  "勾上的才会出现在这个人的目录里。": "Only ticked modules appear on this person's home.",
+  "管理员默认全开。": "Admins get every module by default.",
+  "员工只能改自己录的日报；负责人和管理员能改全部；财务能看全部账目并替任何人记账，但改不了余额、分类和期初（负责人专属）。只有管理员能管账号。删除后此人不能再登录，但他录过的日报和账目都保留。":
+    "Staff can only edit their own logs; managers and admins can edit all; finance can see every account and record on behalf of anyone, but cannot change balances, categories or opening balances (manager only). Only admins manage accounts. After deletion the person can no longer sign in, but their logs and entries are kept.",
+  "删除后不能再登录，他录过的日报和账目会保留。": "They can no longer sign in, but their logs and entries are kept.",
+  "删除账号": "Delete member", "人员已添加": "Member added", "账号已删除": "Member deleted",
+  "新的密码（至少 8 位）": "New password (at least 8 characters)",
+  "已改。下次用新密码登录。": "Changed. They must sign in with the new password.",
+  "已停用": "Disabled", "已启用": "Enabled", "已保存": "Saved", "已删除": "Deleted",
+  /* 动态 */
+  "写留言…": "Write a comment…", "收起留言": "Hide comments", "删除这条动态？": "Delete this post?",
+  "这条动态不存在": "Post not found", "写点内容再发": "Write something first",
+  "写点留言": "Write a comment", "点赞": "Like", "评论": "Comment",
+  "说点什么…": "Say something…", "编辑动态": "Edit post",
+  "留言没发出去，重试一下": "Comment failed — try again", "点赞失败": "Like failed",
+  "刚刚": "just now", "分钟前": "min ago", "小时前": "h ago", "天前": "d ago",
+  /* 财务常用 */
+  "现金": "Cash", "银行": "Bank", "余额": "Balance", "账户": "Account", "公司账户": "Company account",
+  "资金总览": "Fund overview", "资金流水": "Cash flow", "资金调拨": "Fund transfer",
+  "支出明细": "Expense detail", "支出汇总": "Expense summary", "支出": "Expense", "收入": "Income",
+  "记一笔": "Add entry", "转账": "Transfer", "公司调款": "Company transfer", "人员转账": "Person transfer",
+  "转入": "Transfer in", "转出": "Transfer out", "取现": "Withdraw", "存现": "Deposit",
+  "取现/存现": "Withdraw / deposit", "备用金": "Float", "收到备用金": "Float received",
+  "发备用金": "Send float", "发出备用金": "Send float", "员工往来（备用金）": "Staff float",
+  "生活": "Life", "项目": "Project", "私人": "Private", "其它": "Other", "未分类": "Uncategorised",
+  "交通": "Transport", "住宿": "Accommodation", "餐饮住宿": "Food & lodging", "加油": "Fuel",
+  "办公": "Office", "办公室": "Office", "维修": "Repairs", "邮费": "Postage", "通讯": "Comms",
+  "电话": "Phone", "家庭开支": "Household", "小费": "Tips", "员工工资": "Staff salary",
+  "员工补贴": "Staff allowance", "借出": "Lent", "借款": "Loan", "已还": "Repaid",
+  "对账": "Reconcile", "对账日": "Reconcile date", "期初余额": "Opening balance",
+  "保存期初": "Save opening", "保存公司账户": "Save company account", "公司账户已保存": "Company account saved",
+  "期初已保存": "Opening balance saved", "余额已更新": "Balance updated", "已记账": "Recorded",
+  "已调拨": "Transferred", "已取现": "Withdrawn", "已存现": "Deposited", "已花": "Spent",
+  "有票": "Invoiced", "无票": "No invoice", "有发票": "Invoiced", "无发票": "No invoice",
+  "有票 / 无票": "Invoiced / not", "有票·缺图": "Invoiced · no photo", "票据": "Receipt",
+  "单据照片": "Receipt photos", "票据筛选": "Receipt filter", "全部票据": "All receipts",
+  "上传发票照片": "Upload receipt photo", "还没上传发票照片": "No receipt photo yet",
+  "补票模式：逐行标有票/无票": "Receipt mode: mark each row invoiced / not",
+  "标完了": "Done", "补票中：点每行的": "Tagging: tap each row's",
+  "改分类": "Change category", "分类已更新": "Category updated", "分类已合并": "Categories merged",
+  "合并": "Merge", "合并老分类": "Merge old categories", "老分类": "Old categories",
+  "整理老分类？": "Tidy old categories?", "没有要合并的老分类": "No old categories to merge",
+  "去向": "To", "方向": "Direction", "调到谁": "Transfer to", "从哪个口": "From channel",
+  "从哪里出": "From", "从谁出": "From", "入账口": "To channel", "入账户": "To account",
+  "出账口": "From channel", "出账户": "From account", "付款户": "Payer account",
+  "发给谁": "Send to", "给员工": "To staff", "记在谁名下": "Record under", "我自己": "Myself",
+  "某人手上还有多少备用金：收到的备用金": "How much float someone still holds: floats received",
+  "员工手上": "With staff", "已花，仍算在员工手上": "Spent, still counted as held",
+  "公司资金总额": "Company funds", "公司总额不变": "Company total unchanged",
+  "调拨": "Transfer", "调拨不减总额，消费才减": "Transfers don't reduce the total; spending does",
+  "资金流水 CSV": "Cash flow CSV", "支出明细 CSV": "Expense detail CSV",
+  "支出汇总 ·": "Expense summary ·", "支出汇总：按用途分类，分": "Expense summary: by purpose, ",
+  "核对与报表": "Reconciliation & reports", "核对与报表（资金总览 / 备用金 / 调拨 / 支出汇总）默认收起":
+    "Reconciliation & reports (overview / float / transfers / expenses) collapsed by default",
+  "对账": "Reconcile", "实际现金余额（ZMW）": "Actual cash balance (ZMW)",
+  "实际银行余额（ZMW）": "Actual bank balance (ZMW)",
+  "全部汇总；其它": "All buckets; other", "归属（大类）": "Bucket (group)",
+  "按用途分类 · 报税用": "By purpose · for tax", "报税与核对用": "For tax and reconciliation",
+  "常用花费人：列表置顶（顺序即优先），其余保持原顺序":
+    "Frequent payers are pinned to the top (order = priority); the rest keep their order",
+  "户与户之间搬钱，不算花费": "Moving money between accounts is not spending",
+  "收到之后他自己的支出（备用金本身不算花费）":
+    "Their own spending after receiving it (the float itself is not spending)",
+  "这天公司账户实际有多少钱": "How much the company account actually holds on this day",
+  "账户：对账余额": "Account: reconciled balance", "现金来源": "Cash source",
+  "取现 / 存现（内部转账 · 不算花费）": "Withdraw / deposit (internal transfer · not spending)",
+  "手续费": "Fees", "外协劳务（包工头）": "Subcontract labour",
+  "外协劳务：付给包工头的工作目标款（不是本公司员工工资）。留合同/工作范围":
+    "Subcontract: paid to a contractor for a scope of work (not staff wages). Keep the contract/scope.",
+  "不是公司费用的科目：钱照样出账（余额要扣），但不进利润表":
+    "Non-expense categories: money still leaves the account (balance drops) but is not in the P&L",
+  "私人：钱从账户出，但不计入公司费用、不用发票":
+    "Private: money leaves the account but is not a company expense and needs no invoice",
+  "往来（不计费用）": "Transfers (not an expense)", "不计费用": "Not an expense",
+  "不计入公司费用）": "not a company expense)", "在": "at",
+  "生活 · 自定义分类（逗号分隔，可留空）": "Life · custom categories (comma separated, optional)",
+  "矿权维护 · 矿证（逗号分隔，可留空）": "Licences · permits (comma separated, optional)",
+  "项目（逗号分隔，可留空）": "Projects (comma separated, optional)",
+  "来自": "From", "合计": "Total", "笔数": "Entries", "金额 ZMW": "Amount ZMW",
+  "金额ZMW": "Amount ZMW", "支出（USD）": "Expense (USD)", "花费": "Spend",
+  "公司账户 · 对账基准": "Company account · reconciliation baseline",
+  "公司资金总额；调拨不改总额，只有消费才减少":
+    "Total company funds; transfers don't change it, only spending does",
+  "公司账户（一级户，uid 固定；只作为资金沉淀处，不是人）":
+    "Company account (top-level, fixed uid; a place funds sit, not a person)",
+  "公司账户只有银行口：选中公司账户时锁死渠道并禁用":
+    "The company account is bank-only: the channel is locked when it is selected",
+  "人·天": "person-days", "按矿区": "By site", "最近记录": "Recent records",
+  "最近一次渲染的列表（导出用）": "Last rendered list (for export)",
+  "某人的账本": "Someone's ledger", "某个人的账本": "Someone's ledger",
+  "自己的账本：自己花的": "Own ledger: what they spent",
+  "请选择调到谁": "Choose who to transfer to", "调出和调入不能是同一户": "Source and destination must differ",
+  "系统里还没有可转入的第二个人": "No second person available to transfer to",
+  "确认转账": "Confirm transfer", "修改调拨": "Edit transfer", "修改记录": "Edit record",
+  "转入人：按转入渠道增加": "Receiver: increases on the destination channel",
+  "转出人：按转出口减少": "Sender: decreases on the source channel",
+  "已添加": "Added", "已更新": "Updated", "已导出": "Exported", "已发": "Sent",
+  "没有要合并的老分类": "No old categories to merge",
+  "老分类：只用来显示还没合并的历史记录": "Old categories: only for history not yet merged",
+  "新分类，合并按钮和接口都按这张表走": "New categories; merge uses this table",
+  "分类（细类）：改这里就是改": "Category (detail): editing here is editing the data",
+  "分类（细类）：两级联动，项目/矿权维护的自定义项来自 fin":
+    "Category (detail): two-level; custom project/licence items come from fin",
+  "上次用过的 分类 / 渠道 / 归属：日常记账预填，少点几下":
+    "Last used category / channel / bucket: pre-filled to save taps",
+  "日常记账少点几下：沿用上次的 分类 / 渠道 / 归属（往来科目不记）":
+    "Fewer taps: reuse the last category / channel / bucket (transfers excluded)",
+  "比如：ATM 取现": "e.g. ATM withdrawal", "比如：去矿区打车": "e.g. taxi to the mine",
+  "比如：给 Peter 现金进货": "e.g. cash purchase for Peter",
+  "例：Ta2O5 180 ppm": "e.g. Ta2O5 180 ppm",
+  "照片数": "Photos", "有发票要上传发票照片（最多 6 张）": "Invoiced — attach receipt photos (max 6)",
+  "最多 6 张，先移除一些再添加": "Max 6 photos — remove some first",
+  "照片没传上：": "Photo upload failed: ", "张没传上": " failed",
+  "这张照片读不了（可能是 HEIC 或文件损坏），请换 JPG 再试":
+    "This photo can't be read (HEIC or corrupted). Try a JPG.",
+  "页面版本": "Version", "有新版本": "New version", "立即更新": "Update now",
+  "关于": "About", "退出后需要重新用账号密码登录。": "You will need to sign in again.",
+  "退出登录？": "Sign out?", "删除这条记录？": "Delete this record?",
+  "删除这条记录？不能撤销。": "Delete this record? This cannot be undone.",
+  "金额要填（大于 0）": "Amount is required (above 0)", "金额要大于 0": "Amount must be above 0",
+  "备注要填": "Note is required", "日期要 YYYY-MM-DD": "Date must be YYYY-MM-DD",
+  "请填矿区/项目": "Site / project is required", "记录不存在": "Record not found",
+  "只能改自己录的": "You can only edit your own", "没有这条留言": "Comment not found",
+  "只能删自己的留言": "You can only delete your own", "不支持的操作": "Unsupported action",
+  "账号或密码不对": "Wrong login or password", "请先登录": "Please sign in first",
+  "请求失败": "Request failed",
+  /* 语言页 */
+  "默认为中文。切换后目录、日报、账目、动态等界面全部用英文。":
+    "Chinese is the default. After switching, the whole interface — home, logs, accounts, feed — is in English.",
+  "留言、备注等文字会由 AI 自动翻译成你选择的语言；原文仍然保留。":
+    "Comments and notes are translated by AI into your chosen language; the original is kept.",
+  "界面语言": "Interface language", "中文": "中文", "英文": "英文",
+  "今日": "Today", "本周": "This week", "本月": "This month", "本年": "This year",
+  "备用金流转": "Float flow", "银行余额": "Bank balance", "核对与报表": "Reconciliation & reports",
+  "公司调款": "Company transfer", "给员工": "To staff", "调拨": "Transfer",
+  "来源": "In", "花费": "Out", "原密码": "Current password",
+  "改完其它设备上的登录会失效，需要用新密码重登。": "Sign-ins on other devices are revoked; sign in again with the new password.",
+  "填「这天公司账户实际有多少钱」，之后的调拨、消费自动累加；对账日之前的记录不计入。": "Enter how much the company account actually holds on this day; later transfers and spending add up from it. Records before this date are excluded.",
+  "还没有动态，点右下角 ＋ 发第一条": "No posts yet — tap ＋ at the bottom right to start",
+  "快捷": "Shortcuts", "设为快捷": "Pin to shortcuts", "取消快捷": "Remove from shortcuts",
+  "已加到快捷": "Pinned to shortcuts", "已取消快捷": "Removed from shortcuts",
+  "点右上角 ☆ 把常用的放到最上面的「快捷」。": "Tap ☆ on a card to keep it in Shortcuts at the top.",
+  "待开放": "Soon",
+  "已切换为 English": "Switched to English", "已切换为中文": "已切换为中文",
+};
+
+const EN_RULES = [
+  [/^账号（(\d+)）$/, "Members ($1)"],
+  [/^记录（(\d+)）$/, "Records ($1)"],
+  [/^查看全部 (\d+) 条留言$/, "Show all $1 comments"],
+  [/^(\d+) 条留言$/, "$1 comments"],
+  [/^(\d+) 人$/, "$1 people"],
+  [/^(\d+) 人 · (\d+) 天$/, "$1 people · $2 days"],
+  [/^(\d+) 分钟前$/, "$1 min ago"],
+  [/^(\d+) 小时前$/, "$1 h ago"],
+  [/^(\d+) 天前$/, "$1 d ago"],
+  [/^(\d+) 笔$/, "$1 entries"],
+  [/^(\d+) 条$/, "$1 items"],
+  [/^(\d+) 张$/, "$1 photos"],
+  [/^(早上好|中午好|下午好|晚上好)，(.*)$/, (m) => ({ 早上好: "Good morning", 中午好: "Good afternoon", 下午好: "Good afternoon", 晚上好: "Good evening" }[m[1]] + ", " + m[2])],
+  [/^初始密码（(.+)）$/, (m) => "Initial password (" + m[1].replace(/位/g, "chars") + ")"],
+  [/^新密码（(.+)）$/, (m) => "New password (" + m[1].replace(/位/g, "chars") + ")"],
+  [/^来源\s*([\d.,]+).*?花费\s*([\d.,]+)$/, "In $1 · Out $2"],
+  [/^来源\s*([\d.,]+)$/, "In $1"],
+  [/^花费\s*([\d.,]+)$/, "Out $1"],
+  [/^原密码（(.+)）$/, "Current password ($1)"],
+  [/^(.+) 办公室$/, "$1 office"],
+  [/^页面版本 (.*)$/, "Version $1"],
+  [/^(.+) · 本月支出$/, "$1 · Spend this month"],
+  [/^(.+) · 本月收入$/, "$1 · Income this month"],
+  [/^公司 ([\d.,]+) · 本月有票 (.*) \/ 无票 (.*)$/, "Company $1 · Invoiced this month $2 / no invoice $3"],
+  [/^· 📊 核对与报表$/, "· 📊 Reconciliation & reports"],
+];
+
+function tr(s) {
+  if (!isEN() || !s) return s;
+  const key = String(s).trim();
+  if (EN[key]) return EN[key];
+  for (const [re, rep] of EN_RULES) {
+    const m = key.match(re);
+    if (m) return typeof rep === "function" ? rep(m) : key.replace(re, rep);
+  }
+  /* 带 emoji 前缀的按钮："🏦 公司账户 · 对账基准" */
+  const pre = key.match(/^([^\u4e00-\u9fffA-Za-z0-9]+)\s*([\u4e00-\u9fff].*)$/);
+  if (pre) {
+    const inner = tr(pre[2]);
+    if (inner !== pre[2]) return pre[1] + inner;
+  }
+  /* 组合串："boss@ecobox.com · 现金 · buy diesel" */
+  if (/[·•・]/.test(key)) {
+    const parts = key.split(/\s*[·•・]\s*/);
+    const mapped = parts.map(tr);
+    if (mapped.some((x, i) => x !== parts[i])) return mapped.join(" · ");
+  }
+  return s;
+}
+
+const roleName = (r) => tr(ROLE_ZH[r] || "员工");
+
+/* 双语内容：原文 + AI 译文；当前语言缺译文就回退原文 */
+function tx(o, field) {
+  if (!o) return "";
+  const zh = o[field + "_zh"] || o[field] || "";
+  const en = o[field + "_en"] || "";
+  return isEN() ? (en || o[field] || zh) : (zh || o[field] || en);
+}
+
+/* 把当前 DOM 里能对上的中文文案翻成英文（渲染后调用；观察器兜住异步内容） */
+function applyLang(root) {
+  if (!isEN() || !root) return;
+  const scope = root.nodeType === 1 ? root : document.body;
+  const walker = document.createTreeWalker(scope, NodeFilter.SHOW_TEXT, null);
+  const nodes = [];
+  while (walker.nextNode()) nodes.push(walker.currentNode);
+  for (const n of nodes) {
+    const raw = n.nodeValue;
+    const key = raw.trim();
+    if (!key || !/[\u4e00-\u9fff]/.test(key)) continue;
+    const out = tr(key);
+    if (out !== key) n.nodeValue = raw.replace(key, out);
+  }
+  for (const el of scope.querySelectorAll("[placeholder],[title],[aria-label]")) {
+    for (const a of ["placeholder", "title", "aria-label"]) {
+      const v = el.getAttribute(a);
+      if (v && /[\u4e00-\u9fff]/.test(v)) {
+        const out = tr(v);
+        if (out !== v) el.setAttribute(a, out);
+      }
+    }
+  }
+}
+
+let LANG_OBS = null;
+function watchLang() {
+  if (LANG_OBS) { LANG_OBS.disconnect(); LANG_OBS = null; }
+  if (!isEN() || typeof MutationObserver === "undefined") return;
+  LANG_OBS = new MutationObserver((muts) => {
+    for (const m of muts) {
+      if (m.type === "characterData") applyLang(m.target.parentElement || document.body);
+      else for (const n of m.addedNodes) if (n.nodeType === 1) applyLang(n);
+    }
+  });
+  LANG_OBS.observe(document.body, { childList: true, subtree: true, characterData: true });
+}
+
+async function setLang(l) {
+  LANG = l === "en" ? "en" : "zh";
+  try { localStorage.setItem(LANG_KEY, LANG); } catch (e) {}
+  document.documentElement.lang = isEN() ? "en" : "zh-CN";
+  if (S.user) {
+    S.user.lang = LANG;
+    api("/me", { method: "PATCH", body: { lang: LANG }, quiet: true }).catch(() => {});
+    paintWho();
+    buildTabs();
+  }
+  await render();
+  toast(isEN() ? "Switched to English" : tr("已切换为中文"));
+}
+
+function langHtml() {
+  const opt = (v, name, sub) => `<button class="langopt${LANG === v ? " on" : ""}" data-lang="${v}">
+    <b>${name}</b><span>${sub}</span>${LANG === v ? "<em>✓</em>" : ""}</button>`;
+  const subEN = isEN() ? "" : "英文";
+  return `<div class="card"><h3>${tr("界面语言")}</h3>
+    <p class="mut">${esc(tr("默认为中文。切换后目录、日报、账目、动态等界面全部用英文。"))}</p>
+    <div class="langopts">${opt("zh", "中文", "Chinese")}${opt("en", "English", subEN)}</div>
+    <p class="mut">${esc(tr("留言、备注等文字会由 AI 自动翻译成你选择的语言；原文仍然保留。"))}</p>
+  </div>`;
+}
+
+
+/* ---------- 操作提示 ---------- */
+let UPD_TIMER = 0;
+function showUpd(msg, kind) {
+  const b = document.getElementById("updbar");
+  if (!b) return;
+  b.textContent = (kind === "bad" ? "✗ " : "✓ ") + msg;
+  b.className = "updbar show " + (kind === "bad" ? "bad" : "ok");
+  requestAnimationFrame(() => b.classList.add("in"));
+  clearTimeout(UPD_TIMER);
+  UPD_TIMER = setTimeout(hideUpd, kind === "bad" ? 3500 : 1200);
+}
+
+function hideUpd() {
+  clearTimeout(UPD_TIMER);
+  const b = document.getElementById("updbar");
+  if (!b) return;
+  b.classList.remove("in");
+  setTimeout(() => { if (!b.classList.contains("in")) b.classList.remove("show"); }, 200);
+}
+
+function toast(msg, kind = "good") {
+  showUpd(msg, kind);
+}
+
+function resetUpdbar() { hideUpd(); }
+
+async function api(path, opts = {}) {
+  const r = await fetch("/api" + path, {
+    method: opts.method || "GET",
+    headers: { ...(opts.body ? { "content-type": "application/json" } : {}), ...(opts.headers || {}) },
+    body: opts.body ? JSON.stringify(opts.body) : undefined,
+    credentials: "same-origin",
+  });
+  let data = {};
+  try { data = await r.json(); } catch {}
+  if (r.status === 401 && path !== "/me") { showLogin(); throw new Error(data.error || "请先登录"); }
+  if (!r.ok) throw new Error(data.error || "请求失败 " + r.status);
+  if (opts.method && opts.method !== "GET" && !opts.quiet && !/^\/(login|logout|setup)\b/.test(path)) {
+    const txt = opts.toast || (opts.method === "DELETE" ? "已删除" : "已保存");
+    toast(txt + " · " + new Date().toTimeString().slice(0, 5));
+  }
+  return data;
+}
+
+function showLogin() {
+  S.user = null;
+  $("#setup").classList.add("hide");
+  $("#app").classList.add("hide");
+  $("#login").classList.remove("hide");
+  $("#l_pass").value = "";
+}
+function showSetup() {
+  $("#login").classList.add("hide");
+  $("#app").classList.add("hide");
+  $("#setup").classList.remove("hide");
+}
+async function showApp() {
+  $("#login").classList.add("hide");
+  $("#app").classList.remove("hide");
+  if (S.user && !Array.isArray(S.user.shortcuts)) S.user.shortcuts = [];
+  if (!pinBound) {
+    pinBound = true;
+    $("#pane").addEventListener("click", (e) => {
+      const p = e.target.closest("[data-pin]");
+      if (!p) return;
+      /* 星标在卡片内部，先拦下来，别让这次点击进模块或跳外链 */
+      e.preventDefault();
+      e.stopPropagation();
+      togglePin(p.dataset.pin);
+    }, true);
+  }
+  if (S.user && (S.user.lang === "zh" || S.user.lang === "en")) {
+    LANG = S.user.lang;
+    try { localStorage.setItem(LANG_KEY, LANG); } catch (e) {}
+  }
+  document.documentElement.lang = isEN() ? "en" : "zh-CN";
+  paintWho();
+  try { MODS = (await api("/modules")).modules || []; } catch (e) { if (!MODS.length) MODS = []; }
+  buildTabs();
+  $("#back").onclick = () => goHome();
+  $("#updbar").onclick = async () => {
+    const b = $("#updbar");
+    b.textContent = "刷新中…";
+    b.className = "updbar show in";
+    try { await render(); showUpd("已刷新到最新"); }
+    catch (e) { showUpd(e.message, "bad"); }
+  };
+  resetUpdbar();
+  try { await loadTodos(); } catch (e) {}
+  render();
+  maybeLateAlert();
+}
+
+function paintWho() {
+  $("#who").textContent = S.user.name + (["admin", "manager", "finance"].includes(S.user.role) ? " · " + roleName(S.user.role) : "");
+}
+
+function buildTabs() {
+  const tabs = [["status", tr("状态")], ["home", tr("目录")]];
+  for (const g of GROUPS) {
+    const ms = groupMods(g);
+    if (g !== "系统" && !ms.length) continue;
+    tabs.push(["g:" + g, tr(g)]);
+  }
+  $("#tabs").innerHTML = tabs.map(([k, t]) => `<button data-tab="${k}" class="${S.tab === k ? "on" : ""}">${t}</button>`).join("");
+  $("#tabs").onclick = (e) => {
+    const b = e.target.closest("[data-tab]");
+    if (!b) return;
+    enterApp(b.dataset.tab);
+  };
+}
+
+
+/* ---------- 目录 ---------- */
+let MODS = []; // 服务器 /api/modules 下发的模块目录
+const allowed = (k) =>
+  !!k && !!S.user && (S.user.role === "admin" || (S.user.modules || []).includes(k));
+const TAB_KEY = { todo: "todo", board: "board", log: "log", users: "users", mine: "mine", fin: "finance", lang: "lang" };
+const modDesc = (m) => (isEN() && m.d_en ? m.d_en : m.d);
+
+/* 快捷（置顶）：存在账号上，换设备也跟着走 */
+const pinned = (k) => (S.user.shortcuts || []).includes(k);
+async function togglePin(k) {
+  const cur = (S.user.shortcuts || []).slice();
+  const next = cur.includes(k) ? cur.filter((x) => x !== k) : [...cur, k].slice(-8);
+  S.user.shortcuts = next;
+  render();
+  try {
+    const r = await api("/me", { method: "PATCH", body: { shortcuts: next }, quiet: true });
+    if (r.user) S.user.shortcuts = r.user.shortcuts;
+    toast(next.includes(k) ? tr("已加到快捷") : tr("已取消快捷"));
+  } catch (e) {
+    S.user.shortcuts = cur;
+    render();
+    toast(e.message, "bad");
+  }
+}
+
+function modCard(x) {
+  if (x.soon) return `<div class="mod soon"><i>${x.i}</i><b>${esc(tr(x.t))}</b><span>${esc(modDesc(x))}</span><em>${esc(tr("待开放"))}</em></div>`;
+  const on = pinned(x.k);
+  const label = esc(tr(on ? "取消快捷" : "设为快捷"));
+  const pin = `<span class="pin${on ? " on" : ""}" data-pin="${esc(x.k)}" role="button" tabindex="-1" aria-label="${label}" title="${label}">${on ? "★" : "☆"}</span>`;
+  const lateN = x.k === "todo" ? lateForMe().length : 0;
+  const dot = lateN ? `<em class="td-dot" title="${esc(tr("已逾期"))}">${lateN}</em>` : "";
+  const inner = `<i>${x.i}</i><b>${esc(tr(x.t))}${dot}</b><span>${esc(modDesc(x))}</span>${pin}`;
+  return x.tab
+    ? `<button class="mod pinable" data-go="${x.tab}">${inner}</button>`
+    : `<a class="mod pinable" href="${x.u}" target="_blank" rel="noopener">${inner}</a>`;
+}
+
+function homeHtml() {
+  const hour = new Date().getHours();
+  const hi = hour < 11 ? "早上好" : hour < 14 ? "中午好" : hour < 18 ? "下午好" : "晚上好";
+  const vis = MODS.filter((m) => allowed(m.k) && !m.navOnly && (!m.soon || S.user.role === "admin"));
+  /* 分组次序跟顶部页签一致；配置里新出现的组追加在最后 */
+  const order = [...GROUPS];
+  for (const m of vis) if (!order.includes(m.g)) order.push(m.g);
+  const pins = (S.user.shortcuts || []).map((k) => vis.find((m) => m.k === k)).filter(Boolean);
+  const quick = pins.length
+    ? `<div class="sec">★ ${esc(tr("快捷"))}</div><div class="mods">${pins.map(modCard).join("")}</div>`
+    : "";
+  const secs = order.map((g) => {
+    const list = vis.filter((m) => m.g === g);
+    if (!list.length) return "";
+    return `<div class="sec">${esc(tr(g))}</div><div class="mods">${list.map(modCard).join("")}</div>`;
+  }).join("");
+  return `<div class="hello">${hi}，${esc(S.user.name)}</div>
+    <div class="mut" style="margin-bottom:4px">${esc(tr("点右上角 ☆ 把常用的放到最上面的「快捷」。"))}</div>
+    ${quick}${secs || '<div class="empty">还没有可用模块，找管理员开通</div>'}`;
+}
+
+/* 管理员给某人勾模块 */
+function openModPicker(u) {
+  const has = u.modules || [];
+  const box = $("#modbox");
+  box.innerHTML = `<h3 style="margin:0 0 4px">${esc(u.name)} · 可用模块</h3>
+    <p class="mut" style="margin:0 0 8px">勾上的才会出现在这个人的目录里。${u.role === "admin" ? "管理员默认全开。" : ""}</p>
+    ${MODS.map((m) => `<label style="display:flex;align-items:center;gap:8px;margin:7px 0;font-size:14px;color:inherit">
+        <input type="checkbox" data-k="${m.k}" style="width:auto" ${has.includes(m.k) ? "checked" : ""} ${m.adminOnly || m.soon ? "disabled" : ""}>
+        <span>${m.i} ${esc(tr(m.t))}</span><span class="mut" style="margin-left:auto;text-align:right">${m.soon ? "待开放" : esc(modDesc(m))}</span>
+      </label>`).join("")}
+    <div class="err" id="mod_err"></div>
+    <div class="acts" style="margin-top:12px"><button class="pri" id="mod_save">保存</button><button class="ghost" id="mod_close">关闭</button></div>`;
+  $("#moddlg").classList.remove("hide");
+  $("#mod_close").onclick = () => $("#moddlg").classList.add("hide");
+  $("#mod_save").onclick = async () => {
+    $("#mod_err").textContent = "";
+    const keys = [...box.querySelectorAll("input[data-k]")].filter((x) => x.checked).map((x) => x.dataset.k);
+    try {
+      await patchUser(u.id, { modules: keys });
+      if (u.id === S.user.id) S.user = (await api("/me")).user;
+      S.users = (await api("/users")).users;
+      $("#moddlg").classList.add("hide");
+      await showApp();
+    } catch (e) { $("#mod_err").textContent = e.message; }
+  };
+}
+
+/* ---------- 看板 ---------- */
+async function loadBoard() {
+  if (!S.from) { const d = new Date(); S.from = iso(new Date(d.getFullYear(), d.getMonth(), 1)); S.to = iso(d); }
+  const [sum, ls] = await Promise.all([
+    api(`/summary?from=${S.from}&to=${S.to}`),
+    api(`/logs?from=${S.from}&to=${S.to}`),
+  ]);
+  S.logs = ls.logs;
+  return sum;
+}
+
+function boardHtml(sum) {
+  const t = sum.totals || {};
+  const siteRows = (sum.by_site || []).map((r) => `<tr><td>${esc(r.site)}</td><td class="n">${r.entries}</td><td class="n">${num(r.man_days, 0)}</td><td class="n">${num(r.ore_t, 1)}</td><td class="n">${money(r.cost_usd)}</td></tr>`).join("");
+  const recent = S.logs.slice(0, 12).map((l) => `<tr><td>${esc(l.day)}</td><td>${esc(l.site)}</td><td class="n">${num(l.ore_t, 1)}</td><td class="n">${num(l.headcount, 0)}</td><td>${esc(l.user_name)}</td></tr>`).join("");
+  return `<div class="card">
+    <div class="row" style="align-items:end">
+      <div><label>从</label><input type="date" id="f_from" value="${S.from}"></div>
+      <div><label>到</label><input type="date" id="f_to" value="${S.to}"></div>
+    </div>
+  </div>
+  <div class="grid">
+    <div class="kpi"><i>记录天数</i><b>${num(t.days, 0)}</b></div>
+    <div class="kpi"><i>人·天</i><b>${num(t.man_days, 0)}</b></div>
+    <div class="kpi"><i>矿石（吨）</i><b>${num(t.ore_t, 1)}</b></div>
+    <div class="kpi"><i>支出（USD）</i><b>${money(t.cost_usd)}</b></div>
+  </div>
+  <div class="card" style="margin-top:12px"><h3>按矿区</h3>
+    ${siteRows ? `<table><tr><th>矿区/项目</th><th>记录</th><th>人·天</th><th>矿石吨</th><th>USD</th></tr>${siteRows}</table>` : `<div class="empty">这段时间还没有记录</div>`}
+  </div>
+  <div class="card"><h3>最近记录</h3>
+    ${recent ? `<table><tr><th>日期</th><th>矿区</th><th>矿石</th><th>人数</th><th>录入</th></tr>${recent}</table>` : `<div class="empty">还没有记录</div>`}
+  </div>`;
+}
+
+/* ---------- 日报 ---------- */
+function logForm(l) {
+  const d = l || { day: iso(new Date()), site: S.user.site || SITES[0], shift: "白班", crew: "", headcount: "", ore_t: "", waste_t: "", grade: "", cost_usd: "", note: "" };
+  return `<div class="card">
+    <h3>${l ? "修改记录 #" + l.id : "新增日报"}</h3>
+    <div class="row">
+      <div><label>日期</label><input type="date" id="d_day" value="${esc(d.day)}"></div>
+      <div><label>矿区/项目</label><input id="d_site" list="sites" value="${esc(d.site)}"></div>
+    </div>
+    <datalist id="sites">${SITES.map((s) => `<option>${esc(s)}</option>`).join("")}</datalist>
+    <div class="row3">
+      <div><label>班次</label><select id="d_shift">${["白班", "夜班", "全天"].map((x) => `<option${x === d.shift ? " selected" : ""}>${x}</option>`).join("")}</select></div>
+      <div><label>班组</label><input id="d_crew" value="${esc(d.crew)}" placeholder="选填"></div>
+      <div><label>出勤人数</label><input id="d_people" type="number" min="0" step="1" value="${esc(d.headcount)}"></div>
+    </div>
+    <div class="row3">
+      <div><label>矿石（吨）</label><input id="d_ore" type="number" min="0" step="0.1" value="${esc(d.ore_t)}"></div>
+      <div><label>废石（吨）</label><input id="d_waste" type="number" min="0" step="0.1" value="${esc(d.waste_t)}"></div>
+      <div><label>支出（USD）</label><input id="d_cost" type="number" min="0" step="0.01" value="${esc(d.cost_usd)}"></div>
+    </div>
+    <label>品位 / 品级</label><input id="d_grade" value="${esc(d.grade)}" placeholder="例：Ta2O5 180 ppm">
+    <label>备注</label><textarea id="d_note" placeholder="今天做了什么、有什么问题">${esc(d.note)}</textarea>
+    <div class="err" id="d_err"></div>
+    <div class="acts" style="margin-top:10px">
+      <button class="pri" id="d_save">${l ? "保存修改" : "提交"}</button>
+      ${l ? `<button id="d_cancel">取消</button>` : ""}
+    </div>
+  </div>`;
+}
+
+function logListHtml() {
+  if (!S.logs.length) return `<div class="card"><div class="empty">这段时间还没有记录</div></div>`;
+  const rows = S.logs.slice(0, 60).map((l) => {
+    const mine = l.user_id === S.user.id;
+    return `<tr>
+      <td>${esc(l.day)}<div class="mut">${esc(l.site)} · ${esc(l.shift)}</div></td>
+      <td class="n">${num(l.ore_t, 1)}<div class="mut">${num(l.headcount, 0)} 人</div></td>
+      <td>${esc(tx(l, "note")).slice(0, 40)}<div class="mut">${esc(l.user_name)}${mine ? ' <span class="pill me">我</span>' : ""}</div></td>
+      <td class="n" style="white-space:nowrap">
+        ${(mine || S.user.role === "admin" || S.user.role === "manager") ? `<button data-edit="${l.id}" style="padding:4px 8px">改</button> <button class="danger" data-del="${l.id}" style="padding:4px 8px">删</button>` : ""}
+      </td></tr>`;
+  }).join("");
+  return `<div class="card"><h3>记录（${S.logs.length}）</h3><table>
+    <tr><th>日期 / 矿区</th><th>矿石 / 人数</th><th>内容 / 录入</th><th></th></tr>${rows}</table></div>`;
+}
+
+/* ---------- 待办 ---------- */
+const TODO_FILTERS = [["all", "全部"], ["mine", "我负责"], ["made", "我发起"], ["company", "公司事项"], ["late", "已逾期"], ["done", "已完成"]];
+let TODOS = [], TPEOPLE = [], TD_OPEN = {};
+const daysLeft = (due) => Math.round((new Date(due + "T00:00:00") - new Date(iso(new Date()) + "T00:00:00")) / 864e5);
+const isMine = (t) => t.owner === (S.user && S.user.login);
+const canTouch = (t) => isMine(t) || t.creator === S.user.login || S.user.role === "admin" || S.user.role === "manager";
+
+async function loadTodos() {
+  const r = await api("/todos");
+  TODOS = r.todos || [];
+  if (!TPEOPLE.length) TPEOPLE = (await api("/people")).people || [];
+}
+
+const overdue = (t) => t.status !== "done" && !!t.due && daysLeft(t.due) < 0;
+const canReport = (t) => isMine(t) || (t.scope === "company" && !t.owner);
+const lateForMe = () => TODOS.filter((t) => overdue(t) && (isMine(t) || t.creator === (S.user && S.user.login) || (t.scope === "company" && !t.owner)));
+const NOTE_TIME = (n) => String(n.created_at || "").slice(5, 16).replace("T", " ");
+
+function noteLine(n) {
+  const t = esc(NOTE_TIME(n));
+  if (n.kind === "sys") return `<div class="td-note-line"><b>${esc(n.name)}</b><i class="mut">${esc(tr(n.body))}</i><span class="mut"> · ${t}</span></div>`;
+  if (n.kind === "start") return `<div class="td-note-line"><b>${esc(n.name)}</b><i class="td-go">▶ ${esc(tr("开始执行"))}</i><span class="mut"> · ${t}</span><div class="td-fb">${esc(n.body)}</div></div>`;
+  return `<div class="td-note-line"><b>${esc(n.name)}</b>${esc(n.body)}<span class="mut"> · ${t}</span></div>`;
+}
+
+function todoCard(t) {
+  const st = t.status || "todo";
+  const late = st !== "done" && t.due && daysLeft(t.due) < 0;
+  const d = t.due ? (st === "done" ? t.due : (late ? tr("已逾期") + " " + (-daysLeft(t.due)) + " " + tr("天") : (daysLeft(t.due) === 0 ? tr("今天") : t.due))) : "";
+  const badges = [
+    t.imp ? `<span class="pill td-imp">★ ${tr("重要")}</span>` : "",
+    t.scope === "company" ? `<span class="pill td-co">${tr("公司事项")}</span>` : "",
+    t.scope === "person" ? `<span class="pill">${tr("指派")}</span>` : "",
+    st === "doing" ? `<span class="pill td-doing">${tr("进行中")}</span>` : "",
+  ].join(" ");
+  const who = t.owner ? t.owner_name || t.owner : tr("未指派");
+  const all = t.notes || [];
+  const lastFb = [...all].reverse().find((n) => n.kind === "start" || n.kind === "cmt");
+  const notes = all.slice(-6).map(noteLine).join("");
+  const canStart = canReport(t) && st === "todo";
+  const canProg = canReport(t) && st === "doing";
+  const open = !!TD_OPEN[t.id];
+  return `<div class="td-card${st === "done" ? " done" : ""}${late ? " late" : ""}" data-td="${t.id}">
+    <div class="td-row">
+      <button class="td-check${st === "done" ? " on" : ""}" data-td-done="${t.id}" aria-label="${esc(tr(st === "done" ? "重新打开" : "标记完成"))}">${st === "done" ? "✓" : ""}</button>
+      <div class="td-mid">
+        <div class="td-title">${esc(t.title)} ${badges}</div>
+        <div class="td-meta">${esc(who)}${d ? " · " + (late ? `<b class="td-late">${esc(d)}</b>` : esc(d)) : ""}${t.creator && t.creator !== t.owner ? " · " + esc(tr("发起")) + " " + esc(t.creator_name || t.creator) : ""}</div>
+        ${t.note ? `<div class="td-body">${esc(t.note)}</div>` : ""}
+        ${lastFb ? `<div class="td-fb">${esc(lastFb.body)}<span class="mut"> · ${esc(lastFb.name)} ${esc(NOTE_TIME(lastFb))}</span></div>` : ""}
+        ${open ? `<div class="td-log">${notes || `<div class="mut">${esc(tr("还没有留言"))}</div>`}
+          <div class="td-cin"><input class="td-cmt" data-td-input="${t.id}" maxlength="500" placeholder="${esc(tr("写留言…"))}"><button data-td-send="${t.id}">${esc(tr("发送"))}</button></div></div>` : ""}
+      </div>
+      <div class="td-ops">
+        <button data-td-star="${t.id}" class="${t.imp ? "on" : ""}" title="${esc(tr("重要"))}">★</button>
+        ${canTouch(t) ? `<button data-td-edit="${t.id}">${esc(tr("改"))}</button>` : ""}
+        ${(t.creator === S.user.login || S.user.role === "admin") ? `<button class="danger" data-td-del="${t.id}">${esc(tr("删"))}</button>` : ""}
+      </div>
+    </div>
+    <div class="td-foot">
+      ${canStart ? `<button class="pri" data-td-start="${t.id}">▶ ${esc(tr("开始执行"))}</button>` : ""}
+      ${canProg ? `<button data-td-start="${t.id}">✎ ${esc(tr("写进展"))}</button>` : ""}
+      ${canTouch(t) && st !== "done" ? `<button${canStart || canProg ? "" : ' class="pri"'} data-td-fin="${t.id}">${esc(tr("完成"))}</button>` : ""}
+      <button data-td-cmt="${t.id}">💬 ${(t.notes || []).length || ""} ${esc(tr("留言"))}</button>
+    </div>
+  </div>`;
+}
+
+function todoSection(title, list, cls) {
+  if (!list.length) return "";
+  return `<div class="td-sec ${cls || ""}">${esc(title)} <i>${list.length}</i></div>` + list.map(todoCard).join("");
+}
+
+function todoHtml() {
+  const me = S.user.login;
+  const f = S.todoFilter || "all";
+  const open = TODOS.filter((t) => t.status !== "done");
+  const match = (t) => {
+    if (f === "late") return overdue(t);
+    if (f === "done") return t.status === "done";
+    if (t.status === "done") return f === "all";
+    if (f === "mine") return t.owner === me;
+    if (f === "made") return t.creator === me;
+    if (f === "company") return t.scope === "company";
+    return true;
+  };
+  const list = TODOS.filter(match);
+  const byDue = (a, b) => (a.due || "9999-12-31").localeCompare(b.due || "9999-12-31");
+  const imp = list.filter((t) => t.status !== "done" && t.imp).sort(byDue);
+  const rest = list.filter((t) => t.status !== "done" && !t.imp);
+  const late = rest.filter((t) => t.due && daysLeft(t.due) < 0).sort(byDue);
+  const today = rest.filter((t) => t.due && daysLeft(t.due) === 0);
+  const soon = rest.filter((t) => t.due && daysLeft(t.due) > 0).sort(byDue);
+  const none = rest.filter((t) => !t.due);
+  const fin = list.filter((t) => t.status === "done");
+  const mineN = open.filter((t) => t.owner === me).length;
+  const chip = ([k, label]) => `<button class="td-chip${f === k ? " on" : ""}" data-td-filter="${k}">${esc(tr(label))}</button>`;
+  const body = imp.length + late.length + today.length + soon.length + none.length + fin.length
+    ? todoSection("★ " + tr("重要"), imp) + todoSection("⚠ " + tr("已逾期"), late, "late") +
+      todoSection(tr("今天到期"), today) + todoSection(tr("接下来"), soon) +
+      todoSection(tr("无截止"), none) + todoSection("✓ " + tr("已完成"), fin, "done")
+    : `<div class="card"><div class="empty">${esc(tr("没有待办。点右上角「+ 新待办」记一条。"))}</div></div>`;
+  const lm = lateForMe();
+  const banner = lm.length
+    ? `<div class="td-alert">⚠ ${lm.length} ${esc(tr("条已逾期"))} · ${esc(tr("最久"))} ${Math.max(...lm.map((t) => -daysLeft(t.due)))} ${esc(tr("天"))}
+        <button data-td-filter="late">${esc(tr("看已逾期"))} →</button></div>`
+    : "";
+  return banner + `<div class="card td-head">
+      <div class="td-headrow">
+        <h3 style="margin:0">✅ ${esc(tr("待办"))} <span class="mut" style="font-weight:400;font-size:13px">${open.length} ${esc(tr("进行中"))}${mineN ? " · " + esc(tr("我负责")) + " " + mineN : ""}</span></h3>
+        <button class="pri" id="td_new">+ ${esc(tr("新待办"))}</button>
+      </div>
+      <div class="td-filters">${TODO_FILTERS.map(chip).join("")}</div>
+    </div>` + body;
+}
+
+function todoSheet(t) {
+  const cur = t || { title: "", note: "", scope: "self", owner: "", due: "", imp: 0 };
+  const opt = (p) => `<option value="${esc(p.login)}"${p.login === cur.owner ? " selected" : ""}>${esc(p.name)}${p.login === S.user.login ? " (" + esc(tr("我")) + ")" : ""}</option>`;
+  document.body.insertAdjacentHTML("beforeend", `<div class="fd-dim" id="td_dim"></div>
+    <div class="fd-sheet" id="td_sheet">
+      <div class="fd-sh"><h3>${esc(tr(t ? "修改待办" : "新待办"))}</h3><button id="td_x">${esc(tr("取消"))}</button></div>
+      <label>${esc(tr("要做什么"))}</label><input id="tdf_title" maxlength="200" value="${esc(cur.title)}" placeholder="${esc(tr("例：把 1330NW 的取样照片传完"))}">
+      <div class="row">
+        <div><label>${esc(tr("谁来做"))}</label>
+          <select id="tdf_scope">
+            <option value="self"${cur.scope === "self" ? " selected" : ""}>${esc(tr("我自己"))}</option>
+            <option value="person"${cur.scope === "person" ? " selected" : ""}>${esc(tr("派给同事"))}</option>
+            <option value="company"${cur.scope === "company" ? " selected" : ""}>${esc(tr("公司事项（大家跟）"))}</option>
+          </select></div>
+        <div id="tdf_owner_box"${cur.scope === "person" ? "" : ' class="hide"'}><label>${esc(tr("执行人"))}</label>
+          <select id="tdf_owner"><option value="">${esc(tr("选一个人"))}</option>${TPEOPLE.map(opt).join("")}</select></div>
+      </div>
+      <div class="row">
+        <div><label>${esc(tr("截止日期"))}</label><input type="date" id="tdf_due" value="${esc(cur.due)}"></div>
+        <div><label>${esc(tr("标记"))}</label><label class="td-impbox"><input type="checkbox" id="tdf_imp"${cur.imp ? " checked" : ""}> ★ ${esc(tr("重要"))}</label></div>
+      </div>
+      <label>${esc(tr("说明（给同事看的具体要求）"))}</label><textarea id="tdf_note" placeholder="${esc(tr("做到什么程度算完、要找谁、注意什么"))}">${esc(cur.note)}</textarea>
+      <div class="err" id="tdf_err"></div>
+      <div class="acts" style="margin-top:10px"><button class="pri" id="tdf_save">${esc(tr("保存"))}</button><button id="tdf_cancel">${esc(tr("取消"))}</button></div>
+    </div>`);
+  const close = () => { ["td_dim", "td_sheet"].forEach((id) => { const el = document.getElementById(id); if (el) el.remove(); }); };
+  $("#td_x").onclick = close;
+  $("#tdf_cancel").onclick = close;
+  $("#td_dim").onclick = close;
+  $("#tdf_scope").onchange = (e) => $("#tdf_owner_box").classList.toggle("hide", e.target.value !== "person");
+  $("#tdf_save").onclick = async () => {
+    const b = {
+      title: $("#tdf_title").value.trim(),
+      scope: $("#tdf_scope").value,
+      due: $("#tdf_due").value,
+      imp: $("#tdf_imp").checked ? 1 : 0,
+      note: $("#tdf_note").value.trim(),
+    };
+    /* 只有「派给同事」才提交执行人；其余范围由服务端按规则定 */
+    if (b.scope === "person") b.owner = $("#tdf_owner").value;
+    if (!b.title) { $("#tdf_err").textContent = tr("请填标题"); return; }
+    if (b.scope === "person" && !b.owner) { $("#tdf_err").textContent = tr("请选执行人"); return; }
+    try {
+      if (t) await api("/todos/" + encodeURIComponent(t.id), { method: "PATCH", body: b });
+      else await api("/todos", { method: "POST", body: b });
+      close();
+      await loadTodos();
+      render();
+    } catch (e) { $("#tdf_err").textContent = e.message; }
+  };
+  $("#tdf_title").focus();
+}
+
+function bindTodo() {
+  const pane = $("#pane");
+  if ($("#td_new")) $("#td_new").onclick = () => todoSheet(null);
+  pane.querySelectorAll("[data-td-filter]").forEach((b) => b.onclick = () => { S.todoFilter = b.dataset.tdFilter; render(); });
+  pane.querySelectorAll("[data-td-edit]").forEach((b) => b.onclick = () => todoSheet(TODOS.find((t) => t.id === b.dataset.tdEdit)));
+  pane.querySelectorAll("[data-td-cmt]").forEach((b) => b.onclick = () => { TD_OPEN[b.dataset.tdCmt] = !TD_OPEN[b.dataset.tdCmt]; render(); });
+  pane.querySelectorAll("[data-td-star]").forEach((b) => b.onclick = () => todoPatch(b.dataset.tdStar, { imp: (TODOS.find((t) => t.id === b.dataset.tdStar) || {}).imp ? 0 : 1 }));
+  pane.querySelectorAll("[data-td-done]").forEach((b) => b.onclick = () => {
+    const t = TODOS.find((x) => x.id === b.dataset.tdDone);
+    todoPatch(t.id, { status: t.status === "done" ? "todo" : "done" });
+  });
+  pane.querySelectorAll("[data-td-start]").forEach((b) => b.onclick = () => tdReport(TODOS.find((x) => x.id === b.dataset.tdStart)));
+  pane.querySelectorAll("[data-td-fin]").forEach((b) => b.onclick = () => todoPatch(b.dataset.tdFin, { status: "done" }));
+  pane.querySelectorAll("[data-td-del]").forEach((b) => b.onclick = async () => {
+    if (!confirm(tr("删除这条待办？"))) return;
+    try { await api("/todos/" + encodeURIComponent(b.dataset.tdDel), { method: "DELETE" }); await loadTodos(); render(); }
+    catch (e) { toast(e.message, "bad"); }
+  });
+  pane.querySelectorAll("[data-td-send]").forEach((b) => b.onclick = async () => {
+    const id = b.dataset.tdSend;
+    const inp = pane.querySelector(`[data-td-input="${id}"]`);
+    const text = (inp && inp.value || "").trim();
+    if (!text) { toast(tr("写点内容再发"), "bad"); return; }
+    try { await api("/todos/" + encodeURIComponent(id) + "/notes", { method: "POST", body: { text }, quiet: true }); await loadTodos(); render(); }
+    catch (e) { toast(e.message, "bad"); }
+  });
+}
+
+async function todoPatch(id, patch) {
+  try { await api("/todos/" + encodeURIComponent(id), { method: "PATCH", body: patch, quiet: true }); await loadTodos(); render(); }
+  catch (e) { toast(e.message, "bad"); }
+}
+
+/* 汇报进展：首次汇报即「开始执行」，反馈必填（正文就是这次的反馈） */
+function tdReport(t) {
+  if (!t) return;
+  const first = t.status !== "doing";
+  document.body.insertAdjacentHTML("beforeend", `<div class="fd-dim" id="tdr_dim"></div>
+    <div class="fd-sheet" id="td_report">
+      <div class="fd-sh"><h3>${first ? "▶ " : "✎ "}${esc(tr(first ? "开始执行" : "写进展"))} · ${esc(t.title)}</h3><button id="tdr_x">${esc(tr("取消"))}</button></div>
+      <div class="mut" style="font-size:12.5px;margin-bottom:6px">${esc(tr("提交后会记下几月几日几点，发起人和同事都能看到。"))}</div>
+      <label>${esc(tr("反馈内容（必填）"))}</label>
+      <textarea id="tdr_text" maxlength="1000" placeholder="${esc(tr("做了什么、卡在哪、预计什么时候能完"))}"></textarea>
+      <div class="err" id="tdr_err"></div>
+      <div class="acts" style="margin-top:10px"><button class="pri" id="tdr_ok">${esc(tr("提交"))}</button><button id="tdr_cancel">${esc(tr("取消"))}</button></div>
+    </div>`);
+  const close = () => { ["tdr_dim", "td_report"].forEach((id) => { const el = document.getElementById(id); if (el) el.remove(); }); };
+  $("#tdr_x").onclick = close;
+  $("#tdr_cancel").onclick = close;
+  $("#tdr_dim").onclick = close;
+  $("#tdr_ok").onclick = async () => {
+    const text = $("#tdr_text").value.trim();
+    if (!text) { $("#tdr_err").textContent = tr("反馈是必填的，写一句也行"); return; }
+    try {
+      await api("/todos/" + encodeURIComponent(t.id) + "/start", { method: "POST", body: { text }, quiet: true });
+      close();
+      toast(tr(first ? "已开始执行，进度已记下" : "进展已记下"));
+      await loadTodos();
+      render();
+    } catch (e) { $("#tdr_err").textContent = e.message; }
+  };
+  if ($("#tdr_text")) $("#tdr_text").focus();
+}
+
+/* 逾期提醒：每天第一次打开工作台弹一次，附首页卡片红点 */
+function maybeLateAlert() {
+  if (!S.user || document.getElementById("td_alert")) return;
+  const lm = lateForMe();
+  if (!lm.length) return;
+  const key = "tdal_" + S.user.login + "_" + iso(new Date());
+  try { if (localStorage.getItem(key)) return; } catch (e) {}
+  const lines = lm.slice(0, 6).map((t) => `<div class="td-al-line"><b>${esc(t.title)}</b><span class="td-late">${-daysLeft(t.due)} ${esc(tr("天"))}</span></div>`).join("");
+  document.body.insertAdjacentHTML("beforeend", `<div class="fd-dim" id="tda_dim"></div>
+    <div class="fd-sheet" id="td_alert">
+      <div class="fd-sh"><h3>⚠ ${lm.length} ${esc(tr("条已逾期"))}</h3></div>
+      <div class="mut" style="font-size:13px">${esc(tr("这些过了截止日期还没交，今天处理一下；已经开始做的，记得写进展。"))}</div>
+      <div class="td-al-list">${lines}${lm.length > 6 ? `<div class="mut">+${lm.length - 6}</div>` : ""}</div>
+      <div class="acts" style="margin-top:12px"><button class="pri" id="tda_go">${esc(tr("去处理"))}</button><button id="tda_ok">${esc(tr("知道了"))}</button></div>
+    </div>`);
+  const mark = () => { try { localStorage.setItem(key, "1"); } catch (e) {} };
+  const close = () => { ["tda_dim", "td_alert"].forEach((id) => { const el = document.getElementById(id); if (el) el.remove(); }); };
+  $("#tda_ok").onclick = () => { mark(); close(); };
+  $("#tda_dim").onclick = () => { mark(); close(); };
+  $("#tda_go").onclick = async () => { mark(); close(); S.todoFilter = "late"; await enterApp("todo"); };
+}
+
+/* ---------- 人员 ---------- */
+const ROLE_ZH = { staff: "员工", manager: "负责人", finance: "财务", admin: "管理员" };
+const roleOpts = (cur) => ["staff", "manager", "finance", "admin"]
+  .map((v) => `<option value="${v}"${cur === v ? " selected" : ""}>${roleName(v)}</option>`).join("");
+
+function usersHtml() {
+  const cards = S.users.map((u) => (u.id === S.editUid ? userEditHtml(u) : `
+    <div class="ucard">
+      <div class="uhead">
+        <div><span class="uname">${esc(u.name)}</span>${u.active ? "" : ' <span class="pill">停用</span>'}
+          <div class="mut">${esc(u.login)}${u.phone ? " · " + esc(u.phone) : ""}</div></div>
+        <span class="pill${u.role === "admin" ? " me" : u.role === "finance" ? " fin" : ""}">${roleName(u.role)}</span>
+      </div>
+      <div class="uacts">
+        <button data-mods="${u.id}">权限</button>
+        <button data-edit-user="${u.id}">编辑</button>
+        <button data-pwd="${u.id}">改密码</button>
+        <button data-active="${u.id}">${u.active ? "停用" : "启用"}</button>
+        <button class="danger" data-del-user="${u.id}">删除</button>
+      </div>
+    </div>`)).join("");
+  return `<div class="card"><h3>新增账号</h3>
+    <div class="row"><div><label>姓名</label><input id="u_name"></div><div><label>账号</label><input id="u_login" placeholder="可留空，默认用姓名"></div></div>
+    <div class="row"><div><label>初始密码（≥8 位）</label><input id="u_pass" type="text"></div><div><label>角色</label><select id="u_role">${roleOpts("staff")}</select></div></div>
+    <label>电话（选填）</label><input id="u_phone">
+    <div class="ok" id="u_ok"></div><div class="err" id="u_err"></div>
+    <button class="pri" id="u_add" style="margin-top:8px;width:100%">开通账号</button>
+  </div>
+  <div class="card"><h3>账号（${S.users.length}）</h3>
+    <div class="ulist">${cards || '<div class="empty">还没有账号</div>'}</div>
+    <p class="mut">员工只能改自己录的日报；负责人和管理员能改全部；财务能看全部账目并替任何人记账，但改不了余额、分类和期初（负责人专属）。只有管理员能管账号。删除后此人不能再登录，但他录过的日报和账目都保留。</p>
+  </div>`;
+}
+
+function userEditHtml(u) {
+  return `<div class="ucard">
+    <div class="row"><div><label>姓名</label><input id="eu_name" value="${esc(u.name)}"></div><div><label>账号</label><input id="eu_login" value="${esc(u.login)}"></div></div>
+    <div class="row"><div><label>角色</label><select id="eu_role">${roleOpts(u.role)}</select></div><div><label>电话</label><input id="eu_phone" value="${esc(u.phone || "")}"></div></div>
+    <div class="err" id="eu_err"></div>
+    <div class="uacts"><button class="pri" id="eu_save">保存</button><button id="eu_cancel">取消</button></div>
+  </div>`;
+}
+
+/* ---------- 我的 ---------- */
+function mineHtml() {
+  return `<div class="card"><h3>我的账号</h3>
+    <table>
+      <tr><th>姓名</th><td>${esc(S.user.name)}</td></tr>
+      <tr><th>账号</th><td>${esc(S.user.login)}</td></tr>
+      <tr><th>角色</th><td>${ROLE_ZH[S.user.role] || "员工"}</td></tr>
+      <tr><th>上次登录</th><td>${esc((S.user.last_login || "").slice(0, 16).replace("T", " ") || "—")}</td></tr>
+    </table></div>
+  <div class="card"><h3>改密码</h3>
+    <label>原密码</label><input id="p_old" type="password">
+    <label>新密码（≥8 位）</label><input id="p_new" type="password">
+    <div class="err" id="p_err"></div><div class="ok" id="p_ok"></div>
+    <button class="pri" id="p_save" style="margin-top:8px">保存</button>
+    <p class="mut">改完其它设备上的登录会失效，需要用新密码重登。</p>
+  </div>
+  <div class="card"><h3>关于</h3><p class="mut" style="margin:0">页面版本 ${esc(BUILD)}</p></div>
+  <div class="card"><h3>退出</h3>
+    <p class="mut" style="margin:0 0 8px">退出后需要重新用账号密码登录。</p>
+    <button class="danger" id="p_out" style="width:100%">退出登录</button>
+  </div>`;
+}
+
+
+/* ---------- 财务 ---------- */
+let FIN = null;
+let FINR = "month"; // day | week | month | year
+const FINR_ZH = { day: "今日", week: "本周", month: "本月", year: "本年" };
+let FININV = "all"; // all | yes | no   票据筛选
+let FINMARK = false; // 补票模式：逐行标有票/无票
+let FINANA = false; // 核对与报表（资金总览 / 备用金 / 调拨 / 支出汇总）默认收起
+const FINCO = "__company"; // 公司账户（一级户，uid 固定；只作为资金沉淀处，不是人）
+let FINVIEW = null; // 最近一次渲染的列表（导出用）
+let FINWHO = ""; // "" = 我自己；"ALL" = 全部汇总；其它 = 某个人的账本
+try {
+  const v = JSON.parse(localStorage.getItem("ops_fin_view") || "{}");
+  if (FINR_ZH[v.range]) FINR = v.range;
+  if (v.inv === "yes" || v.inv === "no" || v.inv === "all") FININV = v.inv;
+  if (v.ana) FINANA = true;
+  if (v.who) FINWHO = v.who;
+} catch (e) {}
+const saveFinView = () => {
+  try { localStorage.setItem("ops_fin_view", JSON.stringify({ who: FINWHO, range: FINR, inv: FININV, ana: FINANA })); } catch (e) {}
+};
+const FIN_CAT_ZH = { transport: "交通", fuel: "加油", tip: "小费", meal: "餐饮住宿", comms: "通讯", office: "办公",
+  allow: "员工补贴", pliving: "生活开销", repair: "维修", misc: "其它",
+  sub: "外协劳务（包工头）", serenje: "Serenje 钽铌矿项目",
+  loan: "借款", home: "家庭开支",
+  /* 老分类：只用来显示还没合并的历史记录 */
+  lodging: "住宿", daily: "日常", postage: "邮费", other: "其它" };
+/* 归属（大类）→ 分类（细类）：改这里就是改「记一笔」的下拉 */
+const FIN_FT = [
+  ["life", "生活", ["transport", "fuel", "tip", "meal", "comms", "office", "allow", "pliving", "repair", "misc"]],
+  ["project", "项目", ["sub", "serenje"]],
+  ["licence", "矿权维护", []],
+  ["ledger", "往来（不计费用）", ["loan", "home"]],
+];
+const FIN_FT_CATS = Object.fromEntries(FIN_FT.map(([k, , c]) => [k, c]));
+const FIN_CAT_FT = Object.fromEntries(FIN_FT.reduce((a, [k, , cs]) => a.concat(cs.map((c) => [c, k])), []));
+/* 老分类 → 新分类，合并按钮和接口都按这张表走 */
+const FIN_CAT_MERGE = { daily: "misc", postage: "misc", other: "misc", lodging: "meal" };
+/* 不是公司费用的科目：钱照样出账（余额要扣），但不进利润表 */
+const FIN_OFFBOOK = { home: "私人", loan: "往来" };
+/* 选中某些分类时给一句解释 */
+const FIN_CAT_HINT = {
+  home: "家庭开支 = 私人：钱从账户出，但不计入公司费用、不用发票",
+  sub: "外协劳务：付给包工头的工作目标款（不是本公司员工工资）。留合同/工作范围 + 收据，最好要票",
+};
+const finOffbook = (e) => ((e.kind === "out" || e.kind === "in") && (FIN_OFFBOOK[e.cat] || (e.ft === "ledger" && "往来"))) || "";
+const finMoney = (n) => (Number(n) || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const finCatName = (k) => {
+  if (!k) return "未分类";
+  if (String(k).startsWith("u:")) return String(k).slice(2);
+  return (FIN && FIN.cats && FIN.cats.names && FIN.cats.names[k]) || FIN_CAT_ZH[k] || k;
+};
+const finKindName = (k) => (k === "in" ? "收入" : k === "float" ? "备用金" : k === "move" ? "取现/存现" : k === "transfer" ? "人员转账" : "支出");
+
+/* 账户：对账余额 + 之后的流入/流出，拆成「来源 − 花费 = 剩余」 */
+function finAcct(uid, skipId) {
+  const a = (FIN.accounts || []).find((x) => x.uid === uid) || {};
+  const since = a.since || "";
+  const src = { cash: Number(a.cash) || 0, card: Number(a.card) || 0 };
+  const out = { cash: 0, card: 0 };
+  const chOf = (ch) => (ch === "card" ? "card" : "cash");
+  for (const e of FIN.entries) {
+    if (skipId && e.id === skipId) continue;
+    if (since && String(e.date) <= since) continue;
+    const amt = Number(e.amount) || 0;
+    const ch = chOf(e.ch);
+    if (e.kind === "float") {
+      if (e.to_uid === uid) src[ch] += amt;      // 收到备用金 → 现金来源
+      if (e.uid === uid) out[ch] += amt;         // 发出备用金 → 花费
+    } else if (e.kind === "move") {
+      if (e.uid === uid) { const to = ch === "card" ? "cash" : "card"; out[ch] += amt; src[to] += amt; }
+    } else if (e.kind === "transfer") {
+      if (e.uid === uid) out[ch] += amt;                          // 转出人：按转出口减少
+      if (e.to_uid === uid) src[chOf(e.to_ch || e.ch)] += amt;    // 转入人：按转入渠道增加
+    } else if (e.uid === uid) {
+      if (e.kind === "in") src[ch] += amt; else out[ch] += amt;
+    }
+  }
+  return { cash: src.cash - out.cash, card: src.card - out.card, src, out, since, name: a.name };
+}
+const finBalance = (uid) => { const a = finAcct(uid); return { cash: a.cash, card: a.card }; };
+
+/* 某人手上还有多少备用金：收到的备用金 − 收到之后他自己的支出（备用金本身不算花费） */
+function finFloatOf(uid) {
+  const got = (FIN.entries || []).filter((e) => e.kind === "float" && e.to_uid === uid);
+  if (!got.length) return null;
+  const since = got.map((e) => String(e.date || "")).sort()[0] || "";
+  const used = (FIN.entries || []).filter((e) => e.uid === uid && e.kind === "out" && String(e.date || "") >= since);
+  return {
+    got: got.reduce((s, e) => s + (Number(e.amount) || 0), 0),
+    used: used.reduce((s, e) => s + (Number(e.amount) || 0), 0),
+    giver: got[0].uid, since,
+  };
+}
+
+/* 常用花费人：列表置顶（顺序即优先），其余保持原顺序 */
+const FIN_FAV = ["frank", "supeichang"];
+const finFavRank = (u) => {
+  const keys = [String(u.login || "").trim().toLowerCase(), String(u.name || "").trim().toLowerCase()];
+  const i = FIN_FAV.findIndex((k) => keys.includes(k));
+  return i < 0 ? FIN_FAV.length : i;
+};
+
+const finPeople = () => {
+  const us = (FIN.users || []).filter((u) => u.login !== FINCO).map((u) => ({ login: u.login, name: u.name, role: u.role, ghost: false }));
+  const known = new Set(us.map((u) => u.login));
+  for (const a of FIN.accounts || []) {
+    if (a.uid === FINCO || known.has(a.uid)) continue;
+    us.push({ login: a.uid, name: a.name || a.uid, role: "", ghost: true });
+  }
+  us.sort((a, b) => finFavRank(a) - finFavRank(b));
+  return us.length ? us : [{ login: FIN.me.uid, name: FIN.me.name, role: FIN.me.role }];
+};
+const finNameOf = (uid) => {
+  if (uid === FINCO) return "公司账户";
+  const u = (FIN.users || []).find((x) => x.login === uid);
+  if (u && u.name) return u.name;
+  const a = (FIN.accounts || []).find((x) => x.uid === uid);
+  return (a && a.name) || uid;
+};
+
+function finView(src) {
+  const box = document.createElement("div");
+  box.className = "fin-dim";
+  box.style.display = "flex";
+  box.style.alignItems = "center";
+  box.style.justifyContent = "center";
+  box.innerHTML = `<img src="${src}" style="max-width:94%;max-height:92%;border-radius:10px;box-shadow:0 10px 40px rgba(0,0,0,.4)">`;
+  box.onclick = () => box.remove();
+  document.body.appendChild(box);
+}
+
+async function loadFin() {
+  FIN = await api("/fin/bootstrap");
+}
+
+/* 时间范围起点（YYYY-MM-DD），本周从周一起算 */
+function finFrom() {
+  const n = new Date();
+  const y = n.getFullYear(), m = n.getMonth(), d = n.getDate();
+  let dt = new Date(y, m, 1);
+  if (FINR === "day") dt = new Date(y, m, d);
+  else if (FINR === "week") dt = new Date(y, m, d - ((n.getDay() + 6) % 7));
+  else if (FINR === "year") dt = new Date(y, 0, 1);
+  const p = (x) => String(x).padStart(2, "0");
+  return `${dt.getFullYear()}-${p(dt.getMonth() + 1)}-${p(dt.getDate())}`;
+}
+
+function finHtml() {
+  const who = FINWHO || FIN.me.uid;
+  const isAll = FINWHO === "ALL";
+  const isMe = !FINWHO;                 // 空 = 我自己
+  const ro = !isMe && !isAll;           // 点某个人 = 只读（只看看，不能改）
+  const canAll = FIN.canAll;
+  const mine = (e) => e.uid === who || e.to_uid === who;   // 自己的账本：自己花的 + 收到的备用金
+  const scoped = isAll ? FIN.entries : FIN.entries.filter(mine);
+  const invOk = (e) => FININV === "all" || (e.kind !== "out" && e.kind !== "in")
+    || (FININV === "yes" ? !!Number(e.inv) : !Number(e.inv));
+  const list = scoped.filter((e) => String(e.date) >= finFrom() && invOk(e));
+  const sum = { out: 0, in: 0, float: 0, home: 0, loanOut: 0, loanIn: 0 };
+  for (const e of list) {
+    const amt = Number(e.amount) || 0;
+    const off = finOffbook(e);
+    if (off === "私人") sum.home += amt;
+    else if (off === "往来") sum[e.kind === "in" ? "loanIn" : "loanOut"] += amt;
+    else sum[e.kind] = (sum[e.kind] || 0) + amt;
+  }
+  const offNote = [
+    sum.home ? `🏠 私人 ${finMoney(sum.home)}` : "",
+    (sum.loanOut || sum.loanIn) ? `🤝 借款 借出 ${finMoney(sum.loanOut)} · 已还 ${finMoney(sum.loanIn)}` : "",
+  ].filter(Boolean).join(" · ");
+
+  const rows = list.map((e) => {
+    const ph = (e.photos || []).slice(0, 3).map((k) => `<img src="/api/fin/photo/${k}" data-finview="/api/fin/photo/${k}" alt="">`).join("");
+    let whoTxt = esc(e.uid), sign = "-", label = finKindName(e.kind), title = esc(finCatName(e.cat));
+    if (e.kind === "float") {
+      whoTxt = `${esc(e.by_name || e.uid)} → ${esc(e.to_uid || "")}`;
+      sign = e.to_uid === who ? "+" : "-";
+      label = e.to_uid === who ? "收到备用金" : "发出备用金";
+      title = "备用金";
+    } else if (e.kind === "move") {
+      sign = "⇄";
+      const out = e.ch === "card";
+      title = out ? "取现" : "存现";
+      label = out ? "银行 → 现金" : "现金 → 银行";
+    } else if (e.kind === "transfer") {
+      sign = isAll ? "⇄" : (e.to_uid === who ? "+" : "-");
+      const fromCh = e.ch === "card" ? "银行" : "现金";
+      const toCh = (e.to_ch || e.ch) === "card" ? "银行" : "现金";
+      whoTxt = `${esc(finNameOf(e.uid))} → ${esc(finNameOf(e.to_uid))}`;
+      label = isAll ? "转账" : (e.to_uid === who ? "转入" : "转出");
+      title = `${fromCh} → ${toCh}`;
+    } else {
+      sign = e.kind === "in" ? "+" : "-";
+    }
+    const chTxt = e.kind === "transfer" ? "" : ` · ${e.ch === "card" ? "银行" : "现金"}`;
+    const isExp = e.kind === "out" || e.kind === "in";
+    const offBook = finOffbook(e);
+    const canMark = isExp && !offBook && (FIN.owner || FIN.canAll || e.uid === FIN.me.uid);
+    const hasPh = (e.photos || []).length > 0;
+    const invTag = !isExp ? ""
+      : offBook ? `<i class="fin-inv ${offBook === "往来" ? "l" : "p"}" title="${offBook}科目，不计入公司费用">${offBook}·不计费用</i>`
+      : Number(e.inv)
+        ? (hasPh ? `<i class="fin-inv y">有票</i>` : `<i class="fin-inv w" title="还没上传发票照片">有票·缺图</i>`)
+        : `<i class="fin-inv n">无票</i>`;
+    const markBtns = FINMARK && canMark
+      ? `<div class="fin-mark">
+          <button data-setinv="${esc(e.id)}" data-inv="1" class="${Number(e.inv) ? "on" : ""}">有票</button>
+          <button data-setinv="${esc(e.id)}" data-inv="0" class="${Number(e.inv) ? "" : "on"}">无票</button>
+        </div>` : "";
+    return `<div class="fin-row fin-${e.kind}">
+      <div class="d">${esc(String(e.date).slice(5))}</div>
+      <div class="m"><b>${title}${invTag}</b>
+        <p>${whoTxt}${chTxt}${e.note ? " · " + esc(tx(e, "note")) : ""}</p>
+        ${ph ? `<div class="ph">${ph}</div>` : ""}
+        ${markBtns}</div>
+      <div class="a">${sign}${finMoney(e.amount)}<small>${esc(label)}</small></div>
+      ${(FIN.owner || FIN.canAll || e.uid === FIN.me.uid) ? `<button class="ghost fin-more" data-finmore="${e.id}" title="更多">⋯</button>` : ""}
+    </div>`;
+  }).join("");
+
+  const roleLabel = (p) => (p.ghost ? "历史账户" : ROLE_ZH[p.role] || "员工");
+  const acctCard = (p) => {
+    const a = finAcct(p.login);
+    const row = (FIN.accounts || []).find((x) => x.uid === p.login) || {};
+    const acts = [];
+    if (FIN.owner) acts.push(`<button class="ghost" data-recon="${esc(p.login)}">对账</button>`);
+    if (FIN.owner) acts.push(`<button class="ghost" data-give="${esc(p.login)}">给员工</button>`);
+    return `<div class="fin-acct" data-acct="${esc(p.login)}">
+      <div class="n">${esc(p.name || p.login)} <span class="mut">${esc(roleLabel(p))}${row.since ? " · 对账 " + esc(row.since) : ""}</span></div>
+      <div class="g">
+        <div><label>现金</label><b>${finMoney(a.cash)}</b><small>来源 ${finMoney(a.src.cash)} − 花费 ${finMoney(a.out.cash)}</small></div>
+        <div><label>银行</label><b>${finMoney(a.card)}</b><small>来源 ${finMoney(a.src.card)} − 花费 ${finMoney(a.out.card)}</small></div>
+      </div>
+      ${acts.length ? `<div class="acts">${acts.join("")}</div>` : ""}
+    </div>`;
+  };
+  const people = finPeople();
+  const personCard = () => acctCard(people.find((p) => p.login === who) || { login: who, name: finNameOf(who), role: "", ghost: false });
+  const acctHtml = isAll ? "" : `<div class="sec">${isMe ? "我的账户" : esc(finNameOf(who)) + " 账户"}</div>` + personCard();
+
+  const withAcct = (FIN.accounts || []).filter((a) => a.uid !== FINCO && (Number(a.cash) || Number(a.card)));
+  const scopeChips = [`<button data-fscope="" class="${isMe ? "on" : ""}">我</button>`];
+  if (canAll) {
+    scopeChips.push(`<button data-fscope="ALL" class="${isAll ? "on" : ""}">全部</button>`);
+    for (const a of withAcct) {
+      const p = people.find((x) => x.login === a.uid) || { login: a.uid, name: a.name || a.uid, role: "", ghost: true };
+      scopeChips.push(`<button data-fscope="${esc(p.login)}" class="${FINWHO === p.login ? "on" : ""}">${esc(p.name || p.login)}</button>`);
+    }
+  }
+  const tabs = `<div class="fin-ptab">${scopeChips.join("")}</div>`;
+
+  /* 资金总览：公司账户 + 员工手上 = 公司资金总额；调拨不改总额，只有消费才减少 */
+  const coRow = (FIN.accounts || []).find((a) => a.uid === FINCO) || { cash: 0, card: 0, since: "" };
+  const coBal = finAcct(FINCO);
+  const pplBal = people.reduce((s, p) => { const a = finAcct(p.login); s.cash += a.cash; s.card += a.card; return s; }, { cash: 0, card: 0 });
+  const totCash = coBal.cash + pplBal.cash, totCard = coBal.card + pplBal.card;
+  const floatLeft = people.reduce((s, p) => { const f = finFloatOf(p.login); return s + (f ? Math.max(0, f.got - f.used) : 0); }, 0);
+  const coHtml = !canAll ? "" : `<div class="fin-acct">
+    <div class="n">🏦 资金总览 <span class="mut" style="font-weight:400;font-size:12px">· 调拨不减总额，消费才减</span></div>
+    <div class="g" style="margin-top:8px">
+      <div><label>公司账户</label><b>${finMoney(coBal.cash + coBal.card)}</b><small>对账日 ${esc(coRow.since || "未设")}</small></div>
+      <div><label>员工手上</label><b>${finMoney(pplBal.cash + pplBal.card)}</b><small>现金 ${finMoney(pplBal.cash)} · 银行 ${finMoney(pplBal.card)}</small></div>
+    </div>
+    <div class="g" style="margin-top:8px">
+      <div><label>公司资金总额</label><b>${finMoney(totCash + totCard)}</b><small>现金 ${finMoney(totCash)} · 银行 ${finMoney(totCard)}</small></div>
+      <div><label>未报备用金</label><b>${finMoney(floatLeft)}</b><small>已发 − 已花，仍算在员工手上</small></div>
+    </div>
+  </div>`;
+
+  const actions = !ro ? `<div class="fin-acts">
+    ${!isAll && (FIN.canAll || FIN.owner) ? `<button id="fin_transfer">🔀 调拨</button>` : ""}
+    ${canAll ? `<button id="fin_cosend">🏦 公司调款</button>` : ""}
+    <button id="fin_move">🔁 取现</button>
+    ${FIN.owner ? `<button id="fin_give">🤝 给员工</button>` : ""}
+    <button id="fin_mark"${FINMARK ? ` class="pri"` : ""}>${FINMARK ? "✅ 标完了" : "🧾 补票"}</button>
+  </div>` : "";
+
+  const roHint = ro ? `<div class="mut" style="margin:0 0 8px">🔒 只读 · ${esc(finNameOf(who))}</div>` : "";
+
+  const floatUids = isAll ? people.map((p) => p.login) : [who];
+  const floats = floatUids.map((uid) => [uid, finFloatOf(uid)]).filter(([, f]) => f);
+  const floatHtml = floats.length ? `<div class="fin-acct">
+    <div class="n">🧾 员工往来（备用金）</div>
+    ${floats.map(([uid, f]) => `<div class="g" style="margin-top:8px"><div><label>${esc(finNameOf(uid))}</label><b>${finMoney(f.got - f.used)}</b><small>收到 ${finMoney(f.got)}（来自 ${esc(finNameOf(f.giver))}） − 已花 ${finMoney(f.used)}</small></div></div>`).join("")}
+    <div class="mut" style="margin-top:6px">收到备用金 − 之后的支出 = 手上还剩多少；备用金本身不算花费。</div>
+  </div>` : "";
+
+  const trList = list.filter((e) => e.kind === "transfer");
+  const trSum = trList.reduce((s, e) => s + (Number(e.amount) || 0), 0);
+  const trOut = trList.filter((e) => isAll || e.uid === who).reduce((s, e) => s + (Number(e.amount) || 0), 0);
+  const trIn = trList.filter((e) => isAll || e.to_uid === who).reduce((s, e) => s + (Number(e.amount) || 0), 0);
+  const trHtml = trList.length ? `<div class="fin-acct">
+    <div class="n">🔀 资金调拨核对</div>
+    <div class="mut" style="margin-top:6px">${trList.length} 笔 · 合计 ${finMoney(trSum)} ZMW${isAll
+      ? ` · 转出 ${finMoney(trOut)} = 转入 ${finMoney(trIn)} ✓ 公司总额不变`
+      : ` · 转出 ${finMoney(trOut)} · 转入 ${finMoney(trIn)}`}</div>
+  </div>` : "";
+
+  /* 支出汇总：按用途分类，分「有票 / 无票」——报税与核对用 */
+  const expOut = list.filter((e) => e.kind === "out" && !finOffbook(e));
+  const byCat = new Map();
+  for (const e of expOut) {
+    const k = e.cat || "";
+    const o = byCat.get(k) || { k, yes: 0, no: 0, n: 0 };
+    const amt = Number(e.amount) || 0;
+    if (Number(e.inv)) o.yes += amt; else o.no += amt;
+    o.n++;
+    byCat.set(k, o);
+  }
+  const catRows = [...byCat.values()].sort((a, b) => (b.yes + b.no) - (a.yes + a.no))
+    .map((o) => `<div class="fin-fr"><span>${esc(finCatName(o.k))}<small class="mut"> ${o.n} 笔</small></span><b>${finMoney(o.yes + o.no)}</b><i>${finMoney(o.yes)}</i><i>${finMoney(o.no)}</i></div>`).join("");
+  const sumYes = expOut.filter((e) => Number(e.inv)).reduce((s, e) => s + (Number(e.amount) || 0), 0);
+  const sumNo = expOut.filter((e) => !Number(e.inv)).reduce((s, e) => s + (Number(e.amount) || 0), 0);
+  const catHtml = expOut.length ? `<div class="fin-acct">
+          <div class="n">📊 支出汇总 · ${FINR_ZH[FINR]}中 <span class="mut" style="font-weight:400;font-size:12px">· 按用途分类 · 报税用</span></div>
+    <div class="fin-fr hd"><span>用途</span><b>金额</b><i>有票</i><i>无票</i></div>
+    ${catRows}
+    <div class="fin-fr tot"><span>合计 ${expOut.length} 笔</span><b>${finMoney(sumYes + sumNo)}</b><i>${finMoney(sumYes)}</i><i>${finMoney(sumNo)}</i></div>
+    <div class="acts"><button class="ghost" id="fin_csv_items">⬇ 支出明细 CSV</button><button class="ghost" id="fin_csv_flow">⬇ 资金流水 CSV</button></div>
+    <div class="mut" style="margin-top:6px">无票支出税前不能扣除，已在表里单列；CSV 用 Excel 直接打开。</div>
+  </div>` : "";
+
+  FINVIEW = { list, isAll, who };
+  const orph = FIN.orphans || [];
+  const orphanHtml = canAll && orph.length ? `<div class="fin-orph">
+    <b>⚠ 有 ${orph.reduce((s, o) => s + o.n, 0)} 条记录挂在旧账号名下</b>
+    <div class="mut">${orph.map((o) => `「${esc(o.name)}」${o.n} 条`).join("、")} —— 改过账号名会出现这种情况，记录本身没丢。</div>
+    ${FIN.me.role === "admin" ? `<div class="acts">${orph.map((o) => `<button class="ghost" data-orphan="${esc(o.uid)}">并到我名下（${o.n}）</button>`).join("")}</div>` : ""}
+  </div>` : "";
+  const anaSum = canAll ? `公司 ${finMoney(coBal.cash + coBal.card)} · ` : "";
+  const anaBar = `<div class="fin-anabar">
+    <button class="ghost" id="fin_ana">${FINANA ? "▾" : "▸"} 📊 核对与报表</button>
+    <span class="mut">${anaSum}${FINR_ZH[FINR]}有票 ${finMoney(sumYes)} / 无票 ${finMoney(sumNo)}${sum.home ? ` · 私人 ${finMoney(sum.home)}` : ""}${(sum.loanOut - sum.loanIn) ? ` · 借出 ${finMoney(sum.loanOut - sum.loanIn)}` : ""}</span>
+  </div>`;
+  return `${tabs}${roHint}
+    ${orphanHtml}
+    ${acctHtml}
+    ${anaBar}
+    ${FINANA ? coHtml + floatHtml + trHtml + catHtml : ""}
+    ${actions}
+    <div class="fin-seg">${["day", "week", "month", "year"].map((k) => `<button data-finrange="${k}" class="${FINR === k ? "on" : ""}">${FINR_ZH[k]}</button>`).join("")}</div>
+    <div class="fin-ptab">${[["all", "全部票据"], ["yes", "有发票"], ["no", "无发票"]].map(([k, t]) => `<button data-finv="${k}" class="${FININV === k ? "on" : ""}">${t}</button>`).join("")}</div>
+    ${FINMARK ? `<div class="mut" style="margin:-4px 0 10px">🧾 补票中：点每行的「有票 / 无票」，点一下即存 · <span id="fin_markcnt"></span></div>` : ""}
+    <div class="fin-kpi">
+      <div><span>${isAll ? "全部" : esc(finNameOf(who))} · ${FINR_ZH[FINR]}支出</span><b>${finMoney(sum.out)}</b></div>
+      <div><span>收入</span><b>${finMoney(sum.in)}</b></div>
+      <div><span>备用金流转</span><b>${finMoney(sum.float)}</b></div>
+      <div><span>笔数</span><b>${list.length}</b></div>
+    </div>
+    ${offNote ? `<div class="mut" style="margin:-4px 0 10px">${offNote}（不计入公司费用）</div>` : ""}
+    <div class="fin-list">${rows || `<div class="empty">${FINR_ZH[FINR]}还没有记录</div>`}</div>
+    ${!ro && !isAll ? `<button class="fin-fab" id="fin_add">＋ 记一笔</button>` : ""}
+    ${FIN.owner && !ro ? `<div class="sec">设置</div>
+      <div class="fin-acct"><div class="n">期初余额</div>
+        <div class="g">
+          <div><label>日期</label><input type="date" id="fo_date" value="${esc(FIN.opening.date || "")}"></div>
+          <div><label>现金</label><input type="number" id="fo_cash" value="${FIN.opening.cash || 0}"></div>
+          <div><label>银行</label><input type="number" id="fo_card" value="${FIN.opening.card || 0}"></div>
+        </div>
+        <div class="acts"><button class="ghost" id="fo_save">保存期初</button>
+        <button class="ghost" id="fin_cats">改分类</button>
+        <button class="ghost" id="fin_merge">合并老分类</button></div>
+      </div>
+      <div class="fin-acct"><div class="n">🏦 公司账户 · 对账基准</div>
+        <div class="g">
+          <div><label>对账日</label><input type="date" id="fco_date" value="${esc(coRow.since || "")}"></div>
+          <div><label>银行余额</label><input type="number" step="0.01" id="fco_card" value="${Number(coRow.card) || 0}"></div>
+        </div>
+        <div class="acts"><button class="ghost" id="fco_save">保存公司账户</button></div>
+        <div class="mut" style="margin-top:6px">填「这天公司账户实际有多少钱」，之后的调拨、消费自动累加；对账日之前的记录不计入。</div>
+      </div>` : ""}
+    ${!ro && !isAll ? `<div style="height:56px"></div>` : ""}`;
+}
+
+/* ---------- 照片区（记一笔 / 编辑 / 取现 共用） ---------- */
+function finPhotoHtml(p) {
+  return `<label>单据照片 <span id="${p}_phn" style="font-weight:400;color:var(--mut)">0/6</span></label>
+    <div class="r" style="gap:8px;margin-bottom:6px">
+      <button class="ghost" type="button" id="${p}_cam">📷 拍照</button>
+      <button class="ghost" type="button" id="${p}_alb">🖼 从相册选</button>
+    </div>
+    <input id="${p}_cam_in" type="file" accept="image/*" capture="environment" style="display:none">
+    <input id="${p}_alb_in" type="file" accept="image/*" multiple style="display:none">
+    <div class="ph" id="${p}_ph"></div>`;
+}
+
+function finPhotoWire(box, p, initial) {
+  const state = { list: Array.isArray(initial) ? initial.slice(0, 6) : [], busy: false };
+  const phBox = $("#" + p + "_ph", box), phN = $("#" + p + "_phn", box), msgEl = $("#" + p + "_msg", box);
+  const draw = () => {
+    phBox.innerHTML = state.list.map((k, i) => `<span class="pht"><img src="/api/fin/photo/${k}" data-phv="/api/fin/photo/${k}" alt=""><b data-delph="${i}" title="移除">×</b></span>`).join("");
+    phN.textContent = state.list.length + "/6";
+    phBox.querySelectorAll("[data-delph]").forEach((b) => b.onclick = (ev) => { ev.stopPropagation(); state.list.splice(+b.dataset.delph, 1); draw(); });
+    phBox.querySelectorAll("[data-phv]").forEach((im) => im.onclick = () => finView(im.dataset.phv));
+  };
+  const addFiles = async (files) => {
+    const list = [...files].slice(0, Math.max(0, 6 - state.list.length));
+    if (!list.length) { if (msgEl) msgEl.textContent = "最多 6 张，先移除一些再添加"; return; }
+    let fail = 0;
+    state.busy = true;
+    try {
+      for (let i = 0; i < list.length; i++) {
+        if (msgEl) msgEl.textContent = "上传中…（" + i + "/" + list.length + "）";
+        const key = await finUpload(list[i], msgEl);
+        if (key) state.list.push(key); else fail++;
+        draw();
+      }
+    } finally { state.busy = false; }
+    if (msgEl) {
+      msgEl.textContent = fail ? "有 " + fail + " 张没传上" : "已添加 " + list.length + " 张";
+      if (fail) toast("有 " + fail + " 张照片没传上，先别保存", "bad");
+      setTimeout(() => { if (/^(已添加|有 )/.test(msgEl.textContent)) msgEl.textContent = ""; }, 2500);
+    }
+  };
+  $("#" + p + "_cam", box).onclick = () => $("#" + p + "_cam_in", box).click();
+  $("#" + p + "_alb", box).onclick = () => $("#" + p + "_alb_in", box).click();
+  $("#" + p + "_cam_in", box).onchange = async (e) => { const f = [...e.target.files]; e.target.value = ""; await addFiles(f); };
+  $("#" + p + "_alb_in", box).onchange = async (e) => { const f = [...e.target.files]; e.target.value = ""; await addFiles(f); };
+  draw();
+  return state;
+}
+
+/* 上次用过的 分类 / 渠道 / 归属：日常记账预填，少点几下 */
+const finLastUse = () => { try { return JSON.parse(localStorage.getItem("ops_fin_last") || "{}"); } catch (e) { return {}; } };
+const saveFinLast = (o) => { try { localStorage.setItem("ops_fin_last", JSON.stringify(o)); } catch (e) {} };
+
+function finSheet(presetTo, presetKind, editEntry) {
+  const canAll = FIN.canAll;
+  const viewUid = FINWHO && FINWHO !== "ALL" ? FINWHO : FIN.me.uid;
+  const people = canAll ? finPeople().map((u) => u.login) : [FIN.me.uid];
+  /* 归属（大类）→ 分类（细类）：两级联动，项目/矿权维护的自定义项来自 fin_cfg.cats */
+  const opt = (k) => `<option value="${esc(k)}">${esc(finCatName(k))}</option>`;
+  const catsOf = (ft) => {
+    const base = (FIN_FT_CATS[ft] || []).filter((k) => FIN_CAT_ZH[k]);
+    const custom = ((FIN.cats && FIN.cats[ft]) || []).filter(Boolean);
+    const extra = ft === "life" ? ["u:员工工资"] : [];
+    return [...new Set([...base, ...custom, ...extra])];
+  };
+  const catsHtml = (ft, cur) => {
+    const list = catsOf(ft);
+    if (cur && !list.includes(cur)) list.unshift(cur);
+    return list.length ? list.map(opt).join("") : `<option value="">（暂无，先「改分类」添加）</option>`;
+  };
+  const ftHtml = FIN_FT.map(([k, n]) => `<option value="${esc(k)}">${esc(n)}</option>`).join("");
+  const last = editEntry ? null : finLastUse();
+  const initFt = editEntry ? (FIN_FT_CATS[editEntry.ft] ? editEntry.ft : (FIN_CAT_FT[editEntry.cat] || "life"))
+    : (last && FIN_FT_CATS[last.ft] ? last.ft : "life");
+  const edit = editEntry || null;
+  const d = edit || {};
+  const initKind = edit ? edit.kind : (presetTo || presetKind === "float" ? "float" : "out");
+  const box = document.createElement("div");
+  box.className = "fin-dim";
+  box.innerHTML = `<div class="fin-sheet">
+    <h3>${edit ? "修改记录" : "记一笔"}</h3>
+    <label>类型</label>
+    <select id="ff_kind"${edit ? " disabled" : ""}><option value="out">支出</option><option value="in">收入</option>${FIN.owner ? `<option value="float">发备用金</option>` : ""}</select>
+    <div class="r" style="margin-top:8px">
+      <div><label>金额 ZMW <i class="req">*</i></label><input id="ff_amt" type="number" step="0.01" inputmode="decimal" value="${edit ? d.amount : ""}"></div>
+      <div><label>日期</label><input id="ff_date" type="date" value="${esc(edit ? d.date : new Date().toISOString().slice(0, 10))}"></div>
+    </div>
+    <label>备注 <i class="req">*</i></label><input id="ff_note" placeholder="比如：去矿区打车" value="${esc(d.note || "")}">
+    <div id="ff_out">
+      <div class="row3" style="margin-top:8px">
+        <div><label>归属</label><select id="ff_ft">${ftHtml}</select></div>
+        <div><label>分类</label><select id="ff_cat">${catsHtml(initFt, edit ? d.cat : null)}</select></div>
+        <div><label>渠道</label><select id="ff_ch"><option value="cash">现金</option><option value="card">银行</option></select></div>
+      </div>
+      <div class="mut" id="ff_cat_hint" style="display:none;margin:6px 0 0"></div>
+      <div id="ff_invwrap" style="margin-top:8px">
+        <div class="fin-seg" style="margin:0">
+          <button type="button" data-inv="0">无发票</button>
+          <button type="button" data-inv="1">有发票 <i class="req" id="ff_inv_req" style="display:none">*</i></button>
+        </div>
+        <div class="mut" id="ff_inv_hint" style="display:none;margin:6px 0 0">有发票要上传发票照片（最多 6 张）</div>
+      </div>
+      ${canAll ? `<label>记在谁名下</label><select id="ff_uid">${people.map((p) => `<option value="${esc(p)}" ${p === (edit ? d.uid : viewUid) ? "selected" : ""}>${esc(finNameOf(p))}</option>`).join("")}</select>` : ""}
+    </div>
+    <div id="ff_fl" class="hide">
+      <div class="r"><div><label>从谁出</label><select id="ff_giver">${people.map((p) => `<option value="${esc(p)}" ${p === (edit ? d.uid : FIN.me.uid) ? "selected" : ""}>${esc(finNameOf(p))}</option>`).join("")}</select></div>
+      <div><label>从哪个口</label><select id="ff_from"><option value="cash">现金</option><option value="card">银行</option></select></div></div>
+      <label>发给谁</label><select id="ff_to">${people.filter((p) => p !== (edit ? d.uid : FIN.me.uid)).map((p) => `<option value="${esc(p)}">${esc(finNameOf(p))}</option>`).join("")}</select>
+    </div>
+    ${finPhotoHtml("ff")}
+    <p class="mut" id="ff_msg" style="min-height:1em;margin:8px 0 0"></p>
+    <div class="r" style="margin-top:8px"><button class="ghost" id="ff_x">取消</button><button id="ff_save">${edit ? "保存修改" : "保存"}</button></div>
+  </div>`;
+  document.body.appendChild(box);
+  const close = () => box.remove();
+  box.onclick = (e) => { if (e.target === box) close(); };
+  $("#ff_x", box).onclick = close;
+  const setKind = (k) => {
+    const fl = k === "float";
+    $("#ff_kind", box).value = k;
+    $("#ff_out", box).classList.toggle("hide", fl);
+    $("#ff_fl", box).classList.toggle("hide", !fl);
+  };
+  setKind(initKind);
+  let INV = edit ? (Number(d.inv) ? 1 : 0) : 0;
+  const paintInv = () => {
+    box.querySelectorAll("[data-inv]").forEach((b) => b.classList.toggle("on", +b.dataset.inv === INV));
+    const req = $("#ff_inv_req", box);
+    if (req) req.style.display = INV ? "inline" : "none";
+    const hint = $("#ff_inv_hint", box);
+    if (hint) hint.style.display = INV ? "block" : "none";
+  };
+  box.querySelectorAll("[data-inv]").forEach((b) => b.onclick = () => { INV = +b.dataset.inv; paintInv(); });
+  paintInv();
+  const ftSel = $("#ff_ft", box), catSel = $("#ff_cat", box);
+  ftSel.value = initFt;
+  if (edit) {
+    if (d.cat) catSel.value = d.cat;
+    $("#ff_ch", box).value = d.ch || "cash";
+    $("#ff_from", box).value = d.ch || "cash";
+    if ($("#ff_to", box)) $("#ff_to", box).value = d.to_uid || "";
+    if ($("#ff_uid", box)) $("#ff_uid", box).value = d.uid || viewUid;
+    if ($("#ff_giver", box)) $("#ff_giver", box).value = d.uid || viewUid;
+  } else if (presetTo) {
+    if ($("#ff_to", box)) $("#ff_to", box).value = presetTo;
+  }
+  if (!edit && last) {
+    /* 日常记账少点几下：沿用上次的 分类 / 渠道 / 归属（往来科目不记） */
+    if (last.cat && !FIN_OFFBOOK[last.cat] && catsOf(initFt).includes(last.cat)) catSel.value = last.cat;
+    if (last.ch) $("#ff_ch", box).value = last.ch === "card" ? "card" : "cash";
+  }
+  const paintCat = () => {
+    const hint = $("#ff_cat_hint", box);
+    const txt = FIN_CAT_HINT[catSel.value] || "";
+    hint.textContent = txt;
+    hint.style.display = txt ? "block" : "none";
+  };
+  ftSel.onchange = () => { catSel.innerHTML = catsHtml(ftSel.value, null); paintCat(); };
+  catSel.onchange = paintCat;
+  paintCat();
+  $("#ff_kind", box).onchange = (e) => setKind(e.target.value);
+  const PH = finPhotoWire(box, "ff", edit ? d.photos : []);
+  $("#ff_save", box).onclick = async () => {
+    const kind = $("#ff_kind", box).value;
+    const amt = +$("#ff_amt", box).value;
+    const note = $("#ff_note", box).value.trim();
+    const inv = kind === "float" ? 0 : INV;
+    const fail = (t) => { const m = $("#ff_msg", box); if (m) m.textContent = t; toast(t, "bad"); };
+    if (PH.busy) return fail("照片还在上传，等一两秒再点保存");
+    if (!(amt > 0)) return fail("金额要填（大于 0）");
+    if (!$("#ff_date", box).value) return fail("选个日期");
+    if (kind !== "move" && !note) return fail("备注要填");
+    if (inv && !PH.list.length) return fail("选了「有发票」就要上传发票照片");
+    const cat = kind === "float" ? "" : $("#ff_cat", box).value;
+    const ft = kind === "float" ? "life" : $("#ff_ft", box).value;
+    if (!cat && ft === "licence") return fail("矿权维护还没分类，先点「改分类」加矿证");
+    const b = {
+      amount: amt,
+      date: $("#ff_date", box).value,
+      note,
+      inv,
+      photos: PH.list,
+      cat,
+      ft,
+      ch: kind === "float" ? $("#ff_from", box).value : $("#ff_ch", box).value,
+      to_uid: kind === "float" ? $("#ff_to", box).value : "",
+    };
+    try {
+      if (edit) {
+        await api("/fin/entries/" + encodeURIComponent(edit.id), { method: "PATCH", body: b, toast: "记录已修改" });
+      } else {
+        b.kind = kind;
+        b.uid = kind === "float" ? ($("#ff_giver", box) ? $("#ff_giver", box).value : FIN.me.uid)
+          : (canAll && $("#ff_uid", box) ? $("#ff_uid", box).value : viewUid);
+        await api("/fin/entries", { method: "POST", body: b, toast: kind === "float" ? "备用金已记录" : "已记账 " + finMoney(b.amount) + " ZMW" });
+      }
+      if (!edit) saveFinLast({ cat: b.cat, ch: b.ch, ft: b.ft === "ledger" ? "life" : b.ft });
+      close(); await loadFin(); render();
+    } catch (err) { fail(err.message); }
+  };
+}
+
+function finMoveSheet() {
+  const box = document.createElement("div");
+  box.className = "fin-dim";
+  box.innerHTML = `<div class="fin-sheet">
+    <h3>取现 / 存现（内部转账 · 不算花费）</h3>
+    <label>方向</label>
+    <select id="fm_dir"><option value="card2cash">取现 · 银行 → 现金</option><option value="cash2card">存现 · 现金 → 银行</option></select>
+    <div class="r" style="margin-top:8px">
+      <div><label>金额 ZMW</label><input id="fm_amt" type="number" step="0.01" inputmode="decimal"></div>
+      <div><label>日期</label><input id="fm_date" type="date" value="${new Date().toISOString().slice(0, 10)}"></div>
+    </div>
+    <label>备注</label><input id="fm_note" placeholder="比如：ATM 取现">
+    ${finPhotoHtml("fm")}
+    <p class="mut" id="fm_msg" style="min-height:1em;margin:8px 0 0"></p>
+    <div class="r" style="margin-top:8px"><button class="ghost" id="fm_x">取消</button><button id="fm_save">保存</button></div>
+  </div>`;
+  document.body.appendChild(box);
+  const close = () => box.remove();
+  box.onclick = (e) => { if (e.target === box) close(); };
+  $("#fm_x", box).onclick = close;
+  const PH = finPhotoWire(box, "fm", []);
+  $("#fm_save", box).onclick = async () => {
+    const dir = $("#fm_dir", box).value;
+    const fail = (t) => { $("#fm_msg", box).textContent = t; toast(t, "bad"); };
+    if (PH.busy) return fail("照片还在上传，等一两秒再点保存");
+    const b = { kind: "move", amount: +$("#fm_amt", box).value, date: $("#fm_date", box).value,
+      note: $("#fm_note", box).value, ch: dir === "card2cash" ? "card" : "cash", cat: "", ft: "life", photos: PH.list, to_uid: "" };
+    try {
+      await api("/fin/entries", { method: "POST", body: b, toast: dir === "card2cash" ? "已取现" : "已存现" });
+      close(); await loadFin(); render();
+    } catch (err) { fail(err.message); }
+  };
+}
+/* 人员转账：甲 → 乙。转出人按转出口减少，转入人按转入渠道增加；公司总额不变。 */
+function finTransferSheet(editEntry, presetFrom) {
+  const edit = editEntry || null;
+  const people = finPeople();
+  const coOpt = { login: FINCO, name: "公司账户", role: "", co: true };
+  const canMove = FIN.canAll || FIN.owner;
+  const funds = canMove ? [coOpt, ...people] : people.filter((p) => p.login === FIN.me.uid);
+  const fromList = edit && !funds.some((p) => p.login === edit.uid) ? [...funds, { login: edit.uid, name: finNameOf(edit.uid) }] : funds;
+  const from0 = edit ? edit.uid : (presetFrom || FIN.me.uid);
+  const box = document.createElement("div");
+  box.className = "fin-dim";
+  box.innerHTML = `<div class="fin-sheet">
+    <h3>${edit ? "修改调拨" : "资金调拨"} <span class="mut" style="font-weight:400;font-size:12px">· 户与户之间搬钱，不算花费</span></h3>
+    <div class="r">
+      <div><label>从哪里出</label><select id="ft_from">${fromList.map((p) => `<option value="${esc(p.login)}" ${p.login === from0 ? "selected" : ""}>${esc(p.name || p.login)}</option>`).join("")}</select></div>
+      <div><label>出账口</label><select id="ft_ch"><option value="cash">现金</option><option value="card">银行</option></select></div>
+    </div>
+    <div class="r" style="margin-top:8px">
+      <div><label>调到谁</label><select id="ft_to"></select></div>
+      <div><label>进到</label><select id="ft_toch"><option value="cash">现金</option><option value="card">银行</option></select></div>
+    </div>
+    <div class="r" style="margin-top:8px">
+      <div><label>金额 ZMW</label><input id="ft_amt" type="number" step="0.01" inputmode="decimal" value="${edit ? edit.amount : ""}"></div>
+      <div><label>日期</label><input id="ft_date" type="date" value="${esc(edit ? edit.date : new Date().toISOString().slice(0, 10))}"></div>
+    </div>
+    <p class="mut" id="ft_preview" style="margin:8px 0 0;min-height:2.6em"></p>
+    <label>备注</label><input id="ft_note" placeholder="比如：给 Peter 现金进货" value="${esc(edit ? edit.note || "" : "")}">
+    ${finPhotoHtml("ft")}
+    <p class="mut" id="ft_msg" style="min-height:1em;margin:8px 0 0"></p>
+    <div class="r" style="margin-top:8px"><button class="ghost" id="ft_x">取消</button><button id="ft_save">${edit ? "保存修改" : "确认转账"}</button></div>
+  </div>`;
+  document.body.appendChild(box);
+  const close = () => box.remove();
+  box.onclick = (e) => { if (e.target === box) close(); };
+  $("#ft_x", box).onclick = close;
+
+  const fromSel = $("#ft_from", box), toSel = $("#ft_to", box);
+  const fillTo = (keep) => {
+    const list = [...people, coOpt].filter((p) => p.login !== fromSel.value);
+    toSel.innerHTML = list.map((p) => `<option value="${esc(p.login)}">${esc(p.name || p.login)}</option>`).join("");
+    if (keep && list.some((p) => p.login === keep)) toSel.value = keep;
+  };
+  fillTo(edit ? edit.to_uid : "");
+  $("#ft_ch", box).value = edit && edit.ch === "card" ? "card" : "cash";
+  $("#ft_toch", box).value = edit && (edit.to_ch || edit.ch) === "card" ? "card" : "cash";
+
+  /* 公司账户只有银行口：选中公司账户时锁死渠道并禁用「现金」 */
+  const lockCo = () => {
+    [[fromSel, $("#ft_ch", box)], [toSel, $("#ft_toch", box)]].forEach(([sel, ch]) => {
+      const isCo = sel.value === FINCO;
+      const cashOpt = [...ch.options].find((o) => o.value === "cash");
+      if (cashOpt) cashOpt.disabled = isCo;
+      if (isCo) ch.value = "card";
+    });
+  };
+
+  const draw = () => {
+    lockCo();
+    const el = $("#ft_preview", box);
+    const from = fromSel.value, to = toSel.value;
+    if (!to) { el.textContent = "系统里还没有可转入的第二个人"; return; }
+    const fch = $("#ft_ch", box).value, tch = $("#ft_toch", box).value;
+    const amt = Number($("#ft_amt", box).value) || 0;
+    const skip = edit ? edit.id : "";
+    const A = finAcct(from, skip), B = finAcct(to, skip);
+    const fa = { cash: A.cash, card: A.card }, ba = { cash: B.cash, card: B.card };
+    fa[fch] -= amt; ba[tch] += amt;
+    const money = (v) => (v < 0 ? `<b style="color:#c33">${finMoney(v)}</b>` : finMoney(v));
+    const side = (uid, x) => `${esc(finNameOf(uid))}：现金 ${money(x.cash)} · 银行 ${money(x.card)}`;
+    el.innerHTML = `转出后 ${side(from, fa)}<br>转入后 ${side(to, ba)}`;
+  };
+
+  const PH = finPhotoWire(box, "ft", edit ? edit.photos : []);
+  fromSel.onchange = () => { fillTo(); draw(); };
+  ["#ft_to", "#ft_ch", "#ft_toch", "#ft_amt"].forEach((s) => {
+    const el = $(s, box);
+    el.onchange = draw;
+    el.oninput = draw;
+  });
+  draw();
+
+  $("#ft_save", box).onclick = async () => {
+    const from = fromSel.value, to = toSel.value;
+    const b = {
+      amount: +$("#ft_amt", box).value,
+      date: $("#ft_date", box).value,
+      note: $("#ft_note", box).value,
+      photos: PH.list,
+      kind: "transfer", cat: "", ft: "life",
+      uid: from, ch: $("#ft_ch", box).value,
+      to_uid: to, to_ch: $("#ft_toch", box).value,
+    };
+    if (!to) return void ($("#ft_msg", box).textContent = "请选择调到谁");
+    if (from === to) return void ($("#ft_msg", box).textContent = "调出和调入不能是同一户");
+    if (!(b.amount > 0)) return void ($("#ft_msg", box).textContent = "金额要大于 0");
+    try {
+      if (edit) await api("/fin/entries/" + encodeURIComponent(edit.id), { method: "PATCH", body: b, toast: "调拨已修改" });
+      else await api("/fin/entries", { method: "POST", body: b, toast: "已调拨 " + finMoney(b.amount) + " ZMW" });
+      close(); await loadFin(); render();
+    } catch (err) { $("#ft_msg", box).textContent = err.message; }
+  };
+}
+
+/* ---------- CSV 导出：给会计核对 / Excel 直接打开 ---------- */
+function finCsv(name, head, rows) {
+  const cell = (v) => `"${String(v == null ? "" : v).replace(/"/g, '""')}"`;
+  const body = [head, ...rows].map((r) => r.map(cell).join(",")).join("\r\n");
+  const url = URL.createObjectURL(new Blob(["\uFEFF" + body], { type: "text/csv;charset=utf-8" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+
+function finExport(mode) {
+  const v = FINVIEW || { list: [] };
+  const day = new Date().toISOString().slice(0, 10);
+  const chZh = (c) => (c === "card" ? "银行" : "现金");
+  const money = (n) => (Number(n) || 0).toFixed(2);
+  if (mode === "items") {
+    const rows = v.list.filter((e) => (e.kind === "out" || e.kind === "in") && !finOffbook(e));
+    finCsv(`支出明细_${day}.csv`,
+      ["日期", "类型", "付款户", "渠道", "用途", "归属", "金额ZMW", "票据", "备注", "照片数"],
+      rows.map((e) => [e.date, finKindName(e.kind), finNameOf(e.uid), chZh(e.ch), finCatName(e.cat),
+        e.ft === "project" ? "项目" : "生活", money(e.amount), Number(e.inv) ? "有票" : "无票",
+        e.note || "", (e.photos || []).length]));
+    toast(`已导出 ${rows.length} 笔支出明细`);
+    return;
+  }
+  const all = (FIN.entries || []).filter((e) => String(e.date) >= finFrom());
+  finCsv(`资金流水_${day}.csv`,
+    ["日期", "类型", "出账户", "出账口", "入账户", "入账口", "金额ZMW", "用途", "票据", "备注"],
+    all.map((e) => [e.date, finKindName(e.kind), finNameOf(e.uid), chZh(e.ch),
+      e.to_uid ? finNameOf(e.to_uid) : "", e.to_ch ? chZh(e.to_ch) : "", money(e.amount),
+      e.cat ? finCatName(e.cat) : "", Number(e.inv) ? "有票" : "无票", e.note || ""]));
+  toast(`已导出 ${all.length} 笔资金流水`);
+}
+
+
+
+async function finUpload(file, msgEl, dir) {
+  const data = await new Promise((res) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      try {
+        const max = 1280, sc = Math.min(1, max / Math.max(img.width, img.height));
+        const c = document.createElement("canvas");
+        c.width = Math.round(img.width * sc) || 1; c.height = Math.round(img.height * sc) || 1;
+        c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+        res(c.toDataURL("image/jpeg", 0.82));
+      } catch (err) { res(""); }
+      finally { URL.revokeObjectURL(url); }
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); res(""); };
+    img.src = url;
+  });
+  if (!data) { if (msgEl) msgEl.textContent = "这张照片读不了（可能是 HEIC 或文件损坏），请换 JPG 再试"; return ""; }
+  try {
+    return (await api("/fin/photo", { method: "POST", body: { data, dir: dir || "" }, quiet: true })).key;
+  } catch (e) { if (msgEl) msgEl.textContent = "照片没传上：" + e.message; return ""; }
+}
+
+async function finMergeOrphan(from) {
+  const o = (FIN.orphans || []).find((x) => x.uid === from) || { n: 0, name: from };
+  if (!confirm(`把「${o.name}」名下的 ${o.n} 条记录并到 ${FIN.me.name}（${FIN.me.uid}）名下？\n合并后不能拆开。`)) return;
+  try {
+    const r = await api("/fin/remap", { method: "POST", body: { from, to: FIN.me.uid }, quiet: true });
+    toast(`已合并 ${((r.moved || {}).entries) || 0} 条记录`);
+    await loadFin();
+    render();
+  } catch (e) { toast(e.message, "bad"); }
+}
+
+async function finRecon(uid) {
+  const b = finBalance(uid);
+  const c = prompt(finNameOf(uid) + " 实际现金余额（ZMW）", String(b.cash.toFixed(2)));
+  if (c === null) return;
+  const k = prompt(finNameOf(uid) + " 实际银行余额（ZMW）", String(b.card.toFixed(2)));
+  if (k === null) return;
+  const row = (FIN.accounts || []).find((x) => x.uid === uid) || {};
+  await api("/fin/accounts/" + encodeURIComponent(uid), { method: "PUT", body: {
+    name: finNameOf(uid), bank: row.bank || "", card_no: row.card_no || "",
+    cash: Number(c) || 0, card: Number(k) || 0, since: new Date().toISOString().slice(0, 10),
+  }, toast: "余额已更新" });
+  await loadFin(); render();
+}
+
+async function finSaveAcct(uid) {
+  const el = document.querySelector(`[data-acct="${uid}"]`);
+  const v = (f) => el.querySelector(`[data-f="${f}"]`).value;
+  await api("/fin/accounts/" + encodeURIComponent(uid), {
+    method: "PUT",
+    body: { cash: +v("cash"), card: +v("card"), since: v("since"), name: (FIN.accounts.find((a) => a.uid === uid) || {}).name || uid },
+  });
+  await loadFin(); render();
+}
+
+function closeFinMenu() { const m = $("#fin_menu"); if (m) m.remove(); }
+function openFinMenu(id, btn) {
+  closeFinMenu();
+  const e = (FIN.entries || []).find((x) => x.id === id);
+  if (!e) return;
+  const r = btn.getBoundingClientRect();
+  const m = document.createElement("div");
+  m.className = "fd-menu";
+  m.id = "fin_menu";
+  m.style.top = Math.round(r.bottom + 6) + "px";
+  m.style.right = Math.max(8, Math.round(window.innerWidth - r.right)) + "px";
+  m.innerHTML = `<button data-act="edit">编辑</button><button data-act="del" class="dz">删除</button>`;
+  document.body.appendChild(m);
+  m.querySelector('[data-act="edit"]').onclick = () => { closeFinMenu(); if (e.kind === "transfer") finTransferSheet(e); else finSheet(null, null, e); };
+  m.querySelector('[data-act="del"]').onclick = async () => {
+    closeFinMenu();
+    if (!confirm("删除这条记录？")) return;
+    try { await api("/fin/entries/" + encodeURIComponent(e.id), { method: "DELETE", toast: "记录已删除" }); await loadFin(); render(); }
+    catch (err) { toast(err.message, "bad"); }
+  };
+  setTimeout(() => document.addEventListener("click", closeFinMenu, { once: true }), 0);
+}
+
+function bindFin() {
+  const pane = $("#pane");
+  pane.querySelectorAll("[data-orphan]").forEach((b) => b.onclick = () => finMergeOrphan(b.dataset.orphan));
+  pane.querySelectorAll("[data-fscope]").forEach((b) => b.onclick = () => { FINWHO = b.dataset.fscope; saveFinView(); S.editId = 0; render(); });
+  pane.querySelectorAll("[data-finrange]").forEach((b) => b.onclick = () => { FINR = b.dataset.finrange; saveFinView(); render(); });
+  pane.querySelectorAll("[data-finv]").forEach((b) => b.onclick = () => { FININV = b.dataset.finv; saveFinView(); render(); });
+  const markCnt = () => {
+    const bs = [...pane.querySelectorAll('[data-setinv][data-inv="1"]')];
+    const yes = bs.filter((b) => b.classList.contains("on")).length;
+    const el = $("#fin_markcnt");
+    if (el) el.textContent = `本页 有票 ${yes} / 无票 ${bs.length - yes}`;
+  };
+  const mk = $("#fin_mark");
+  if (mk) mk.onclick = () => { FINMARK = !FINMARK; render(); };
+  const cosend = $("#fin_cosend");
+  if (cosend) cosend.onclick = () => finTransferSheet(null, FINCO);
+  const anaBtn = $("#fin_ana");
+  if (anaBtn) anaBtn.onclick = () => { FINANA = !FINANA; saveFinView(); render(); };
+  const csvItems = $("#fin_csv_items");
+  if (csvItems) csvItems.onclick = () => finExport("items");
+  const csvFlow = $("#fin_csv_flow");
+  if (csvFlow) csvFlow.onclick = () => finExport("flow");
+  const fcoSave = $("#fco_save");
+  if (fcoSave) fcoSave.onclick = async () => {
+    try {
+      await api("/fin/accounts/" + encodeURIComponent(FINCO), { method: "PUT", body: {
+        name: "公司账户", cash: 0,
+        card: Number($("#fco_card").value) || 0,
+        since: $("#fco_date").value || "",
+      }, toast: "公司账户已保存" });
+      await loadFin(); render();
+    } catch (err) { toast(err.message); }
+  };
+  pane.querySelectorAll("[data-setinv]").forEach((b) => b.onclick = async () => {
+    const id = b.dataset.setinv, inv = +b.dataset.inv;
+    try {
+      await api("/fin/entries/" + encodeURIComponent(id) + "/inv", { method: "PUT", body: { inv }, quiet: true });
+      const e = (FIN.entries || []).find((x) => x.id === id);
+      if (e) e.inv = inv;
+      pane.querySelectorAll('[data-setinv="' + id + '"]').forEach((x) => x.classList.toggle("on", +x.dataset.inv === inv));
+      markCnt();
+    } catch (err) { toast(err.message); }
+  });
+  markCnt();
+  const add = $("#fin_add");
+  if (add) add.onclick = () => finSheet();
+  const mv = $("#fin_move");
+  if (mv) mv.onclick = () => finMoveSheet();
+  const tv = $("#fin_transfer");
+  if (tv) tv.onclick = () => finTransferSheet();
+  const gv = $("#fin_give");
+  if (gv) gv.onclick = () => finSheet(undefined, "float");
+  pane.querySelectorAll("[data-finview]").forEach((img) => img.onclick = () => finView(img.dataset.finview));
+  pane.querySelectorAll("[data-recon]").forEach((b) => b.onclick = () => finRecon(b.dataset.recon).catch((e) => toast(e.message, "bad")));
+  pane.querySelectorAll("[data-give]").forEach((b) => b.onclick = () => finSheet(b.dataset.give));
+  pane.querySelectorAll("[data-finmore]").forEach((b) => (b.onclick = (ev) => { ev.stopPropagation(); openFinMenu(b.dataset.finmore, b); }));
+  const fo = $("#fo_save");
+  if (fo) fo.onclick = async () => {
+    await api("/fin/opening", { method: "PUT", toast: "期初已保存", body: { date: $("#fo_date").value, cash: +$("#fo_cash").value, card: +$("#fo_card").value } });
+    await loadFin(); render();
+  };
+  const fc = $("#fin_cats");
+  if (fc) fc.onclick = async () => {
+    const life = prompt("生活 · 自定义分类（逗号分隔，可留空）", (FIN.cats.life || []).join(","));
+    if (life === null) return;
+    const project = prompt("项目（逗号分隔，可留空）", (FIN.cats.project || []).join(","));
+    if (project === null) return;
+    const licence = prompt("矿权维护 · 矿证（逗号分隔，可留空）", (FIN.cats.licence || []).join(","));
+    if (licence === null) return;
+    await api("/fin/cats", { method: "PUT", body: {
+      life: life.split(",").map((x) => x.trim()).filter(Boolean),
+      project: project.split(",").map((x) => x.trim()).filter(Boolean),
+      licence: licence.split(",").map((x) => x.trim()).filter(Boolean),
+      names: FIN.cats.names || {},
+    }, toast: "分类已更新" });
+    await loadFin(); render();
+  };
+  const fm = $("#fin_merge");
+  if (fm) fm.onclick = async () => {
+    const pre = await api("/fin/cats/merge?dry=1", { method: "POST", quiet: true });
+    if (!pre.total && !pre.ftFixed) return toast("没有要合并的老分类");
+    const detail = Object.entries(pre.map || {}).filter(([, v]) => v.n)
+      .map(([k, v]) => `${finCatName(k)} ${v.n} 条 → ${finCatName(v.to)}`);
+    if (pre.ftFixed) detail.push(`${pre.ftFixed} 条 借款/家庭开支 的归属改为「往来」`);
+    if (!confirm(`整理老分类？\n\n${detail.join("\n")}`)) return;
+    const r = await api("/fin/cats/merge", { method: "POST", toast: "分类已合并" });
+    toast(`合并 ${r.total} 条，归属修正 ${r.ftFixed} 条`);
+    await loadFin(); render();
+  };
+}
+
+
+/* ---------- 导航 ---------- */
+const GROUPS = ["财务", "日常协同", "业务现场", "资产", "系统"];
+function groupMods(g) {
+  return MODS.filter((m) => m.g === g && allowed(m.k) && (!m.soon || S.user.role === "admin"));
+}
+
+function enterApp(k) { S.tab = k; S.editId = 0; render(); }
+function goHome() { enterApp("home"); }
+function syncChrome() {
+  const isFin = S.tab === "fin";
+  const tabs = $("#tabs"); if (tabs) tabs.classList.toggle("hide", isFin);
+  const back = $("#back"); if (back) back.classList.toggle("hide", !isFin);
+  const ttl = $("#ttl");
+  if (ttl) {
+    const names = { status: "动态", home: "目录", todo: "待办", board: "看板", log: "日报", users: "人员", mine: "我的", fin: "费用记录", lang: "语言" };
+    ttl.textContent = tr(names[S.tab] || (S.tab.startsWith("g:") ? S.tab.slice(2) : "ECOBOX"));
+  }
+}
+
+
+let FEED = null;
+
+/* ---------- 动态：卡片流 ---------- */
+const mediaSrc = (u) => (/^https?:\/\//.test(u) ? u : "/api/fin/photo/" + u);
+const mediaList = (p) => (p.photos || []).map((m) => (typeof m === "string" ? { t: "i", u: m } : m)).filter((m) => m && m.u);
+const KIND = { company: "🏢 公司", prod: "⛏ 生产", export: "🚢 出口" };
+const whenOf = (p) => { const raw = String(p.created_at || ""); return raw.slice(11, 16) === "00:00" ? raw.slice(0, 10) : raw.replace("T", " ").slice(0, 16); };
+const ago = (t) => { if (!t) return ""; const d = Date.now() - new Date(t).getTime(); if (d < 60000) return "刚刚"; if (d < 3600000) return Math.floor(d / 60000) + " 分钟前"; if (d < 86400000) return Math.floor(d / 3600000) + " 小时前"; if (d < 604800000) return Math.floor(d / 86400000) + " 天前"; return String(t || "").slice(0, 10); };
+const fb = (u) => (u.startsWith("feed/old/") ? ` onerror="this.onerror=null;this.src='/api/feed/img/${u.slice(9)}'"` : "");
+const FD_EXP = new Set();
+const FD_OPEN = new Set();
+const meId = () => S.user.login || S.user.uid;
+
+function feedHtml() {
+  return `<div class="fd-top"><div class="fd-title">公司动态</div><span class="mut">全体可见</span></div>
+    <div id="fd_list"><div class="empty">加载中…</div></div>
+    <button id="fd_fab" class="fd-fab" title="添加动态">＋</button>`;
+}
+
+function bindFeed() {
+  const f = $("#fd_fab");
+  if (f) f.onclick = () => openComposer();
+  loadFeed();
+}
+
+function loadFeed() {
+  return api("/feed", { quiet: true })
+    .then((r) => { FEED = r.posts || []; drawFeed(); })
+    .catch((e) => { const el = $("#fd_list"); if (el) el.innerHTML = `<div class="empty">${esc(e.message)}</div>`; });
+}
+
+function mediaHtml(p) {
+  const list = mediaList(p);
+  if (!list.length) return "";
+  const cls = list.length === 1 ? "g1" : list.length === 2 ? "g2" : "g3";
+  const tiles = list.slice(0, 9).map((m, i) => {
+    const src = mediaSrc(m.u);
+    const more = i === 8 && list.length > 9 ? `<span class="fd-more-n">+${list.length - 9}</span>` : "";
+    return m.t === "v"
+      ? `<button class="fd-tile" data-vid="${esc(src)}"><video src="${esc(src)}" preload="none" muted playsinline></video><span class="fd-play">▶</span>${more}</button>`
+      : `<button class="fd-tile" data-img="${esc(src)}"><img src="${esc(src)}" loading="lazy" alt=""${fb(m.u)}>${more}</button>`;
+  }).join("");
+  return `<div class="fd-media ${cls}">${tiles}</div>`;
+}
+
+function cmtHtml(p) {
+  if (!FD_OPEN.has(p.id)) return "";
+  const list = p.comments || [];
+  const me = meId();
+  const all = FD_EXP.has(p.id) || list.length <= 3;
+  const pairs = list.map((c, i) => [c, i]);
+  const vis = all ? pairs : pairs.slice(0, 3);
+  const rows = vis.map(([c, i]) => `<div class="fd-c"><b>${esc(c.by || "")}</b><span>${esc(tx(c, "text"))}</span><em>${esc(ago(c.at))}</em>${
+    (c.uid === me || S.user.role === "admin") ? `<button class="x" data-cdel="${esc(p.id)}:${i}" title="删除">×</button>` : ""}</div>`).join("");
+  const moreBtn = list.length > 3
+    ? (all ? `<button class="fd-cmore" data-cmore="${esc(p.id)}">收起留言</button>` : `<button class="fd-cmore" data-cmore="${esc(p.id)}">查看全部 ${list.length} 条留言</button>`)
+    : "";
+  return `<div class="fd-comments">${rows}${moreBtn}
+    <div class="fd-cin"><input data-cin="${esc(p.id)}" maxlength="300" placeholder="写留言…"><button data-csend="${esc(p.id)}">发送</button></div>
+  </div>`;
+}
+
+function postHtml(p) {
+  const me = meId();
+  const mine = p.uid === me || S.user.role === "admin";
+  const liked = (p.likes || []).includes(me);
+  const nLike = (p.likes || []).length;
+  const nCmt = (p.comments || []).length;
+  return `<article class="fd-post" data-id="${esc(p.id)}">
+    <div class="fd-h">
+      <div class="fd-av">${esc((p.name || "?").slice(0, 1).toUpperCase())}</div>
+      <div class="fd-meta"><b>${esc(p.name || p.uid)}</b><span>${esc(KIND[p.kind] || KIND.company)} · ${esc(whenOf(p))}</span></div>
+      ${mine ? `<button class="fd-more" data-more="${esc(p.id)}" title="更多">⋯</button>` : ""}
+    </div>
+    ${p.body ? `<div class="fd-b">${esc(tx(p, "body"))}</div>` : ""}
+    ${mediaHtml(p)}
+    <div class="fd-acts">
+      <button class="fd-like${liked ? " on" : ""}" data-like="${esc(p.id)}" aria-label="点赞"><i>${liked ? "❤" : "♡"}</i><span>${nLike || "赞"}</span></button>
+      <button class="fd-cmtb" data-cmt="${esc(p.id)}" aria-label="评论"><i>💬</i><span>${nCmt || "评论"}</span></button>
+    </div>
+    ${cmtHtml(p)}
+  </article>`;
+}
+
+function bindPost(el) {
+  el.querySelectorAll("[data-img]").forEach((b) => (b.onclick = () => fdView(b.dataset.img, "")));
+  el.querySelectorAll("[data-vid]").forEach((b) => (b.onclick = () => fdView("", b.dataset.vid)));
+  el.querySelectorAll("[data-like]").forEach((b) => (b.onclick = () => likePost(b.dataset.like)));
+  el.querySelectorAll("[data-cmt]").forEach((b) => (b.onclick = () => toggleCmt(b.dataset.cmt)));
+  el.querySelectorAll("[data-cmore]").forEach((b) => (b.onclick = () => { FD_EXP.has(b.dataset.cmore) ? FD_EXP.delete(b.dataset.cmore) : FD_EXP.add(b.dataset.cmore); refreshPost(b.dataset.cmore); }));
+  el.querySelectorAll("[data-csend]").forEach((b) => (b.onclick = () => sendComment(b.dataset.csend)));
+  el.querySelectorAll("[data-cin]").forEach((inp) => (inp.onkeydown = (e) => { if (e.key === "Enter") { e.preventDefault(); sendComment(inp.dataset.cin); } }));
+  el.querySelectorAll("[data-cdel]").forEach((b) => (b.onclick = () => delComment(b.dataset.cdel)));
+  el.querySelectorAll("[data-more]").forEach((b) => (b.onclick = (e) => { e.stopPropagation(); openMenu(b.dataset.more, b); }));
+}
+
+function thumbVideos() {
+  const load = (v) => { if (v.dataset.tried) return; v.dataset.tried = "1"; v.preload = "metadata"; v.load(); };
+  document.querySelectorAll(".fd-tile[data-vid] video").forEach((v) => {
+    if (v.dataset.tried) return;
+    v.addEventListener("loadedmetadata", () => { try { v.currentTime = Math.min(0.1, (v.duration || 1) / 2); } catch (e) {} }, { once: true });
+    if ("IntersectionObserver" in window) {
+      const io = new IntersectionObserver((es) => es.forEach((en) => { if (en.isIntersecting) { load(v); io.disconnect(); } }), { rootMargin: "300px" });
+      io.observe(v.closest(".fd-tile"));
+    } else load(v);
+  });
+}
+
+function drawFeed() {
+  const el = $("#fd_list");
+  if (!el) return;
+  el.innerHTML = (FEED && FEED.length) ? FEED.map(postHtml).join("") : '<div class="empty">还没有动态，点右下角 ＋ 发第一条</div>';
+  el.querySelectorAll(".fd-post").forEach(bindPost);
+  thumbVideos();
+}
+
+function refreshPost(id) {
+  const p = (FEED || []).find((x) => x.id === id);
+  if (!p) return;
+  const el = document.querySelector(`.fd-post[data-id="${id}"]`);
+  if (!el) return;
+  el.outerHTML = postHtml(p);
+  const next = document.querySelector(`.fd-post[data-id="${id}"]`);
+  if (next) bindPost(next);
+  thumbVideos();
+}
+
+function toggleCmt(id) {
+  if (FD_OPEN.has(id)) FD_OPEN.delete(id); else FD_OPEN.add(id);
+  refreshPost(id);
+  if (FD_OPEN.has(id)) focusCmt(id);
+}
+function focusCmt(id) {
+  const inp = document.querySelector(`[data-cin="${id}"]`);
+  if (inp) inp.focus();
+}
+
+async function likePost(id) {
+  const p = (FEED || []).find((x) => x.id === id);
+  if (!p) return;
+  const me = meId();
+  const liked = (p.likes || []).includes(me);
+  p.likes = liked ? p.likes.filter((x) => x !== me) : (p.likes || []).concat([me]);
+  refreshPost(id);
+  try { await api("/feed/" + encodeURIComponent(id) + "/like", { method: "POST", quiet: true }); }
+  catch (e) { toast("点赞失败", "bad"); await loadFeed(); }
+}
+
+async function sendComment(id) {
+  const inp = document.querySelector(`[data-cin="${id}"]`);
+  const text = (inp && inp.value || "").trim();
+  if (!text) { if (inp) inp.focus(); return; }
+  const p = (FEED || []).find((x) => x.id === id);
+  const me = meId();
+  if (p) { p.comments = (p.comments || []).concat([{ uid: me, by: S.user.name || me, text, at: new Date().toISOString() }]); FD_EXP.add(id); refreshPost(id); }
+  if (inp) inp.value = "";
+  try { await api("/feed/" + encodeURIComponent(id) + "/comment", { method: "POST", body: { text }, quiet: true }); }
+  catch (e) { toast("留言没发出去，重试一下", "bad"); await loadFeed(); }
+}
+
+async function delComment(spec) {
+  const [id, i] = spec.split(":");
+  const p = (FEED || []).find((x) => x.id === id);
+  if (!p) return;
+  p.comments.splice(+i, 1);
+  refreshPost(id);
+  try { await api(`/feed/${encodeURIComponent(id)}/comment/${i}`, { method: "DELETE", quiet: true }); }
+  catch (e) { await loadFeed(); }
+}
+
+function openMenu(id, btn) {
+  closeMenu();
+  const p = (FEED || []).find((x) => x.id === id);
+  if (!p) return;
+  const r = btn.getBoundingClientRect();
+  const m = document.createElement("div");
+  m.className = "fd-menu";
+  m.id = "fd_menu";
+  m.style.top = Math.round(r.bottom + 6) + "px";
+  m.style.right = Math.max(8, Math.round(window.innerWidth - r.right)) + "px";
+  m.innerHTML = `<button data-act="edit">编辑</button><button data-act="copy">复制内容</button><button data-act="del" class="dz">删除</button>`;
+  document.body.appendChild(m);
+  m.querySelector('[data-act="edit"]').onclick = () => { closeMenu(); openComposer(p); };
+  m.querySelector('[data-act="copy"]').onclick = () => {
+    closeMenu();
+    const t = p.body || "";
+    if (!t) { toast("没有文字可复制", "bad"); return; }
+    if (navigator.clipboard) navigator.clipboard.writeText(t).then(() => toast("已复制", "good")).catch(() => toast("复制失败", "bad"));
+    else toast("复制失败", "bad");
+  };
+  m.querySelector('[data-act="del"]').onclick = async () => {
+    closeMenu();
+    if (!confirm("删除这条动态？")) return;
+    try { await api("/feed/" + encodeURIComponent(id), { method: "DELETE", toast: "已删除" }); await loadFeed(); }
+    catch (e) {}
+  };
+  setTimeout(() => document.addEventListener("click", closeMenu, { once: true }), 0);
+}
+function closeMenu() { const m = $("#fd_menu"); if (m) m.remove(); }
+
+let FD_EDIT = null, FD_DRAFT = [];
+function openComposer(post) {
+  FD_EDIT = post || null;
+  FD_DRAFT = post ? mediaList(post).slice() : [];
+  closeSheet();
+  const dim = document.createElement("div");
+  dim.className = "fd-dim"; dim.id = "fd_dim"; dim.onclick = closeSheet;
+  const s = document.createElement("div");
+  s.className = "fd-sheet"; s.id = "fd_sheet";
+  s.innerHTML = `<div class="fd-sh"><h3>${post ? "编辑动态" : "添加动态"}</h3><button id="fd_x">取消</button></div>
+    <textarea id="fd_body" maxlength="2000" placeholder="说点什么…">${esc(post ? post.body : "")}</textarea>
+    <div class="fd-cnt"><span id="fd_cnt">0</span>/2000</div>
+    <div id="fd_ph" class="fd-thumbs"></div>
+    <div class="row"><button id="fd_pick">＋ 照片</button><button class="pri" id="fd_send">${post ? "保存" : "发布"}</button></div>
+    <input id="fd_file" type="file" accept="image/*" multiple hidden>`;
+  document.body.appendChild(dim);
+  document.body.appendChild(s);
+  $("#fd_x").onclick = closeSheet;
+  $("#fd_pick").onclick = () => $("#fd_file").click();
+  $("#fd_file").onchange = async (e) => {
+    const files = [...e.target.files].slice(0, Math.max(0, 9 - FD_DRAFT.length));
+    e.target.value = "";
+    const btn = $("#fd_send");
+    if (!files.length) return;
+    btn.disabled = true; btn.textContent = "上传中…";
+    for (const f of files) {
+      const key = await finUpload(f, null, "feed");
+      if (key) FD_DRAFT.push({ t: "i", u: key });
+      drawDraft();
+    }
+    btn.disabled = false; btn.textContent = FD_EDIT ? "保存" : "发布";
+  };
+  $("#fd_body").oninput = () => { const c = $("#fd_cnt"); if (c) c.textContent = ($("#fd_body").value || "").length; };
+  $("#fd_send").onclick = sendPost;
+  const c = $("#fd_cnt"); if (c) c.textContent = (post ? post.body : "").length;
+  drawDraft();
+  $("#fd_body").focus();
+}
+
+function drawDraft() {
+  const box = $("#fd_ph");
+  if (!box) return;
+  box.innerHTML = FD_DRAFT.map((m, i) => `<div class="t">${
+    m.t === "v" ? `<video src="${esc(mediaSrc(m.u))}" muted></video>` : `<img src="${esc(mediaSrc(m.u))}" alt="">`
+  }<button class="x" data-rm="${i}">×</button></div>`).join("");
+  box.querySelectorAll("[data-rm]").forEach((b) => (b.onclick = () => { FD_DRAFT.splice(+b.dataset.rm, 1); drawDraft(); }));
+}
+
+function closeSheet() { ["fd_dim", "fd_sheet"].forEach((id) => { const el = document.getElementById(id); if (el) el.remove(); }); }
+
+async function sendPost() {
+  const t = ($("#fd_body").value || "").trim();
+  if (!t && !FD_DRAFT.length) { toast("写点内容再发", "bad"); return; }
+  const btn = $("#fd_send");
+  btn.disabled = true;
+  try {
+    if (FD_EDIT) {
+      await api("/feed/" + encodeURIComponent(FD_EDIT.id), { method: "PATCH", body: { body: t, photos: FD_DRAFT }, toast: "已保存" });
+    } else {
+      await api("/feed", { method: "POST", body: { body: t, photos: FD_DRAFT }, toast: "已发布" });
+    }
+    closeSheet();
+    FD_DRAFT = []; FD_EDIT = null;
+    await loadFeed();
+  } finally { btn.disabled = false; }
+}
+
+function fdView(img, vid) {
+  const box = document.createElement("div");
+  box.className = "fd-view";
+  if (vid) {
+    box.innerHTML = `<video src="${esc(vid)}" controls autoplay playsinline preload="auto"></video><button class="fd-view-x">×</button>`;
+    box.onclick = (e) => { if (e.target === box || e.target.classList.contains("fd-view-x")) box.remove(); };
+  } else {
+    box.innerHTML = `<div class="fd-zoom"><img src="${esc(img)}" alt=""></div><button class="fd-view-x">×</button>`;
+    box.onclick = (e) => { if (e.target === box || e.target.classList.contains("fd-view-x")) box.remove(); };
+    attachZoom(box.querySelector(".fd-zoom"), box.querySelector(".fd-zoom img"));
+  }
+  document.body.appendChild(box);
+}
+
+function attachZoom(wrap, im) {
+  let s = 1, tx = 0, ty = 0, pinch = 0, startS = 1, px = 0, py = 0, start = null, last = 0;
+  const apply = () => { im.style.transform = `translate(${tx}px,${ty}px) scale(${s})`; };
+  const reset = () => { s = 1; tx = ty = 0; apply(); };
+  wrap.onclick = (e) => e.stopPropagation();
+  wrap.addEventListener("touchstart", (e) => {
+    if (e.touches.length === 2) {
+      pinch = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+      startS = s;
+    } else if (e.touches.length === 1) { start = [e.touches[0].clientX, e.touches[0].clientY]; px = tx; py = ty; }
+  }, { passive: false });
+  wrap.addEventListener("touchmove", (e) => {
+    e.preventDefault();
+    if (e.touches.length === 2) {
+      const d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+      if (pinch) { s = Math.min(4, Math.max(1, startS * d / pinch)); apply(); }
+    } else if (e.touches.length === 1 && start && s > 1) {
+      tx = px + (e.touches[0].clientX - start[0]); ty = py + (e.touches[0].clientY - start[1]); apply();
+    }
+  }, { passive: false });
+  wrap.addEventListener("touchend", (e) => {
+    start = null; pinch = 0;
+    const now = Date.now();
+    if (e.touches.length === 0) {
+      if (now - last < 320) { if (s > 1) reset(); else { s = 2.5; tx = ty = 0; apply(); } last = 0; }
+      else last = now;
+    }
+  });
+}
+
+/* ---------- 分组页 ---------- */
+function groupHtml(g) {
+  const mods = groupMods(g);
+  const cards = mods.map(modCard).join("");
+  return `<div class="sec">${esc(tr(g))}</div><div class="mods">${cards || '<div class="empty">这个分类还没有模块</div>'}</div>`;
+}
+
+/* ---------- 渲染 ---------- */
+async function render() {
+  await renderPane();
+  applyLang(document.body);
+  watchLang();
+}
+async function renderPane() {
+  const pane = $("#pane");
+  syncChrome();
+  if (!["home", "status", "mine"].includes(S.tab) && !S.tab.startsWith("g:") && !allowed(TAB_KEY[S.tab])) S.tab = "home";
+  [...$("#tabs").children].forEach((b) => b.classList.toggle("on", b.dataset.tab === S.tab));
+  if (S.tab === "home") {
+    pane.innerHTML = homeHtml();
+    pane.querySelectorAll("[data-go]").forEach((b) => b.onclick = () => enterApp(b.dataset.go));
+    return;
+  }
+  if (S.tab === "status") {
+    pane.innerHTML = feedHtml();
+    bindFeed();
+    return;
+  }
+  if (S.tab.startsWith("g:")) {
+    pane.innerHTML = groupHtml(S.tab.slice(2));
+    pane.querySelectorAll("[data-go]").forEach((b) => b.onclick = () => enterApp(b.dataset.go));
+    return;
+  }
+  if (S.tab === "board") {
+    pane.innerHTML = `<div class="empty">加载中…</div>`;
+    const sum = await loadBoard();
+    pane.innerHTML = boardHtml(sum);
+    $("#f_from").onchange = (e) => { S.from = e.target.value; render(); };
+    $("#f_to").onchange = (e) => { S.to = e.target.value; render(); };
+  } else if (S.tab === "log") {
+    await loadBoard();
+    const editing = S.editId ? S.logs.find((l) => l.id === S.editId) : null;
+    pane.innerHTML = logForm(editing) + logListHtml();
+    $("#d_save").onclick = saveLog;
+    if (editing) $("#d_cancel").onclick = () => { S.editId = 0; render(); };
+    pane.querySelectorAll("[data-edit]").forEach((b) => b.onclick = () => { S.editId = +b.dataset.edit; render(); });
+    pane.querySelectorAll("[data-del]").forEach((b) => b.onclick = () => delLog(+b.dataset.del));
+  } else if (S.tab === "fin") {
+    pane.innerHTML = `<div class="empty">加载中…</div>`;
+    try { await loadFin(); } catch (e) { pane.innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
+    if (!FIN.canAll && FINWHO) FINWHO = "";
+    pane.innerHTML = finHtml();
+    bindFin();
+  } else if (S.tab === "users") {
+    S.users = (await api("/users")).users;
+    pane.innerHTML = usersHtml();
+    $("#u_add").onclick = addUser;
+    pane.querySelectorAll("[data-mods]").forEach((b) => b.onclick = () => {
+      const u = S.users.find((x) => x.id === +b.dataset.mods);
+      if (u) openModPicker(u);
+    });
+    pane.querySelectorAll("[data-edit-user]").forEach((b) => b.onclick = () => {
+      S.editUid = +b.dataset.editUser;
+      render();
+    });
+    pane.querySelectorAll("[data-pwd]").forEach((b) => b.onclick = () => {
+      const pw = prompt("新的密码（至少 8 位）");
+      if (pw) patchUser(b.dataset.pwd, { password: pw }).then(() => toast("已改，对方需要用新密码重登")).catch((e) => toast(e.message, "bad"));
+    });
+    pane.querySelectorAll("[data-active]").forEach((b) => b.onclick = () => {
+      const u = S.users.find((x) => x.id === +b.dataset.active);
+      patchUser(u.id, { active: u.active ? 0 : 1 }).then(render).catch((e) => toast(e.message, "bad"));
+    });
+    pane.querySelectorAll("[data-del-user]").forEach((b) => b.onclick = () => delUser(+b.dataset.delUser));
+    if ($("#eu_save")) {
+      $("#eu_save").onclick = saveUserEdit;
+      $("#eu_cancel").onclick = () => { S.editUid = 0; render(); };
+    }
+  } else if (S.tab === "todo") {
+    pane.innerHTML = `<div class="empty">加载中…</div>`;
+    try { await loadTodos(); } catch (e) { pane.innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
+    pane.innerHTML = todoHtml();
+    bindTodo();
+  } else if (S.tab === "lang") {
+    pane.innerHTML = langHtml();
+    pane.querySelectorAll("[data-lang]").forEach((b) => b.onclick = () => setLang(b.dataset.lang));
+  } else {
+    pane.innerHTML = mineHtml();
+    $("#p_out").onclick = async () => {
+      if (!confirm("退出登录？")) return;
+      try { await api("/logout", { method: "POST" }); } catch (e) {}
+      showLogin();
+    };
+    $("#p_save").onclick = async () => {
+      $("#p_err").textContent = ""; $("#p_ok").textContent = "";
+      try {
+        await api("/password", { method: "POST", body: { old: $("#p_old").value, new: $("#p_new").value } });
+        $("#p_ok").textContent = "已改。下次用新密码登录。";
+        $("#p_old").value = $("#p_new").value = "";
+      } catch (e) { $("#p_err").textContent = e.message; }
+    };
+  }
+}
+
+/* ---------- 动作 ---------- */
+function numOf(id) { const v = $(id).value.trim(); return v === "" ? 0 : +v; }
+
+async function saveLog() {
+  $("#d_err").textContent = "";
+  const body = {
+    day: $("#d_day").value, site: $("#d_site").value, shift: $("#d_shift").value,
+    crew: $("#d_crew").value, headcount: numOf("#d_people"),
+    ore_t: numOf("#d_ore"), waste_t: numOf("#d_waste"), cost_usd: numOf("#d_cost"),
+    grade: $("#d_grade").value, note: $("#d_note").value,
+  };
+  const btn = $("#d_save"); btn.disabled = true;
+  try {
+    if (S.editId) await api("/logs/" + S.editId, { method: "PATCH", body, toast: "生产记录已更新" });
+    else await api("/logs", { method: "POST", body, toast: "生产记录已保存" });
+    S.editId = 0; S.tab = "log"; await render();
+  } catch (e) { $("#d_err").textContent = e.message; btn.disabled = false; }
+}
+
+async function delLog(id) {
+  if (!confirm("删掉这条记录？不能撤销。")) return;
+  try { await api("/logs/" + id, { method: "DELETE", toast: "生产记录已删除" }); S.editId = 0; render(); }
+  catch (e) { toast(e.message, "bad"); }
+}
+
+async function addUser() {
+  $("#u_err").textContent = ""; $("#u_ok").textContent = "";
+  try {
+    const r = await api("/users", { method: "POST", body: {
+      name: $("#u_name").value, login: $("#u_login").value, password: $("#u_pass").value,
+      role: $("#u_role").value, phone: $("#u_phone").value,
+    }, toast: "人员已添加" });
+    $("#u_ok").textContent = "已开通。下面勾一下这个人能用哪些模块。";
+    ["#u_name", "#u_login", "#u_pass", "#u_phone"].forEach((s) => ($(s).value = ""));
+    S.users = (await api("/users")).users;
+    await render();
+    const nu = S.users.find((x) => x.id === r.id);
+    if (nu) openModPicker(nu);
+  } catch (e) { $("#u_err").textContent = e.message; }
+}
+
+async function saveUserEdit() {
+  const err = $("#eu_err"); err.textContent = "";
+  try {
+    await patchUser(S.editUid, {
+      name: $("#eu_name").value, login: $("#eu_login").value,
+      role: $("#eu_role").value, phone: $("#eu_phone").value,
+    });
+    S.editUid = 0; await render();
+  } catch (e) { err.textContent = e.message; }
+}
+
+async function delUser(id) {
+  const u = S.users.find((x) => x.id === id);
+  if (!u) return;
+  if (!confirm(`删除账号「${u.name}」？\n删除后不能再登录，他录过的日报和账目会保留。`)) return;
+  try {
+    await api("/users/" + id, { method: "DELETE", toast: "账号已删除" });
+    if (S.editUid === id) S.editUid = 0;
+    await render();
+  } catch (e) { toast(e.message, "bad"); }
+}
+
+async function patchUser(id, patch) {
+  const t = patch.password ? "密码已修改" : patch.active != null ? (patch.active ? "已启用" : "已停用") : "已更新";
+  await api("/users/" + id, { method: "PATCH", body: patch, toast: t });
+}
+
+/* ---------- 启动 ---------- */
+$("#lf").onsubmit = async (e) => {
+  e.preventDefault();
+  $("#l_err").textContent = "";
+  try {
+    const r = await api("/login", { method: "POST", body: { login: $("#l_login").value, password: $("#l_pass").value } });
+    S.user = r.user; await showApp();
+  } catch (e2) { $("#l_err").textContent = e2.message; }
+};
+
+
+$("#sf").onsubmit = async (e) => {
+  e.preventDefault();
+  $("#s_err").textContent = "";
+  try {
+    const r = await api("/setup", { method: "POST", headers: { "x-setup-token": $("#s_token").value.trim() },
+      body: { login: $("#s_login").value, name: $("#s_name").value, password: $("#s_pass").value } });
+    S.user = r.user; await showApp();
+  } catch (e2) { $("#s_err").textContent = e2.message; }
+};
+
+(async () => {
+  try {
+    const st = await api("/status");
+    if (st.setup_needed) return showSetup();
+  } catch {}
+  try {
+    const r = await api("/me");
+    if (r.user) { S.user = r.user; await showApp(); } else showLogin();
+  } catch { showLogin(); }
+})();
+</script>
+</body>
+</html>
