@@ -54,6 +54,12 @@
 - `finAcct(uid)`：来源 − 花费 = 剩余（现金/银行分开；`move` 在 card↔cash 间搬；收到 float 计入来源、发出 float 计入花费）。
 - `finFloatOf(uid)`：收到备用金 − 之后支出 = 手上剩余（备用金本身不算花费）。
 
+**登录 / 备份**
+
+- 登录闸门：`GET /` 未登录只返回 `LOGIN_PAGE`（最小登录页，无 app 框架 / 数据）；登录后返回完整页面。会话 30 天（`SESSION_DAYS`），登录一次即可。
+- 每日备份：Cron `0 0 * * *` 触发 `scheduled()` → `runBackup()`，把 D1 全表导出到 R2 `backups/YYYY-MM-DD.json`，只保留最近 30 份。
+- 手动：`GET /api/backup` 看列表、`POST /api/backup` 立即备份（仅 admin）。
+
 **前端关键函数**：`finHtml`(渲染) · `finSheet(presetTo, presetKind, editEntry)`(记/改表单) · `openFinMenu`(⋯ 菜单) · `loadFin`(拉 bootstrap) · `finUpload`(照片) · `finAcct` / `finFloatOf`(算账)
 
 **已完成（均验收过）**
@@ -97,6 +103,7 @@
 4. jsdom 测**真实需求**（不只 happy path）。
 5. 部署 + `check_deploy.py` 核对 BUILD。
 6. 复制到镜像仓库 `_repo/ecobox-sampling` → commit → push。
+7. 定时任务（Cron）只能用 wrangler 设：`npx -y wrangler@3 triggers deploy`（配 `[triggers] crons`）；`PUT .../schedules` 用 API token 会报 10026。
 
 > **推送坑**：直接 `git push origin main` 走本机 git 凭据管理器即可；**不要**用 `GITHUB_TOKEN` 拼进 URL（只读，403），也别用 `GITHUB_PUSH_TOKEN`（可能为空导致卡住）。
 
