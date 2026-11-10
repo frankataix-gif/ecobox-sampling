@@ -745,7 +745,7 @@ function finHtml() {
         <p>${whoTxt} · ${e.ch === "card" ? "银行" : "现金"}${e.note ? " · " + esc(e.note) : ""}</p>
         ${ph ? `<div class="ph">${ph}</div>` : ""}</div>
       <div class="a">${sign}${finMoney(e.amount)}<small>${esc(label)}</small></div>
-      ${FIN.owner ? `<button class="ghost fin-more" data-finmore="${e.id}" title="更多">⋯</button>` : ""}
+      ${(FIN.owner || FIN.canAll || e.uid === FIN.me.uid) ? `<button class="ghost fin-more" data-finmore="${e.id}" title="更多">⋯</button>` : ""}
     </div>`;
   }).join("");
 

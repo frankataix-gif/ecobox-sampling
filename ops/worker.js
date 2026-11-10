@@ -472,11 +472,11 @@ async function finApi(req, env, me, seg, url, body) {
     return json({ ok: true, photos: photos.length });
   }
 
-  /* 改一笔（仅财务负责人；kind / uid 保持不变） */
+  /* 改一笔（负责人/管理员可改全部，其他人只能改自己的；kind / uid 保持不变） */
   if (sub === "entries" && seg[2] && req.method === "PATCH") {
     const row = await env.DB.prepare("SELECT * FROM fin_entries WHERE id=?").bind(seg[2]).first();
     if (!row) return err("记录不存在", 404);
-    if (!isOwner) return err("只有财务负责人能改记录", 403);
+    if (!isOwner && !all && row.uid !== own) return err("只能改自己的记录", 403);
     const b = await body();
     if (!DAY_RE.test(String(b.date || ""))) return err("日期要 YYYY-MM-DD");
     const amount = Math.round(num(b.amount) * 100) / 100;
@@ -493,11 +493,11 @@ async function finApi(req, env, me, seg, url, body) {
     return json({ ok: true });
   }
 
-  /* 删（管理员或本人） */
+  /* 删（负责人/管理员可删全部，其他人只能删自己的） */
   if (sub === "entries" && seg[2] && req.method === "DELETE") {
     const row = await env.DB.prepare("SELECT * FROM fin_entries WHERE id=?").bind(seg[2]).first();
     if (!row) return err("记录不存在", 404);
-    if (!isOwner) return err("只有财务负责人能删除记录", 403);
+    if (!isOwner && !all && row.uid !== own) return err("只能删自己的记录", 403);
     await env.DB.prepare("DELETE FROM fin_entries WHERE id=?").bind(seg[2]).run();
     await audit(env, me, "fin.del", seg[2], `${row.kind} ${row.amount}`);
     return json({ ok: true });
