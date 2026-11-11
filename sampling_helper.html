@@ -55,7 +55,8 @@ textarea{min-height:64px;resize:vertical}
 .gpsrow{display:flex;gap:6px;margin-top:8px}
 .gpsrow .btn{flex:1 1 0;min-width:0;padding:7px 4px;font-size:13px;min-height:36px;white-space:nowrap}
 .tabs{display:flex;gap:6px;margin-bottom:10px}
-.tabs button{flex:1;border:1.5px solid #cbd5e1;background:#fff;color:#1e293b;border-radius:9px;padding:8px 0;font-size:14px;font-weight:600;min-height:38px}
+.tabs button{flex:1;min-width:0;white-space:nowrap;overflow:hidden;border:1.5px solid #cbd5e1;background:#fff;color:#1e293b;border-radius:9px;padding:8px 0;font-size:14px;font-weight:600;min-height:38px}
+@media (max-width:359px){.tabs button{font-size:12px}}
 .tabs button.on{background:var(--primary);border-color:var(--primary);color:#fff}
 .tabs button{position:relative}
 .tabdot{position:absolute;top:4px;right:6px;width:8px;height:8px;border-radius:50%;background:var(--danger);box-shadow:0 0 0 2px #fff}
@@ -129,8 +130,8 @@ progress{width:100%;height:10px;margin-top:8px}
   <!-- ===== 记录页 ===== -->
   <section id="pg-form">
     <div class="tabs" id="formtabs">
-      <button type="button" data-tab="cur" class="on">✏️ 取样</button>
-      <button type="button" data-tab="list">📋 取样历史</button>
+      <button type="button" data-tab="cur" class="on">✏️ 野外取样</button>
+      <button type="button" data-tab="list">📋 野外取样历史</button>
       <button type="button" data-tab="trip">🧭 行程<span class="tabdot hidden" id="tab_trip_dot"></span></button>
     </div>
     <div id="tab_cur">
@@ -153,7 +154,7 @@ progress{width:100%;height:10px;margin-top:8px}
       </div>
       <div id="w_mark" class="hidden"><label>标记类型</label><div class="chips" id="chips_mark"></div></div>
       <select id="f_kind" class="hidden">
-        <option value="sample" selected>⛏ 取样</option><option value="marker">🚩 标记点</option>
+        <option value="sample" selected>⛏ 野外取样</option><option value="marker">🚩 标记点</option>
       </select>
       <select id="f_type" class="hidden">
         <option value="" selected>—</option><option>岩石</option><option>土壤</option><option>刻槽</option><option>岩心</option><option>矿点/民采点</option><option>其他</option>
@@ -162,7 +163,7 @@ progress{width:100%;height:10px;margin-top:8px}
         <option selected>桥</option><option>路口</option><option>岔路</option><option>过河点</option><option>营地</option><option>水井</option><option>村庄</option><option>矿部/办公室</option><option>停车点</option><option>其他标记</option>
       </select>
       <input type="hidden" id="f_sid">
-      <label>取样时间（系统自动，精确到秒）</label><input type="datetime-local" id="f_time" step="1" readonly style="background:#f1f5f9;color:var(--muted)">
+      <label>野外取样时间（系统自动，精确到秒）</label><input type="datetime-local" id="f_time" step="1" readonly style="background:#f1f5f9;color:var(--muted)">
     </div>
     <div class="card">
       <h3>📍 坐标（GPS 无需网络）<span style="color:var(--danger)"> *</span></h3>
@@ -216,7 +217,7 @@ progress{width:100%;height:10px;margin-top:8px}
       <div class="toolbar"><input id="q_list" placeholder="🔍 搜索 编号 / 备注 / 地区 / 元素" inputmode="search"></div>
       <div class="chips" id="chips_rectype">
         <button type="button" data-t="all" class="on">全部</button>
-        <button type="button" data-t="sample">样品</button>
+        <button type="button" data-t="sample">野外取样</button>
         <button type="button" data-t="marker">标记点</button>
         <button type="button" data-t="trip">行程</button>
       </div>
@@ -232,7 +233,7 @@ progress{width:100%;height:10px;margin-top:8px}
         <button class="btn secondary" id="btn_pull_all" style="padding:6px 10px;min-height:34px">存到本机</button>
       </div>
       <div id="samlist"></div>
-      <div class="card" id="empty_tip" style="text-align:center;color:var(--muted)">暂无记录，在「取样」录入并保存后会出现在这里</div>
+      <div class="card" id="empty_tip" style="text-align:center;color:var(--muted)">暂无记录，在「野外取样」录入并保存后会出现在这里</div>
     </div>
     <div id="tab_trip" class="hidden">
     <div class="card">
@@ -263,7 +264,7 @@ progress{width:100%;height:10px;margin-top:8px}
       <div class="mapctl">
         <button id="mzin">＋</button><button id="mzout">－</button>
         <button id="mloc" title="我的位置">◎</button>
-        <button id="msamp" title="跳到全部取样点">🪨</button>
+        <button id="msamp" title="跳到全部野外取样点">🪨</button>
         <button id="mlic" title="跳到矿证范围">📜</button>
         <button id="mzone" title="跳到潜在验证区">🎯</button>
         <button id="mgeo" title="地质图层开关">⛏</button>
@@ -285,7 +286,7 @@ progress{width:100%;height:10px;margin-top:8px}
   <section id="pg-set" class="hidden">
     <div class="card">
       <h3>🗂 矿证 / 地质资料</h3>
-      <p style="font-size:13px;color:var(--muted);line-height:1.7">取样时<b>不需要选矿区</b>：记录会按 GPS 坐标自动标注所属矿区（依据 <code>areas.json</code> 的 bbox），落在范围外记为「未归属」。<br>
+      <p style="font-size:13px;color:var(--muted);line-height:1.7">野外取样时<b>不需要选矿区</b>：记录会按 GPS 坐标自动标注所属矿区（依据 <code>areas.json</code> 的 bbox），落在范围外记为「未归属」。<br>
       矿证与地质资料在单独页面查看：</p>
       <a class="btn secondary block" href="licences.html" style="display:block;text-decoration:none;text-align:center">📚 打开矿证与地质资料页</a>
     </div>
@@ -300,7 +301,7 @@ progress{width:100%;height:10px;margin-top:8px}
     </div>
     <div class="card">
       <h3>📤 导出</h3>
-      <button class="btn primary block" id="btn_backup">📤 导出完整备份（样品+照片+轨迹，存 Drive / 发邮件 / WhatsApp）</button>
+      <button class="btn primary block" id="btn_backup">📤 导出完整备份（野外取样+照片+轨迹，存 Drive / 发邮件 / WhatsApp）</button>
       <button class="btn secondary block" id="btn_gpx">GPX 轨迹文件（QGIS 用）</button>
       <button class="btn secondary block" id="btn_kml">KML 轨迹文件（Google Earth 用）</button>
       <button class="btn secondary block" id="btn_csv">CSV 表格（Excel 用）</button>
@@ -342,17 +343,17 @@ progress{width:100%;height:10px;margin-top:8px}
     <div class="card">
       <h3>🔄 版本更新</h3>
       <button class="btn secondary block" id="btn_update">检查并强制更新到最新版</button>
-      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：20261109-1144</p>
+      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：20261111-1000</p>
     </div>
     <div class="card">
-      <p style="font-size:11px;color:var(--muted);text-align:center">20261109-1144</p>
+      <p style="font-size:11px;color:var(--muted);text-align:center">20261111-1000</p>
       <h3>🗑 危险操作</h3>
       <button class="btn danger block" id="btn_wipe">🔒 清空本机全部数据（需密码）</button>
     </div>
   </section>
 </main>
 <nav>
-        <button data-pg="pg-form" class="on">✏️ 取样</button>
+        <button data-pg="pg-form" class="on">✏️ 野外取样</button>
   <button data-pg="pg-map">🗺 地图</button>
   <button data-pg="pg-set">⚙️ 设置</button>
 </nav>
@@ -382,7 +383,7 @@ progress{width:100%;height:10px;margin-top:8px}
 </div></div>
 <div class="modal hidden" id="wipemodal"><div class="box">
   <h3 style="color:var(--danger)">🗑 清空本机全部数据</h3>
-  <p style="font-size:14px;color:var(--muted)">将删除<b>全部样品记录、照片、行程轨迹、离线地图</b>，不可恢复！请输入授权密码：</p>
+  <p style="font-size:14px;color:var(--muted)">将删除<b>全部野外取样、照片、行程轨迹、离线地图</b>，不可恢复！请输入授权密码：</p>
   <input id="wipepwd" type="password" inputmode="numeric" placeholder="输入授权密码">
   <div class="row" style="margin-top:10px">
     <button class="btn secondary" id="wipecancel">取消</button>
@@ -508,7 +509,7 @@ const AREAS_FALLBACK={version:1,areas:[
 const AREA={doc:AREAS_FALLBACK,list:AREAS_FALLBACK.areas};
 const areaById=id=>AREA.list.find(a=>a.id===id)||null;
 const areaName=id=>{const a=areaById(id);return a?a.name:""};
-function areaAt(lat,lon){ // 按 GPS 坐标反推所在矿区：取样时自动标注，不需要用户先选
+function areaAt(lat,lon){ // 按 GPS 坐标反推所在矿区：野外取样时自动标注，不需要用户先选
   if(lat==null||lon==null)return null;
   for(const a of AREA.list){
     const b=a.bbox;if(!b||b.length<4)continue;
@@ -652,7 +653,7 @@ addEventListener("online",()=>{netStatus();toast("网络已恢复，可同步");
 addEventListener("offline",netStatus);netStatus();
 
 /* ============ 页面切换 ============ */
-// 记录页三个视图：取样（录入）/ 取样历史（已保存列表）/ 行程（轨迹）
+// 记录页三个视图：野外取样（录入）/ 野外取样历史（已保存列表）/ 行程（轨迹）
 function setFormTab(t,save){
   if(t!=="cur")saveDraft();
   document.querySelectorAll("#formtabs button").forEach(b=>b.classList.toggle("on",b.dataset.tab===t));
@@ -917,7 +918,7 @@ document.addEventListener("visibilitychange",()=>{if(document.visibilityState===
 window.addEventListener("pagehide",()=>{saveDraft()});
 
 /* ============ 保存记录 ============ */
-/* 记录类型切换：取样 vs 标记点 */
+/* 记录类型切换：野外取样 vs 标记点 */
 function applyKind(){
   const isMark=$("f_kind").value==="marker";
   $("w_type").classList.toggle("hidden",isMark);
@@ -963,7 +964,7 @@ async function resetForm(){
 $("btn_save").onclick=async()=>{
   if($("btn_save").disabled)return;
   const isMark=$("f_kind").value==="marker";
-  // === 必填校验：坐标（取样）/ 记录人；照片对标记点放宽 ===
+  // === 必填校验：坐标（野外取样）/ 记录人；照片对标记点放宽 ===
   const lat=parseFloat($("f_lat").value),lon=parseFloat($("f_lon").value);
   if(!isFinite(lat)||!isFinite(lon)){toast("缺少坐标：请先📍获取定位或🗺地图选点");return}
   if(Math.abs(lat)>90||Math.abs(lon)>180){toast("坐标超出范围，请重新定位");return}
@@ -1125,7 +1126,7 @@ function drawList(local,cloud,extra={}){
       (s.assays||[]).map(a=>a.element+" "+a.value).join(" ")].filter(Boolean).join(" ").toLowerCase();
     return hay.includes(q);
   });
-  $("list_stat").textContent=`共 ${rows.length} 条 · 样品 ${nS} · 标记 ${nM} · 行程 ${nT}`
+  $("list_stat").textContent=`共 ${rows.length} 条 · 野外取样 ${nS} · 标记点 ${nM} · 行程 ${nT}`
     +(cloudOnly?` · 云端 ${cloudOnly}`:"")+` · 待同步 ${pend} 条`
     +(cloudCache.err?` · 云端暂不可用`:"")+(q?` · 匹配 ${rows2.length} 条`:"");
   $("chips_rectype").querySelectorAll("button").forEach(b=>b.classList.toggle("on",b.dataset.t===listType));
@@ -1265,7 +1266,7 @@ function viewDetail(s){
       const u=p.blob?URL.createObjectURL(p.blob):(p.url||"");if(p.blob&&u)urls.push(u);
       return u?`<img src="${u}" style="max-width:100px;border-radius:8px;cursor:pointer">`:"";
     }).join("")||"<span style='color:var(--muted)'>无照片</span>"}</div>
-    ${row("取样时间",xesc(s.sample_time))}
+    ${row("野外取样时间",xesc(s.sample_time))}
     ${row("类型",xesc(s.sample_type))}
     ${row("坐标",coord)}
     ${row("UTM",xesc(s.utm))}
@@ -1394,7 +1395,7 @@ $("btn_backup").onclick=async()=>{
   const payload={app:"ecobox-sampling",exported_at:new Date().toISOString(),areas:AREA.doc.areas,samples:data,trips};
   const f=new File([JSON.stringify(payload)],`ecobox_backup_${new Date().toISOString().slice(0,10)}.json`,{type:"application/json"});
   if(navigator.canShare&&navigator.canShare({files:[f]})){
-    try{await navigator.share({files:[f],title:"ECOBOX 取样备份"});return}catch(e){if(e.name==="AbortError")return}
+    try{await navigator.share({files:[f],title:"ECOBOX 野外取样备份"});return}catch(e){if(e.name==="AbortError")return}
   }
   // 不支持分享的浏览器（如 iOS Safari 旧版）：退化为下载
   const a=document.createElement("a");a.href=URL.createObjectURL(f);a.download=f.name;a.click();
@@ -1422,7 +1423,7 @@ async function renderSetStats(){
     const failed=all.filter(s=>s.status==="failed").length;
     const km=trips.reduce((n,t)=>n+trkDist(t.pts||[]),0)/1000;
     el.innerHTML=`
-      <div><b>${all.length}</b>样品 / 标记</div>
+      <div><b>${all.length}</b>野外取样 / 标记点</div>
       <div><b>${pend}</b>待同步${failed?`（失败 ${failed}）`:""}</div>
       <div><b>${photos}</b>张照片</div>
       <div><b>${trips.length}</b>条行程</div>
@@ -1771,7 +1772,7 @@ function initMap(){
       ctx.closePath();ctx.save();ctx.fillStyle="rgba(250,204,21,.3)";ctx.fill();ctx.restore();ctx.stroke();
       ctx.fillText(Z.no,lcx/Z.ring.length+4,lcy/Z.ring.length);
     }
-    // 取样点（内存缓存，同步画）；标记点画蓝色三角
+    // 野外取样点（内存缓存，同步画）；标记点画蓝色三角
     for(const s of sampleCache){if(s.latitude==null)continue;const[px,py]=map.toPx(s.latitude,s.longitude);
       if(px<-20||py<-20||px>w+20||py>h+20)continue;
       if(s.kind==="marker"){
@@ -1901,16 +1902,16 @@ function initMap(){
     map.z=z;map.cx=lon2x(lo,12);map.cy=lat2y(la,12);map.draw();
     toast(`已定位到 ${LICENSES.length} 个矿证范围`);
   };
-  $("msamp").onclick=()=>{ // 视野移到全部取样点
+  $("msamp").onclick=()=>{ // 视野移到全部野外取样点
     const pts=sampleCache.filter(s=>s.latitude!=null&&s.longitude!=null);
-    if(!pts.length){toast("暂无取样点");return}
+    if(!pts.length){toast("暂无野外取样点");return}
     let a1=90,o1=180,a2=-90,o2=-180;
     for(const s of pts){a1=Math.min(a1,s.latitude);o1=Math.min(o1,s.longitude);a2=Math.max(a2,s.latitude);o2=Math.max(o2,s.longitude)}
     const la=(a1+a2)/2,lo=(o1+o2)/2;
     const span=Math.max(a2-a1,o2-o1);
     let z=15;if(span>2)z=11;else if(span>1)z=12;else if(span>.2)z=13;else if(span>.05)z=14;
     map.z=z;map.cx=lon2x(lo,12);map.cy=lat2y(la,12);map.draw();
-    toast(`已定位到 ${pts.length} 个取样点`);
+    toast(`已定位到 ${pts.length} 个野外取样点`);
   };
   $("mzone").onclick=()=>{ // 视野移到全部潜在验证区
     if(!ZONES.length){toast("未嵌入靶区数据");return}
@@ -2347,7 +2348,7 @@ if(!isStandalone){
 }
 
 /* ============ 版本检查：发布新版本后自动弹「更新」按钮 ============ */
-const APP_VER="20261109-1144";
+const APP_VER="20261111-1000";
 let updateDismissed=false;
 function showUpdateTip(){if(updateDismissed)return;const t=$("update_tip");if(t)t.style.display="flex";}
 async function checkUpdate(){
