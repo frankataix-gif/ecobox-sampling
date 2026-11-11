@@ -2,7 +2,7 @@
 // 唯一目标：**页面本体一定要留在本机**，断网冷启动（关掉再打开）必须能进。
 // 做法：安装时抓一份页面并校验内容后写进 sampling-shell（activate 不清它），
 // 导航请求缓存优先（不等网络），新缓存没拿到页面之前绝不删除旧缓存。
-const CACHE = "sampling-v57";
+const CACHE = "sampling-v58";
 const SHELL_CACHE = "sampling-shell"; // 只放校验过的页面本体
 const BASE = new URL(self.registration.scope).pathname; // /ecobox-sampling/
 const BASE_ROOT = BASE.endsWith("/") ? BASE.slice(0, -1) : BASE;
@@ -110,11 +110,20 @@ async function readCachedShell() {
 }
 
 let refreshing = false, lastRefresh = 0;
+const verOf = (t) => ((t || "").match(/const APP_VER="([^"]+)"/) || [])[1] || "";
 async function refreshShell() {
   const t = await fetchShell();
   if (!t) return;
+  const old = await readCachedShell().catch(() => null);
+  const oldText = old ? await old.clone().text().catch(() => "") : "";
   await putShell(await caches.open(CACHE), t);
   await putShell(await caches.open(SHELL_CACHE), t);
+  // 第二道保险：SW 自己发现页面变新了就喊前台弹更新条（version.txt 探针失效时也能提醒）
+  const nv = verOf(t), ov = verOf(oldText);
+  if (nv && nv !== ov) {
+    const cs = await self.clients.matchAll({ includeUncontrolled: true });
+    cs.forEach((c) => c.postMessage({ type: "NEW_VER", ver: nv }));
+  }
 }
 
 const OFFLINE_HTML = `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8">

@@ -31,7 +31,7 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
 .prepitem .pt{flex:1;min-width:0}
 .prepitem .pt b{display:block;font-size:14px;line-height:1.5}
 .prepitem .pt span{display:block;font-size:12px;color:var(--muted);line-height:1.5;word-break:break-word}
-.prepitem button{border:none;border-radius:8px;background:var(--primary);color:#fff;padding:9px 13px;font-size:13px;min-height:36px;flex:0 0 auto}
+.prepitem button{border:none;border-radius:8px;background:var(--primary);color:#fff;padding:10px 14px;font-size:13px;min-height:40px;flex:0 0 auto}
 .prepitem button:disabled{opacity:.6}
 header{position:sticky;top:0;z-index:50;background:#111;color:#fff;padding:6px 12px;display:flex;align-items:center;gap:10px}
 .netdot{width:10px;height:10px;border-radius:50%;background:var(--ok)}
@@ -288,14 +288,28 @@ progress{width:100%;height:10px;margin-top:8px}
   <!-- ===== 设置页 ===== -->
   <section id="pg-set" class="hidden">
     <div class="card">
-      <h3>🗂 矿证 / 地质资料</h3>
-      <p style="font-size:13px;color:var(--muted);line-height:1.7">野外取样时<b>不需要选矿区</b>：记录会按 GPS 坐标自动标注所属矿区（依据 <code>areas.json</code> 的 bbox），落在范围外记为「未归属」。<br>
-      矿证与地质资料在单独页面查看：</p>
-      <a class="btn secondary block" href="licences.html" style="display:block;text-decoration:none;text-align:center">📚 打开矿证与地质资料页</a>
+      <h3>🚦 出发前检查</h3>
+      <div class="prep" id="prep_list"></div>
+      <p id="prep_sum" style="font-size:13px;margin:0 0 10px"></p>
+      <button class="btn primary block" id="btn_prep_all">一键准备（缓存页面 + 下载地图）</button>
+      <p class="hint" style="margin-top:6px">四项全绿再出门：飞行模式也能打开，地图也还在。换手机或清过浏览器数据后要重做一次。</p>
+    </div>
+    <div class="card" id="install_card">
+      <h3>📲 添加到手机桌面</h3>
+      <div style="display:flex;gap:12px;align-items:center;margin:4px 0 10px">
+        <img src="icon-192.png" alt="" style="width:52px;height:52px;border-radius:13px;box-shadow:0 2px 8px rgba(15,23,42,.18)">
+        <div style="flex:1;min-width:0">
+          <div id="inst_state" style="font-size:15px;font-weight:600"></div>
+          <div id="inst_sub" class="hint" style="margin:2px 0 0"></div>
+        </div>
+      </div>
+      <button class="btn primary block hidden" id="btn_install">📲 添加到桌面</button>
+      <ol id="inst_steps" style="font-size:13px;color:var(--muted);line-height:1.75;margin:0 0 0 18px;padding:0"></ol>
+      <p class="hint" style="margin-top:8px">从桌面图标打开：全屏、没有地址栏、断网也能用。</p>
     </div>
     <div class="card">
       <h3>☁️ 云端同步</h3>
-      <p id="cloud_state" style="font-size:13px;line-height:1.7"></p>
+      <p id="cloud_state" style="font-size:13px;line-height:1.7;margin:0 0 10px"></p>
       <button class="btn secondary block" id="btn_synctest">测试连接</button>
       <details id="adv_box" style="margin-top:10px">
         <summary style="font-size:12px;color:var(--muted);cursor:pointer">高级：手动填写服务器地址 / 令牌</summary>
@@ -305,68 +319,52 @@ progress{width:100%;height:10px;margin-top:8px}
       </details>
     </div>
     <div class="card">
-      <h3>📤 导出</h3>
-      <button class="btn primary block" id="btn_backup">📤 导出完整备份（野外取样+照片+轨迹，存 Drive / 发邮件 / WhatsApp）</button>
-      <button class="btn secondary block" id="btn_gpx">GPX 轨迹文件（QGIS 用）</button>
-      <button class="btn secondary block" id="btn_kml">KML 轨迹文件（Google Earth 用）</button>
-      <button class="btn secondary block" id="btn_csv">CSV 表格（Excel 用）</button>
-      <button class="btn secondary block" id="btn_trk_clear" style="display:none">清空轨迹点</button>
-      <p style="font-size:13px;color:var(--muted);margin-top:8px">点导出会弹手机分享面板，直接选 Drive 存云端、或选邮件/WhatsApp 发出去，无需先下载。</p>
-    </div>
-    <div class="card">
-      <h3>👤 记录人</h3>
-      <p style="font-size:15px;line-height:1.7"><b id="set_user">—</b><br><span class="hint">登录后即锁定为本机记录人，软件内不提供换人入口。</span></p>
-    </div>
-    <div class="card">
       <h3>📊 本机数据</h3>
+      <p style="font-size:14px;margin:0 0 10px">记录人：<b id="set_user">—</b> <span class="hint">（登录后锁定）</span></p>
       <div class="stat" id="set_stat"></div>
-      <button class="btn secondary block" id="btn_stat_refresh" style="margin-top:10px;font-size:14px;min-height:40px">刷新统计</button>
     </div>
     <div class="card">
-      <h3>♻️ 从云端恢复记录</h3>
-      <p style="font-size:12px;color:var(--muted);margin-bottom:8px;line-height:1.6">换手机、清了浏览器数据、或旧记录没显示出来时用。会把云端已有的记录补回本机；<b>本机已有记录不会被删除</b>，本机还没同步的修改优先保留。</p>
-      <button class="btn primary block" id="btn_pull">☁️ 从云端恢复记录</button>
-      <button class="btn secondary block" id="btn_import" style="margin-top:8px">📥 从备份文件恢复（选 JSON）</button>
+      <h3>📤 备份与恢复</h3>
+      <button class="btn primary block" id="btn_backup">📤 导出完整备份（记录 + 照片 + 轨迹）</button>
+      <p class="hint" style="margin:6px 0 10px">导出会弹手机分享面板，可直接存 Drive，或发邮件 / WhatsApp。</p>
+      <button class="btn secondary block" id="btn_pull">☁️ 从云端恢复记录</button>
+      <button class="btn secondary block" id="btn_import" style="margin-top:8px">📥 从备份文件恢复（JSON）</button>
       <input type="file" id="file_import" accept=".json,application/json" class="hidden">
-      <p id="pull_info" style="font-size:12px;color:var(--muted);margin-top:6px"></p>
+      <p id="pull_info" class="hint" style="margin-top:6px"></p>
+      <details style="margin-top:10px">
+        <summary style="font-size:12px;color:var(--muted);cursor:pointer">更多格式：GPX / KML / CSV</summary>
+        <button class="btn secondary block" id="btn_gpx" style="margin-top:8px">GPX 轨迹（QGIS 用）</button>
+        <button class="btn secondary block" id="btn_kml" style="margin-top:8px">KML 轨迹（Google Earth 用）</button>
+        <button class="btn secondary block" id="btn_csv" style="margin-top:8px">CSV 表格（Excel 用）</button>
+        <button class="btn secondary block" id="btn_trk_clear" style="margin-top:8px;display:none">清空轨迹点</button>
+      </details>
     </div>
     <div class="card">
-      <h3>ℹ️ 说明</h3>
-      <p style="font-size:13px;color:var(--muted);line-height:1.7">
-        · 定位依靠 GPS 卫星，<b>无网络也能用</b>；首次定位请站开阔地等 30 秒–2 分钟。<br>
-        · 记录与照片保存在本机浏览器，未同步前勿清除浏览器数据。<br>
-        · 出发前在「地图」页按 ⬇ 下载矿区离线地图。<br>
-        · 想更顺手：设置里「📲 添加到手机桌面」，从桌面图标全屏打开，断网也能进。
-      </p>
-    </div>
-    <div class="card">
-      <h3>🚦 出发前检查</h3>
-      <div class="prep" id="prep_list"></div>
-      <p id="prep_sum" style="font-size:13px;margin:0 0 10px"></p>
-      <button class="btn primary block" id="btn_prep_all">一键准备（缓存页面 + 下载地图）</button>
-      <p style="font-size:12px;color:var(--muted);margin-top:6px;line-height:1.6">四项全绿再出门：关掉软件、飞行模式、完全没信号都能打开，地图也还在。换手机或清过浏览器数据后要重新准备。</p>
-    </div>
-    <div class="card" id="install_card">
-      <h3>📲 添加到手机桌面</h3>
-      <div style="display:flex;gap:12px;align-items:center;margin:4px 0 10px">
-        <img src="icon-192.png" alt="" style="width:56px;height:56px;border-radius:14px;box-shadow:0 2px 8px rgba(15,23,42,.18)">
-        <div style="flex:1;min-width:0">
-          <div id="inst_state" style="font-size:15px;font-weight:600"></div>
-          <div id="inst_sub" class="hint" style="margin:2px 0 0"></div>
-        </div>
-      </div>
-      <button class="btn primary block hidden" id="btn_install">📲 添加到桌面</button>
-      <ol id="inst_steps" style="font-size:13px;color:var(--muted);line-height:1.75;margin:0 0 0 18px;padding:0"></ol>
-      <p class="hint" style="margin-top:8px">添加后从桌面图标打开：全屏、没有地址栏，断网也能用，跟装 App 一样。</p>
+      <h3>🗂 矿证 / 地质资料</h3>
+      <p class="hint" style="margin:0 0 10px">记录不用选矿证：按 GPS 坐标自动归属矿区，范围外记「未归属」。</p>
+      <a class="btn secondary block" href="licences.html" style="display:block;text-decoration:none;text-align:center">📚 打开矿证与地质资料页</a>
     </div>
     <div class="card">
       <h3>🔄 版本更新</h3>
+      <p style="font-size:13px;margin:0 0 10px">当前版本 <b id="set_ver">20261112-1002</b></p>
+      <button class="btn primary block hidden" id="btn_now" style="margin-bottom:8px">⬆️ 立即更新到 <span id="now_ver"></span></button>
       <button class="btn secondary block" id="btn_update">🔄 检查更新</button>
-      <button class="btn secondary block" id="btn_force_update" style="margin-top:8px;font-size:14px;min-height:40px">强制重新下载最新版（清缓存重载）</button>
-      <p style="font-size:12px;color:var(--muted);margin-top:8px;line-height:1.6">当前版本：<span id="set_ver">20261112-1001</span>。有新版本时屏幕底部会自动弹出「立即更新」，点一下就换到最新版。</p>
+      <details style="margin-top:10px">
+        <summary style="font-size:12px;color:var(--muted);cursor:pointer">更新卡住了？强制重新下载</summary>
+        <button class="btn secondary block" id="btn_force_update" style="margin-top:8px;font-size:14px;min-height:40px">清缓存并重新下载最新版</button>
+      </details>
     </div>
     <div class="card">
-      <p style="font-size:11px;color:var(--muted);text-align:center">20261112-1001</p>
+      <details id="help_box">
+        <summary style="cursor:pointer;font-size:15px;font-weight:600">ℹ️ 使用说明</summary>
+        <p class="hint" style="margin-top:10px;line-height:1.75">
+          · 定位靠 GPS 卫星，<b>没有网络也能用</b>；首次定位站到开阔地等 30 秒 ~ 1 分钟。<br>
+          · 记录和照片存在本机浏览器里，同步之前别清除浏览器数据。<br>
+          · 想更省电更顺手：先「添加到手机桌面」，再从桌面图标打开。
+        </p>
+      </details>
+    </div>
+    <div class="card">
       <h3>🗑 危险操作</h3>
       <button class="btn danger block" id="btn_wipe">🔒 清空本机全部数据（需密码）</button>
     </div>
@@ -1463,7 +1461,6 @@ async function renderSetStats(){
       <div><b>${tiles}</b>张离线地图瓦片</div>`;
   }catch(e){el.innerHTML='<div style="grid-column:1/-1;color:var(--danger)">统计失败：'+xesc(e.message||e)+'</div>'}
 }
-$("btn_stat_refresh").onclick=renderSetStats;
 /* 从云端（D1）拉回记录：补齐本机没有的，不删除本机记录 */
 async function pullSamples(){
   const btns=[$("btn_pull"),$("btn_pull2"),$("btn_pull_all")].filter(Boolean);
@@ -2433,12 +2430,17 @@ if(pwaBtn)pwaBtn.onclick=doInstall;
 renderInstall();
 
 /* ============ 版本检查：发布新版本后自动弹「更新」条 ============ */
-const APP_VER="20261112-1001";
+const APP_VER="20261112-1002";
 const UPD_SNOOZE=30*60*1000; // 点「稍后」只压半小时；版本号一变立刻再提醒
 let updVer="",updSnoozedVer="",updSnoozedAt=0;
 function hideUpdateTip(){const t=$("update_tip");if(!t)return;t.style.display="none";t.classList.remove("flash")}
+function markUpdateBtn(ver){ // 设置页也给一个确定的入口，别只靠底部条
+  const b=$("btn_now");if(!b)return;
+  if(ver){$("now_ver").textContent=ver;b.classList.remove("hidden")}else b.classList.add("hidden");
+}
 function showUpdateTip(ver){
   if(ver)updVer=ver;
+  markUpdateBtn(updVer);
   if(updVer&&updVer===updSnoozedVer&&Date.now()-updSnoozedAt<UPD_SNOOZE)return;
   const t=$("update_tip");if(!t)return;
   $("update_ver").textContent="🔄 有新版本"+(updVer?" "+updVer:"");
@@ -2456,26 +2458,20 @@ async function checkUpdate(){
   }catch(e){return "err"}
   if(!v)return "err";
   if(v>APP_VER){showUpdateTip(v);return "new"}
-  updVer="";hideUpdateTip();return "latest";
+  updVer="";markUpdateBtn("");hideUpdateTip();return "latest";
 }
+// 一律走「清缓存 + 注销 SW + 带参数重载」：结果确定，不会出现点了没反应
 async function applyUpdate(){
-  hideUpdateTip();
-  const b=$("update_now");
-  if(b){b.disabled=true;b.textContent="更新中…";}
-  try{
-    const reg=await navigator.serviceWorker.getRegistration();
-    if(reg&&reg.waiting){
-      reg.waiting.postMessage("SKIP_WAITING");
-      await new Promise(res=>{
-        const done=setTimeout(res,2500);
-        navigator.serviceWorker.addEventListener("controllerchange",()=>{clearTimeout(done);res()},{once:true});
-      });
-      location.reload();return;
-    }
-  }catch(e){}
+  const b=$("update_now"),b2=$("btn_now");
+  if(b){b.disabled=true;b.textContent="更新中…"}
+  if(b2)b2.disabled=true;
+  const restore=()=>{if(b){b.disabled=false;b.textContent="立即更新"}if(b2)b2.disabled=false};
+  if(!navigator.onLine){toast("现在没网：连上网络再更新",6000);restore();return}
   await forceAppUpdate();
+  setTimeout(restore,6000); // 没能重载（被拦/超时）时把按钮还回去，别让用户卡在「更新中」
 }
 $("update_now").onclick=applyUpdate;
+$("btn_now").onclick=applyUpdate;
 $("update_later").onclick=()=>{updSnoozedVer=updVer;updSnoozedAt=Date.now();hideUpdateTip()};
 $("btn_update").onclick=async e=>{
   const b=e.currentTarget;b.disabled=true;b.textContent="检查中…";
@@ -2488,6 +2484,10 @@ setInterval(checkUpdate,5*60*1000);
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")checkUpdate()});
 addEventListener("focus",checkUpdate);
 addEventListener("online",checkUpdate);
+// SW 发现页面变新时也会喊一声（version.txt 被 CDN 拖住时靠它兜底）
+if("serviceWorker" in navigator)navigator.serviceWorker.addEventListener("message",e=>{
+  const d=e.data||{};if(d.type==="NEW_VER"&&d.ver&&d.ver>APP_VER)showUpdateTip(d.ver);
+});
 
 /* ============ Service Worker：页面本体缓存到本机，断网必开 ============ */
 const SW_OK="serviceWorker" in navigator&&(location.protocol==="https:"||["localhost","127.0.0.1"].includes(location.hostname));
