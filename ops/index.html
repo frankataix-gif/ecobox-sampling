@@ -116,15 +116,23 @@ td.n{text-align:right;font-variant-numeric:tabular-nums}
 .td-selfbar b{font-size:14px}
 .td-selfbar button{margin-left:auto;background:#166534;color:#fff;border:0;border-radius:999px;padding:4px 10px;font-size:12px;cursor:pointer}
 /* 督导：按人看谁没汇报 */
-.td-team{display:flex;flex-direction:column;gap:6px}
-.td-team-row{display:flex;align-items:center;gap:8px;width:100%;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:13px;cursor:pointer}
-.td-team-row.on{border-color:var(--ink)}
-.td-team-row i{flex:none;width:22px;height:22px;border-radius:50%;background:var(--chip);color:var(--ink);font-style:normal;font-size:11.5px;font-weight:700;display:inline-flex;align-items:center;justify-content:center}
-.td-team-row b{font-weight:600}
-.td-team-row span{margin-left:auto;font-size:12px}
-.td-team-row span+span{margin-left:8px}
-.td-team-row .bad{color:var(--bad);font-weight:600}
-.td-team-row .ok{color:var(--good)}
+.td-board{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px 10px;margin:0 0 10px}
+.td-board-h{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:700;color:var(--mut);margin:0 0 6px}
+.td-board-h span{margin-left:auto;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+.td-board-list{display:grid;gap:2px}
+@media(min-width:820px){.td-board-list{grid-template-columns:1fr 1fr;column-gap:12px}}
+.td-brow{display:flex;align-items:center;gap:6px;width:100%;text-align:left;background:transparent;border:0;border-radius:8px;padding:6px;font:inherit;font-size:13px;color:inherit;cursor:pointer}
+.td-brow:hover{background:var(--chip)}
+.td-brow.on{background:var(--chip);box-shadow:inset 0 0 0 1px var(--ink)}
+.td-brow i{flex:none;width:20px;height:20px;border-radius:50%;background:var(--chip);color:var(--ink);font-style:normal;font-size:11px;font-weight:700;display:inline-flex;align-items:center;justify-content:center}
+.td-brow.me i{background:var(--ink);color:#fff}
+.td-brow>b{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.td-brow>b em{font-style:normal;font-size:11px;color:var(--mut);margin-left:3px}
+.td-num{margin-left:auto;font-size:12px;color:var(--mut);white-space:nowrap;font-variant-numeric:tabular-nums}
+.td-num+.td-num{margin-left:8px}
+.td-num b{font-weight:700;color:var(--ink)}
+.td-num.bad b{color:var(--bad)}
+.td-num.late b{color:#b45309}
 .td-who-bar{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--mut);margin:0 0 8px}
 .td-who-bar button{margin-left:auto;font-size:12px;padding:3px 10px}
 /* 汇报弹层：三个一键按钮 */
@@ -536,7 +544,7 @@ const EN = {
   "已上报，今天这项算报了": "Reported for today",
   "我给自己排了": "Self-assigned:", "连续汇报": "Report streak", "今天报一项，开始连击": "Report once to start a streak",
   "看我的": "Mine", "看全部": "All", "正在看": "Viewing", "的任务": "'s tasks", "我的今天": "My day",
-  "督导 · 谁今天还没汇报": "Follow-up · who hasn't reported today", "项没汇报": "unreported", "今天都报了": "all reported",
+  "谁手上还有多少事": "Who's carrying what", "未完成": "Open", "未跟踪": "Not reported", "项没汇报": "unreported",
   "同事今天还没汇报": "Teammates not reported yet", "位同事今天还没汇报": "teammates haven't reported today",
   "项逾期": "overdue", "项": "items", "自定": "Self-set", "别人派的": "Assigned to you",
   "去汇报": "Go report", "逾期 + 今天还没汇报": "Overdue + unreported today",
@@ -1370,9 +1378,8 @@ function todoHtml() {
     : "";
   const who = f.startsWith("p:") ? `<div class="td-who-bar">${esc(tr("正在看"))} ${esc(nameOf(f.slice(2)))} ${esc(tr("的任务"))}
       <button data-td-filter="all">${esc(tr("看全部"))}</button></div>` : "";
-  return banner + `<div class="td-sec">👤 ${esc(tr("我的今天"))}</div><div class="td-kpi">${kpi}</div>${selfbar}
+  return statsBoard(f) + banner + `<div class="td-sec">👤 ${esc(tr("我的今天"))}</div><div class="td-kpi">${kpi}</div>${selfbar}
     <div class="td-filters">${TODO_FILTERS.map(chip).join("")}</div>${who}` + body +
-    teamHtml() +
     `<button class="fin-fab" id="td_new">＋ ${esc(tr("新待办"))}</button>`;
 }
 
@@ -1382,32 +1389,35 @@ const nameOf = (login) => {
   return (p && p.name) || (t && t.owner_name) || login;
 };
 
-/* 老板视角：按人看谁没汇报、谁在拖 */
-function teamHtml() {
-  if (!canAssign() || S.todoFilter === "done") return "";
-  const people = [];
-  const seen = {};
+/* 置顶统计：谁手上还有多少事（未完成 / 未跟踪 / 逾期）。所有人都看得见，自己排第一个 */
+function statsBoard(f) {
+  const me = S.user.login;
+  const agg = {};
   for (const t of TODOS) {
-    if (t.status === "done" || !t.owner || t.owner === S.user.login) continue;
-    if (seen[t.owner]) continue;
-    seen[t.owner] = 1;
-    const os = TODOS.filter((x) => x.status !== "done" && x.owner === t.owner);
-    people.push({
-      login: t.owner, name: t.owner_name || nameOf(t.owner),
-      open: os.length,
-      need: os.filter((x) => !reportedToday(x)).length,
-      late: os.filter(overdue).length,
-    });
+    if (t.status === "done" || !t.owner) continue;
+    const p = agg[t.owner] = agg[t.owner] || { login: t.owner, name: t.owner_name || nameOf(t.owner), open: 0, need: 0, late: 0 };
+    p.open++;
+    if (!reportedToday(t)) p.need++;
+    if (overdue(t)) p.late++;
   }
-  if (!people.length) return "";
-  people.sort((a, b) => b.need - a.need || b.late - a.late);
-  const rows = people.map((p) => `<button class="td-team-row${S.todoFilter === "p:" + p.login ? " on" : ""}" data-td-filter="p:${esc(p.login)}">
-      <i>${esc(p.name.trim().slice(0, 1))}</i>
-      <b>${esc(p.name)}</b>
-      <span class="${p.need ? "bad" : "ok"}">${p.need ? `${p.need} ${esc(tr("项没汇报"))}` : esc(tr("今天都报了"))}</span>
-      <span class="${p.late ? "bad" : "mut"}">${p.late ? `${p.late} ${esc(tr("项逾期"))}` : ""}</span>
-    </button>`).join("");
-  return `<div class="td-sec">👀 ${esc(tr("督导 · 谁今天还没汇报"))}</div><div class="td-team">${rows}</div>`;
+  const rows = Object.values(agg);
+  if (!agg[me]) rows.push({ login: me, name: S.user.name || me, open: 0, need: 0, late: 0 });
+  rows.sort((a, b) => (a.login === me ? -1 : b.login === me ? 1 : b.need - a.need || b.open - a.open));
+  const tot = rows.reduce((s, r) => ({ open: s.open + r.open, need: s.need + r.need }), { open: 0, need: 0 });
+  const rowsHtml = rows.map((r) => {
+    const k = r.login === me ? "mine" : "p:" + r.login;
+    return `<button class="td-brow${r.login === me ? " me" : ""}${f === k ? " on" : ""}" data-td-filter="${esc(k)}">
+        <i>${esc(String(r.name).trim().slice(0, 1))}</i>
+        <b>${esc(r.name)}${r.login === me ? `<em>${esc(tr("我"))}</em>` : ""}</b>
+        <span class="td-num">${esc(tr("未完成"))} <b>${r.open}</b></span>
+        <span class="td-num${r.need ? " bad" : ""}">${esc(tr("未跟踪"))} <b>${r.need}</b></span>
+        ${r.late ? `<span class="td-num late">${esc(tr("逾期"))} <b>${r.late}</b></span>` : ""}
+      </button>`;
+  }).join("");
+  return `<div class="td-board">
+      <div class="td-board-h">👥 ${esc(tr("谁手上还有多少事"))}
+        <span>${esc(tr("未完成"))} ${tot.open} · ${esc(tr("未跟踪"))} ${tot.need}</span></div>
+      <div class="td-board-list">${rowsHtml}</div></div>`;
 }
 
 function todoSheet(t) {

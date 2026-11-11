@@ -52,7 +52,7 @@
 - **汇报只认归属人**（`owner`），`admin`/`manager` 也不能替员工报（否则「日日汇报」就假了）；公司事项没 `owner` 时谁都能跟一句，但只记 `kind=cmt`，**不动归属、不算某人汇报**
 - 改派：`PATCH {owner}` 换人时 `last_report_at/last_report_by/last_flag` 清零、`assign_at=now`，时间线记「改派给 Y，汇报重新开始」——别拿上一个人的记录充数
 - 前端：卡片显示汇报状态（`今天已汇报` / `N 天没汇报`，`reportedToday()` / `reportAge()`）；执行人看到「📝 汇报」按钮，弹层三个一键按钮（推进了/卡住了/今天没动），点一下就算报过，文字选填
-- 页面结构 `todoHtml()`：KPI 四个数（我负责 / 今天未汇报 / 已逾期 / 7 天内到期，都可点筛选）→ 主动性条（`.td-selfbar`：自派几项 + `reportStreak()` 连续汇报天数）→ `TODO_FILTERS` 计数筛选 → 分组（📝今天还没汇报 / ★重要 / ⚠已逾期 / 今天到期 / 接下来 / 无截止 / ✓已完成）→ 督导块（`teamHtml()`，admin/manager 按人看谁没汇报，点人 = `p:<login>` 筛选）
+- 页面结构 `todoHtml()`：**置顶统计 `statsBoard()`**（`.td-board`，所有人可见，自己排第一：未完成 / **未跟踪 = 今天还没汇报** / 逾期，行可点 = 筛选那个人 `p:<login>`）→ KPI 四个数（我负责 / 今天未汇报 / 已逾期 / 7 天内到期，都可点筛选）→ 主动性条（`.td-selfbar`：自派几项 + `reportStreak()` 连续汇报天数）→ `TODO_FILTERS` 计数筛选 → 分组（📝今天还没汇报 / ★重要 / ⚠已逾期 / 今天到期 / 接下来 / 无截止 / ✓已完成）
 - 派活权限：**只有 `admin` / `manager` 能派给同事**（`canAssign()`；服务端 `POST` 拦 `scope=person`、`PATCH` 拦换 `owner`，403），弹层里员工只看到「我自己」；员工编辑别人派的活时不提交 `scope`，避免把归属改回自己
 - 逾期/未汇报提醒：待办页顶部红条（`.td-alert`）、首页待办卡片红点（`lateForMe + needReport`）、**每天首次打开工作台弹一次**（`maybeLateAlert()`，先列我的「今天还没汇报」再列「已逾期」，管理层最后一块「同事今天还没汇报」按人计数，localStorage `tdal_<login>_<date>` 去重）；`showApp()` 里预载 `loadTodos()` 才有这些数
 - 权限：`owner` 和 `creator` 能改状态/标题，`admin`/`manager` 全能改；**删除只给 `creator` 和 `admin`**（执行人不能删别人派的活）
