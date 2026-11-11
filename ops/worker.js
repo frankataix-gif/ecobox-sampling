@@ -169,7 +169,7 @@ async function trPair(env, text) {
 /* ---------- 模块目录：目录页、导航、权限勾选都从这里来 ---------- */
 const MODULES = [
   /* 日常协同 */
-  { k: "todo", g: "日常协同", t: "待办", d: "派活 · 期限 · 完成情况", d_en: "Assign · due · status", i: "✅", tab: "todo" },
+  { k: "todo", g: "日常协同", t: "待办", d: "派活 · 归谁 · 每天汇报", d_en: "Assign · owner · daily report", i: "✅", tab: "todo" },
   { k: "punch", g: "日常协同", t: "打卡", d: "每日出勤 · 班组 · 请假", d_en: "Daily attendance · crew · leave", i: "⏱️", soon: true },
   /* 业务 */
   { k: "log", g: "业务现场", t: "生产", d: "班次产量 · 油耗 · 停机", d_en: "Shift output · fuel · downtime", i: "🏭", tab: "log" },
@@ -554,11 +554,28 @@ async function todoSchema(env) {
        kind TEXT NOT NULL DEFAULT 'cmt', body TEXT NOT NULL DEFAULT '', created_at TEXT NOT NULL)`
   ).run();
   for (const sql of [
+    "ALTER TABLE todo_notes ADD COLUMN flag TEXT NOT NULL DEFAULT ''",
+  ]) { try { await env.DB.prepare(sql).run(); } catch {} }
+  for (const sql of [
     "ALTER TABLE todos ADD COLUMN imp INTEGER NOT NULL DEFAULT 0",
     "ALTER TABLE todos ADD COLUMN done_at TEXT NOT NULL DEFAULT ''",
     "ALTER TABLE todos ADD COLUMN started_at TEXT NOT NULL DEFAULT ''",
     "ALTER TABLE todos ADD COLUMN deleted INTEGER NOT NULL DEFAULT 0",
+    "ALTER TABLE todos ADD COLUMN last_report_at TEXT NOT NULL DEFAULT ''",
+    "ALTER TABLE todos ADD COLUMN last_report_by TEXT NOT NULL DEFAULT ''",
+    "ALTER TABLE todos ADD COLUMN last_flag TEXT NOT NULL DEFAULT ''",
+    "ALTER TABLE todos ADD COLUMN assign_at TEXT NOT NULL DEFAULT ''",
+    "ALTER TABLE todos ADD COLUMN self_set INTEGER NOT NULL DEFAULT 0",
   ]) { try { await env.DB.prepare(sql).run(); } catch {} }
+  /* 指派即开工：老数据里停在「待开始」的并进「进行中」，起点取创建时间 */
+  try {
+    await env.DB.prepare(
+      `UPDATE todos SET status='doing',
+         started_at=CASE WHEN started_at='' THEN created_at ELSE started_at END,
+         assign_at=CASE WHEN assign_at='' THEN created_at ELSE assign_at END
+       WHERE status='todo'`
+    ).run();
+  } catch {}
   try { await env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_todo_notes ON todo_notes(todo_id)").run(); } catch {}
   todoOk = true;
 }
@@ -589,6 +606,8 @@ async function todoApi(req, env, me, seg, body) {
     if (!title) return err("请填标题");
     if (title.length > 200) return err("标题最多 200 字");
     const scope = TODO_SCOPES.includes(b.scope) ? b.scope : "self";
+    /* 派活是管理层的事，员工只能给自己排；前端已经收口，这里兜住直接打接口的 */
+    if (scope === "person" && !isAdmin && me.role !== "manager") return err("派活只给管理员或负责人", 403);
     const due = String(b.due || "").trim();
     if (!dayOk(due)) return err("截止日期格式不对");
     let owner = String(b.owner || "").trim();
@@ -607,14 +626,19 @@ async function todoApi(req, env, me, seg, body) {
       }
     }
     const now = nowISO();
-    const row = { id: newId("t"), title, note: String(b.note || "").trim().slice(0, 2000), scope, owner, ownerName,
-      creator: meId, creatorName: me.name, due, imp: b.imp ? 1 : 0, now };
+    const tid = newId("t");
+    const selfSet = scope === "self" ? 1 : 0;
     await env.DB.prepare(
-      `INSERT INTO todos(id,title,note,scope,owner,owner_name,creator,creator_name,due,status,imp,created_at,updated_at)
-       VALUES(?,?,?,?,?,?,?,?,?, 'todo', ?,?,?)`
-    ).bind(row.id, title, row.note, scope, owner, ownerName, meId, me.name, due, row.imp, now, now).run();
-    await audit(env, me, "todo.create", row.id, title);
-    return json({ id: row.id }, 201);
+      `INSERT INTO todos(id,title,note,scope,owner,owner_name,creator,creator_name,due,status,imp,created_at,updated_at,started_at,assign_at,self_set)
+       VALUES(?,?,?,?,?,?,?,?,?, 'doing', ?,?,?,?,?,?)`
+    ).bind(tid, title, String(b.note || "").trim().slice(0, 2000), scope, owner, ownerName, meId, me.name, due,
+      b.imp ? 1 : 0, now, now, now, now, selfSet).run();
+    /* 归属从创建那一刻就定下来：谁派的、派给谁，时间线上写清楚 */
+    const line = selfSet ? "自己给自己排的任务" : owner ? `指派给 ${ownerName || owner}` : "公司事项，大家一起跟";
+    await env.DB.prepare("INSERT INTO todo_notes(id,todo_id,uid,name,kind,body,created_at) VALUES(?,?,?,?,?,?,?)")
+      .bind(newId("n"), tid, meId, me.name, "assign", line, now).run();
+    await audit(env, me, "todo.create", tid, title);
+    return json({ id: tid, status: "doing", owner }, 201);
   }
 
   const row = id ? await env.DB.prepare("SELECT * FROM todos WHERE id=?").bind(id).first() : null;
@@ -638,42 +662,54 @@ async function todoApi(req, env, me, seg, body) {
       owner = u.login; ownerName = u.name;
     }
     if (scope === "self") { owner = row.creator; ownerName = row.creator_name; }
-    let status = TODO_STATUS.includes(b.status) ? b.status : row.status;
-    /* 只有发起人、执行人、管理层能改状态 */
+    /* 改派 = 换归属，同样只给管理层 */
+    if (owner !== row.owner && !isAdmin && me.role !== "manager") return err("只有管理员或负责人能改派", 403);
+    /* 只有「进行中 / 已完成」两种状态；老客户端传 todo 一律当进行中 */
+    let status = b.status === undefined ? row.status : (b.status === "done" ? "done" : "doing");
+    if (!TODO_STATUS.includes(status)) status = row.status;
     if (b.status !== undefined && !mine && !isAdmin && me.role !== "manager") return err("只有相关人能改状态", 403);
     const doneAt = status === "done" ? (row.status === "done" ? row.done_at : nowISO()) : "";
+    const moved = owner !== row.owner;
+    const now = nowISO();
     await env.DB.prepare(
-      `UPDATE todos SET title=?,note=?,scope=?,owner=?,owner_name=?,due=?,status=?,imp=?,done_at=?,updated_at=? WHERE id=?`
+      `UPDATE todos SET title=?,note=?,scope=?,owner=?,owner_name=?,due=?,status=?,imp=?,done_at=?,updated_at=?,
+         last_report_at=?,last_report_by=?,last_flag=?,assign_at=? WHERE id=?`
     ).bind(title, b.note === undefined ? row.note : String(b.note || "").trim().slice(0, 2000), scope, owner, ownerName,
-           due, status, b.imp === undefined ? row.imp : (b.imp ? 1 : 0), doneAt, nowISO(), row.id).run();
-    if (status !== row.status) {
-      const line = status === "done" ? "标记完成" : (status === "doing" ? "开始执行" : "重新打开");
-      await env.DB.prepare("INSERT INTO todo_notes(id,todo_id,uid,name,kind,body,created_at) VALUES(?,?,?,?,'sys',?,?)")
-        .bind(newId("n"), row.id, meId, me.name, line, nowISO()).run();
-    }
+      due, status, b.imp === undefined ? row.imp : (b.imp ? 1 : 0), doneAt, now,
+      /* 换人接手就从零开始算汇报，别拿上一个人的记录充数 */
+      moved ? "" : row.last_report_at, moved ? "" : row.last_report_by, moved ? "" : row.last_flag,
+      moved ? now : (row.assign_at || row.created_at), row.id).run();
+    const say = (kind, body) => env.DB.prepare("INSERT INTO todo_notes(id,todo_id,uid,name,kind,body,created_at) VALUES(?,?,?,?,?,?,?)")
+      .bind(newId("n"), row.id, meId, me.name, kind, body, now);
+    if (moved) await say("assign", owner ? `改派给 ${ownerName || owner}，汇报重新开始` : "改回公司事项，大家一起跟").run();
+    else if (status !== row.status) await say("sys", status === "done" ? "标记完成" : "重新打开").run();
     await audit(env, me, "todo.update", row.id, title);
-    return json({ ok: true });
+    return json({ ok: true, status, owner });
   }
 
-  /* 汇报进展：首次汇报即开始执行；反馈内容必填，只有执行人（公司事项无执行人时谁都能）能报 */
-  if (id && sub === "start" && req.method === "POST") {
-    if (row.owner && row.owner !== meId) return err("这条派给别人了，只有执行人能汇报进展", 403);
+  /* 每日汇报：派给谁就由谁报；公司事项没指派时，谁都能跟一句（但不算某人汇报，也不改归属） */
+  if (id && (sub === "start" || sub === "report") && req.method === "POST") {
     if (row.status === "done") return err("已经完成了，不用再汇报", 400);
     const b = await body();
-    const text = String(b.text || "").trim().slice(0, 1000);
-    if (!text) return err("写点反馈再提交：这段做了什么、卡在哪、什么时候能完", 400);
+    const flag = ["progress", "blocked", "idle"].includes(b.flag) ? b.flag : "progress";
+    let text = String(b.text || "").trim().slice(0, 1000);
+    if (!text) text = flag === "idle" ? "今天没动" : flag === "blocked" ? "卡住了，需要支持" : "有推进";
+    const assigned = !!row.owner;
+    /* 汇报只认归属人：管理员也不能替员工报，否则「日日汇报」就假了 */
+    if (assigned && row.owner !== meId) {
+      return err(`这条派给 ${row.owner_name || row.owner} 了，由他汇报，你可以留言`, 403);
+    }
     const now = nowISO();
-    const first = row.status !== "doing";
-    await env.DB.prepare("INSERT INTO todo_notes(id,todo_id,uid,name,kind,body,created_at) VALUES(?,?,?,?,?,?,?)")
-      .bind(newId("n"), row.id, meId, me.name, first ? "start" : "cmt", text, now).run();
-    if (first) {
-      await env.DB.prepare("UPDATE todos SET status='doing', started_at=?, updated_at=? WHERE id=?")
-        .bind(row.started_at || now, now, row.id).run();
+    await env.DB.prepare("INSERT INTO todo_notes(id,todo_id,uid,name,kind,flag,body,created_at) VALUES(?,?,?,?,?,?,?,?)")
+      .bind(newId("n"), row.id, meId, me.name, assigned ? "report" : "cmt", flag, text, now).run();
+    if (assigned) {
+      await env.DB.prepare("UPDATE todos SET last_report_at=?,last_report_by=?,last_flag=?,updated_at=? WHERE id=?")
+        .bind(now, meId, flag, now, row.id).run();
     } else {
       await env.DB.prepare("UPDATE todos SET updated_at=? WHERE id=?").bind(now, row.id).run();
     }
-    await audit(env, me, "todo.progress", row.id, text.slice(0, 60));
-    return json({ ok: true, status: first ? "doing" : row.status, started: first }, first ? 201 : 200);
+    await audit(env, me, "todo.report", row.id, text.slice(0, 60));
+    return json({ ok: true, status: row.status, flag, reported: assigned });
   }
 
   if (id && !sub && req.method === "DELETE") {

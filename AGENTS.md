@@ -44,16 +44,20 @@
 - `homeHtml()` 的分组顺序**跟顶部页签一致**（`GROUPS` 常量），配置里新出现的分组追加在最后；卡片统一由 `modCard()` 渲染（含星标），分组页复用同一个渲染器。
 - 星标点击由 `#pane` 的**捕获阶段**监听器处理（`stopPropagation`），所以点星标不会进模块、也不会跳外链；监听器只绑一次（`pinBound` 防重复绑定，否则会一置顶一取消）。
 
-**待办（`/api/todos`，`todos` + `todo_notes`）**
-- 三个范围 `scope`：`self` 自己记（执行人=自己）、`person` 派活（必须指定 `owner`，服务端校验用户存在，`owner_name` 冗余存姓名）、`company` 公司事项（可空执行人，谁都能留言跟）
-- 状态 `status`：`todo` → `doing` → `done`；`PATCH` 改状态只留完成/重开，**开始执行走 `POST /api/todos/:id/start`**
-- 开始执行/写进展：`/start` 的 `text` **必填**（就是这次的反馈），首次调用置 `doing` + `started_at` + 记 `kind=start` 的动态，之后调用只追加 `kind=cmt` 的进展；只有执行人能报（公司事项没执行人时谁都能报），已完成再报 400
-- 前端「开始执行 / 写进展」按钮只给执行人看（`canReport()`），卡片上永远显示最近一条反馈（`.td-fb`），完整历史在留言里展开
-- 逾期提醒：待办页顶部红条（`.td-alert`，含条数+最久天数+跳到已逾期筛选）、首页待办卡片红点（`.td-dot`）、**每天首次打开工作台弹一次**（`maybeLateAlert()`，localStorage `tdal_<login>_<date>` 去重）；`showApp()` 里预载 `loadTodos()` 才有这些数
+**待办（`/api/todos`，`todos` + `todo_notes`）—— 派活即归属 + 每日汇报**
+- 三个范围 `scope`：`self` 自己给自己排（`self_set=1`）、`person` 派活（必须指定 `owner`，服务端校验用户存在，`owner_name` 冗余存姓名）、`company` 公司事项（可空执行人，谁都能跟一句）
+- **归属在创建那一刻定死**：`POST` 直接写 `status='doing'` + `started_at` + `assign_at`，并在时间线写一条 `kind=assign`（「指派给 X」/「自己给自己排的任务」/「公司事项，大家一起跟」）。**没有「开始执行」这一步**，不存在「谁点了就归谁」
+- 状态只有 `doing` / `done`；`PATCH` 传 `status:'todo'` 一律当 `doing`（兼容老前端）。建表时会把历史 `status='todo'` 的行一次性并进 `doing`
+- 每日汇报：`POST /api/todos/:id/report`（`/start` 是别名）`{text?, flag}`，`flag` = `progress|blocked|idle`；**`text` 可选**，不写就按 flag 补「有推进 / 卡住了，需要支持 / 今天没动」；写入 `todo_notes.kind=report, flag=...` 并更新 `last_report_at / last_report_by / last_flag`
+- **汇报只认归属人**（`owner`），`admin`/`manager` 也不能替员工报（否则「日日汇报」就假了）；公司事项没 `owner` 时谁都能跟一句，但只记 `kind=cmt`，**不动归属、不算某人汇报**
+- 改派：`PATCH {owner}` 换人时 `last_report_at/last_report_by/last_flag` 清零、`assign_at=now`，时间线记「改派给 Y，汇报重新开始」——别拿上一个人的记录充数
+- 前端：卡片显示汇报状态（`今天已汇报` / `N 天没汇报`，`reportedToday()` / `reportAge()`）；执行人看到「📝 汇报」按钮，弹层三个一键按钮（推进了/卡住了/今天没动），点一下就算报过，文字选填
+- 页面结构 `todoHtml()`：KPI 四个数（我负责 / 今天未汇报 / 已逾期 / 7 天内到期，都可点筛选）→ 主动性条（`.td-selfbar`：自派几项 + `reportStreak()` 连续汇报天数）→ `TODO_FILTERS` 计数筛选 → 分组（📝今天还没汇报 / ★重要 / ⚠已逾期 / 今天到期 / 接下来 / 无截止 / ✓已完成）→ 督导块（`teamHtml()`，admin/manager 按人看谁没汇报，点人 = `p:<login>` 筛选）
+- 派活权限：**只有 `admin` / `manager` 能派给同事**（`canAssign()`；服务端 `POST` 拦 `scope=person`、`PATCH` 拦换 `owner`，403），弹层里员工只看到「我自己」；员工编辑别人派的活时不提交 `scope`，避免把归属改回自己
+- 逾期/未汇报提醒：待办页顶部红条（`.td-alert`）、首页待办卡片红点（`lateForMe + needReport`）、**每天首次打开工作台弹一次**（`maybeLateAlert()`，先列我的「今天还没汇报」再列「已逾期」，管理层最后一块「同事今天还没汇报」按人计数，localStorage `tdal_<login>_<date>` 去重）；`showApp()` 里预载 `loadTodos()` 才有这些数
 - 权限：`owner` 和 `creator` 能改状态/标题，`admin`/`manager` 全能改；**删除只给 `creator` 和 `admin`**（执行人不能删别人派的活）
 - `imp=1` = 重要（前端 ★ 置顶段）；`due` 只收 `YYYY-MM-DD`
-- 前端 `todoHtml()` 分五段：★重要 / ⚠已逾期 / 今天到期 / 接下来 / 无截止 / ✓已完成；`TODO_FILTERS` 六片筛选（含「已逾期」）；`todoSheet()` 复用底部弹层（`#td_sheet`），保存时**只有 `scope=person` 才提交 `owner`**（否则清空公司事项的执行人）
-- 建表在 `todoSchema()` 里用 `CREATE TABLE IF NOT EXISTS` 跑，跟 `fin_entries` 的 ALTER 一样靠首次请求自迁移（部署脚本的 D1 校验接口没权限，403 属正常）
+- 建表在 `todoSchema()` 里用 `CREATE TABLE IF NOT EXISTS` + ALTER 兜底跑，跟 `fin_entries` 一样靠首次请求自迁移（部署脚本的 D1 校验接口没权限，403 属正常）
 
 **人员接口**（`/api/users`，仅 admin）
 `GET` 列表（只列 `deleted=0`） · `POST` 开通 · `PATCH :id`（姓名/账号/电话/角色/密码/模块） · `DELETE :id` 删除

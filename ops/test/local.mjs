@@ -374,33 +374,51 @@ const mineRow = list1.data.todos.find((t) => t.id === tdMine.data.id);
 ok(mineRow.owner === "boss@ecobox.com" && mineRow.scope === "self", "自己的待办执行人是自己");
 
 ok((await patch(tdStaff, "/api/todos/" + tdMine.data.id, { status: "done" })).status === 403, "员工不能关别人的待办");
-/* 开始执行 = 必须带反馈；只有执行人能报 */
-const prog0 = await post(tdStaff, "/api/todos/" + tdGive.data.id + "/start", { text: "   " });
-ok(prog0.status === 400, "开始执行必须写反馈");
-ok((await post(boss, "/api/todos/" + tdGive.data.id + "/start", { text: "我来看看" })).status === 403, "不是执行人不能汇报进展");
-const prog1 = await post(tdStaff, "/api/todos/" + tdGive.data.id + "/start", { text: "今天导出了 3 个点的照片，还剩 2 个" });
-ok(prog1.status === 201 && prog1.data.started === true, "执行人带反馈开始执行");
-const started = (await tdStaff("/api/todos")).data.todos.find((t) => t.id === tdGive.data.id);
-ok(started.status === "doing", "开始后状态是进行中");
-ok(!!started.started_at, "记下开始时间");
-const stNote = started.notes.find((n) => n.kind === "start");
-ok(stNote && stNote.body.includes("还剩 2 个") && stNote.name === "待办同事" && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(stNote.created_at), "开始执行留下带时间的反馈记录", JSON.stringify(stNote));
-const startedAt1 = started.started_at;
-const prog2 = await post(tdStaff, "/api/todos/" + tdGive.data.id + "/start", { text: "剩下 2 个明天上午补完" });
-ok(prog2.status === 200 && prog2.data.started === false, "进行中再汇报是追加进展");
-const again = (await tdStaff("/api/todos")).data.todos.find((t) => t.id === tdGive.data.id);
-ok(again.status === "doing" && again.started_at === startedAt1, "追加进展不改开始时间");
-ok(again.notes.filter((n) => n.body.includes("明天上午")).length === 1, "追加进展作为普通反馈记录");
-ok((await patch(tdStaff, "/api/todos/" + tdGive.data.id, { status: "done" })).status === 200, "执行人能标完成");
-ok((await post(tdStaff, "/api/todos/" + tdGive.data.id + "/start", { text: "完成后又说一句" })).status === 400, "完成了不能再汇报");
+/* 指派即归属：不等对方点「开始执行」，派下去就是进行中，就归他 */
+const assignRow = list1.data.todos.find((t) => t.id === tdGive.data.id);
+ok(assignRow.status === "doing", "派下去就是进行中（不用等对方点开始）");
+ok(!!assignRow.assign_at && !!assignRow.started_at, "派下去就记下归属时间");
+ok(assignRow.notes.some((n) => n.kind === "assign" && n.body.includes("待办同事")), "时间线记下「指派给谁」");
+ok(assignRow.self_set === 0, "派给别人的不算自派");
+ok(mineRow.self_set === 1, "自己给自己排的标成自派");
+
+/* 每日汇报：派给谁就由谁报，别人只能留言；一键「今天没动」不用打字 */
+ok((await post(boss, "/api/todos/" + tdGive.data.id + "/start", { text: "我来看看" })).status === 403, "不是归属人不能汇报");
+const rep1 = await post(tdStaff, "/api/todos/" + tdGive.data.id + "/report", { text: "今天导出了 3 个点的照片，还剩 2 个", flag: "progress" });
+ok(rep1.status === 200 && rep1.data.reported === true, "归属人能汇报");
+const reported = (await tdStaff("/api/todos")).data.todos.find((t) => t.id === tdGive.data.id);
+ok(/^\d{4}-\d{2}-\d{2}/.test(reported.last_report_at), "汇报后记下最近汇报日期");
+ok(reported.last_report_by === "td@ecobox.com" && reported.last_flag === "progress", "汇报人和标记落库");
+const repNote = reported.notes.filter((n) => n.kind === "report").pop();
+ok(!!repNote && repNote.flag === "progress" && repNote.body.includes("还剩 2 个") && repNote.name === "待办同事", "汇报留下带时间的记录");
+ok((await post(tdStaff, "/api/todos/" + tdGive.data.id + "/report", { flag: "idle" })).status === 200, "一键「今天没动」也能汇报");
+const idleRow = (await tdStaff("/api/todos")).data.todos.find((t) => t.id === tdGive.data.id);
+ok(idleRow.last_flag === "idle" && idleRow.notes.some((n) => n.flag === "idle" && n.body === "今天没动"), "一键汇报自动补正文");
+ok(idleRow.status === "doing" && idleRow.owner === "td@ecobox.com", "汇报不会改状态、更不会改归属");
+
+/* 改派：人换了，汇报记录从零开始，别拿上一个人的充数 */
+ok((await patch(boss, "/api/todos/" + tdGive.data.id, { owner: "boss@ecobox.com" })).status === 200, "发起人能改派");
+const movedRow = (await boss("/api/todos")).data.todos.find((t) => t.id === tdGive.data.id);
+ok(movedRow.owner === "boss@ecobox.com" && movedRow.last_report_at === "" && movedRow.last_flag === "", "改派后汇报清零");
+ok(movedRow.notes.some((n) => n.body.includes("改派给")), "时间线记下改派");
+ok((await post(tdStaff, "/api/todos/" + tdGive.data.id + "/report", { text: "还想报" })).status === 403, "改派后原执行人不能再汇报");
+ok((await patch(boss, "/api/todos/" + tdGive.data.id, { owner: "td@ecobox.com" })).status === 200, "能改派回去");
+
+/* 完成 / 重开 */
+ok((await patch(tdStaff, "/api/todos/" + tdGive.data.id, { status: "done" })).status === 200, "归属人能标完成");
+ok((await post(tdStaff, "/api/todos/" + tdGive.data.id + "/report", { text: "完成后又说一句" })).status === 400, "完成了不能再汇报");
 const finished = (await tdStaff("/api/todos")).data.todos.find((t) => t.id === tdGive.data.id);
-ok(finished.status === "done" && finished.done_at, "完成时间落库");
-ok(finished.notes.some((n) => n.body === "标记完成"), "完成也记一条动态");
-ok((await patch(tdStaff, "/api/todos/" + tdGive.data.id, { status: "todo" })).status === 200, "能重新打开");
-ok((await tdStaff("/api/todos")).data.todos.find((t) => t.id === tdGive.data.id).done_at === "", "重开后清掉完成时间");
-ok((await post(tdStaff, "/api/todos/" + tdGive.data.id + "/start", { text: "重开后继续" })).status === 201, "重开后能重新开始并留记录");
-/* 公司事项没有执行人：谁都能汇报 */
-ok((await post(tdStaff, "/api/todos/" + tdCo.data.id + "/start", { text: "我先去对发票" })).status === 201, "公司事项谁都能汇报进展");
+ok(finished.status === "done" && !!finished.done_at, "完成时间落库");
+ok(finished.notes.some((n) => n.kind === "sys" && n.body === "标记完成"), "完成也记一条动态");
+ok((await patch(tdStaff, "/api/todos/" + tdGive.data.id, { status: "todo" })).status === 200, "能重新打开（老写法 todo 也当进行中）");
+const reopened = (await tdStaff("/api/todos")).data.todos.find((t) => t.id === tdGive.data.id);
+ok(reopened.status === "doing" && reopened.done_at === "", "重开后是进行中，完成时间清掉");
+
+/* 公司事项没有归属人：谁都能跟一句，但不算某人汇报、也不改归属（不许「谁点谁得」） */
+const coRep = await post(tdStaff, "/api/todos/" + tdCo.data.id + "/report", { text: "我先去对发票" });
+ok(coRep.status === 200 && coRep.data.reported === false, "公司事项谁都能跟一句");
+const coFollow = (await boss("/api/todos")).data.todos.find((t) => t.id === tdCo.data.id);
+ok(coFollow.owner === "" && coFollow.last_report_at === "", "跟一句不会变成「谁点谁得」");
 
 const cmt = await post(tdStaff, "/api/todos/" + tdCo.data.id + "/notes", { text: "会计周五来取" });
 ok(cmt.status === 201, "公司事项能留言跟踪");
@@ -412,6 +430,18 @@ ok((await post(tdStaff, "/api/todos/" + tdCo.data.id + "/notes", { text: "x".rep
 ok((await patch(boss, "/api/todos/" + tdCo.data.id, { title: "本月报税材料交给会计（含发票）" })).status === 200, "发起人能改标题");
 ok((await patch(boss, "/api/todos/" + tdCo.data.id, { status: "done" })).status === 200, "发起人能改状态");
 ok((await patch(boss, "/api/todos/" + tdCo.data.id, { status: "todo" })).status === 200, "再改回来");
+
+/* 派活/改派只给管理层：前端收口了，直接打接口也要拦住 */
+const staffAssign = await post(tdStaff, "/api/todos", { title: "替老板派个活", scope: "person", owner: "boss@ecobox.com" });
+ok(staffAssign.status === 403, "员工不能派活给同事");
+const staffMove = await patch(tdStaff, "/api/todos/" + tdGive.data.id, { owner: "boss@ecobox.com" });
+ok(staffMove.status === 403, "员工不能把自己的活甩给别人");
+const staffSelf = await post(tdStaff, "/api/todos", { title: "今天先核 3 个点的坐标", due: "" });
+ok(staffSelf.status === 201, "员工能给自己排今天的活");
+const staffSelfRow = (await tdStaff("/api/todos")).data.todos.find((t) => t.id === staffSelf.data.id);
+ok(staffSelfRow.owner === "td@ecobox.com" && staffSelfRow.self_set === 1 && staffSelfRow.scope === "self", "自己排的活归自己");
+ok(staffSelfRow.status === "doing" && !!staffSelfRow.assign_at, "建好就是进行中，不用再点开始");
+ok(staffSelfRow.notes.some((n) => n.kind === "assign" && n.body === "自己给自己排的任务"), "时间线写清是自己给自己排的");
 ok((await tdStaff("/api/todos/" + tdGive.data.id, { method: "DELETE" })).status === 403, "员工不能删别人的待办");
 ok((await boss("/api/todos/" + tdMine.data.id, { method: "DELETE" })).status === 200, "发起人能删自己的待办");
 ok(!(await boss("/api/todos")).data.todos.some((t) => t.id === tdMine.data.id), "删掉的待办不再返回");

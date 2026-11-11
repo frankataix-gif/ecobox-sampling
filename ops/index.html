@@ -72,7 +72,6 @@ td.n{text-align:right;font-variant-numeric:tabular-nums}
 .td-sec.late{color:var(--bad)}
 .td-card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:8px;box-shadow:inset 3px 0 0 #e5e7eb}
 .td-card.late{box-shadow:inset 3px 0 0 var(--bad)}
-.td-card.doing{box-shadow:inset 3px 0 0 #f59e0b}
 .td-card.done{box-shadow:inset 3px 0 0 var(--good);opacity:.62}
 .td-row{display:flex;align-items:flex-start;gap:10px}
 .td-check{flex:none;width:22px;height:22px;border:2px solid #cbd5e1;border-radius:6px;background:#fff;color:#fff;font-size:12px;line-height:1;padding:0;cursor:pointer}
@@ -103,7 +102,39 @@ td.n{text-align:right;font-variant-numeric:tabular-nums}
 .td-cin button{font-size:12px;padding:4px 10px}
 .td-imp{background:#fef3c7;color:#b45309}
 .td-co{background:#e0e7ff;color:#1d4ed8}
-.td-doing{background:#ffedd5;color:#c2410c}
+.td-self{background:#dcfce7;color:#15803d}
+/* 汇报状态：今天报过 = 绿；N 天没报 = 橙/红 */
+.td-rep{display:inline-flex;align-items:center;gap:3px;font-size:11.5px;font-weight:600;padding:1px 7px;border-radius:999px;background:#fef3c7;color:#b45309}
+.td-rep.ok{background:#dcfce7;color:#15803d}
+.td-rep.bad{background:#fee2e2;color:var(--bad)}
+.td-flag{font-style:normal;font-weight:600;margin-right:5px}
+.td-flag-blocked{color:#b45309}
+.td-flag-idle{color:#6b7280}
+.td-flag-progress{color:#0f766e}
+/* 主动性条：自派任务 + 连续汇报 */
+.td-selfbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;border-radius:12px;padding:8px 12px;font-size:12.5px;margin:0 0 10px}
+.td-selfbar b{font-size:14px}
+.td-selfbar button{margin-left:auto;background:#166534;color:#fff;border:0;border-radius:999px;padding:4px 10px;font-size:12px;cursor:pointer}
+/* 督导：按人看谁没汇报 */
+.td-team{display:flex;flex-direction:column;gap:6px}
+.td-team-row{display:flex;align-items:center;gap:8px;width:100%;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:13px;cursor:pointer}
+.td-team-row.on{border-color:var(--ink)}
+.td-team-row i{flex:none;width:22px;height:22px;border-radius:50%;background:var(--chip);color:var(--ink);font-style:normal;font-size:11.5px;font-weight:700;display:inline-flex;align-items:center;justify-content:center}
+.td-team-row b{font-weight:600}
+.td-team-row span{margin-left:auto;font-size:12px}
+.td-team-row span+span{margin-left:8px}
+.td-team-row .bad{color:var(--bad);font-weight:600}
+.td-team-row .ok{color:var(--good)}
+.td-who-bar{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--mut);margin:0 0 8px}
+.td-who-bar button{margin-left:auto;font-size:12px;padding:3px 10px}
+/* 汇报弹层：三个一键按钮 */
+.td-quick{display:grid;gap:8px;grid-template-columns:repeat(3,1fr);margin:4px 0 10px}
+.td-quick button{display:flex;flex-direction:column;gap:2px;align-items:flex-start;background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px 10px;cursor:pointer;text-align:left}
+.td-quick button b{font-size:13px;color:var(--ink)}
+.td-quick button span{font-size:11.5px;color:var(--mut)}
+.td-quick button:active{background:var(--chip)}
+@media(max-width:640px){.td-quick{grid-template-columns:1fr}.td-quick button{flex-direction:row;align-items:center;gap:8px}}
+.td-al-sub{font-size:12px;font-weight:700;color:var(--mut);margin-top:10px}
 .td-impbox{display:flex;align-items:center;gap:6px;font-size:13px;margin-top:6px}
 #td_sheet .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 #td_sheet label{display:block;font-size:12px;color:var(--mut);margin:8px 0 4px}
@@ -494,6 +525,25 @@ const isEN = () => LANG === "en";
 
 /* 界面文案：中文原文 → 英文。只在英文模式下走这里；查不到就保留中文。 */
 const EN = {
+  /* 待办：派活 → 归属 → 每日汇报 */
+  "我负责": "Assigned to me", "在办": "open", "今天未汇报": "Unreported today",
+  "今天还没报": "still open today", "都报过了": "all reported", "7 天内到期": "Due in 7 days", "含今天": "incl. today",
+  "今天已汇报": "Reported today", "今天还没汇报": "Not reported today", "天没汇报": "days silent",
+  "汇报": "Report", "汇报进展": "Daily report", "推进了": "Made progress", "卡住了": "Blocked", "今天没动": "No change",
+  "今天做到哪一步": "What got done", "卡在哪，需要谁支持": "Where it is stuck", "今天没排上，明天做": "Not today",
+  "说一句（选填）": "Say a word (optional)",
+  "点一下就记下今天报过了；有细节就顺手写一句。老板和同事都看得见。": "One tap logs today's report; add a line if you like. Everyone can see it.",
+  "已上报，今天这项算报了": "Reported for today",
+  "我给自己排了": "Self-assigned:", "连续汇报": "Report streak", "今天报一项，开始连击": "Report once to start a streak",
+  "看我的": "Mine", "看全部": "All", "正在看": "Viewing", "的任务": "'s tasks", "我的今天": "My day",
+  "督导 · 谁今天还没汇报": "Follow-up · who hasn't reported today", "项没汇报": "unreported", "今天都报了": "all reported",
+  "同事今天还没汇报": "Teammates not reported yet", "位同事今天还没汇报": "teammates haven't reported today",
+  "项逾期": "overdue", "项": "items", "自定": "Self-set", "别人派的": "Assigned to you",
+  "去汇报": "Go report", "逾期 + 今天还没汇报": "Overdue + unreported today",
+  "点一下「今天没动」也算报过，别攒着。": "Tapping “No change” counts as a report — don't let them pile up.",
+  "这些过了截止日期还没交，今天处理一下。": "These are past due — clear them today.",
+  "派下去就归他，从今天开始算汇报；对方每天要交一句进展。": "Once assigned it is theirs; the daily report starts today.",
+  "给自己排一件今天要推进的事，做完点「完成」，每天点一下「汇报」。": "Put one thing on your own list, tick it off, and report daily.",
   /* 导航 / 分组 / 模块 */
   "状态": "Activity", "目录": "Home", "看板": "Board", "日报": "Daily log", "人员": "Members",
   "我的": "Account", "费用记录": "Expenses", "会员设置": "Membership", "语言": "Language",
@@ -994,8 +1044,9 @@ function modCard(x) {
   const on = pinned(x.k);
   const label = esc(tr(on ? "取消快捷" : "设为快捷"));
   const pin = `<span class="pin${on ? " on" : ""}" data-pin="${esc(x.k)}" role="button" tabindex="-1" aria-label="${label}" title="${label}">${on ? "★" : "☆"}</span>`;
-  const lateN = x.k === "todo" ? lateForMe().length : 0;
-  const dot = lateN ? `<em class="td-dot" title="${esc(tr("已逾期"))}">${lateN}</em>` : "";
+  /* 红点 = 逾期 + 今天还没汇报，就是今天必须动手的件数 */
+  const todoN = x.k === "todo" ? lateForMe().length + needReport().length : 0;
+  const dot = todoN ? `<em class="td-dot" title="${esc(tr("逾期 + 今天还没汇报"))}">${todoN}</em>` : "";
   const inner = `<i>${x.i}</i><b>${esc(tr(x.t))}${dot}</b><span>${esc(modDesc(x))}</span>${pin}`;
   return x.tab
     ? `<button class="mod pinable" data-go="${x.tab}">${inner}</button>`
@@ -1137,6 +1188,8 @@ let TODOS = [], TPEOPLE = [], TD_OPEN = {};
 const daysLeft = (due) => Math.round((new Date(due + "T00:00:00") - new Date(iso(new Date()) + "T00:00:00")) / 864e5);
 const isMine = (t) => t.owner === (S.user && S.user.login);
 const canTouch = (t) => isMine(t) || t.creator === S.user.login || S.user.role === "admin" || S.user.role === "manager";
+/* 派活是管理层的事；员工只给自己排（避免互相甩活） */
+const canAssign = () => ["admin", "manager"].includes(S.user.role);
 
 async function loadTodos() {
   const r = await api("/todos");
@@ -1145,19 +1198,46 @@ async function loadTodos() {
 }
 
 const overdue = (t) => t.status !== "done" && !!t.due && daysLeft(t.due) < 0;
-const canReport = (t) => isMine(t) || (t.scope === "company" && !t.owner);
 const lateForMe = () => TODOS.filter((t) => overdue(t) && (isMine(t) || t.creator === (S.user && S.user.login) || (t.scope === "company" && !t.owner)));
 const NOTE_TIME = (n) => String(n.created_at || "").slice(5, 16).replace("T", " ");
+
+const REPORT_FLAGS = { progress: "推进了", blocked: "卡住了", idle: "今天没动" };
+const todayStr = () => iso(new Date());
+/* 今天报过没？没有的话从派下来（或最后汇报）算起几天没报 */
+const reportedToday = (t) => String(t.last_report_at || "").slice(0, 10) === todayStr();
+const reportAge = (t) => {
+  const base = t.last_report_at || t.assign_at || t.created_at || "";
+  if (!base) return 0;
+  return Math.max(0, Math.round((new Date(todayStr() + "T00:00:00") - new Date(String(base).slice(0, 10) + "T00:00:00")) / 864e5));
+};
+const myOpen = () => TODOS.filter((t) => t.status !== "done" && t.owner === S.user.login);
+const needReport = () => myOpen().filter((t) => !reportedToday(t));
+/* 连续汇报天数：从今天（今天还没报就从昨天）往前数，连着有汇报的天数 */
+function reportStreak() {
+  const days = new Set();
+  for (const t of TODOS) for (const n of t.notes || []) {
+    if (n.kind === "report" && n.uid === S.user.login) days.add(String(n.created_at || "").slice(0, 10));
+  }
+  let n = 0;
+  const d = new Date();
+  if (!days.has(iso(d))) d.setDate(d.getDate() - 1);
+  while (days.has(iso(d))) { n++; d.setDate(d.getDate() - 1); }
+  return n;
+}
 
 function noteLine(n) {
   const t = esc(NOTE_TIME(n));
   if (n.kind === "sys") return `<div class="td-note-line"><b>${esc(n.name)}</b><i class="mut">${esc(tr(n.body))}</i><span class="mut"> · ${t}</span></div>`;
-  if (n.kind === "start") return `<div class="td-note-line"><b>${esc(n.name)}</b><i class="td-go">▶ ${esc(tr("开始执行"))}</i><span class="mut"> · ${t}</span><div class="td-fb">${esc(n.body)}</div></div>`;
+  if (n.kind === "assign") return `<div class="td-note-line"><b>${esc(n.name)}</b><i class="td-go">${esc(n.body)}</i><span class="mut"> · ${t}</span></div>`;
+  if (n.kind === "report") {
+    const label = REPORT_FLAGS[n.flag] || REPORT_FLAGS.progress;
+    return `<div class="td-note-line"><b>${esc(n.name)}</b><i class="td-flag td-flag-${esc(n.flag || "progress")}">${esc(tr(label))}</i>${esc(n.body)}<span class="mut"> · ${t}</span></div>`;
+  }
   return `<div class="td-note-line"><b>${esc(n.name)}</b>${esc(n.body)}<span class="mut"> · ${t}</span></div>`;
 }
 
 function todoCard(t) {
-  const st = t.status || "todo";
+  const st = t.status === "done" ? "done" : "doing";
   const dl = t.due ? daysLeft(t.due) : null;
   const late = st !== "done" && dl !== null && dl < 0;
   const dueTxt = dl === null ? ""
@@ -1165,22 +1245,26 @@ function todoCard(t) {
       : dl < 0 ? `${esc(tr("逾期"))} ${-dl} ${esc(tr("天"))}`
         : dl === 0 ? esc(tr("今天到期"))
           : esc(String(t.due).slice(5)) + (dl <= 7 ? ` · ${dl} ${esc(tr("天"))}` : "");
+  const isOwner = !!t.owner && t.owner === S.user.login;
+  const age = reportAge(t);
+  const rep = st === "done" ? ""
+    : isOwner && reportedToday(t) ? `<span class="td-rep ok">✓ ${esc(tr("今天已汇报"))}</span>`
+      : isOwner ? `<span class="td-rep${age >= 2 ? " bad" : ""}">${age ? `${age} ${esc(tr("天没汇报"))}` : esc(tr("今天还没汇报"))}</span>`
+        : "";
   const tags = [
     t.imp ? `<span class="pill td-imp">★ ${esc(tr("重要"))}</span>` : "",
+    t.self_set ? `<span class="pill td-self">${esc(tr("自定"))}</span>` : "",
     t.scope === "company" ? `<span class="pill td-co">${esc(tr("公司事项"))}</span>` : "",
     t.scope === "person" ? `<span class="pill">${esc(tr("指派"))}</span>` : "",
-    st === "doing" ? `<span class="pill td-doing">${esc(tr("进行中"))}</span>` : "",
     st === "done" ? `<span class="pill">${esc(tr("已完成"))}</span>` : "",
   ].filter(Boolean).join("");
   const who = t.owner ? t.owner_name || t.owner : tr("未指派");
   const all = t.notes || [];
-  const lastFb = [...all].reverse().find((n) => n.kind === "start" || n.kind === "cmt");
+  const lastRep = [...all].reverse().find((n) => n.kind === "report" || n.kind === "cmt" || n.kind === "start");
   const notes = all.slice(-6).map(noteLine).join("");
-  const canStart = canReport(t) && st === "todo";
-  const canProg = canReport(t) && st === "doing";
   const open = !!TD_OPEN[t.id];
   const box = `class="td-check${st === "done" ? " on" : ""}" data-td-done="${t.id}" aria-label="${esc(tr(st === "done" ? "重新打开" : "标记完成"))}"`;
-  return `<div class="td-card${st === "done" ? " done" : ""}${late ? " late" : ""}${st === "doing" ? " doing" : ""}" data-td="${t.id}">
+  return `<div class="td-card${st === "done" ? " done" : ""}${late ? " late" : ""}" data-td="${t.id}">
     <div class="td-row">
       <button ${box}>${st === "done" ? "✓" : ""}</button>
       <div class="td-mid">
@@ -1188,11 +1272,12 @@ function todoCard(t) {
         <div class="td-meta">
           <span class="td-who${t.owner ? "" : " none"}"><i>${esc(String(who).trim().slice(0, 1))}</i>${esc(who)}</span>
           ${dueTxt ? `<span class="td-due${late ? " late" : dl === 0 && st !== "done" ? " today" : ""}">🗓 ${dueTxt}</span>` : ""}
+          ${rep}
           ${t.creator && t.creator !== t.owner ? `<span>· ${esc(tr("发起"))} ${esc(t.creator_name || t.creator)}</span>` : ""}
         </div>
         ${tags ? `<div class="td-tags">${tags}</div>` : ""}
         ${t.note ? `<div class="td-body">${esc(t.note)}</div>` : ""}
-        ${lastFb ? `<div class="td-fb">${esc(lastFb.body)}<span class="mut"> · ${esc(lastFb.name)} ${esc(NOTE_TIME(lastFb))}</span></div>` : ""}
+        ${lastRep ? `<div class="td-fb"><span class="mut">${esc(lastRep.name)} · ${esc(NOTE_TIME(lastRep))}</span> ${esc(lastRep.body)}</div>` : ""}
         ${open ? `<div class="td-log">${notes || `<div class="mut">${esc(tr("还没有留言"))}</div>`}
           <div class="td-cin"><input class="td-cmt" data-td-input="${t.id}" maxlength="500" placeholder="${esc(tr("写留言…"))}"><button data-td-send="${t.id}">${esc(tr("发送"))}</button></div></div>` : ""}
       </div>
@@ -1202,9 +1287,8 @@ function todoCard(t) {
       </div>
     </div>
     <div class="td-foot">
-      ${canStart ? `<button class="pri" data-td-start="${t.id}">▶ ${esc(tr("开始执行"))}</button>` : ""}
-      ${canProg ? `<button data-td-start="${t.id}">✎ ${esc(tr("写进展"))}</button>` : ""}
-      ${canTouch(t) && st !== "done" ? `<button${canStart || canProg ? "" : ' class="pri"'} data-td-fin="${t.id}">${esc(tr("完成"))}</button>` : ""}
+      ${isOwner && st !== "done" ? `<button class="pri" data-td-report="${t.id}">📝 ${esc(tr("汇报"))}</button>` : ""}
+      ${canTouch(t) && st !== "done" ? `<button${isOwner ? "" : ' class="pri"'} data-td-fin="${t.id}">${esc(tr("完成"))}</button>` : ""}
       <button data-td-cmt="${t.id}">💬 ${all.length || ""} ${esc(tr("留言"))}</button>
     </div>
   </div>`;
@@ -1217,16 +1301,16 @@ function todoSection(title, list, cls) {
 
 function todoHtml() {
   const me = S.user.login;
-  const f = S.todoFilter || "all";
+  const f = S.todoFilter || (canAssign() ? "all" : "mine");
   const openAll = TODOS.filter((t) => t.status !== "done");
-  const mineN = openAll.filter((t) => t.owner === me).length;
-  const doingN = openAll.filter((t) => t.status === "doing").length;
+  const mineOpen = openAll.filter((t) => t.owner === me);
   const lateAll = TODOS.filter(overdue);
   const weekOf = (t) => t.status !== "done" && !!t.due && daysLeft(t.due) >= 0 && daysLeft(t.due) <= 7;
   const match = (t) => {
+    if (f.startsWith("p:")) return t.owner === f.slice(2);
+    if (f === "need") return t.owner === me && t.status !== "done" && !reportedToday(t);
     if (f === "late") return overdue(t);
     if (f === "done") return t.status === "done";
-    if (f === "doing") return t.status === "doing";
     if (f === "week") return weekOf(t);
     if (t.status === "done") return f === "all";
     if (f === "mine") return t.owner === me;
@@ -1236,8 +1320,10 @@ function todoHtml() {
   };
   const list = TODOS.filter(match);
   const byDue = (a, b) => (a.due || "9999-12-31").localeCompare(b.due || "9999-12-31");
-  const imp = list.filter((t) => t.status !== "done" && t.imp).sort(byDue);
-  const rest = list.filter((t) => t.status !== "done" && !t.imp);
+  const need = list.filter((t) => t.status !== "done" && t.owner === me && !reportedToday(t));
+  const rest0 = list.filter((t) => !need.includes(t));
+  const imp = rest0.filter((t) => t.status !== "done" && t.imp).sort(byDue);
+  const rest = rest0.filter((t) => t.status !== "done" && !t.imp && !need.includes(t));
   const late = rest.filter((t) => t.due && daysLeft(t.due) < 0).sort(byDue);
   const today = rest.filter((t) => t.due && daysLeft(t.due) === 0);
   const soon = rest.filter((t) => t.due && daysLeft(t.due) > 0).sort(byDue);
@@ -1247,21 +1333,32 @@ function todoHtml() {
   const cnt = (k) => k === "all" ? TODOS.length
     : k === "done" ? TODOS.length - openAll.length
       : k === "late" ? lateAll.length
-        : k === "mine" ? mineN
+        : k === "mine" ? mineOpen.length
           : k === "made" ? TODOS.filter((t) => t.creator === me && t.status !== "done").length
             : k === "company" ? openAll.filter((t) => t.scope === "company").length : 0;
   const chip = ([k, label]) => `<button class="td-chip${f === k ? " on" : ""}" data-td-filter="${k}">${esc(tr(label))}<i>${cnt(k)}</i></button>`;
 
+  const needN = needReport().length;
+  const myLate = mineOpen.filter(overdue).length;
   const kpi = [
-    [tr("待处理"), openAll.length, `${tr("我负责")} ${mineN}`, "all", false],
-    [tr("进行中"), doingN, tr("已开工"), "doing", false],
-    [tr("已逾期"), lateAll.length, lateAll.length ? tr("尽快处理") : tr("没有逾期"), "late", lateAll.length > 0],
-    [tr("7 天内到期"), openAll.filter(weekOf).length, tr("含今天"), "week", false],
+    [tr("我负责"), mineOpen.length, tr("在办"), "mine", false],
+    [tr("今天未汇报"), needN, needN ? tr("今天还没报") : tr("都报过了"), "need", needN > 0],
+    [tr("已逾期"), myLate, myLate ? tr("尽快处理") : tr("没有逾期"), "late", myLate > 0],
+    [tr("7 天内到期"), mineOpen.filter(weekOf).length, tr("含今天"), "week", false],
   ].map(([t, n, s, k, bad]) =>
     `<button class="${bad ? "bad " : ""}${f === k ? "on" : ""}" data-td-filter="${k}"><span>${esc(t)}</span><b>${n}</b><span>${esc(s)}</span></button>`).join("");
 
-  const body = imp.length + late.length + today.length + soon.length + none.length + fin.length
-    ? todoSection("★ " + tr("重要"), imp) + todoSection("⚠ " + tr("已逾期"), late, "late") +
+  /* 主动性：自己给自己排的任务 + 连续汇报天数 */
+  const selfN = TODOS.filter((t) => t.self_set && t.status !== "done" && t.owner === me).length;
+  const streak = reportStreak();
+  const selfbar = `<div class="td-selfbar">
+      <span>🌱 ${esc(tr("我给自己排了"))} <b>${selfN}</b> ${esc(tr("项"))}</span>
+      <span>${streak ? `🔥 ${esc(tr("连续汇报"))} <b>${streak}</b> ${esc(tr("天"))}` : esc(tr("今天报一项，开始连击"))}</span>
+      <button data-td-filter="mine">${esc(tr("看我的"))} →</button></div>`;
+
+  const body = imp.length + late.length + today.length + soon.length + none.length + fin.length + need.length
+    ? todoSection("📝 " + tr("今天还没汇报"), need, "need") +
+      todoSection("★ " + tr("重要"), imp) + todoSection("⚠ " + tr("已逾期"), late, "late") +
       todoSection(tr("今天到期"), today) + todoSection(tr("接下来"), soon) +
       todoSection(tr("无截止"), none) + todoSection("✓ " + tr("已完成"), fin, "done")
     : `<div class="card"><div class="empty">${esc(tr(f === "all" ? "还没有待办，点右下角「＋」记一条。" : "这个筛选下没有内容。"))}</div></div>`;
@@ -1271,9 +1368,46 @@ function todoHtml() {
     ? `<div class="td-alert">⚠ ${lm.length} ${esc(tr("条已逾期"))} · ${esc(tr("最久"))} ${Math.max(...lm.map((t) => -daysLeft(t.due)))} ${esc(tr("天"))}
         <button data-td-filter="late">${esc(tr("看已逾期"))} →</button></div>`
     : "";
-  return banner + `<div class="td-kpi">${kpi}</div>
-    <div class="td-filters">${TODO_FILTERS.map(chip).join("")}</div>` + body +
+  const who = f.startsWith("p:") ? `<div class="td-who-bar">${esc(tr("正在看"))} ${esc(nameOf(f.slice(2)))} ${esc(tr("的任务"))}
+      <button data-td-filter="all">${esc(tr("看全部"))}</button></div>` : "";
+  return banner + `<div class="td-sec">👤 ${esc(tr("我的今天"))}</div><div class="td-kpi">${kpi}</div>${selfbar}
+    <div class="td-filters">${TODO_FILTERS.map(chip).join("")}</div>${who}` + body +
+    teamHtml() +
     `<button class="fin-fab" id="td_new">＋ ${esc(tr("新待办"))}</button>`;
+}
+
+const nameOf = (login) => {
+  const p = TPEOPLE.find((x) => x.login === login);
+  const t = TODOS.find((x) => x.owner === login);
+  return (p && p.name) || (t && t.owner_name) || login;
+};
+
+/* 老板视角：按人看谁没汇报、谁在拖 */
+function teamHtml() {
+  if (!canAssign() || S.todoFilter === "done") return "";
+  const people = [];
+  const seen = {};
+  for (const t of TODOS) {
+    if (t.status === "done" || !t.owner || t.owner === S.user.login) continue;
+    if (seen[t.owner]) continue;
+    seen[t.owner] = 1;
+    const os = TODOS.filter((x) => x.status !== "done" && x.owner === t.owner);
+    people.push({
+      login: t.owner, name: t.owner_name || nameOf(t.owner),
+      open: os.length,
+      need: os.filter((x) => !reportedToday(x)).length,
+      late: os.filter(overdue).length,
+    });
+  }
+  if (!people.length) return "";
+  people.sort((a, b) => b.need - a.need || b.late - a.late);
+  const rows = people.map((p) => `<button class="td-team-row${S.todoFilter === "p:" + p.login ? " on" : ""}" data-td-filter="p:${esc(p.login)}">
+      <i>${esc(p.name.trim().slice(0, 1))}</i>
+      <b>${esc(p.name)}</b>
+      <span class="${p.need ? "bad" : "ok"}">${p.need ? `${p.need} ${esc(tr("项没汇报"))}` : esc(tr("今天都报了"))}</span>
+      <span class="${p.late ? "bad" : "mut"}">${p.late ? `${p.late} ${esc(tr("项逾期"))}` : ""}</span>
+    </button>`).join("");
+  return `<div class="td-sec">👀 ${esc(tr("督导 · 谁今天还没汇报"))}</div><div class="td-team">${rows}</div>`;
 }
 
 function todoSheet(t) {
@@ -1283,12 +1417,16 @@ function todoSheet(t) {
     <div class="fd-sheet" id="td_sheet">
       <div class="fd-sh"><h3>${esc(tr(t ? "修改待办" : "新待办"))}</h3><button id="td_x">${esc(tr("取消"))}</button></div>
       <label>${esc(tr("要做什么"))}</label><input id="tdf_title" maxlength="200" value="${esc(cur.title)}" placeholder="${esc(tr("例：把 1330NW 的取样照片传完"))}">
+      <div class="mut" style="font-size:12.5px;margin:-2px 0 8px">${esc(tr(canAssign()
+        ? "派下去就归他，从今天开始算汇报；对方每天要交一句进展。"
+        : "给自己排一件今天要推进的事，做完点「完成」，每天点一下「汇报」。"))}</div>
       <div class="row">
         <div><label>${esc(tr("谁来做"))}</label>
           <select id="tdf_scope">
             <option value="self"${cur.scope === "self" ? " selected" : ""}>${esc(tr("我自己"))}</option>
-            <option value="person"${cur.scope === "person" ? " selected" : ""}>${esc(tr("派给同事"))}</option>
-            <option value="company"${cur.scope === "company" ? " selected" : ""}>${esc(tr("公司事项（大家跟）"))}</option>
+            ${!canAssign() && cur.scope !== "self" ? `<option value="${esc(cur.scope)}" selected disabled>${esc(tr("别人派的"))}</option>` : ""}
+            ${canAssign() ? `<option value="person"${cur.scope === "person" ? " selected" : ""}>${esc(tr("派给同事"))}</option>
+            <option value="company"${cur.scope === "company" ? " selected" : ""}>${esc(tr("公司事项（大家跟）"))}</option>` : ""}
           </select></div>
         <div id="tdf_owner_box"${cur.scope === "person" ? "" : ' class="hide"'}><label>${esc(tr("执行人"))}</label>
           <select id="tdf_owner"><option value="">${esc(tr("选一个人"))}</option>${TPEOPLE.map(opt).join("")}</select></div>
@@ -1310,11 +1448,12 @@ function todoSheet(t) {
   $("#tdf_save").onclick = async () => {
     const b = {
       title: $("#tdf_title").value.trim(),
-      scope: $("#tdf_scope").value,
       due: $("#tdf_due").value,
       imp: $("#tdf_imp").checked ? 1 : 0,
       note: $("#tdf_note").value.trim(),
     };
+    /* 员工改自己手上的任务时，下拉里没有「派给同事」——不能因此把归属改回自己 */
+    if ($("#tdf_scope").querySelector(`option[value="${cur.scope}"]`)) b.scope = $("#tdf_scope").value;
     /* 只有「派给同事」才提交执行人；其余范围由服务端按规则定 */
     if (b.scope === "person") b.owner = $("#tdf_owner").value;
     if (!b.title) { $("#tdf_err").textContent = tr("请填标题"); return; }
@@ -1349,9 +1488,9 @@ function bindTodo() {
   pane.querySelectorAll("[data-td-star]").forEach((b) => b.onclick = () => todoPatch(b.dataset.tdStar, { imp: (TODOS.find((t) => t.id === b.dataset.tdStar) || {}).imp ? 0 : 1 }));
   pane.querySelectorAll("[data-td-done]").forEach((b) => b.onclick = () => {
     const t = TODOS.find((x) => x.id === b.dataset.tdDone);
-    todoPatch(t.id, { status: t.status === "done" ? "todo" : "done" });
+    todoPatch(t.id, { status: t.status === "done" ? "doing" : "done" });
   });
-  pane.querySelectorAll("[data-td-start]").forEach((b) => b.onclick = () => tdReport(TODOS.find((x) => x.id === b.dataset.tdStart)));
+  pane.querySelectorAll("[data-td-report]").forEach((b) => b.onclick = () => tdReport(TODOS.find((x) => x.id === b.dataset.tdReport)));
   pane.querySelectorAll("[data-td-fin]").forEach((b) => b.onclick = () => todoPatch(b.dataset.tdFin, { status: "done" }));
   pane.querySelectorAll("[data-td-send]").forEach((b) => b.onclick = async () => {
     const id = b.dataset.tdSend;
@@ -1368,15 +1507,17 @@ async function todoPatch(id, patch) {
   catch (e) { toast(e.message, "bad"); }
 }
 
-/* 汇报进展：首次汇报即「开始执行」，反馈必填（正文就是这次的反馈） */
+/* 每日汇报：三下五除二 —— 推进了 / 卡住了 / 今天没动，点一下就算报过；想细说再写字 */
 function tdReport(t) {
   if (!t) return;
-  const first = t.status !== "doing";
+  const quick = [["progress", "🟢 推进了", "今天做到哪一步"], ["blocked", "🟠 卡住了", "卡在哪，需要谁支持"], ["idle", "⚪ 今天没动", "今天没排上，明天做"]];
   document.body.insertAdjacentHTML("beforeend", `<div class="fd-dim" id="tdr_dim"></div>
     <div class="fd-sheet" id="td_report">
-      <div class="fd-sh"><h3>${first ? "▶ " : "✎ "}${esc(tr(first ? "开始执行" : "写进展"))} · ${esc(t.title)}</h3><button id="tdr_x">${esc(tr("取消"))}</button></div>
-      <div class="mut" style="font-size:12.5px;margin-bottom:6px">${esc(tr("提交后会记下几月几日几点，发起人和同事都能看到。"))}</div>
-      <label>${esc(tr("反馈内容（必填）"))}</label>
+      <div class="fd-sh"><h3>📝 ${esc(tr("汇报进展"))} · ${esc(t.title)}</h3><button id="tdr_x">${esc(tr("取消"))}</button></div>
+      <div class="mut" style="font-size:12.5px;margin-bottom:8px">${esc(tr("点一下就记下今天报过了；有细节就顺手写一句。老板和同事都看得见。"))}</div>
+      <div class="td-quick">${quick.map(([k, label, ph]) =>
+        `<button data-tdr-flag="${k}"><b>${esc(tr(label))}</b><span>${esc(tr(ph))}</span></button>`).join("")}</div>
+      <label>${esc(tr("说一句（选填）"))}</label>
       <textarea id="tdr_text" maxlength="1000" placeholder="${esc(tr("做了什么、卡在哪、预计什么时候能完"))}"></textarea>
       <div class="err" id="tdr_err"></div>
       <div class="acts" style="margin-top:10px"><button class="pri" id="tdr_ok">${esc(tr("提交"))}</button><button id="tdr_cancel">${esc(tr("取消"))}</button></div>
@@ -1385,40 +1526,65 @@ function tdReport(t) {
   $("#tdr_x").onclick = close;
   $("#tdr_cancel").onclick = close;
   $("#tdr_dim").onclick = close;
-  $("#tdr_ok").onclick = async () => {
+  const send = async (flag) => {
     const text = $("#tdr_text").value.trim();
-    if (!text) { $("#tdr_err").textContent = tr("反馈是必填的，写一句也行"); return; }
     try {
-      await api("/todos/" + encodeURIComponent(t.id) + "/start", { method: "POST", body: { text }, quiet: true });
+      await api("/todos/" + encodeURIComponent(t.id) + "/report", { method: "POST", body: { text, flag }, quiet: true });
       close();
-      toast(tr(first ? "已开始执行，进度已记下" : "进展已记下"));
+      toast(tr("已上报，今天这项算报了"));
       await loadTodos();
       render();
     } catch (e) { $("#tdr_err").textContent = e.message; }
   };
+  document.querySelectorAll("[data-tdr-flag]").forEach((b) => b.onclick = () => send(b.dataset.tdrFlag));
+  /* 直接点「提交」= 有推进（正文可选） */
+  $("#tdr_ok").onclick = () => send("progress");
   if ($("#tdr_text")) $("#tdr_text").focus();
 }
 
-/* 逾期提醒：每天第一次打开工作台弹一次，附首页卡片红点 */
+/* 每日提醒：逾期 + 今天还没汇报的，每天第一次打开工作台弹一张；管理层多看一行「谁还没报」 */
 function maybeLateAlert() {
   if (!S.user || document.getElementById("td_alert")) return;
   const lm = lateForMe();
-  if (!lm.length) return;
+  const nr = needReport();
+  const byOwner = {};
+  if (canAssign()) {
+    for (const t of TODOS) {
+      if (t.status === "done" || !t.owner || t.owner === S.user.login || reportedToday(t)) continue;
+      const p = byOwner[t.owner] = byOwner[t.owner] || { name: t.owner_name || nameOf(t.owner), n: 0 };
+      p.n++;
+    }
+  }
+  const team = Object.values(byOwner).sort((a, b) => b.n - a.n);
+  if (!lm.length && !nr.length && !team.length) return;
   const key = "tdal_" + S.user.login + "_" + iso(new Date());
   try { if (localStorage.getItem(key)) return; } catch (e) {}
-  const lines = lm.slice(0, 6).map((t) => `<div class="td-al-line"><b>${esc(t.title)}</b><span class="td-late">${-daysLeft(t.due)} ${esc(tr("天"))}</span></div>`).join("");
+  const line = (t, right) => `<div class="td-al-line"><b>${esc(t.title)}</b><span class="${right.cls}">${right.txt}</span></div>`;
+  const lateRows = lm.slice(0, 5).map((t) => line(t, { cls: "td-late", txt: `${-daysLeft(t.due)} ${tr("天")}` })).join("");
+  const needRows = nr.slice(0, 5).map((t) => line(t, {
+    cls: reportAge(t) >= 2 ? "td-late" : "mut",
+    txt: reportAge(t) ? `${reportAge(t)} ${tr("天没汇报")}` : tr("今天还没汇报"),
+  })).join("");
+  const teamRows = team.map((p) => `<div class="td-al-line"><b>${esc(p.name)}</b><span class="td-late">${p.n} ${esc(tr("项没汇报"))}</span></div>`).join("");
+  const head = nr.length ? `📝 ${tr("今天还没汇报")} ${nr.length} ${tr("项")}`
+    : lm.length ? `⚠ ${lm.length} ${tr("条已逾期")}`
+      : `👀 ${team.length} ${tr("位同事今天还没汇报")}`;
   document.body.insertAdjacentHTML("beforeend", `<div class="fd-dim" id="tda_dim"></div>
     <div class="fd-sheet" id="td_alert">
-      <div class="fd-sh"><h3>⚠ ${lm.length} ${esc(tr("条已逾期"))}</h3></div>
-      <div class="mut" style="font-size:13px">${esc(tr("这些过了截止日期还没交，今天处理一下；已经开始做的，记得写进展。"))}</div>
-      <div class="td-al-list">${lines}${lm.length > 6 ? `<div class="mut">+${lm.length - 6}</div>` : ""}</div>
-      <div class="acts" style="margin-top:12px"><button class="pri" id="tda_go">${esc(tr("去处理"))}</button><button id="tda_ok">${esc(tr("知道了"))}</button></div>
+      <div class="fd-sh"><h3>${esc(head)}</h3></div>
+      <div class="mut" style="font-size:13px">${esc(tr(nr.length
+        ? "点一下「今天没动」也算报过，别攒着。"
+        : "这些过了截止日期还没交，今天处理一下。"))}</div>
+      ${nr.length ? `<div class="td-al-sub">${esc(tr("今天还没汇报"))}</div><div class="td-al-list">${needRows}${nr.length > 5 ? `<div class="mut">+${nr.length - 5}</div>` : ""}</div>` : ""}
+      ${lm.length ? `<div class="td-al-sub">${esc(tr("已逾期"))}</div><div class="td-al-list">${lateRows}${lm.length > 5 ? `<div class="mut">+${lm.length - 5}</div>` : ""}</div>` : ""}
+      ${team.length ? `<div class="td-al-sub">${esc(tr("同事今天还没汇报"))}</div><div class="td-al-list">${teamRows}</div>` : ""}
+      <div class="acts" style="margin-top:12px"><button class="pri" id="tda_go">${esc(tr(nr.length ? "去汇报" : "去处理"))}</button><button id="tda_ok">${esc(tr("知道了"))}</button></div>
     </div>`);
   const mark = () => { try { localStorage.setItem(key, "1"); } catch (e) {} };
   const close = () => { ["tda_dim", "td_alert"].forEach((id) => { const el = document.getElementById(id); if (el) el.remove(); }); };
   $("#tda_ok").onclick = () => { mark(); close(); };
   $("#tda_dim").onclick = () => { mark(); close(); };
-  $("#tda_go").onclick = async () => { mark(); close(); S.todoFilter = "late"; await enterApp("todo"); };
+  $("#tda_go").onclick = async () => { mark(); close(); S.todoFilter = nr.length ? "need" : "late"; await enterApp("todo"); };
 }
 
 /* ---------- 人员 ---------- */
