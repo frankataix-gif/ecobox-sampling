@@ -2,7 +2,7 @@
 // 唯一目标：**页面本体一定要留在本机**，断网冷启动（关掉再打开）必须能进。
 // 做法：安装时抓一份页面并校验内容后写进 sampling-shell（activate 不清它），
 // 导航请求缓存优先（不等网络），新缓存没拿到页面之前绝不删除旧缓存。
-const CACHE = "sampling-v58";
+const CACHE = "sampling-v59";
 const SHELL_CACHE = "sampling-shell"; // 只放校验过的页面本体
 const BASE = new URL(self.registration.scope).pathname; // /ecobox-sampling/
 const BASE_ROOT = BASE.endsWith("/") ? BASE.slice(0, -1) : BASE;

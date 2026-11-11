@@ -59,8 +59,8 @@
 
 ## 版本号
 
-改完在 `ecobox-sampling/` 下跑 `py -3.12 devtools/bump_version.py`，一次同步三处（`--dry-run` 可先看）：
-`sampling_helper.html` 的 `APP_VER` + 设置页两处显示、`sampling_sw.js` 的 `CACHE`（`sampling-vNN` 必须变，否则老客户端不换缓存）、`version.txt`。
+改完在 `ecobox-sampling/` 下跑 `py -3.12 devtools/bump_version.py`，一次同步（`--dry-run` 可先看）：
+`sampling_helper.html` 里两处（`APP_VER` + 设置页 `#set_ver`）、`sampling_sw.js` 的 `CACHE`（`sampling-vNN` 必须变，否则老客户端不换缓存）、`version.txt`。
 
 `version.txt` 是**更新探针**：页面加载 1.5 秒后、回到前台/窗口获焦、联网、每 5 分钟各 fetch 一次（`no-store`），远端版本**大于** `APP_VER` 就在底部导航上方弹出「🔄 有新版本 <版本号> / 立即更新 / 稍后」，同时弹一条 toast；远端回到一致时横幅自动收起（`checkUpdate()` 返回 `new|latest|err`）。
 「稍后」只压 30 分钟（`UPD_SNOOZE`），且**换了新版本号立刻再提醒**；设置页「🔄 检查更新」按钮手动检查并告诉你「已是最新 / 发现新版本 / 检查失败」，旁边的「强制重新下载最新版」才是清缓存重载。
@@ -77,8 +77,6 @@ SW 侧还有第二道保险：`refreshShell()` 抓到的新页面若 `APP_VER` �
 - 步骤按 UA 分叉（`installGuide()`）：iOS Safari / iPhone 上的 Chrome·微信（提示改用 Safari）/ 微信内置 / 华为浏览器 / 三星 / 小米·红米 / UC·夸克 / QQ 浏览器 / 其它安卓（Chrome·Edge）/ 桌面。
 - 只有浏览器真的派发 `beforeinstallprompt`（`deferredPrompt`）才显示「一键添加」；没有就只给步骤，避免点了没反应。`appinstalled` 后弹 toast 并收起横幅。
 - 图标：`icon-192.png` / `icon-512.png` / `icon-maskable-512.png` / `apple-touch-icon.png` 由 `devtools/make_icons.py`（Playwright 渲染 `icon.svg` 截图）生成；`manifest.json` 里 192/512 为 `any`、512 单独一份 `maskable`，`<link rel="apple-touch-icon">` 必须指向 PNG（iOS 不认 SVG）。四个 PNG 都进了 SW 的 `STATIC`。
-
-版本号现在由 `build_public.py` 生成 `YYYYMMDD-NNNN`（`licences.html` 的 `PAGE_VER` 就是这种），`bump_version.py` 两种写法（`bYYYYMMDD-NNN` / `YYYYMMDD-NNNN`）都能识别并保持原格式；`version.txt` 与页面 `APP_VER` 必须一字不差，否则每次打开都误报「有新版本」。
 
 ## 离线可用（2026-11 重构，动 SW 前必读）
 
@@ -264,6 +262,8 @@ go/no-go 由人拍板并记 decision log。取样点永不写入矿证归属（�
 - 设置页「☁️ 云端同步」默认只显示状态句（`#cloud_state`：已连接 / 未连接）+「测试连接」；Worker 地址与令牌收进 `<details>`「高级」，`#s_token` 不再默认暴露。令牌正常走 `?t=` 链接一次性写入（`store.app_token`），401 时提示「用带 ?t= 的链接重新打开」。
 - 设置页 9 个分区，按使用频率排：**🚦出发前检查 / 📲添加到桌面 / ☁️云端同步 / 📊本机数据（记录人合并进来，进页面自动统计）/ 📤备份与恢复（导出+云恢复+JSON 恢复，「更多格式 GPX/KML/CSV」折叠）/ 🗂矿证 / 🔄版本更新（`#btn_now` 立即更新 + 强制重下折叠）/ ℹ️使用说明（折叠）/ 🗑危险操作**。
   改版时删掉：单独「记录人」卡片、「刷新统计」按钮（进页面即算）、危险操作卡里重复的版本号、旧「说明」里的重复条目。回归：`t_settings.py`（18 条）。
+- 有新版本时三个入口同时亮：底部条「立即更新」、导航「⚙️ 设置」上的红点（`#setdot`）、设置页 `#btn_now`；三者都走同一个 `applyUpdate()`。
+- 坑：`$("id").onclick=…` 是顶层语句，删元素忘删绑定会抛错并让**该 script 后面所有顶层绑定全部不执行**（按钮集体失灵）。改设置页后必跑 `.agent_tmp/audit_ids.py` 查「JS 引用但 HTML 没有」的 id。
 - `pg-form` 内两个视图，用 `#formtabs` 切换：`tab_cur`（野外取样，录入表单）、`tab_trip`（行程，轨迹记录 + 历史行程）。
   切换函数 `setFormTab("cur"|"trip")`；进行程视图才 `updTrk()/renderTrips()`。
 - `pg-list` 是独立一级页面（原来的 `tab_list` 已拆出来）：点导航先 `saveDraft()` 再 `renderList()`。
