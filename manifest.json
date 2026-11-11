@@ -3,16 +3,38 @@
   "short_name": "矿区考察记录",
   "description": "矿区野外取样、GPS 轨迹、离线地图与导出工具",
   "start_url": "sampling_helper.html",
+  "scope": "./",
+  "id": "/ecobox-sampling/",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui", "browser"],
   "orientation": "portrait",
   "background_color": "#f4f6f9",
   "theme_color": "#1668dc",
+  "lang": "zh-CN",
   "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
     {
       "src": "icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
   ]
 }

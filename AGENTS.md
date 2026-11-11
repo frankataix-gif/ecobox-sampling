@@ -62,9 +62,19 @@
 改完在 `ecobox-sampling/` 下跑 `py -3.12 devtools/bump_version.py`，一次同步三处（`--dry-run` 可先看）：
 `sampling_helper.html` 的 `APP_VER` + 设置页两处显示、`sampling_sw.js` 的 `CACHE`（`sampling-vNN` 必须变，否则老客户端不换缓存）、`version.txt`。
 
-`version.txt` 是**更新探针**：页面加载后、回到前台、每 5 分钟各 fetch 一次（`no-store`），内容与 `APP_VER` 不一致就在底部导航上方弹出「🔄 有新版本 / 立即更新 / 稍后」。
+`version.txt` 是**更新探针**：页面加载 1.5 秒后、回到前台/窗口获焦、联网、每 5 分钟各 fetch 一次（`no-store`），远端版本**大于** `APP_VER` 就在底部导航上方弹出「🔄 有新版本 <版本号> / 立即更新 / 稍后」，同时弹一条 toast；远端回到一致时横幅自动收起（`checkUpdate()` 返回 `new|latest|err`）。
+「稍后」只压 30 分钟（`UPD_SNOOZE`），且**换了新版本号立刻再提醒**；设置页「🔄 检查更新」按钮手动检查并告诉你「已是最新 / 发现新版本 / 检查失败」，旁边的「强制重新下载最新版」才是清缓存重载。
 「立即更新」优先走 `SW.postMessage("SKIP_WAITING")` + `controllerchange` 重载，没有 waiting SW 时退回 `forceAppUpdate()`（清缓存 + 注销 SW + 带 `?r=` 重载）。
 `version.txt` 必须发布（不能进 `.gitignore`）；漏传时探针 404，横幅永远不弹。
+
+版本号现在由 `build_public.py` 生成 `YYYYMMDD-NNNN`（`licences.html` 的 `PAGE_VER` 就是这种），`bump_version.py` 两种写法（`bYYYYMMDD-NNN` / `YYYYMMDD-NNNN`）都能识别并保持原格式；`version.txt` 与页面 `APP_VER` 必须一字不差，否则每次打开都误报「有新版本」。
+
+## 添加到手机桌面（2026-11）
+
+- 设置页 **📲 添加到手机桌面**（`#install_card`）：一个 56px 图标 + 机型标题 + 3 步操作清单；`display-mode: standalone` 时显示「✅ 已添加到桌面」。
+- 步骤按 UA 分叉（`installGuide()`）：iOS Safari / iPhone 上的 Chrome·微信（提示改用 Safari）/ 微信内置 / 华为浏览器 / 三星 / 小米·红米 / UC·夸克 / QQ 浏览器 / 其它安卓（Chrome·Edge）/ 桌面。
+- 只有浏览器真的派发 `beforeinstallprompt`（`deferredPrompt`）才显示「一键添加」；没有就只给步骤，避免点了没反应。`appinstalled` 后弹 toast 并收起横幅。
+- 图标：`icon-192.png` / `icon-512.png` / `icon-maskable-512.png` / `apple-touch-icon.png` 由 `devtools/make_icons.py`（Playwright 渲染 `icon.svg` 截图）生成；`manifest.json` 里 192/512 为 `any`、512 单独一份 `maskable`，`<link rel="apple-touch-icon">` 必须指向 PNG（iOS 不认 SVG）。四个 PNG 都进了 SW 的 `STATIC`。
 
 版本号现在由 `build_public.py` 生成 `YYYYMMDD-NNNN`（`licences.html` 的 `PAGE_VER` 就是这种），`bump_version.py` 两种写法（`bYYYYMMDD-NNN` / `YYYYMMDD-NNNN`）都能识别并保持原格式；`version.txt` 与页面 `APP_VER` 必须一字不差，否则每次打开都误报「有新版本」。
 
@@ -248,6 +258,8 @@ go/no-go 由人拍板并记 decision log。取样点永不写入矿证归属（�
 ## 采集页（sampling_helper.html）页面结构
 
 - 底部导航 4 项：`pg-form`（野外取样）/ `pg-list`（历史数据）/ `pg-map`（地图）/ `pg-set`（设置）。
+- 顶部栏只剩 `.netdot`（网络状态点）+「同步」按钮（`#syncbtn`），**不再有标题**；`header` padding 6px、按钮 30px 高，整条 42px，把竖向空间还给内容。
+- 设置页「☁️ 云端同步」默认只显示状态句（`#cloud_state`：已连接 / 未连接）+「测试连接」；Worker 地址与令牌收进 `<details>`「高级」，`#s_token` 不再默认暴露。令牌正常走 `?t=` 链接一次性写入（`store.app_token`），401 时提示「用带 ?t= 的链接重新打开」。
 - `pg-form` 内两个视图，用 `#formtabs` 切换：`tab_cur`（野外取样，录入表单）、`tab_trip`（行程，轨迹记录 + 历史行程）。
   切换函数 `setFormTab("cur"|"trip")`；进行程视图才 `updTrk()/renderTrips()`。
 - `pg-list` 是独立一级页面（原来的 `tab_list` 已拆出来）：点导航先 `saveDraft()` 再 `renderList()`。
