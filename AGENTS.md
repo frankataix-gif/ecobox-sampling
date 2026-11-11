@@ -247,16 +247,17 @@ go/no-go 由人拍板并记 decision log。取样点永不写入矿证归属（�
 - 测试：`t_multilic.html`（侧栏只列项目、加证后计数变 2、两张边界卡、地图画两条环）。
 ## 采集页（sampling_helper.html）页面结构
 
-- 底部导航 3 项：`pg-form`（取样）/ `pg-map`（地图）/ `pg-set`（设置）。独立的 `pg-list`（取样）与 `pg-track`（行程）都已删掉。
-- `pg-form` 内三个视图，用 `#formtabs` 切换：`tab_cur`（取样，录入表单）、`tab_list`（取样历史，已保存列表）、`tab_trip`（行程，轨迹记录 + 历史行程）。
-  切换函数 `setFormTab("cur"|"list"|"trip")`；进列表视图才 `renderList()`，进行程视图才 `updTrk()/renderTrips()`。
-  老客户端 `kv.cur_page === "pg-list"` / `"pg-track"` 由启动逻辑映射到对应视图；`kv.form_tab` 记住上次停留的视图。
+- 底部导航 4 项：`pg-form`（野外取样）/ `pg-list`（历史数据）/ `pg-map`（地图）/ `pg-set`（设置）。
+- `pg-form` 内两个视图，用 `#formtabs` 切换：`tab_cur`（野外取样，录入表单）、`tab_trip`（行程，轨迹记录 + 历史行程）。
+  切换函数 `setFormTab("cur"|"trip")`；进行程视图才 `updTrk()/renderTrips()`。
+- `pg-list` 是独立一级页面（原来的 `tab_list` 已拆出来）：点导航先 `saveDraft()` 再 `renderList()`。
+  老客户端 `kv.cur_page === "pg-list"` 直接落到该页，`"pg-track"` 映射到 `pg-form` + 行程视图；`kv.form_tab` 记住上次停留的视图。
 - 记录人由登录锁定：`openLogin()` / `submitLogin()`，账号 `ACCOUNTS` 写在 HTML 里（离线无后端，已知取舍）；
   `#f_recorder` 只读，值取登录身份，保存时 `recorder` 直接取该字段，软件内无「切换」入口。
 - 取样视图有**草稿自动保存**：`kv.draft`（文字/含量）+ `kv.draft_photos`（照片 Blob），切页/切后台/刷新后自动恢复，保存或「清空本次输入」后清除；半天以上视为过期。编辑旧记录期间不写草稿（避免被当成新记录）。
-- 取样历史 = **全部现场记录**：样品 + 标记点（本机，可编辑）、云端独有记录（只读）、**行程**（可直接回放/编辑）、以及**未保存的草稿**（置顶一条，点它回表单）。
+- 历史数据页 = **全部现场记录**：样品 + 标记点（本机，可编辑）、云端独有记录（只读）、**行程**（可直接回放/编辑）、以及**未保存的草稿**（置顶一条，点它回表单）。
   `drawList(local, cloud, extra)` 三个来源合并后按时间倒序（`rowTs()`：样品用 `created_at/sample_time`，行程用 `t0`）。
-  两个筛选维度：`#chips_rectype`（全部/样品/标记点/行程）与 `#chips_filter`（全部状态/待同步/已同步/☁️ 仅云端）；后者只作用于样品，选「行程」时整行隐藏。
+  两个筛选维度：`#chips_rectype`（全部/野外取样/标记点/行程）与 `#chips_filter`（全部状态/待同步/已同步/☁️ 仅云端）；后者只作用于样品，选「行程」时整行隐藏。
   `#list_stat` 分别计数：`共 N 条 · 样品 a · 标记 b · 行程 c · 云端 d · 待同步 e 条`。
   云端独有的记录标「☁️ 云端」、只读，点「⋯ 更多」时自动落库再编辑；`#cloudbar` 给「存到本机」批量入口（`pullSamples`）。
   云端数据缓存在 `kv.cloud_samples_v1`（60 秒节流、非阻塞：先用缓存画一遍再补刷新，弱网不卡列表），离线时只用缓存。

@@ -2,7 +2,7 @@
 // 唯一目标：**页面本体一定要留在本机**，断网冷启动（关掉再打开）必须能进。
 // 做法：安装时抓一份页面并校验内容后写进 sampling-shell（activate 不清它），
 // 导航请求缓存优先（不等网络），新缓存没拿到页面之前绝不删除旧缓存。
-const CACHE = "sampling-v55";
+const CACHE = "sampling-v56";
 const SHELL_CACHE = "sampling-shell"; // 只放校验过的页面本体
 const BASE = new URL(self.registration.scope).pathname; // /ecobox-sampling/
 const BASE_ROOT = BASE.endsWith("/") ? BASE.slice(0, -1) : BASE;
@@ -11,7 +11,7 @@ const PAGES = [MAIN_PAGE, BASE + "licences.html", BASE + "index.html", BASE + "c
 const STATIC = [BASE + "manifest.json", BASE + "icon.svg", BASE + "geo_1230se.jpg"];
 // 矿区配置：网络优先，离线回退缓存（改配置刷新即生效，不必等新版本）
 const CONFIG = [BASE + "areas.json", BASE + "licences.json"];
-const SHELL_MARKS = ['id="pg-form"', 'id="list_stat"'];
+const SHELL_MARKS = ['id="pg-form"', 'id="pg-list"', 'id="list_stat"'];
 const abs = (p) => new URL(p, self.location.origin).href;
 
 async function tryCache(c, f) {

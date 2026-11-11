@@ -97,7 +97,8 @@ textarea{min-height:64px;resize:vertical}
 .b-ok{background:#dcfce7;color:#166534}
 .b-fail{background:#fee2e2;color:#991b1b}
 nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--border);display:flex;z-index:50}
-nav button{flex:1;border:none;background:none;padding:18px 0 17px;font-size:14px;color:var(--muted);line-height:1.3;border-bottom:3px solid transparent}
+nav button{flex:1;min-width:0;border:none;background:none;padding:16px 0 15px;font-size:13.5px;color:var(--muted);line-height:1.3;white-space:nowrap;border-bottom:3px solid transparent}
+@media (max-width:360px){nav button{font-size:12px;padding:15px 0 14px}}
 nav button.on{color:var(--primary);font-weight:600;background:rgba(22,104,220,.08);border-bottom-color:var(--primary)}
 .hidden{display:none!important}
 #mapwrap{position:relative;height:calc(100vh - 130px);height:calc(100svh - 130px);border-radius:12px;overflow:hidden;background:#dbe4ee}
@@ -131,7 +132,6 @@ progress{width:100%;height:10px;margin-top:8px}
   <section id="pg-form">
     <div class="tabs" id="formtabs">
       <button type="button" data-tab="cur" class="on">✏️ 野外取样</button>
-      <button type="button" data-tab="list">📋 野外取样历史</button>
       <button type="button" data-tab="trip">🧭 行程<span class="tabdot hidden" id="tab_trip_dot"></span></button>
     </div>
     <div id="tab_cur">
@@ -213,28 +213,6 @@ progress{width:100%;height:10px;margin-top:8px}
       <button class="btn secondary block" id="btn_clear" style="margin-top:8px;font-size:14px;min-height:40px">🧹 清空本次输入</button>
     </div>
     </div>
-    <div id="tab_list" class="hidden">
-      <div class="toolbar"><input id="q_list" placeholder="🔍 搜索 编号 / 备注 / 地区 / 元素" inputmode="search"></div>
-      <div class="chips" id="chips_rectype">
-        <button type="button" data-t="all" class="on">全部</button>
-        <button type="button" data-t="sample">野外取样</button>
-        <button type="button" data-t="marker">标记点</button>
-        <button type="button" data-t="trip">行程</button>
-      </div>
-      <div class="chips" id="chips_filter">
-        <button type="button" data-f="all" class="on">全部状态</button>
-        <button type="button" data-f="pend">待同步</button>
-        <button type="button" data-f="ok">已同步</button>
-        <button type="button" data-f="cloud">☁️ 仅云端</button>
-      </div>
-      <div class="hint" id="list_stat" style="margin:0 2px 10px"></div>
-      <div class="card" id="cloudbar" style="display:none;gap:8px;align-items:center">
-        <span id="cloudbar_txt" style="flex:1;font-size:13px;color:var(--muted)"></span>
-        <button class="btn secondary" id="btn_pull_all" style="padding:6px 10px;min-height:34px">存到本机</button>
-      </div>
-      <div id="samlist"></div>
-      <div class="card" id="empty_tip" style="text-align:center;color:var(--muted)">暂无记录，在「野外取样」录入并保存后会出现在这里</div>
-    </div>
     <div id="tab_trip" class="hidden">
     <div class="card">
       <h3>🧭 行程轨迹记录</h3>
@@ -255,6 +233,30 @@ progress{width:100%;height:10px;margin-top:8px}
       <div id="triplist"></div>
     </div>
     </div>
+  </section>
+
+  <!-- ===== 历史数据页 ===== -->
+  <section id="pg-list" class="hidden">
+    <div class="toolbar"><input id="q_list" placeholder="🔍 搜索 编号 / 备注 / 地区 / 元素" inputmode="search"></div>
+    <div class="chips" id="chips_rectype">
+      <button type="button" data-t="all" class="on">全部</button>
+      <button type="button" data-t="sample">野外取样</button>
+      <button type="button" data-t="marker">标记点</button>
+      <button type="button" data-t="trip">行程</button>
+    </div>
+    <div class="chips" id="chips_filter">
+      <button type="button" data-f="all" class="on">全部状态</button>
+      <button type="button" data-f="pend">待同步</button>
+      <button type="button" data-f="ok">已同步</button>
+      <button type="button" data-f="cloud">☁️ 仅云端</button>
+    </div>
+    <div class="hint" id="list_stat" style="margin:0 2px 10px"></div>
+    <div class="card" id="cloudbar" style="display:none;gap:8px;align-items:center">
+      <span id="cloudbar_txt" style="flex:1;font-size:13px;color:var(--muted)"></span>
+      <button class="btn secondary" id="btn_pull_all" style="padding:6px 10px;min-height:34px">存到本机</button>
+    </div>
+    <div id="samlist"></div>
+    <div class="card" id="empty_tip" style="text-align:center;color:var(--muted)">暂无记录，在「野外取样」录入并保存后会出现在这里</div>
   </section>
 
   <!-- ===== 地图页 ===== -->
@@ -343,10 +345,10 @@ progress{width:100%;height:10px;margin-top:8px}
     <div class="card">
       <h3>🔄 版本更新</h3>
       <button class="btn secondary block" id="btn_update">检查并强制更新到最新版</button>
-      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：20261111-1000</p>
+      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：20261112-1000</p>
     </div>
     <div class="card">
-      <p style="font-size:11px;color:var(--muted);text-align:center">20261111-1000</p>
+      <p style="font-size:11px;color:var(--muted);text-align:center">20261112-1000</p>
       <h3>🗑 危险操作</h3>
       <button class="btn danger block" id="btn_wipe">🔒 清空本机全部数据（需密码）</button>
     </div>
@@ -354,6 +356,7 @@ progress{width:100%;height:10px;margin-top:8px}
 </main>
 <nav>
         <button data-pg="pg-form" class="on">✏️ 野外取样</button>
+  <button data-pg="pg-list">📋 历史数据</button>
   <button data-pg="pg-map">🗺 地图</button>
   <button data-pg="pg-set">⚙️ 设置</button>
 </nav>
@@ -653,14 +656,12 @@ addEventListener("online",()=>{netStatus();toast("网络已恢复，可同步");
 addEventListener("offline",netStatus);netStatus();
 
 /* ============ 页面切换 ============ */
-// 记录页三个视图：野外取样（录入）/ 野外取样历史（已保存列表）/ 行程（轨迹）
+// 记录页两个视图：野外取样（录入）/ 行程（轨迹）。历史数据是一级页面 pg-list
 function setFormTab(t,save){
   if(t!=="cur")saveDraft();
   document.querySelectorAll("#formtabs button").forEach(b=>b.classList.toggle("on",b.dataset.tab===t));
   $("tab_cur").classList.toggle("hidden",t!=="cur");
-  $("tab_list").classList.toggle("hidden",t!=="list");
   $("tab_trip").classList.toggle("hidden",t!=="trip");
-  if(t==="list")renderList();
   if(t==="trip"){updTrk();renderTrips()}
   if(save!==false)store.set("form_tab",t);
   window.scrollTo(0,0);
@@ -674,6 +675,7 @@ document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
   if(b.dataset.pg!=="pg-map"){pickMode=false;pickPreview=null;if(map)map.draw();$("picktip").classList.add("hidden");$("pickbar").classList.add("hidden")}
   if(b.dataset.pg==="pg-map"){viewTrip=null;initMap()}
       if(b.dataset.pg==="pg-set"){renderSetStats();renderOffStat();}
+  if(b.dataset.pg==="pg-list"){saveDraft();renderList()}
   window.scrollTo(0,0);
 });
 
@@ -1077,7 +1079,7 @@ async function renderList(){
     draftPhotos:((await store.get("draft_photos"))||[]).length,
   };
   drawList(local,cloudCache.items||[],extra);
-  if(await hydrateCloud()&&!$("tab_list").classList.contains("hidden"))drawList(await S.all(),cloudCache.items||[],extra);
+  if(await hydrateCloud()&&!$("pg-list").classList.contains("hidden"))drawList(await S.all(),cloudCache.items||[],extra);
 }
 /* 排序时间戳：样品用 created_at/sample_time，行程用 t0（都是本机时区） */
 const rowTs=s=>{
@@ -1178,7 +1180,7 @@ function drawList(local,cloud,extra={}){
       </div></div></div>`}).join("");
   const rowOf=el=>{const sid=el.closest(".samcard").dataset.sid;return sid?listRows.find(x=>x.sample_id===sid):null};
   const dc=$("draftcard");
-  if(dc)dc.onclick=()=>{document.querySelector('nav button[data-pg="pg-form"]').click();setFormTab("form")};
+  if(dc)dc.onclick=()=>{document.querySelector('nav button[data-pg="pg-form"]').click();setFormTab("cur")};
   document.querySelectorAll("#samlist .samcard").forEach(c=>c.onclick=e=>{
     if(e.target.closest("button"))return;
     if(c.dataset.tid)return; // 行程卡用下面的专用按钮
@@ -2348,7 +2350,7 @@ if(!isStandalone){
 }
 
 /* ============ 版本检查：发布新版本后自动弹「更新」按钮 ============ */
-const APP_VER="20261111-1000";
+const APP_VER="20261112-1000";
 let updateDismissed=false;
 function showUpdateTip(){if(updateDismissed)return;const t=$("update_tip");if(t)t.style.display="flex";}
 async function checkUpdate(){
@@ -2585,7 +2587,7 @@ store.get("track_mode").then(m=>setTrackMode(m==="walk"?"walk":"car"));
 idb().then(()=>{}).catch(()=>toast("⚠️ 本机存储不可用：请关闭无痕/隐私模式，用普通浏览器打开，否则记录无法保存",6000));
 // 刷新后回到上次停留的页面
 store.get("cur_page").then(async pg=>{
-  if(pg==="pg-list"){document.querySelector('nav button[data-pg="pg-form"]').click();setFormTab("list");return}
+          if(pg==="pg-list"){document.querySelector('nav button[data-pg="pg-list"]').click();return}
   if(pg==="pg-track"){document.querySelector('nav button[data-pg="pg-form"]').click();setFormTab("trip");return}
   if(pg&&pg!=="pg-form"){const b=document.querySelector(`nav button[data-pg="${pg}"]`);if(b)b.click();return}
   const t=await store.get("form_tab");
