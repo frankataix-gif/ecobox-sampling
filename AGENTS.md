@@ -60,6 +60,13 @@
 
 **账号名 `login` 是关联键**：`fin_entries.uid` / `to_uid`、`fin_accounts.uid`、`todos.owner`、`todo_notes.uid` 存的都是 **login（不是 user.id）**。改名时 `renameLogin()` 会把它们一起搬过去（`PATCH /api/users/:id` 回 `{ok,moved}`，搬不动会回滚改名并 500）；历史遗留「挂在已不存在 login 下的记录」由 `GET /api/fin/bootstrap` 的 `orphans` 报出，财务页顶部显示「这些记录挂在旧账号名下 · 并到我名下（N）」，点击走 `POST /api/fin/remap {from,to}`（仅 admin）。**别直接改 D1 里的 login**。
 
+**导航：模块＝独立页（2026-11 用户定，别改回去）**
+
+- 「目录 / 动态 / 分组页」是**根页面**，保留顶部页签 `#tabs`；**每个模块都是独立页**：进页隐藏页签，顶部只剩「← 标题」，靠返回出去（以「费用记录」为样板）。
+- 规则集中在一处：`ROOT(t)` 判定根页面 + `syncChrome()` 切页签/返回/标题；`enterApp(k)` 压栈 `S.stack`、`history.pushState('#k')`、滚到顶、置 `S.fresh` 触发进场动画；`goBack()` 弹栈回原页并用 `replaceState` 对齐地址；浏览器/Android 手势后退由 `popstate` 兜住。
+- 新模块只要 `/api/modules` 里带 `tab`，**自动**就是独立页（标题取 `MODS` 的 `t`）；**不要再**把模块渲染成页签，也不要在页面里自带标题栏。
+- 外链工具（配置里用 `u` 不用 `tab`）照旧新窗口打开，不受这条约束。
+
 **岗位（`users.role`）**：`staff` 员工 / `manager` 负责人 / `finance` 财务 / `admin` 管理员
 
 - 员工：只看/只改自己录的日报；财务能看全部账、替任何人记账、标票、登记转账，但不能改余额/分类/期初（负责人专属），也不能改别人的日报、不能管账号；负责人＝员工权限 + 全部日报；管理员＝全部 + 账号/备份。

@@ -260,6 +260,10 @@ td.n{text-align:right;font-variant-numeric:tabular-nums}
 @media(max-width:380px){.fin-kpi{grid-template-columns:1fr}.mods{grid-template-columns:1fr}}
 
 #back{margin:0 2px 0 -4px;padding:6px 10px;font-size:18px;line-height:1;border-color:transparent}
+/* 应用页进场：像新开了一页，不是原地换内容 */
+@keyframes paneIn{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+#pane.page-in{animation:paneIn .18s ease-out}
+@media(prefers-reduced-motion:reduce){#pane.page-in{animation:none}}
 button.chip{border:1px solid var(--line);background:var(--chip);color:var(--mut);max-width:46vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 button.chip:active{background:var(--tealsoft);color:var(--teal2)}
 @media(max-width:640px){#back{min-width:42px;min-height:42px;font-size:20px;border:none;background:transparent}}
@@ -457,7 +461,7 @@ setInterval(checkUpdate, 300000);
 document.addEventListener("visibilitychange", () => { if (!document.hidden) checkUpdate(); });
 window.addEventListener("focus", () => checkUpdate());
 setTimeout(() => checkUpdate(1), 8000);
-const S = { user: null, tab: "status", logs: [], users: [], from: "", to: "", editId: 0, editUid: 0 };
+const S = { user: null, tab: "status", logs: [], users: [], from: "", to: "", editId: 0, editUid: 0, stack: [], fresh: false };
 let pinBound = false;
 const $ = (s, r = document) => r.querySelector(s);
 const esc = (v) => String(v == null ? "" : v).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -901,7 +905,11 @@ async function showApp() {
   paintWho();
   try { MODS = (await api("/modules")).modules || []; } catch (e) { if (!MODS.length) MODS = []; }
   buildTabs();
-  $("#back").onclick = () => goHome();
+  /* 独立页地址：#<页>，刷新/后退都能回到同一页 */
+  const deep = decodeURIComponent((location.hash || "").replace(/^#/, ""));
+  if (deep && (ROOT(deep) || allowed(TAB_KEY[deep]))) { S.tab = deep; S.fresh = true; }
+  try { history.replaceState({ t: S.tab }, "", tabUrl(S.tab)); } catch (e) {}
+  $("#back").onclick = () => goBack();
   $("#updbar").onclick = async () => {
     const b = $("#updbar");
     b.textContent = "刷新中…";
@@ -2354,16 +2362,46 @@ function groupMods(g) {
   return MODS.filter((m) => m.g === g && allowed(m.k) && (!m.soon || S.user.role === "admin"));
 }
 
-function enterApp(k) { S.tab = k; S.editId = 0; render(); }
-function goHome() { enterApp("home"); }
+/* 根页面：看得见页签；其余都是「点进去的独立页」，只有返回 */
+const ROOT = (t) => t === "home" || t === "status" || String(t).startsWith("g:");
+function tabUrl(k) {
+  const h = !k || k === "home" ? "" : "#" + encodeURIComponent(k);
+  return location.pathname + location.search + h;
+}
+
+function enterApp(k, opts = {}) {
+  if (k === S.tab) { S.editId = 0; S.editUid = 0; render(); return; }
+  S.stack.push(S.tab);
+  if (ROOT(k)) S.stack = [];
+  if (S.stack.length > 20) S.stack.shift();
+  S.tab = k; S.editId = 0; S.editUid = 0; S.fresh = true;
+  if (!opts.noHist) { try { history.pushState({ t: k }, "", tabUrl(k)); } catch (e) {} }
+  try { window.scrollTo(0, 0); } catch (e) {}
+  render();
+}
+function goBack() {
+  const to = S.stack.pop() || "home";
+  S.tab = to; S.editId = 0; S.editUid = 0; S.fresh = true;
+  try { history.replaceState({ t: to }, "", tabUrl(to)); } catch (e) {}
+  try { window.scrollTo(0, 0); } catch (e) {}
+  render();
+}
+function goHome() { S.stack = []; enterApp("home"); }
+window.addEventListener("popstate", (e) => {
+  const t = (e.state && e.state.t) || "home";
+  S.tab = t; S.editId = 0; S.editUid = 0; S.stack = []; S.fresh = true;
+  render();
+});
 function syncChrome() {
-  const isFin = S.tab === "fin";
-  const tabs = $("#tabs"); if (tabs) tabs.classList.toggle("hide", isFin);
-  const back = $("#back"); if (back) back.classList.toggle("hide", !isFin);
+  /* 根页面留着页签；进了应用就变成独立页：只剩「← 标题」 */
+  const root = ROOT(S.tab);
+  const tabs = $("#tabs"); if (tabs) tabs.classList.toggle("hide", !root);
+  const back = $("#back"); if (back) back.classList.toggle("hide", root);
   const ttl = $("#ttl");
   if (ttl) {
     const names = { status: "动态", home: "目录", todo: "待办", board: "看板", log: "日报", users: "人员", mine: "我的", fin: "费用记录", lang: "语言" };
-    ttl.textContent = tr(names[S.tab] || (S.tab.startsWith("g:") ? S.tab.slice(2) : "ECOBOX"));
+    const mod = MODS.find((m) => (m.tab || m.k) === S.tab);
+    ttl.textContent = tr(names[S.tab] || (mod && mod.t) || (S.tab.startsWith("g:") ? S.tab.slice(2) : "ECOBOX"));
   }
 }
 
@@ -2694,6 +2732,12 @@ async function render() {
 }
 async function renderPane() {
   const pane = $("#pane");
+  if (S.fresh) {
+    S.fresh = false;
+    pane.classList.remove("page-in");
+    void pane.offsetWidth;
+    pane.classList.add("page-in");
+  }
   syncChrome();
   if (!["home", "status", "mine"].includes(S.tab) && !S.tab.startsWith("g:") && !allowed(TAB_KEY[S.tab])) S.tab = "home";
   [...$("#tabs").children].forEach((b) => b.classList.toggle("on", b.dataset.tab === S.tab));
