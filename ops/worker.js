@@ -1959,6 +1959,12 @@ export default {
     const url = new URL(req.url);
     const path = url.pathname;
 
+    // 旧 workers.dev 入口统一跳到自定义域（只跳页面导航，API / 脚本调用不受影响）
+    if ((req.method === "GET" || req.method === "HEAD") && url.host.endsWith(".workers.dev")
+        && (req.headers.get("accept") || "").includes("text/html")) {
+      return new Response(null, { status: 301, headers: { location: "https://ops.ecoboxmine.com" + path + url.search } });
+    }
+
     if (req.method === "GET" && (path === "/" || path === "/index.html")) {
       let u = null;
       try { await ensureSchema(env); u = await currentUser(req, env); } catch (e) {}
