@@ -438,6 +438,114 @@ a{color:#111}
 .langopt.on{border-color:#3b82f6;box-shadow:0 0 0 1px #3b82f6 inset}
 .langopt em{position:absolute;right:12px;top:12px;font-style:normal;color:#3b82f6}
 @media(max-width:520px){.langopts{grid-template-columns:1fr}}
+
+/* 生产：今日/本月 + 产量走势 + 按日分组记录 */
+.pd-win{display:flex;gap:6px;margin:0 0 2px}
+.pd-bars{display:flex;align-items:flex-end;gap:3px;height:86px;margin-top:8px}
+.pd-bar{flex:1;min-width:2px;max-width:26px;background:var(--ink);opacity:.85;border-radius:3px 3px 0 0}
+.pd-bar.zero{height:2px!important;background:var(--line);opacity:1;border-radius:0}
+.pd-x{display:flex;justify-content:space-between;margin-top:5px}
+.pd-day{display:flex;align-items:baseline;gap:8px;margin:12px 0 6px;font-size:12.5px;color:var(--mut)}
+.pd-day b{color:var(--ink);font-size:13px}
+.pd-day .s{margin-left:auto;font-variant-numeric:tabular-nums}
+.pd-row{border:1px solid var(--line);border-radius:11px;padding:9px 11px;margin-bottom:6px;display:flex;flex-wrap:wrap;gap:6px 10px;align-items:baseline}
+.pd-row .t{font-weight:600;font-size:14px}
+.pd-row .q{font-weight:700;font-variant-numeric:tabular-nums}
+.pd-row .n{flex:1 1 100%;color:var(--mut);font-size:12.5px;overflow-wrap:anywhere}
+.pd-row .m{flex:1 1 100%;display:flex;align-items:center;gap:4px}
+.pd-row .m .u{margin-right:auto;font-size:12px;color:var(--mut)}
+.pd-row .m button{padding:3px 9px;font-size:12px}
+.pd-tot{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px;background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-top:8px;font-size:13px}
+.pd-tot i{font-style:normal;color:var(--mut);margin-right:4px;font-size:12px}
+.pd-tot b{font-size:15px;font-variant-numeric:tabular-nums}
+.pd-avg{font-size:12px;font-variant-numeric:tabular-nums}
+.pd-avg em{font-style:normal;color:var(--mut);margin-left:6px}
+.pd-pk{border-top:1px dashed var(--line);padding-top:7px;margin-top:7px}
+.pd-pk-h{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;font-size:13px}
+.pd-pk-h b{font-size:13.5px}
+.pd-pk-h .q{margin-left:auto;font-weight:700;font-variant-numeric:tabular-nums}
+.pd-bars.sm{height:46px;margin-top:5px}
+.pd-cum{width:100%;height:104px;display:block;margin-top:6px}
+.pd-cum .pd-grid{stroke:var(--line);stroke-width:1;vector-effect:non-scaling-stroke}
+.pd-cum .pd-area{fill:rgba(17,24,39,.06);stroke:none}
+.pd-cum .pd-line{fill:none;stroke:var(--ink);stroke-width:2;stroke-linejoin:round;vector-effect:non-scaling-stroke}
+.pd-cum .pd-gline{fill:none;stroke:#0f766e;stroke-width:1.5;stroke-dasharray:4 3;vector-effect:non-scaling-stroke}
+.pd-cum .pd-nline{fill:none;stroke:#b45309;stroke-width:1.5;stroke-dasharray:2 3;vector-effect:non-scaling-stroke}
+.pd-leg{display:flex;gap:14px;font-size:11.5px;color:var(--mut);margin-top:4px}
+.pd-leg i{display:inline-block;width:14px;height:0;border-top:2px solid var(--ink);vertical-align:middle;margin-right:5px}
+.pd-leg .pd-k2{border-top-style:dashed;border-top-color:#0f766e}
+.pd-leg .pd-k3{border-top-style:dashed;border-top-color:#b45309}
+.pd-leg.col{flex-direction:column;align-items:flex-start;gap:5px;margin-top:8px}
+.pd-panel{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
+.pd-dbars{display:flex;align-items:flex-end;gap:1px;height:92px;margin-top:8px}
+.pd-dcol{flex:1 1 0;min-width:1px;height:100%;display:flex;flex-direction:column-reverse}
+.pd-dcol span{display:block;width:100%}
+.pd-lg{display:flex;align-items:center;gap:6px;font-size:12px;flex-wrap:wrap}
+.pd-lg i{width:10px;height:10px;border-radius:2px;flex:0 0 auto}
+.pd-lg b{font-variant-numeric:tabular-nums}
+.pd-lg em{font-style:normal;color:var(--mut);font-size:11.5px}
+.pd-dot{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:4px}
+.pd-note{font-size:11.5px;margin-top:8px}
+.pd-daytab{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
+.pd-sub{font-size:12.5px;font-weight:600;color:var(--mut);margin-bottom:2px}
+.pd-daytab table{font-size:13px}
+.pd-daytab th{font-size:12px;font-weight:600;color:var(--mut);padding:6px 6px}
+.pd-daytab th.n{text-align:right}
+.pd-daytab td{padding:6px 6px}
+.pd-ths{flex:1 1 100%;display:flex;gap:5px;flex-wrap:wrap}
+.pd-ths img{width:52px;height:52px;object-fit:cover;border-radius:8px;border:1px solid var(--line);cursor:zoom-in}
+.pd-lbl{display:block;font-size:12px;color:var(--mut);margin:10px 0 4px}
+.pd-picks{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
+.pd-fab{position:fixed;right:16px;bottom:calc(18px + env(safe-area-inset-bottom));z-index:50;display:flex;align-items:center;gap:6px;background:var(--ink);color:#fff;border:0;border-radius:999px;padding:12px 18px;font-weight:600;box-shadow:0 8px 22px rgba(0,0,0,.22)}
+
+/* ---------- 公司资料库 ---------- */
+.co-top{display:flex;align-items:center;gap:8px}
+.co-icon{width:34px;height:34px;padding:0;display:flex;align-items:center;justify-content:center;flex:none}
+.co-search{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)}
+.co-pick{display:inline-flex;align-items:center;gap:6px;border:1px dashed var(--line);border-radius:10px;padding:8px 12px;cursor:pointer}
+.co-pick:hover{border-color:var(--teal)}
+.co-list{display:grid;gap:6px}
+.co-row{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:9px 11px;cursor:pointer;color:var(--ink)}
+.co-row:hover{border-color:var(--teal)}
+.co-main{flex:1;display:grid;gap:2px;min-width:0}
+.co-main span{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.co-sh{color:var(--ink)}
+.co-zm{font-size:12px;font-weight:700;color:var(--mut);white-space:nowrap}
+.co-zm.on{color:var(--good)}
+.co-docs{display:grid;gap:6px}
+.co-doc{display:flex;align-items:center;gap:9px;border:1px solid var(--line);border-radius:10px;padding:7px 9px}
+.co-doc .co-ic{font-size:18px;line-height:1}
+.co-doc a{flex:1;display:grid;gap:1px;min-width:0;color:var(--ink);text-decoration:none}
+.co-doc a b{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.co-doc a i{font-style:normal;font-size:11px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.co-doc:hover{border-color:var(--teal)}
+.co-head{display:flex;align-items:center;gap:8px;margin:0 0 10px}
+.co-title{flex:1;font-weight:800;font-size:1.05rem;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.co-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.co-grid label{display:block;font-size:12px;color:var(--mut);margin:0 0 3px}
+@media(max-width:640px){.co-grid{grid-template-columns:1fr}}
+.co-table{width:100%;border-collapse:collapse;font-size:13px}
+.co-table th{font-size:11.5px;color:var(--mut);text-align:left;font-weight:700;padding:4px 2px;border-bottom:1px solid var(--line)}
+.co-table td{padding:3px 2px;border-bottom:1px solid var(--line);vertical-align:middle}
+.co-table input{border:1px solid transparent;border-radius:8px;padding:5px 6px;background:transparent;width:100%;color:inherit;font:inherit}
+.co-table input:not([readonly]){border-color:var(--line);background:var(--card2)}
+.co-x{width:26px;height:26px;padding:0;line-height:1;border-radius:8px}
+
+/* 打卡 / 客户 / 出口 */
+.row-item{display:flex;flex-direction:column;gap:2px;width:100%;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-top:8px;font:inherit;color:inherit}
+.row-item b{font-size:14.5px;font-weight:600}
+.row-item span{font-size:12.5px}
+.st-dots{display:flex;gap:5px;padding:6px 2px 2px}
+.st-dot{display:block;width:100%;height:4px;border-radius:99px;background:var(--line)}
+.st-dot.on{background:var(--good)}
+.exp-detail{border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--card2);margin:8px 0 14px}
+.exp-stage{border-top:1px dashed var(--line);padding-top:10px;margin-top:10px}
+.exp-stage:first-of-type{border-top:0;margin-top:0;padding-top:0}
+.exp-stage-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:13.5px;margin-bottom:2px}
+.exp-stage.done .exp-stage-h b{color:var(--good)}
+.file-row{display:flex;gap:8px;align-items:center;font-size:13px;margin-top:6px}
+.file-row a{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+label.btn{display:inline-flex;align-items:center;justify-content:center;font-size:13.5px;color:inherit;background:var(--card);border:1px solid var(--line);border-radius:9px;padding:8px 12px;margin:0}
 </style>
 </head>
 <body>
@@ -521,6 +629,8 @@ let pinBound = false;
 const $ = (s, r = document) => r.querySelector(s);
 const esc = (v) => String(v == null ? "" : v).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const iso = (d) => d.toISOString().slice(0, 10);
+/* 业务日期一律按本地时区算：iso() 是 UTC 的，UTC+X 时会差一天 */
+const localDay = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 const money = (v) => (v == null ? "-" : (+v).toLocaleString("en-US", { maximumFractionDigits: 2 }));
 const num = (v, d = 3) => (v == null ? "-" : (+v).toLocaleString("en-US", { maximumFractionDigits: d }));
 const SITES = ["Serenje 1330NW", "Chitambo 1230SE", "Kalomo", "Lusaka 办公室"];
@@ -533,6 +643,57 @@ const isEN = () => LANG === "en";
 
 /* 界面文案：中文原文 → 英文。只在英文模式下走这里；查不到就保留中文。 */
 const EN = {
+  "占比合计": "Share total",
+  "可用字段": "Fields",
+  "填充示例": "Fill sample",
+  "公司名 / PACRA 号 / 股东 / 地址": "Name / PACRA no. / shareholder / address",
+  "公司档案": "Company register",
+  "新建公司": "New company",
+  "批量导入": "Bulk import",
+  "搜索": "Search",
+  "股东": "Shareholders",
+  "董事": "Directors",
+  "姓名": "Name",
+  "国籍": "Nationality",
+  "证件号": "ID / passport",
+  "出资": "Contribution",
+  "占比": "Share",
+  "职务": "Role",
+  "注册资本": "Share capital",
+  "注册日期": "Incorporated",
+  "地址": "Address",
+  "邮箱": "Email",
+  "备注": "Notes",
+  "标签": "Tags",
+  "币种": "Currency",
+  "英文名": "English name",
+  "基础信息": "Basic info",
+  "赞方": "Zambian",
+  "赞方合计": "Zambian total",
+  "个人": "Individual",
+  "返回列表": "Back to list",
+  "编辑": "Edit",
+  "取消": "Cancel",
+  "删除这家公司": "Delete this company",
+  "没有股东记录": "No shareholders yet",
+  "没有董事记录": "No directors yet",
+  "股东未填": "No shareholders",
+  "PACRA 未填": "PACRA not set",
+  "有赞比亚股东": "With Zambian shareholding",
+  "共": "Total",
+  "家": "entities",
+  "粘贴 JSON 数组": "Paste a JSON array",
+  "导入": "Import",
+  "已导入": "Imported",
+  "已保存": "Saved",
+  "已删除": "Deleted",
+  "公司名必填": "Company name is required",
+  "JSON 格式不对": "Invalid JSON",
+  "要一个数组": "Expected a JSON array",
+  "确定删除": "Delete",
+  "新公司": "New company",
+  "公司名 / PACRA 号 / 地址": "Name / PACRA no. / address",
+  "还没有公司，点「新建公司」或批量导入": "No companies yet — create one or bulk import",
   /* 待办：派活 → 归属 → 每日汇报 */
   "我负责": "Assigned to me", "在办": "open", "今天未汇报": "Unreported today",
   "今天还没报": "still open today", "都报过了": "all reported", "7 天内到期": "Due in 7 days", "含今天": "incl. today",
@@ -553,13 +714,26 @@ const EN = {
   "派下去就归他，从今天开始算汇报；对方每天要交一句进展。": "Once assigned it is theirs; the daily report starts today.",
   "给自己排一件今天要推进的事，做完点「完成」，每天点一下「汇报」。": "Put one thing on your own list, tick it off, and report daily.",
   /* 导航 / 分组 / 模块 */
-  "状态": "Activity", "目录": "Home", "看板": "Board", "日报": "Daily log", "人员": "Members",
+  "状态": "Activity", "目录": "Home", "日报": "Daily log", "人员": "Members",
   "我的": "Account", "费用记录": "Expenses", "会员设置": "Membership", "语言": "Language",
   "语言 / Language": "Language", "设置": "Settings", "财务": "Finance", "日常协同": "Daily",
   "业务现场": "Field", "项目资料": "Project docs", "资产": "Assets", "系统": "System",
-  "动态": "Feed", "打卡": "Attendance", "生产": "Production", "生产统计": "Output stats",
+  "动态": "Feed", "打卡": "Attendance", "生产": "Production", "产量走势": "Output trend",
+  "今日产量": "Today", "本月记录": "Records this month", "天有记录": "days logged", "另有": "plus",
+  "修改生产记录": "Edit batch", "产品": "Product", "数量": "Quantity", "单位": "Unit",
+  "钽铌精矿": "Ta-Nb concentrate", "跳汰机粗颗粒": "Jig coarse concentrate", "手工原矿": "Hand-mined ore",
+  "Ta 品位 %": "Ta grade %", "Nb 品位 %": "Nb grade %",
+  "总量": "Total", "加权品位": "Weighted grade", "全部品种合计": "All products",
+  "未填产品": "Untitled", "这段时间没有产量记录": "No output in this period",
+  "品位按数量加权平均；不同单位不相加": "Grades are quantity-weighted; units are never added together",
+  "累计": "Cumulative", "产量走势 · 累计": "Output trend · cumulative",
+  "当日": "Day", "累计 Ta%": "Cum. Ta%", "累计 Nb%": "Cum. Nb%", "累计 Ta %": "Cum. Ta %", "累计 Nb %": "Cum. Nb %",
+  "累计只按单一单位统计，袋/吨等其它单位不计入": "Cumulative is per unit; bags and tonnes are excluded",
+  "还没有记录，点右下角「记一笔」": "No records yet — tap “Log a batch”",
+  "现场信息（选填：矿区 / 班次 / 人数 / 废石 / 支出）": "Site details (optional: site / shift / crew / waste / spend)",
+  "数量要大于 0": "Quantity must be above 0", "删掉这条生产记录？不能撤销。": "Delete this batch? It cannot be undone.",
   "项目管理": "Projects", "出口": "Exports", "客户": "Customers", "矿区考察记录本": "Sampling log",
-  "现场相册": "Field album", "矿山项目介绍": "Project intro", "矿证": "Licences",
+  "矿山项目介绍": "Project intro", "矿证": "Licences",
   "公司": "Company", "雇主": "Employers", "待开放": "Coming soon", "工作台": "Workspace",
   "待办": "To-do", "目录磁贴：未开放的模块": "Home tiles: modules not yet open",
   /* 问候 / 首页 */
@@ -598,7 +772,7 @@ const EN = {
   "内容 / 录入": "Note / by", "这段时间还没有记录": "No records in this period",
   "我": "me", "改": "Edit", "删": "Del", "矿石吨": "Ore (t)", "矿石": "Ore",
   "生产记录已保存": "Log saved", "生产记录已更新": "Log updated", "生产记录已删除": "Log deleted",
-  "记录已修改": "Record updated", "记录已删除": "Record deleted", "记录天数": "Days logged",
+  "记录已修改": "Record updated", "记录已删除": "Record deleted",
   /* 待办 */
   "待办": "To-do", "全部": "All", "我负责": "Assigned to me", "我发起": "Created by me",
   "公司事项": "Company", "已完成": "Done", "重要": "Important", "指派": "Assigned",
@@ -716,7 +890,7 @@ const EN = {
     "Company account (top-level, fixed uid; a place funds sit, not a person)",
   "公司账户只有银行口：选中公司账户时锁死渠道并禁用":
     "The company account is bank-only: the channel is locked when it is selected",
-  "人·天": "person-days", "按矿区": "By site", "最近记录": "Recent records",
+ 
   "最近一次渲染的列表（导出用）": "Last rendered list (for export)",
   "某人的账本": "Someone's ledger", "某个人的账本": "Someone's ledger",
   "自己的账本：自己花的": "Own ledger: what they spent",
@@ -791,6 +965,13 @@ const EN_RULES = [
   [/^(\d+) 小时前$/, "$1 h ago"],
   [/^(\d+) 天前$/, "$1 d ago"],
   [/^(\d+) 笔$/, "$1 entries"],
+  [/^(\d+) 笔 · (.+)$/, "$1 entries · $2"],
+  [/^只列最近 (\d+) 天$/, "Latest $1 days only"],
+  [/^累计产量（(.+)）$/, "Cumulative output ($1)"],
+  [/^按品种 · 当日产出（(.+)）$/, "By product · daily output ($1)"],
+  [/^按日明细（(.+)口径）$/, "Daily detail ($1)"],
+  [/^全部品种合计 · 按日（(.+)口径）$/, "All products · by day ($1)"],
+  [/^近 (\d+) 天 · 按品种$/, "Last $1 days · by product"],
   [/^(\d+) 条$/, "$1 items"],
   [/^(\d+) 张$/, "$1 photos"],
   [/^(早上好|中午好|下午好|晚上好)，(.*)$/, (m) => ({ 早上好: "Good morning", 中午好: "Good afternoon", 下午好: "Good afternoon", 晚上好: "Good evening" }[m[1]] + ", " + m[2])],
@@ -1026,7 +1207,8 @@ function buildTabs() {
 let MODS = []; // 服务器 /api/modules 下发的模块目录
 const allowed = (k) =>
   !!k && !!S.user && (S.user.role === "admin" || (S.user.modules || []).includes(k));
-const TAB_KEY = { todo: "todo", board: "board", log: "log", users: "users", mine: "mine", fin: "finance", lang: "lang" };
+const TAB_KEY = { todo: "todo", log: "log", company: "company", users: "users", mine: "mine", fin: "finance", lang: "lang",
+  punch: "punch", export: "export", customer: "customer" };
 const modDesc = (m) => (isEN() && m.d_en ? m.d_en : m.d);
 
 /* 快捷（置顶）：存在账号上，换设备也跟着走 */
@@ -1109,85 +1291,435 @@ function openModPicker(u) {
   };
 }
 
-/* ---------- 看板 ---------- */
-async function loadBoard() {
-  if (!S.from) { const d = new Date(); S.from = iso(new Date(d.getFullYear(), d.getMonth(), 1)); S.to = iso(d); }
-  const [sum, ls] = await Promise.all([
-    api(`/summary?from=${S.from}&to=${S.to}`),
-    api(`/logs?from=${S.from}&to=${S.to}`),
-  ]);
-  S.logs = ls.logs;
-  return sum;
+/* ---------- 生产（日报） ---------- */
+const PROD_UNITS = [["kg", "公斤"], ["t", "吨"], ["bag", "袋"], ["truck", "车"]];
+const PROD_PRESETS = ["钽铌精矿", "跳汰机粗颗粒", "手工原矿"];
+const PROD_WINDOWS = [7, 30, 90];
+const PROD_DAYS = 90;
+let PROD_WIN = 30;
+
+const prodUnitName = (u) => (PROD_UNITS.find((x) => x[0] === u) || PROD_UNITS[0])[1];
+const unitRank = (u) => Math.max(0, PROD_UNITS.findIndex((x) => x[0] === u));
+const prodNum = (v) => { const n = Number(v) || 0; return Number.isInteger(n) ? String(n) : String(+n.toFixed(2)); };
+const prodPhotos = (r) => {
+  try { const a = JSON.parse(r.photos || "[]"); return Array.isArray(a) ? a.filter((x) => typeof x === "string" && x) : []; }
+  catch (e) { return []; }
+};
+/* 老记录只有 ore_t（矿石吨），没有 qty；显示时按吨算 */
+const prodQty = (r) => (Number(r.qty) > 0 ? { n: Number(r.qty), u: r.unit || "kg" } : { n: Number(r.ore_t) || 0, u: "t" });
+const prodMine = (r) => r.user_id === S.user.id || S.user.role === "admin" || S.user.role === "manager";
+
+async function loadProd() {
+  const now = new Date();
+  const to = localDay(now);
+  /* 累计要基于全部历史，所以多取一段；列表仍只显示最近 PROD_DAYS 天 */
+  S.logsAll = (await api(`/logs?from=2000-01-01&to=${to}`)).logs || [];
+  const cut = localDay(new Date(now.getTime() - (PROD_DAYS - 1) * 864e5));
+  S.logs = S.logsAll.filter((r) => String(r.day) >= cut);
 }
 
-function boardHtml(sum) {
-  const t = sum.totals || {};
-  const siteRows = (sum.by_site || []).map((r) => `<tr><td>${esc(r.site)}</td><td class="n">${r.entries}</td><td class="n">${num(r.man_days, 0)}</td><td class="n">${num(r.ore_t, 1)}</td><td class="n">${money(r.cost_usd)}</td></tr>`).join("");
-  const recent = S.logs.slice(0, 12).map((l) => `<tr><td>${esc(l.day)}</td><td>${esc(l.site)}</td><td class="n">${num(l.ore_t, 1)}</td><td class="n">${num(l.headcount, 0)}</td><td>${esc(l.user_name)}</td></tr>`).join("");
-  return `<div class="card">
-    <div class="row" style="align-items:end">
-      <div><label>从</label><input type="date" id="f_from" value="${S.from}"></div>
-      <div><label>到</label><input type="date" id="f_to" value="${S.to}"></div>
-    </div>
-  </div>
-  <div class="grid">
-    <div class="kpi"><i>记录天数</i><b>${num(t.days, 0)}</b></div>
-    <div class="kpi"><i>人·天</i><b>${num(t.man_days, 0)}</b></div>
-    <div class="kpi"><i>矿石（吨）</i><b>${num(t.ore_t, 1)}</b></div>
-    <div class="kpi"><i>支出（USD）</i><b>${money(t.cost_usd)}</b></div>
-  </div>
-  <div class="card" style="margin-top:12px"><h3>按矿区</h3>
-    ${siteRows ? `<table><tr><th>矿区/项目</th><th>记录</th><th>人·天</th><th>矿石吨</th><th>USD</th></tr>${siteRows}</table>` : `<div class="empty">这段时间还没有记录</div>`}
-  </div>
-  <div class="card"><h3>最近记录</h3>
-    ${recent ? `<table><tr><th>日期</th><th>矿区</th><th>矿石</th><th>人数</th><th>录入</th></tr>${recent}</table>` : `<div class="empty">还没有记录</div>`}
+const prodRows = () => S.logs.slice().sort((a, b) => String(b.day).localeCompare(String(a.day)) || b.id - a.id);
+
+function prodTotal(rows) {
+  const m = new Map();
+  rows.forEach((r) => { const q = prodQty(r); if (q.n) m.set(q.u, (m.get(q.u) || 0) + q.n); });
+  return [...m.entries()].map(([u, v]) => prodNum(v) + " " + prodUnitName(u)).join(" · ") || "—";
+}
+
+/* 今日/本月只报一个主单位，别的单位放在小字里，免得 KPI 挤成两行 */
+function prodTotals(rows) {
+  const sum = new Map(), cnt = new Map();
+  rows.forEach((r) => {
+    const q = prodQty(r);
+    if (!q.n) return;
+    sum.set(q.u, (sum.get(q.u) || 0) + q.n);
+    cnt.set(q.u, (cnt.get(q.u) || 0) + 1);
+  });
+  const order = [...cnt.entries()].sort((a, b) => b[1] - a[1] || unitRank(a[0]) - unitRank(b[0])).map((x) => x[0]);
+  if (!order.length) return { main: "—", rest: "" };
+  const fmt = (u) => prodNum(sum.get(u)) + " " + prodUnitName(u);
+  return { main: fmt(order[0]), rest: order.slice(1).map(fmt).join(" · ") };
+}
+
+const prodDayLabel = (d) => {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(d || "")) return d || "—";
+  const wd = new Date(d + "T00:00:00").toLocaleDateString(LANG === "en" ? "en-GB" : "zh-CN", { weekday: "short" });
+  return d.slice(5) + " " + wd;
+};
+
+const prodDaysBack = (n) => {
+  const out = [];
+  const now = new Date(); now.setHours(0, 0, 0, 0);
+  for (let i = n - 1; i >= 0; i--) out.push(localDay(new Date(now.getTime() - i * 864e5)));
+  return out;
+};
+
+/* 品位：按数量加权（同一产品单位一致，可直接加权；整体只取同一单位口径） */
+function prodWavg(rows, key) {
+  let w = 0, s = 0;
+  rows.forEach((r) => {
+    const q = prodQty(r), g = Number(r[key]);
+    if (q.n > 0 && g > 0) { w += q.n; s += q.n * g; }
+  });
+  return w ? s / w : null;
+}
+const prodGradeTxt = (v) => (v == null ? "—" : prodNum(+v.toFixed(2)) + "%");
+
+function prodOverallGrade(rows) {
+  const graded = rows.filter((r) => { const q = prodQty(r); return q.n > 0 && (Number(r.ta) > 0 || Number(r.nb) > 0); });
+  if (!graded.length) return null;
+  const cnt = new Map();
+  graded.forEach((r) => { const u = prodQty(r).u; cnt.set(u, (cnt.get(u) || 0) + 1); });
+  const unit = [...cnt.entries()].sort((a, b) => b[1] - a[1] || unitRank(a[0]) - unitRank(b[0]))[0][0];
+  const use = graded.filter((r) => prodQty(r).u === unit);
+  return { ta: prodWavg(use, "ta"), nb: prodWavg(use, "nb"), unit, n: use.length, qty: use.reduce((s, r) => s + prodQty(r).n, 0) };
+}
+
+/* 累计：数量逐日相加，品位按数量加权；累计基于全部历史，窗口只决定显示哪一段 */
+function prodCumMap(rows) {
+  const daily = new Map();
+  rows.forEach((r) => {
+    const q = prodQty(r);
+    if (!q.n || !r.day) return;
+    let d = daily.get(r.day);
+    if (!d) { d = { inc: 0, wTa: 0, sTa: 0, wNb: 0, sNb: 0 }; daily.set(r.day, d); }
+    d.inc += q.n;
+    const ta = Number(r.ta), nb = Number(r.nb);
+    if (ta > 0) { d.wTa += q.n; d.sTa += q.n * ta; }
+    if (nb > 0) { d.wNb += q.n; d.sNb += q.n * nb; }
+  });
+  const out = new Map();
+  let cum = 0, wTa = 0, sTa = 0, wNb = 0, sNb = 0;
+  [...daily.keys()].sort().forEach((day) => {
+    const d = daily.get(day);
+    cum += d.inc; wTa += d.wTa; sTa += d.sTa; wNb += d.wNb; sNb += d.sNb;
+    out.set(day, { inc: d.inc, cum, ta: wTa ? sTa / wTa : null, nb: wNb ? sNb / wNb : null });
+  });
+  return out;
+}
+
+/* 铺到窗口里每一天，没记录的日子沿用前一天的累计值 */
+function prodCumPoints(map, days) {
+  let cur = { cum: 0, ta: null, nb: null };
+  return days.map((d) => {
+    const v = map.get(d);
+    if (v) cur = v;
+    return { day: d, cum: cur.cum, ta: cur.ta, nb: cur.nb, inc: v ? v.inc : 0, has: !!v };
+  });
+}
+
+/* 折线：实线=累计数量，虚线=累计 Ta% / Nb%（共用一条品位纵轴，便于对比） */
+function prodCumSvg(points) {
+  const W = 600, H = 120, PT = 8, PB = 6, PL = 3, PR = 3;
+  const iw = W - PL - PR, ih = H - PT - PB;
+  const maxQ = Math.max(1, ...points.map((p) => p.cum));
+  const grades = points.flatMap((p) => [p.ta, p.nb]).filter((v) => v != null);
+  const maxG = grades.length ? Math.max(...grades) : 0;
+  const x = (i) => PL + (points.length > 1 ? (i * iw) / (points.length - 1) : iw / 2);
+  const yQ = (v) => PT + ih * (1 - v / maxQ);
+  const yG = (v) => PT + ih * (1 - v / (maxG * 1.1 || 1));
+  const qPath = points.map((p, i) => `${i ? "L" : "M"}${x(i).toFixed(1)} ${yQ(p.cum).toFixed(1)}`).join(" ");
+  const qArea = `${qPath} L${x(points.length - 1).toFixed(1)} ${PT + ih} L${x(0).toFixed(1)} ${PT + ih} Z`;
+  const gradePath = (key) => points
+    .map((p, i) => (p[key] == null ? null : `${i && points[i - 1][key] != null ? "L" : "M"}${x(i).toFixed(1)} ${yG(p[key]).toFixed(1)}`))
+    .filter(Boolean).join(" ");
+  const taPath = gradePath("ta"), nbPath = gradePath("nb");
+  const grid = [0.25, 0.5, 0.75]
+    .map((f) => `<line x1="${PL}" x2="${W - PR}" y1="${(PT + ih * f).toFixed(1)}" y2="${(PT + ih * f).toFixed(1)}" class="pd-grid"/>`)
+    .join("");
+  return `<svg class="pd-cum" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img">
+    ${grid}
+    <path d="${qArea}" class="pd-area"/>
+    <path d="${qPath}" class="pd-line"/>
+    ${taPath ? `<path d="${taPath}" class="pd-gline"/>` : ""}
+    ${nbPath ? `<path d="${nbPath}" class="pd-nline"/>` : ""}
+  </svg>`;
+}
+
+function prodRefUnit(rows) {
+  const cnt = new Map();
+  rows.forEach((r) => { const q = prodQty(r); if (q.n) cnt.set(q.u, (cnt.get(q.u) || 0) + 1); });
+  const top = [...cnt.entries()].sort((a, b) => b[1] - a[1] || unitRank(a[0]) - unitRank(b[0]))[0];
+  return top ? top[0] : "kg";
+}
+
+function prodChartData() {
+  const days = prodDaysBack(PROD_WIN);
+  const all = S.logsAll || S.logs || [];
+  const inSet = new Set(days);
+  const win = all.filter((r) => inSet.has(r.day) && prodQty(r).n > 0);
+  const unit = prodRefUnit(win);
+  const points = prodCumPoints(prodCumMap(all.filter((r) => prodQty(r).u === unit)), days);
+  const last = points[points.length - 1] || { cum: 0, ta: null, nb: null };
+  return { days, win, all, unit, points, cum: last.cum, ta: last.ta, nb: last.nb };
+}
+
+/* 按品种拆当日产出：一个单位一张柱状面板，颜色区分产品 */
+const PROD_COLORS = ["#111827", "#0f766e", "#b45309", "#7c3aed", "#be123c"];
+
+function prodDailyPanels(days, all) {
+  const byUnit = new Map();
+  all.forEach((r) => {
+    const q = prodQty(r);
+    if (!q.n) return;
+    if (!byUnit.has(q.u)) byUnit.set(q.u, new Map());
+    const m = byUnit.get(q.u);
+    const k = r.product || "";
+    if (!m.has(k)) m.set(k, []);
+    m.get(k).push(r);
+  });
+  const inSet = new Set(days);
+  return [...byUnit.entries()]
+    .sort((a, b) => unitRank(a[0]) - unitRank(b[0]))
+    .map(([unit, m]) => {
+      const products = [...m.entries()].map(([name, rows]) => {
+        const daily = new Map();
+        let total = 0;
+        rows.forEach((r) => {
+          if (!inSet.has(r.day)) return;
+          const n = prodQty(r).n;
+          daily.set(r.day, (daily.get(r.day) || 0) + n);
+          total += n;
+        });
+        const cumMap = prodCumMap(rows);
+        const lastDay = [...cumMap.keys()].pop();
+        const last = lastDay ? cumMap.get(lastDay) : { cum: 0, ta: null, nb: null };
+        return { name, daily, total, cum: last.cum, ta: last.ta, nb: last.nb };
+      }).filter((p) => p.total > 0).sort((a, b) => b.total - a.total);
+      products.forEach((p, i) => { p.color = PROD_COLORS[i % PROD_COLORS.length]; });
+      const dailyTot = new Map(days.map((d) => [d, products.reduce((s, p) => s + (p.daily.get(d) || 0), 0)]));
+      return { unit, products, dailyTot, max: Math.max(1, ...dailyTot.values()) };
+    })
+    .filter((p) => p.products.length);
+}
+
+function prodDailyBarsHtml(days, panel) {
+  return `<div class="pd-dbars">${days.map((d) => {
+    const segs = panel.products.map((p) => {
+      const v = p.daily.get(d) || 0;
+      if (!v) return "";
+      const h = ((v / panel.max) * 100).toFixed(1);
+      return `<span style="height:${h}%;background:${p.color}"></span>`;
+    }).join("");
+    const tip = [d].concat(panel.products.filter((p) => p.daily.get(d)).map((p) => `${p.name || "未填产品"} ${prodNum(p.daily.get(d))}`)).join(" · ");
+    return `<div class="pd-dcol" title="${esc(tip)}">${segs}</div>`;
+  }).join("")}</div>`;
+}
+
+function prodDailyPanelHtml(days, panel) {
+  const leg = panel.products.map((p) =>
+    `<span class="pd-lg"><i style="background:${p.color}"></i>${esc(p.name || "未填产品")}
+      <b>${prodNum(p.cum)} ${esc(prodUnitName(panel.unit))}</b>
+      <em>${p.ta == null && p.nb == null ? "" : `Ta ${prodGradeTxt(p.ta)} · Nb ${prodGradeTxt(p.nb)}`}</em></span>`).join("");
+  return `<div class="pd-panel">
+    <div class="pd-sub">按品种 · 当日产出（${esc(prodUnitName(panel.unit))}）</div>
+    ${prodDailyBarsHtml(days, panel)}
+    <div class="pd-x mut"><span>${days[0].slice(5)}</span><span>${days[days.length - 1].slice(5)}</span></div>
+    <div class="pd-leg col">${leg}</div>
   </div>`;
 }
 
-/* ---------- 日报 ---------- */
-function logForm(l) {
-  const d = l || { day: iso(new Date()), site: S.user.site || SITES[0], shift: "白班", crew: "", headcount: "", ore_t: "", waste_t: "", grade: "", cost_usd: "", note: "" };
-  return `<div class="card">
-    <h3>${l ? "修改记录 #" + l.id : "新增日报"}</h3>
-    <div class="row">
-      <div><label>日期</label><input type="date" id="d_day" value="${esc(d.day)}"></div>
-      <div><label>矿区/项目</label><input id="d_site" list="sites" value="${esc(d.site)}"></div>
-    </div>
-    <datalist id="sites">${SITES.map((s) => `<option>${esc(s)}</option>`).join("")}</datalist>
-    <div class="row3">
-      <div><label>班次</label><select id="d_shift">${["白班", "夜班", "全天"].map((x) => `<option${x === d.shift ? " selected" : ""}>${x}</option>`).join("")}</select></div>
-      <div><label>班组</label><input id="d_crew" value="${esc(d.crew)}" placeholder="选填"></div>
-      <div><label>出勤人数</label><input id="d_people" type="number" min="0" step="1" value="${esc(d.headcount)}"></div>
-    </div>
-    <div class="row3">
-      <div><label>矿石（吨）</label><input id="d_ore" type="number" min="0" step="0.1" value="${esc(d.ore_t)}"></div>
-      <div><label>废石（吨）</label><input id="d_waste" type="number" min="0" step="0.1" value="${esc(d.waste_t)}"></div>
-      <div><label>支出（USD）</label><input id="d_cost" type="number" min="0" step="0.01" value="${esc(d.cost_usd)}"></div>
-    </div>
-    <label>品位 / 品级</label><input id="d_grade" value="${esc(d.grade)}" placeholder="例：Ta2O5 180 ppm">
-    <label>备注</label><textarea id="d_note" placeholder="今天做了什么、有什么问题">${esc(d.note)}</textarea>
-    <div class="err" id="d_err"></div>
-    <div class="acts" style="margin-top:10px">
-      <button class="pri" id="d_save">${l ? "保存修改" : "提交"}</button>
-      ${l ? `<button id="d_cancel">取消</button>` : ""}
-    </div>
-  </div>`;
-}
-
-function logListHtml() {
-  if (!S.logs.length) return `<div class="card"><div class="empty">这段时间还没有记录</div></div>`;
-  const rows = S.logs.slice(0, 60).map((l) => {
-    const mine = l.user_id === S.user.id;
-    return `<tr>
-      <td>${esc(l.day)}<div class="mut">${esc(l.site)} · ${esc(l.shift)}</div></td>
-      <td class="n">${num(l.ore_t, 1)}<div class="mut">${num(l.headcount, 0)} 人</div></td>
-      <td>${esc(tx(l, "note")).slice(0, 40)}<div class="mut">${esc(l.user_name)}${mine ? ' <span class="pill me">我</span>' : ""}</div></td>
-      <td class="n" style="white-space:nowrap">
-        ${(mine || S.user.role === "admin" || S.user.role === "manager") ? `<button data-edit="${l.id}" style="padding:4px 8px">改</button> <button class="danger" data-del="${l.id}" style="padding:4px 8px">删</button>` : ""}
-      </td></tr>`;
+/* 日表：每天每个品种的产出 + 当日合计 + 累计（同单位口径） */
+function prodDayTableHtml(days, all, unit, panel) {
+  const map = prodCumMap(all.filter((r) => prodQty(r).u === unit));
+  const rows = days.slice().reverse().filter((d) => map.has(d));
+  if (!rows.length) return "";
+  const prods = panel ? panel.products : [];
+  const shown = rows.slice(0, 20);
+  const head = `<tr><th>日期</th>${prods.map((p) => `<th class="n"><i class="pd-dot" style="background:${p.color}"></i>${esc(p.name || "未填产品")}</th>`).join("")}<th class="n">合计</th><th class="n">累计</th><th class="n">累计 Ta %</th><th class="n">累计 Nb %</th></tr>`;
+  const body = shown.map((d) => {
+    const v = map.get(d);
+    const cells = prods.map((p) => `<td class="n">${p.daily.get(d) ? prodNum(p.daily.get(d)) : "·"}</td>`).join("");
+    return `<tr><td>${esc(d.slice(5))}</td>${cells}<td class="n"><b>${prodNum(v.inc)}</b></td><td class="n">${prodNum(v.cum)}</td>
+      <td class="n">${prodGradeTxt(v.ta)}</td><td class="n">${prodGradeTxt(v.nb)}</td></tr>`;
   }).join("");
-  return `<div class="card"><h3>记录（${S.logs.length}）</h3><table>
-    <tr><th>日期 / 矿区</th><th>矿石 / 人数</th><th>内容 / 录入</th><th></th></tr>${rows}</table></div>`;
+  return `<div class="pd-daytab">
+    <div class="pd-sub">按日明细（${esc(prodUnitName(unit))}口径）</div>
+    <table>${head}${body}</table>
+    ${rows.length > shown.length ? `<div class="pd-note mut">只列最近 ${shown.length} 天</div>` : ""}
+  </div>`;
+}
+
+function prodChartHtml() {
+  const { days, win, all, unit, points, cum, ta, nb } = prodChartData();
+  const wins = PROD_WINDOWS.map((n) => `<button class="td-chip${n === PROD_WIN ? " on" : ""}" data-win="${n}">${n} 天</button>`).join("");
+  if (!win.length) {
+    return `<div class="card" id="prod_chart"><h3>产量走势 · 累计</h3><div class="pd-win">${wins}</div>
+      <div class="empty">这段时间没有产量记录</div></div>`;
+  }
+  const today = localDay(new Date());
+  const todayTot = prodTotals(win.filter((r) => r.day === today));
+  const otherUnits = win.some((r) => prodQty(r).u !== unit);
+  const head = `<div class="pd-tot">
+      <span class="pd-sum"><i>今日</i> <b>${esc(todayTot.main)}</b></span>
+      ${todayTot.rest ? `<span class="mut">另有 ${esc(todayTot.rest)}</span>` : ""}
+      <span class="pd-avg"><i>累计</i> <b>${prodNum(cum)} ${esc(prodUnitName(unit))}</b>
+        ${ta == null && nb == null ? "" : `<em>Ta ${prodGradeTxt(ta)} · Nb ${prodGradeTxt(nb)}</em>`}</span>
+    </div>`;
+  const panelsAll = prodDailyPanels(days, all);
+  const panels = panelsAll.map((p) => prodDailyPanelHtml(days, p)).join("");
+  const refPanel = panelsAll.find((p) => p.unit === unit);
+  return `<div class="card" id="prod_chart">
+    <h3>产量走势 · 累计 <span class="mut" style="font-weight:400">近 ${PROD_WIN} 天</span></h3>
+    <div class="pd-win">${wins}</div>
+    ${head}
+    ${prodCumSvg(points)}
+    <div class="pd-x mut"><span>${days[0].slice(5)}</span><span>${days[days.length - 1].slice(5)}</span></div>
+    <div class="pd-leg"><span><i class="pd-k1"></i>累计产量（${esc(prodUnitName(unit))}）</span><span><i class="pd-k2"></i>累计 Ta%</span><span><i class="pd-k3"></i>累计 Nb%</span></div>
+    ${otherUnits ? `<div class="pd-note mut">累计只按单一单位统计，袋/吨等其它单位不计入</div>` : ""}
+    ${panels}
+    ${prodDayTableHtml(days, all, unit, refPanel)}
+  </div>`;
+}
+
+function prodRowHtml(r) {
+  const q = prodQty(r);
+  const photos = prodPhotos(r);
+  const grade = r.ta || r.nb ? `Ta ${prodNum(r.ta)}% · Nb ${prodNum(r.nb)}%` : (r.grade || "");
+  return `<div class="pd-row">
+    <span class="t">${esc(r.product || (q.u === "t" ? "矿石" : "精矿"))}</span>
+    <span class="q">${q.n ? prodNum(q.n) + " " + esc(prodUnitName(q.u)) : "—"}</span>
+    ${grade ? `<span class="chip">${esc(grade)}</span>` : ""}
+    ${r.note ? `<div class="n">${esc(tx(r, "note"))}</div>` : ""}
+    ${photos.length ? `<div class="pd-ths">${photos.map((k) => `<img src="/api/fin/photo/${esc(k)}" data-pdv="/api/fin/photo/${esc(k)}" alt="">`).join("")}</div>` : ""}
+    <div class="m"><span class="u">${esc(r.user_name || "")}${r.site ? " · " + esc(r.site) : ""}</span>
+      ${prodMine(r) ? `<button data-edit="${r.id}">改</button><button class="danger" data-del="${r.id}">删</button>` : ""}
+    </div>
+  </div>`;
+}
+
+function prodHtml() {
+  const rows = prodRows();
+  const today = localDay(new Date()), month = today.slice(0, 7);
+  const todayRows = rows.filter((r) => r.day === today);
+  const monthRows = rows.filter((r) => String(r.day).startsWith(month));
+  const groups = new Map();
+  rows.forEach((r) => { const k = r.day || "—"; if (!groups.has(k)) groups.set(k, []); groups.get(k).push(r); });
+  let list = "";
+  groups.forEach((g, k) => {
+    list += `<div class="pd-day"><b>${esc(prodDayLabel(k))}</b><span class="s">合计 ${prodTotal(g)}</span></div>`;
+    list += g.map(prodRowHtml).join("");
+  });
+  const tToday = prodTotals(todayRows), tMonth = prodTotals(monthRows);
+  const kpi = (label, t) => `<div class="kpi"><i>${label}</i><b>${t.main}</b>${t.rest ? `<i>另有 ${esc(t.rest)}</i>` : ""}</div>`;
+  return `<div class="grid">
+      ${kpi("今日产量", tToday)}
+      ${kpi("本月", tMonth)}
+      <div class="kpi"><i>本月记录</i><b>${monthRows.length} 笔</b><i>${new Set(monthRows.map((r) => r.day)).size} 天有记录</i></div>
+    </div>
+    ${prodChartHtml()}
+    <div class="card">
+      <h3>生产记录（${rows.length}）</h3>
+      ${rows.length ? list : `<div class="empty">还没有记录，点右下角「记一笔」</div>`}
+    </div>
+    <button class="pd-fab" id="prod_new">＋ 记一笔</button>`;
+}
+
+function bindProd(pane) {
+  $("#prod_new", pane).onclick = () => prodSheet(null);
+  pane.querySelectorAll("[data-edit]").forEach((b) => b.onclick = () => {
+    const r = S.logs.find((x) => x.id === +b.dataset.edit);
+    if (r) prodSheet(r);
+  });
+  pane.querySelectorAll("[data-del]").forEach((b) => b.onclick = () => delProd(+b.dataset.del));
+  pane.querySelectorAll("[data-pdv]").forEach((im) => im.onclick = () => finView(im.dataset.pdv));
+  pane.querySelectorAll("[data-win]").forEach((b) => b.onclick = () => {
+    PROD_WIN = +b.dataset.win;
+    $("#prod_chart", pane).outerHTML = prodChartHtml();
+    bindProd(pane);
+  });
+}
+
+function prodSheet(rec) {
+  const d = rec || {};
+  const q = rec ? prodQty(rec) : { n: 0, u: "kg" };
+  let site = rec ? (d.site || "") : "";
+  if (!site) { try { site = localStorage.getItem("prod_site") || S.user.site || SITES[0] || ""; } catch (e) { site = S.user.site || SITES[0] || ""; } }
+  const box = document.createElement("div");
+  box.className = "fin-dim";
+  box.innerHTML = `<div class="fin-sheet">
+    <h3>${rec ? "修改生产记录" : "记一笔"}</h3>
+    <label>日期</label><input id="pg_date" type="date" value="${esc(rec ? d.day : localDay(new Date()))}">
+    <span class="pd-lbl">产品</span>
+    <div class="pd-picks">${PROD_PRESETS.map((p) => `<button type="button" class="chip" data-prod="${esc(p)}">${esc(p)}</button>`).join("")}</div>
+    <input id="pg_prod" placeholder="产品 / 来源" value="${esc(d.product || "")}">
+    <div class="r" style="margin-top:8px">
+      <div><label>数量</label><input id="pg_qty" type="text" inputmode="decimal" placeholder="0" value="${rec && q.n ? prodNum(q.n) : ""}"></div>
+      <div><label>单位</label><select id="pg_unit">${PROD_UNITS.map(([k, n]) => `<option value="${k}"${k === q.u ? " selected" : ""}>${n} ${k}</option>`).join("")}</select></div>
+    </div>
+    <div class="r" style="margin-top:8px">
+      <div><label>Ta 品位 %</label><input id="pg_ta" type="text" inputmode="decimal" placeholder="0" value="${d.ta ? esc(d.ta) : ""}"></div>
+      <div><label>Nb 品位 %</label><input id="pg_nb" type="text" inputmode="decimal" placeholder="0" value="${d.nb ? esc(d.nb) : ""}"></div>
+    </div>
+    <label>备注</label><input id="pg_note" value="${esc(tx(d, "note"))}">
+    ${finPhotoHtml("pg")}
+    <details style="margin-top:10px">
+      <summary class="mut">现场信息（选填：矿区 / 班次 / 人数 / 废石 / 支出）</summary>
+      <div class="r" style="margin-top:8px">
+        <div><label>矿区/项目</label><input id="pg_site" list="sites" value="${esc(site)}"></div>
+        <div><label>班次</label><select id="pg_shift">${["白班", "夜班", "全天"].map((x) => `<option${x === (d.shift || "白班") ? " selected" : ""}>${x}</option>`).join("")}</select></div>
+      </div>
+      <datalist id="sites">${SITES.map((s) => `<option>${esc(s)}</option>`).join("")}</datalist>
+      <div class="row3" style="margin-top:8px">
+        <div><label>出勤人数</label><input id="pg_people" type="number" min="0" step="1" value="${d.headcount || ""}"></div>
+        <div><label>废石（吨）</label><input id="pg_waste" type="number" min="0" step="0.1" value="${d.waste_t || ""}"></div>
+        <div><label>支出（USD）</label><input id="pg_cost" type="number" min="0" step="0.01" value="${d.cost_usd || ""}"></div>
+      </div>
+    </details>
+    <p class="mut" id="pg_msg" style="min-height:1em;margin:8px 0 0"></p>
+    <div class="r" style="margin-top:8px"><button class="ghost" id="pg_x">取消</button><button class="pri" id="pg_save">${rec ? "保存修改" : "保存"}</button></div>
+  </div>`;
+  document.body.appendChild(box);
+
+  const close = () => box.remove();
+  box.onclick = (e) => { if (e.target === box) close(); };
+  $("#pg_x", box).onclick = close;
+
+  const PH = finPhotoWire(box, "pg", rec ? prodPhotos(rec) : [], "prod");
+  const prodInput = $("#pg_prod", box);
+  const syncPicks = () => box.querySelectorAll("[data-prod]").forEach((b) => b.classList.toggle("on", b.dataset.prod === prodInput.value.trim()));
+  box.querySelectorAll("[data-prod]").forEach((b) => b.onclick = () => { prodInput.value = b.dataset.prod; syncPicks(); });
+  prodInput.oninput = syncPicks;
+  syncPicks();
+  ["pg_qty", "pg_ta", "pg_nb"].forEach((id) => {
+    const inp = $("#" + id, box);
+    inp.oninput = () => { const v = inp.value.replace(/[^\d.,]/g, ""); if (v !== inp.value) inp.value = v; };
+  });
+
+  const btn = $("#pg_save", box), msg = $("#pg_msg", box);
+  const numIn = (id) => +(String($("#" + id, box).value || "0").replace(",", ".") || 0) || 0;
+  btn.onclick = async () => {
+    const qty = numIn("pg_qty");
+    if (!(qty > 0)) { msg.textContent = "数量要大于 0"; return; }
+    const siteV = $("#pg_site", box).value.trim();
+    if (!siteV) { msg.textContent = "请填矿区/项目（在「现场信息」里）"; return; }
+    const body = {
+      day: $("#pg_date", box).value,
+      site: siteV,
+      product: prodInput.value.trim(),
+      qty,
+      unit: $("#pg_unit", box).value,
+      ta: numIn("pg_ta"), nb: numIn("pg_nb"),
+      note: $("#pg_note", box).value,
+      photos: PH.list,
+      shift: $("#pg_shift", box).value,
+      headcount: numIn("pg_people"), waste_t: numIn("pg_waste"), cost_usd: numIn("pg_cost"),
+    };
+    btn.disabled = true; msg.textContent = "";
+    try {
+      if (rec) await api("/logs/" + rec.id, { method: "PATCH", body, toast: "生产记录已更新" });
+      else await api("/logs", { method: "POST", body, toast: "生产记录已保存" });
+      try { localStorage.setItem("prod_site", siteV); } catch (e) {}
+      close();
+      await render();
+    } catch (e) { msg.textContent = e.message; btn.disabled = false; }
+  };
+}
+
+async function delProd(id) {
+  if (!confirm("删掉这条生产记录？不能撤销。")) return;
+  try { await api("/logs/" + id, { method: "DELETE", toast: "生产记录已删除" }); await render(); }
+  catch (e) { toast(e.message, "bad"); }
 }
 
 /* ---------- 待办 ---------- */
@@ -1640,6 +2172,354 @@ function userEditHtml(u) {
   </div>`;
 }
 
+
+/* ---------- 公司资料库 ---------- */
+let CO = { list: [], cur: null, q: "", edit: false, imp: false, showSearch: false, pending: [] };
+
+async function loadCompanies() {
+  const r = await api("/companies" + (CO.q ? "?q=" + encodeURIComponent(CO.q) : ""));
+  CO.list = r.companies || [];
+}
+
+const coShRow = (s = {}) => `<tr>
+  <td><input data-f="name" value="${esc(s.name || "")}"></td>
+  <td><input data-f="nationality" value="${esc(s.nationality || "")}"></td>
+  <td><input data-f="id_no" value="${esc(s.id_no || "")}"></td>
+  <td><input data-f="amount" type="number" step="any" value="${s.amount || ""}"></td>
+  <td class="n">${s.pct ? s.pct + "%" : "—"}</td>
+  <td><button class="ghost co-x" type="button">×</button></td>
+</tr>`;
+
+const coDirRow = (d = {}) => `<tr>
+  <td><input data-f="name" value="${esc(d.name || "")}"></td>
+  <td><input data-f="nationality" value="${esc(d.nationality || "")}"></td>
+  <td><input data-f="id_no" value="${esc(d.id_no || "")}"></td>
+  <td><input data-f="role" value="${esc(d.role || "")}"></td>
+  <td><button class="ghost co-x" type="button">×</button></td>
+</tr>`;
+
+function coRowHtml(c) {
+  const zm = Number(c.zm_pct) || 0;
+  const sh = (c.shareholders || []).map((s) => `${esc(s.name)}${s.pct ? " " + Math.round(s.pct) + "%" : ""}`).join("；");
+  return `<button class="co-row" data-co="${esc(c.id)}">
+    <div class="co-main">
+      <b>${esc(c.name)}${c.kind === "person" ? ' <span class="pill">' + esc(tr("个人")) + "</span>" : ""}${(c.docs || []).length ? ' <span class="mut" style="font-weight:600">📄' + (c.docs || []).length + "</span>" : ""}</b>
+      <span>${c.reg_no ? "PACRA " + esc(c.reg_no) : esc(tr("PACRA 未填"))}${c.phone ? " · " + esc(c.phone) : ""}</span>
+      <span class="co-sh">${sh || esc(tr("股东未填"))}</span>
+    </div>
+    <span class="co-zm${zm >= 5 ? " on" : ""}">${esc(tr("赞方"))} ${zm ? Math.round(zm) + "%" : "—"}</span>
+  </button>`;
+}
+
+function coListHtml() {
+  const zl = CO.list.filter((c) => Number(c.zm_pct) > 0);
+  const rest = CO.list.filter((c) => !(Number(c.zm_pct) > 0));
+  const box = (arr) => `<div class="co-list">${arr.map(coRowHtml).join("")}</div>`;
+  return `<div class="card">
+      <div class="co-top">
+        <button class="ghost co-icon" id="co_q_toggle" title="${esc(tr("搜索"))}">${CO.showSearch ? "▴" : "🔍"}</button>
+        <span class="mut">${esc(tr("共"))} ${CO.list.length} ${esc(tr("家"))}${CO.q ? " · " + esc(CO.q) : ""}</span>
+        <span style="flex:1"></span>
+        <button class="pri" id="co_new">＋ ${esc(tr("新建公司"))}</button>
+      </div>
+      ${CO.showSearch ? `<div class="co-search">
+      <div class="row" style="align-items:end">
+        <div style="flex:1"><label>${esc(tr("搜索"))}</label><input id="co_q" value="${esc(CO.q)}" placeholder="${esc(tr("公司名 / PACRA 号 / 股东 / 地址"))}"></div>
+        <div><button class="ghost" id="co_q_go">${esc(tr("查询"))}</button></div>
+      </div>
+      <div class="row" style="margin-top:8px;align-items:center">
+        <button class="ghost" id="co_imp_btn">📥 ${esc(tr("批量导入"))}</button>
+        ${CO.q ? `<button class="ghost" id="co_q_clear">${esc(tr("清空搜索"))}</button>` : ""}
+      </div>
+      ${CO.imp ? `<div style="margin-top:8px">
+        <label>${esc(tr("粘贴 JSON 数组"))}</label>
+        <textarea id="co_json" rows="6" placeholder='[{"name":"ABC Mining Ltd","reg_no":"120200012345","shareholders":[{"name":"Zhang San","nationality":"China","amount":90000},{"name":"Local Partner","nationality":"Zambia","amount":10000}]}]'></textarea>
+        <div class="mut" style="margin-top:6px;font-size:12px;line-height:1.6">${esc(tr("可用字段"))}：name / name_en / reg_no / reg_date / tpin / address / phone / email / share_capital / currency / tags / notes / shareholders[{name,nationality,id_no,amount}] / directors[{name,nationality,id_no,role}]</div>
+        <div class="row" style="margin-top:6px"><button class="pri" id="co_imp_go">${esc(tr("导入"))}</button><button class="ghost" id="co_imp_demo">${esc(tr("填充示例"))}</button><button class="ghost" id="co_imp_cancel">${esc(tr("取消"))}</button></div>
+      </div>` : ""}
+      </div>` : ""}
+    </div>
+    ${zl.length ? `<div class="card"><h3>${esc(tr("有赞比亚股东"))}（${zl.length}）</h3>${box(zl)}</div>` : ""}
+    <div class="card"><h3>${esc(tr("公司档案"))}（${rest.length}）</h3>
+      ${rest.length ? box(rest) : `<div class="empty">${esc(tr("还没有公司，点「新建公司」或批量导入"))}</div>`}
+    </div>`;
+}
+
+const coIn = (id, label, val, opts = {}) =>
+  `<div${opts.wide ? ' style="grid-column:1/-1"' : ""}><label>${esc(tr(label))}</label>
+    <input id="${id}" value="${esc(val == null ? "" : val)}"${CO.edit ? "" : " readonly"}${opts.type ? ` type="${opts.type}"` : ""}${opts.ph ? ` placeholder="${esc(opts.ph)}"` : ""}></div>`;
+
+function coPendRefresh() {
+  const box = $("#co_pend_list");
+  if (!box) return;
+  box.innerHTML = CO.pending.map(coPendRow).join("");
+  box.hidden = !CO.pending.length;
+  bindPendDel();
+}
+
+function bindPendDel() {
+  document.querySelectorAll("[data-pdel]").forEach((b) => {
+    b.onclick = (ev) => { ev.preventDefault(); CO.pending.splice(Number(b.dataset.pdel), 1); coPendRefresh(); };
+  });
+}
+
+const coKB = (n) => { const s = Number(n) || 0; return s > 1048576 ? (s / 1048576).toFixed(1) + " MB" : s ? Math.round(s / 1024) + " KB" : ""; };
+
+async function coUploadDoc(cid, f) {
+  if (f.size > 25 * 1024 * 1024) throw new Error(tr("文件太大（限 25MB）"));
+  const data = await new Promise((res, rej) => {
+    const rd = new FileReader();
+    rd.onload = () => res(rd.result);
+    rd.onerror = () => rej(new Error(tr("读取失败")));
+    rd.readAsDataURL(f);
+  });
+  const mime = f.type || (/\.pdf$/i.test(f.name) ? "application/pdf" : "image/jpeg");
+  const r = await api("/companies/" + cid + "/doc", {
+    method: "POST", quiet: true,
+    body: { data, name: f.name, mime, label: f.name.replace(/\.[^.]+$/, "") },
+  });
+  return r.docs;
+}
+
+function coPendRow(f, i) {
+  const pdf = /\.pdf$/i.test(f.name) || /pdf/i.test(f.type || "");
+  return `<div class="co-doc">
+      <span class="co-ic">${pdf ? "📄" : "🖼"}</span>
+      <span style="flex:1;display:grid;gap:1px;min-width:0">
+        <b style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(f.name)}</b>
+        <i style="font-style:normal;font-size:11px;color:var(--mut)">${esc(coKB(f.size))}${esc(tr("· 保存后自动上传"))}</i></span>
+      <button class="ghost co-dx" data-pdel="${i}" type="button" title="${esc(tr("移除"))}">×</button>
+    </div>`;
+}
+
+function coDocRow(d, cid) {
+  const pdf = /pdf/i.test(d.mime || "");
+  const size = Number(d.size) || 0;
+  const kb = size > 1048576 ? (size / 1048576).toFixed(1) + " MB" : size ? Math.round(size / 1024) + " KB" : "";
+  return `<div class="co-doc">
+      <span class="co-ic">${pdf ? "📄" : "🖼"}</span>
+      <a href="/api/companies/${esc(cid)}/doc/${esc(d.k)}" target="_blank" rel="noopener">
+        <b>${esc(d.label || d.name || d.k)}</b>
+        <i>${esc(d.name || "")}${kb ? " · " + kb : ""}${d.at ? " · " + esc(d.at) : ""}</i></a>
+      ${CO.edit ? `<button class="ghost co-dx" data-codel="${esc(d.k)}" type="button" title="${esc(tr("删除"))}">×</button>` : ""}
+    </div>`;
+}
+
+function coDetailHtml(c) {
+  const ed = CO.edit;
+  const zm = Number(c.zm_pct) || 0;
+  const pctSum = +((c.shareholders || []).reduce((s, x) => s + (Number(x.pct) || 0), 0)).toFixed(1);
+  const sh = (c.shareholders || []).map((s) => coShRow(s));
+  const dir = (c.directors || []).map((d) => coDirRow(d));
+  const roSh = sh.map((h) => h.replace(/\s*<td><button class="ghost co-x" type="button">×<\/button><\/td>/, "").replace(/<input /g, "<input readonly "));
+  const roDir = dir.map((h) => h.replace(/\s*<td><button class="ghost co-x" type="button">×<\/button><\/td>/, "").replace(/<input /g, "<input readonly "));
+  return `<div class="co-head">
+      <button class="ghost" id="co_back">‹ ${esc(tr("返回列表"))}</button>
+      <div class="co-title">${esc(c.name || tr("新公司"))}</div>
+      ${ed
+        ? `<button class="pri" id="co_save">${esc(tr("保存"))}</button><button class="ghost" id="co_cancel">${esc(tr("取消"))}</button>`
+        : `<button class="pri" id="co_edit">✏️ ${esc(tr("编辑"))}</button>`}
+    </div>
+    <div class="grid" style="margin-bottom:10px">
+      <div class="kpi"><i>${esc(tr("赞方合计"))}</i><b>${zm ? zm + "%" : "—"}</b></div>
+      <div class="kpi"><i>${esc(tr("占比合计"))}</i><b${pctSum && Math.abs(pctSum - 100) > 0.5 ? ' style="color:#c0392b"' : ""}>${pctSum ? pctSum + "%" : "—"}</b></div>
+      <div class="kpi"><i>${esc(tr("股东"))}</i><b>${(c.shareholders || []).length}</b></div>
+      <div class="kpi"><i>${esc(tr("董事"))}</i><b>${(c.directors || []).length}</b></div>
+      <div class="kpi"><i>${esc(tr("注册资本"))}</i><b>${Number(c.share_capital) ? Number(c.share_capital).toLocaleString("en-US") : "—"}</b></div>
+    </div>
+    <div class="card"><h3>${esc(tr("基础信息"))}</h3><div class="co-grid">
+      ${coIn("co_name", "公司名", c.name)}
+      ${coIn("co_name_en", "英文名", c.name_en)}
+      ${coIn("co_reg_no", "PACRA 号", c.reg_no)}
+      ${coIn("co_reg_date", "注册日期", c.reg_date, { type: "date" })}
+      ${coIn("co_tpin", "TPIN", c.tpin)}
+      ${coIn("co_cap", "注册资本", c.share_capital, { type: "number" })}
+      ${coIn("co_cur", "币种", c.currency || "ZMW")}
+      ${coIn("co_phone", "电话", c.phone)}
+      ${coIn("co_email", "邮箱", c.email)}
+      ${coIn("co_tags", "标签", c.tags)}
+      ${coIn("co_addr", "地址", c.address, { wide: true })}
+      <div style="grid-column:1/-1"><label>${esc(tr("备注"))}</label>
+        <textarea id="co_notes" rows="3"${ed ? "" : " readonly"}>${esc(c.notes || "")}</textarea></div>
+    </div></div>
+    <div class="card">
+      <h3 style="display:flex;align-items:center;gap:8px">${esc(tr("股东"))}
+        <span class="mut" style="font-weight:600">${esc(tr("赞方合计"))} ${zm ? zm + "%" : "—"}</span>
+        ${ed ? `<button class="ghost" id="co_add_sh" style="margin-left:auto">＋ ${esc(tr("股东"))}</button>` : ""}</h3>
+      <table class="co-table"><thead><tr><th>${esc(tr("姓名"))}</th><th>${esc(tr("国籍"))}</th><th>${esc(tr("证件号"))}</th><th>${esc(tr("出资"))}</th><th>${esc(tr("占比"))}</th>${ed ? "<th></th>" : ""}</tr></thead>
+        <tbody id="co_sh">${ed ? sh.join("") : roSh.join("")}</tbody></table>
+      ${(c.shareholders || []).length ? "" : `<div class="empty">${esc(tr("没有股东记录"))}</div>`}
+    </div>
+    <div class="card">
+      <h3 style="display:flex;align-items:center;gap:8px">${esc(tr("董事"))}
+        ${ed ? `<button class="ghost" id="co_add_dir" style="margin-left:auto">＋ ${esc(tr("董事"))}</button>` : ""}</h3>
+      <table class="co-table"><thead><tr><th>${esc(tr("姓名"))}</th><th>${esc(tr("国籍"))}</th><th>${esc(tr("证件号"))}</th><th>${esc(tr("职务"))}</th>${ed ? "<th></th>" : ""}</tr></thead>
+        <tbody id="co_dir">${ed ? dir.join("") : roDir.join("")}</tbody></table>
+      ${(c.directors || []).length ? "" : `<div class="empty">${esc(tr("没有董事记录"))}</div>`}
+    </div>
+    <div class="card">
+      <h3 style="display:flex;align-items:center;gap:8px">${esc(tr("资料"))}
+        <span class="mut" style="font-weight:600">${(c.docs || []).length}</span>
+        ${ed && c.id ? `<label class="pri" style="margin-left:auto;cursor:pointer">＋ ${esc(tr("上传资料"))}
+          <input id="co_doc_up" type="file" accept="application/pdf,image/png,image/jpeg,image/webp" hidden></label>` : ""}</h3>
+      ${ed && !c.id ? `<label class="co-pick">📎 ${esc(tr("选择资料文件（可多选）"))}
+          <input id="co_doc_pick" type="file" accept="application/pdf,image/png,image/jpeg,image/webp" multiple hidden></label>
+        <div class="mut" style="font-size:12px;margin:6px 0 0">${esc(tr("先挑好，点保存建好公司后自动上传"))}</div>
+        <div class="co-docs" id="co_pend_list" style="margin-top:8px"${(CO.pending || []).length ? "" : " hidden"}>${CO.pending.map(coPendRow).join("")}</div>` : ""}
+      ${c.id
+        ? ((c.docs || []).length
+          ? `<div class="co-docs">${c.docs.map((d) => coDocRow(d, c.id)).join("")}</div>`
+          : `<div class="empty">${esc(tr("还没有资料（PDF / 图片，单份 ≤25MB）"))}</div>`)
+        : ""}
+    </div>
+    ${ed && c.id ? `<div class="card"><button class="danger" id="co_del">🗑 ${esc(tr("删除这家公司"))}</button></div>` : ""}`;
+}
+
+function companyHtml() {
+  if (CO.cur || CO.edit) return coDetailHtml(CO.cur || { shareholders: [], directors: [] });
+  return coListHtml();
+}
+
+function coReadForm() {
+  const v = (id) => { const el = $("#" + id); return el ? el.value.trim() : ""; };
+  const rows = (sel, cols) => [...document.querySelectorAll(sel + " tr")].map((tr) => {
+    const o = {};
+    cols.forEach((k) => { const el = tr.querySelector('[data-f="' + k + '"]'); o[k] = el ? el.value.trim() : ""; });
+    o.amount = Number(o.amount) || 0;
+    return o;
+  }).filter((x) => x.name);
+  return {
+    name: v("co_name"), name_en: v("co_name_en"), reg_no: v("co_reg_no"), reg_date: v("co_reg_date"),
+    tpin: v("co_tpin"), address: v("co_addr"), phone: v("co_phone"), email: v("co_email"),
+    share_capital: Number(v("co_cap")) || 0, currency: v("co_cur") || "ZMW",
+    notes: v("co_notes"), tags: v("co_tags"),
+    shareholders: rows("#co_sh", ["name", "nationality", "id_no", "amount"]),
+    directors: rows("#co_dir", ["name", "nationality", "id_no", "role"]),
+  };
+}
+
+function bindCompany(pane) {
+  const go = (fn) => (e) => { e.preventDefault(); fn(); };
+  if ($("#co_q")) {
+    const run = () => { CO.q = $("#co_q").value.trim(); loadCompanies().then(render).catch((e) => toast(e.message, "bad")); };
+    $("#co_q").onkeydown = (e) => { if (e.key === "Enter") run(); };
+    $("#co_q").onchange = run;
+  }
+  if ($("#co_q_toggle")) $("#co_q_toggle").onclick = go(() => { CO.showSearch = !CO.showSearch; render(); });
+  if ($("#co_q_go")) $("#co_q_go").onclick = go(() => {
+    CO.q = ($("#co_q").value || "").trim();
+    loadCompanies().then(render).catch((e) => toast(e.message, "bad"));
+  });
+  if ($("#co_q_clear")) $("#co_q_clear").onclick = go(() => {
+    CO.q = "";
+    loadCompanies().then(render).catch((e) => toast(e.message, "bad"));
+  });
+  if ($("#co_new")) $("#co_new").onclick = go(() => { CO.cur = null; CO.edit = true; CO.imp = false; CO.pending = []; render(); });
+  if ($("#co_imp_btn")) $("#co_imp_btn").onclick = go(() => { CO.imp = !CO.imp; render(); });
+  if ($("#co_imp_cancel")) $("#co_imp_cancel").onclick = go(() => { CO.imp = false; render(); });
+  if ($("#co_imp_demo")) $("#co_imp_demo").onclick = go(() => {
+    const ta = $("#co_json");
+    if (ta) {
+      ta.value = JSON.stringify([
+        { name: "ABC Mining Ltd", name_en: "ABC Mining Limited", reg_no: "120200012345", reg_date: "2020-05-12", tpin: "1001234567",
+          address: "Plot 12, Great East Road, Lusaka", phone: "+260 97 000 0000", share_capital: 500000,
+          shareholders: [{ name: "Zhang San", nationality: "China", id_no: "P1234567", amount: 400000 },
+            { name: "Local Partner", nationality: "Zambia", id_no: "123456/11/1", amount: 100000 }],
+          directors: [{ name: "Zhang San", nationality: "China", role: "Director" }], notes: "" },
+      ], null, 2);
+    }
+  });
+  if ($("#co_imp_go")) $("#co_imp_go").onclick = go(async () => {
+    let arr;
+    try { arr = JSON.parse($("#co_json").value); } catch (e) { return toast(tr("JSON 格式不对"), "bad"); }
+    if (!Array.isArray(arr)) return toast(tr("要一个数组"), "bad");
+    try {
+      const r = await api("/companies/bulk", { method: "POST", body: { companies: arr } });
+      CO.imp = false;
+      await loadCompanies();
+      render();
+      toast(tr("已导入") + " " + r.added);
+    } catch (e) { toast(e.message, "bad"); }
+  });
+  if ($("#co_doc_up")) $("#co_doc_up").onchange = async (ev) => {
+    const f = ev.target.files && ev.target.files[0];
+    if (!f || !CO.cur) return;
+    try {
+      CO.cur.docs = await coUploadDoc(CO.cur.id, f);
+      render();
+      toast(tr("已上传") + " " + f.name);
+    } catch (e) { toast(e.message, "bad"); }
+  };
+  if ($("#co_doc_pick")) $("#co_doc_pick").onchange = (ev) => {
+    for (const f of [...(ev.target.files || [])]) {
+      if (CO.pending.some((x) => x.name === f.name && x.size === f.size)) continue;
+      CO.pending.push(f);
+    }
+    ev.target.value = "";
+    coPendRefresh();
+  };
+  bindPendDel();
+  pane.querySelectorAll("[data-codel]").forEach((b) => {
+    b.onclick = async (ev) => {
+      ev.preventDefault();
+      if (!CO.cur || !confirm(tr("删除这份资料？"))) return;
+      try {
+        const r = await api("/companies/" + CO.cur.id + "/doc?k=" + encodeURIComponent(b.dataset.codel),
+          { method: "DELETE", quiet: true });
+        CO.cur.docs = r.docs;
+        render();
+        toast(tr("已删除"));
+      } catch (e) { toast(e.message, "bad"); }
+    };
+  });
+  pane.querySelectorAll("[data-co]").forEach((b) => {
+    b.onclick = () => { CO.cur = CO.list.find((x) => x.id === b.dataset.co) || null; CO.edit = false; render(); };
+  });
+  if ($("#co_back")) $("#co_back").onclick = go(() => { CO.cur = null; CO.edit = false; CO.pending = []; render(); });
+  if ($("#co_edit")) $("#co_edit").onclick = go(() => { CO.edit = true; render(); });
+  if ($("#co_cancel")) $("#co_cancel").onclick = go(() => { CO.edit = false; render(); });
+  if ($("#co_save")) $("#co_save").onclick = go(async () => {
+    const data = coReadForm();
+    if (!data.name) return toast(tr("公司名必填"), "bad");
+    const isNew = !(CO.cur && CO.cur.id);
+    try {
+      const r = isNew
+        ? await api("/companies", { method: "POST", body: data })
+        : await api("/companies/" + CO.cur.id, { method: "PATCH", body: data });
+      CO.cur = r.company;
+      CO.edit = false;
+      let up = 0, bad = [];
+      if (isNew && (CO.pending || []).length) {
+        for (const f of CO.pending) {
+          try { CO.cur.docs = await coUploadDoc(CO.cur.id, f); up++; } catch (e) { bad.push(f.name); }
+        }
+        CO.pending = [];
+      }
+      await loadCompanies();
+      render();
+      if (up) toast(tr("已保存") + "，" + tr("资料") + " " + up + " " + tr("份已上传"));
+      else toast(tr("已保存"));
+      if (bad.length) toast(bad.length + " " + tr("份资料上传失败") + "：" + bad.join("、"), "bad");
+    } catch (e) { toast(e.message, "bad"); }
+  });
+  if ($("#co_del")) $("#co_del").onclick = go(async () => {
+    if (!confirm(tr("确定删除") + "「" + CO.cur.name + "」？")) return;
+    try {
+      await api("/companies/" + CO.cur.id, { method: "DELETE" });
+      CO.cur = null;
+      await loadCompanies();
+      render();
+      toast(tr("已删除"));
+    } catch (e) { toast(e.message, "bad"); }
+  });
+  if ($("#co_add_sh")) $("#co_add_sh").onclick = go(() => $("#co_sh").insertAdjacentHTML("beforeend", coShRow()));
+  if ($("#co_add_dir")) $("#co_add_dir").onclick = go(() => $("#co_dir").insertAdjacentHTML("beforeend", coDirRow()));
+  ["#co_sh", "#co_dir"].forEach((sel) => {
+    const tb = $(sel);
+    if (tb) tb.onclick = (e) => { const b = e.target.closest(".co-x"); if (b) b.closest("tr").remove(); };
+  });
+}
+
 /* ---------- 我的 ---------- */
 function mineHtml() {
   return `<div class="card"><h3>我的账号</h3>
@@ -2050,7 +2930,7 @@ function finPhotoHtml(p) {
     <div class="ph" id="${p}_ph"></div>`;
 }
 
-function finPhotoWire(box, p, initial) {
+function finPhotoWire(box, p, initial, dir) {
   const state = { list: Array.isArray(initial) ? initial.slice(0, 6) : [], busy: false };
   const phBox = $("#" + p + "_ph", box), phN = $("#" + p + "_phn", box), msgEl = $("#" + p + "_msg", box);
   const draw = () => {
@@ -2067,7 +2947,7 @@ function finPhotoWire(box, p, initial) {
     try {
       for (let i = 0; i < list.length; i++) {
         if (msgEl) msgEl.textContent = "上传中…（" + i + "/" + list.length + "）";
-        const key = await finUpload(list[i], msgEl);
+        const key = await finUpload(list[i], msgEl, dir);
         if (key) state.list.push(key); else fail++;
         draw();
       }
@@ -2631,7 +3511,7 @@ function syncChrome() {
   const back = $("#back"); if (back) back.classList.toggle("hide", root);
   const ttl = $("#ttl");
   if (ttl) {
-    const names = { status: "动态", home: "目录", todo: "待办", board: "看板", log: "日报", users: "人员", mine: "我的", fin: "费用记录", lang: "语言" };
+    const names = { status: "动态", home: "目录", todo: "待办", log: "生产", company: "公司", users: "人员", mine: "我的", fin: "费用记录", lang: "语言" };
     const mod = MODS.find((m) => (m.tab || m.k) === S.tab);
     ttl.textContent = tr(names[S.tab] || (mod && mod.t) || (S.tab.startsWith("g:") ? S.tab.slice(2) : "ECOBOX"));
   }
@@ -2988,20 +3868,11 @@ async function renderPane() {
     pane.querySelectorAll("[data-go]").forEach((b) => b.onclick = () => enterApp(b.dataset.go));
     return;
   }
-  if (S.tab === "board") {
+  if (S.tab === "log") {
     pane.innerHTML = `<div class="empty">加载中…</div>`;
-    const sum = await loadBoard();
-    pane.innerHTML = boardHtml(sum);
-    $("#f_from").onchange = (e) => { S.from = e.target.value; render(); };
-    $("#f_to").onchange = (e) => { S.to = e.target.value; render(); };
-  } else if (S.tab === "log") {
-    await loadBoard();
-    const editing = S.editId ? S.logs.find((l) => l.id === S.editId) : null;
-    pane.innerHTML = logForm(editing) + logListHtml();
-    $("#d_save").onclick = saveLog;
-    if (editing) $("#d_cancel").onclick = () => { S.editId = 0; render(); };
-    pane.querySelectorAll("[data-edit]").forEach((b) => b.onclick = () => { S.editId = +b.dataset.edit; render(); });
-    pane.querySelectorAll("[data-del]").forEach((b) => b.onclick = () => delLog(+b.dataset.del));
+    try { await loadProd(); } catch (e) { pane.innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
+    pane.innerHTML = prodHtml();
+    bindProd(pane);
   } else if (S.tab === "fin") {
     pane.innerHTML = `<div class="empty">加载中…</div>`;
     try { await loadFin(); } catch (e) { pane.innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
@@ -3033,6 +3904,24 @@ async function renderPane() {
       $("#eu_save").onclick = saveUserEdit;
       $("#eu_cancel").onclick = () => { S.editUid = 0; render(); };
     }
+  } else if (S.tab === "punch") {
+    await punchPane(pane);
+  } else if (S.tab === "export") {
+    await exportPane(pane);
+  } else if (S.tab === "customer") {
+    await customerPane(pane);
+  } else if (S.tab === "company") {
+    if (!CO.list.length) {
+      pane.innerHTML = `<div class="empty">加载中…</div>`;
+      try { await loadCompanies(); } catch (e) { pane.innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
+    }
+    try {
+      pane.innerHTML = companyHtml();
+    } catch (e) {
+      pane.innerHTML = `<div class="empty">${esc(e.message)}</div>`;
+      return;
+    }
+    bindCompany(pane);
   } else if (S.tab === "todo") {
     pane.innerHTML = `<div class="empty">加载中…</div>`;
     try { await loadTodos(); } catch (e) { pane.innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
@@ -3061,28 +3950,6 @@ async function renderPane() {
 
 /* ---------- 动作 ---------- */
 function numOf(id) { const v = $(id).value.trim(); return v === "" ? 0 : +v; }
-
-async function saveLog() {
-  $("#d_err").textContent = "";
-  const body = {
-    day: $("#d_day").value, site: $("#d_site").value, shift: $("#d_shift").value,
-    crew: $("#d_crew").value, headcount: numOf("#d_people"),
-    ore_t: numOf("#d_ore"), waste_t: numOf("#d_waste"), cost_usd: numOf("#d_cost"),
-    grade: $("#d_grade").value, note: $("#d_note").value,
-  };
-  const btn = $("#d_save"); btn.disabled = true;
-  try {
-    if (S.editId) await api("/logs/" + S.editId, { method: "PATCH", body, toast: "生产记录已更新" });
-    else await api("/logs", { method: "POST", body, toast: "生产记录已保存" });
-    S.editId = 0; S.tab = "log"; await render();
-  } catch (e) { $("#d_err").textContent = e.message; btn.disabled = false; }
-}
-
-async function delLog(id) {
-  if (!confirm("删掉这条记录？不能撤销。")) return;
-  try { await api("/logs/" + id, { method: "DELETE", toast: "生产记录已删除" }); S.editId = 0; render(); }
-  catch (e) { toast(e.message, "bad"); }
-}
 
 async function addUser() {
   $("#u_err").textContent = ""; $("#u_ok").textContent = "";
@@ -3125,6 +3992,465 @@ async function delUser(id) {
 async function patchUser(id, patch) {
   const t = patch.password ? "密码已修改" : patch.active != null ? (patch.active ? "已启用" : "已停用") : "已更新";
   await api("/users/" + id, { method: "PATCH", body: patch, toast: t });
+}
+
+/* ================= 打卡（考勤） ================= */
+const ATT = { ym: "", all: false, cfg: null, rec: null, phase: "in", records: [], stats: {}, scope: "me" };
+
+const gpsFix = () => new Promise((ok, bad) => {
+  if (!navigator.geolocation) return bad(new Error("这台设备/浏览器不支持定位"));
+  navigator.geolocation.getCurrentPosition(
+    (p) => ok({ lat: p.coords.latitude, lng: p.coords.longitude, acc: p.coords.accuracy }),
+    (e) => bad(new Error(e.code === 1 ? "定位被拒绝：请在浏览器里允许定位" : "定位失败，到空旷处再试")),
+    { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
+});
+const hhmm = (iso) => (iso ? new Date(iso).toTimeString().slice(0, 5) : "");
+
+async function punchPane(pane) {
+  pane.innerHTML = `<div class="empty">加载中…</div>`;
+  const d = localDay(new Date());
+  const ym = ATT.ym || d.slice(0, 7);
+  try {
+    const r = await api(`/att?ym=${ym}&d=${d}${ATT.all ? "&all=1" : ""}`);
+    Object.assign(ATT, r, { ym });
+  } catch (e) {
+    pane.innerHTML = `<div class="empty">${esc(e.message)}</div>`;
+    return;
+  }
+  pane.innerHTML = attHtml();
+  bindAtt(pane);
+}
+
+function attHtml() {
+  const cfg = ATT.cfg || {};
+  const rec = ATT.rec;
+  const phase = ATT.phase;
+  const st = ATT.stats || {};
+  const admin = S.user.role === "admin";
+  const btnTxt = phase === "in" ? "上班打卡" : phase === "out" ? "下班打卡" : "今天已打卡完成";
+  const btnCls = phase === "done" ? "" : "pri";
+  const noSite = !cfg.lat && !cfg.lng;
+  const ym = ATT.ym || localDay(new Date()).slice(0, 7);
+
+  const rows = (ATT.records || []).map((r) => {
+    const late = r.inHm && cfg.start && r.inHm > cfg.start && attMinOf(r.inHm) > attMinOf(cfg.start) + (+cfg.grace || 0);
+    const early = r.outHm && cfg.end && r.outHm < cfg.end;
+    return `<tr>
+      <td>${esc(r.d)}${ATT.all ? ` · ${esc(r.name || r.uid)}` : ""}</td>
+      <td>${esc(hhmm(r.inAt) || "-")}</td>
+      <td>${esc(hhmm(r.outAt) || "-")}</td>
+      <td>${r.inDist ? esc(r.inDist) + " m" : "-"}</td>
+      <td>${late ? '<span style="color:var(--warn)">迟到</span>' : ""}${early ? '<span style="color:var(--warn)"> 早退</span>' : ""}${!late && !early && r.outAt ? "正常" : ""}</td>
+      <td class="mut">${esc(r.site || "")}</td>
+    </tr>`;
+  }).join("");
+
+  return `
+  <div class="card">
+    <h3>今日打卡 · ${esc(localDay(new Date()))}</h3>
+    ${noSite ? `<div class="empty" style="padding:10px 0;">还没设置办公点位置 —— ${admin ? "在下方「打卡设置」里填，或点「用当前位置」" : "请让管理员设置"}</div>` : ""}
+    <div class="grid" style="grid-template-columns:1fr 1fr 1fr;">
+      <div class="kpi"><i>上班</i><b>${esc(rec && rec.inAt ? hhmm(rec.inAt) : "--:--")}</b></div>
+      <div class="kpi"><i>下班</i><b>${esc(rec && rec.outAt ? hhmm(rec.outAt) : "--:--")}</b></div>
+      <div class="kpi"><i>今日工时</i><b>${rec && rec.inAt && rec.outAt ? attHours(rec) : "-"}</b></div>
+    </div>
+    <button id="att-punch" class="btn ${btnCls}" style="width:100%;margin-top:12px;padding:14px;font-size:16px;" ${phase === "done" ? "disabled" : ""}>${esc(btnTxt)}</button>
+    <div class="mut" style="font-size:12px;margin-top:8px;">点打卡时自动定位，需在 ${esc(cfg.radius || 300)} 米范围内${cfg.site_name ? "（" + esc(cfg.site_name) + "）" : ""}；两段打卡都要在范围内。</div>
+  </div>
+
+  <div class="card">
+    <h3>本月统计 · ${esc(ym)}</h3>
+    <div class="grid" style="grid-template-columns:repeat(4,1fr);">
+      <div class="kpi"><i>出勤天数</i><b>${st.days || 0}</b></div>
+      <div class="kpi"><i>迟到</i><b>${st.late || 0}</b></div>
+      <div class="kpi"><i>早退</i><b>${st.early || 0}</b></div>
+      <div class="kpi"><i>工时</i><b>${st.hours || 0}h</b></div>
+    </div>
+    <div class="row" style="margin-top:12px;">
+      <label>月份<input id="att-month" type="month" value="${esc(ym)}"></label>
+      ${admin ? `<label>范围<select id="att-scope">
+        <option value="me"${ATT.all ? "" : " selected"}>只看我自己</option>
+        <option value="all"${ATT.all ? " selected" : ""}>全公司</option></select></label>` : "<div></div>"}
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>打卡记录${st.miss ? ` · 未打下班 ${st.miss} 天` : ""}</h3>
+    ${rows ? `<table><thead><tr><th>日期</th><th>上班</th><th>下班</th><th>距离</th><th>状态</th><th>地点</th></tr></thead><tbody>${rows}</tbody></table>`
+      : `<div class="empty">本月还没有记录</div>`}
+  </div>
+
+  ${admin ? `<div class="card">
+    <h3>打卡设置</h3>
+    <div class="row">
+      <label>办公点名称<input id="att-site" value="${esc(cfg.site_name || "")}" placeholder="如 Lusaka 办公室"></label>
+      <label>允许范围（米）<input id="att-radius" type="number" value="${esc(cfg.radius || 300)}"></label>
+    </div>
+    <div class="row3">
+      <label>纬度<input id="att-lat" type="number" step="0.000001" value="${cfg.lat ? esc(cfg.lat) : ""}" placeholder="-15.4067"></label>
+      <label>经度<input id="att-lng" type="number" step="0.000001" value="${cfg.lng ? esc(cfg.lng) : ""}" placeholder="28.2871"></label>
+      <label>&nbsp;<button id="att-here" class="btn" style="width:100%;">用当前位置</button></label>
+    </div>
+    <div class="row3">
+      <label>上班时间<input id="att-start" value="${esc(cfg.start || "08:00")}" placeholder="08:00"></label>
+      <label>下班时间<input id="att-end" value="${esc(cfg.end || "17:00")}" placeholder="17:00"></label>
+      <label>宽限（分钟）<input id="att-grace" type="number" value="${esc(cfg.grace == null ? 15 : cfg.grace)}"></label>
+    </div>
+    <button id="att-cfg-save" class="btn pri" style="margin-top:12px;">保存设置</button>
+  </div>` : ""}`;
+}
+
+function attMinOf(v) {
+  const m = /^(\d{1,2}):(\d{2})/.exec(String(v || ""));
+  return m ? +m[1] * 60 + +m[2] : 0;
+}
+function attHours(r) {
+  const mins = (new Date(r.outAt) - new Date(r.inAt)) / 60000;
+  if (!(mins > 0)) return "-";
+  return Math.floor(mins / 60) + "h " + Math.round(mins % 60) + "m";
+}
+
+function bindAtt(pane) {
+  const btn = $("#att-punch", pane);
+  if (btn) btn.onclick = async () => {
+    btn.disabled = true;
+    const old = btn.textContent;
+    btn.textContent = "正在定位…";
+    try {
+      const g = await gpsFix();
+      const now = new Date();
+      const r = await api("/att/punch", {
+        method: "POST", quiet: true,
+        body: { lat: g.lat, lng: g.lng, acc: g.acc, d: localDay(now), hm: now.toTimeString().slice(0, 5) },
+      });
+      toast(r.phase === "in" ? "上班打卡成功" : "下班打卡成功");
+      await punchPane(pane);
+    } catch (e) {
+      toast(e.message, "bad");
+      btn.disabled = false;
+      btn.textContent = old;
+    }
+  };
+  const mo = $("#att-month", pane);
+  if (mo) mo.onchange = () => { ATT.ym = mo.value; render(); };
+  const sc = $("#att-scope", pane);
+  if (sc) sc.onchange = () => { ATT.all = sc.value === "all"; render(); };
+  const here = $("#att-here", pane);
+  if (here) here.onclick = async () => {
+    try {
+      const g = await gpsFix();
+      $("#att-lat", pane).value = g.lat.toFixed(6);
+      $("#att-lng", pane).value = g.lng.toFixed(6);
+      toast("已填入当前位置，记得保存");
+    } catch (e) { toast(e.message, "bad"); }
+  };
+  const save = $("#att-cfg-save", pane);
+  if (save) save.onclick = async () => {
+    try {
+      await api("/att/cfg", {
+        method: "PUT", toast: "打卡设置已保存",
+        body: {
+          site_name: $("#att-site", pane).value.trim(),
+          radius: +$("#att-radius", pane).value || 300,
+          lat: +$("#att-lat", pane).value || 0,
+          lng: +$("#att-lng", pane).value || 0,
+          start: $("#att-start", pane).value.trim(),
+          end: $("#att-end", pane).value.trim(),
+          grace: +$("#att-grace", pane).value || 0,
+        },
+      });
+      await render();
+    } catch (e) { toast(e.message, "bad"); }
+  };
+}
+
+/* ================= 客户 ================= */
+const CUST = { list: [], q: "", edit: null, total: 0 };
+const CUST_FIELDS = [
+  ["name", "公司名称", 1], ["contact", "联系人"], ["phone", "电话"], ["email", "邮箱"],
+  ["wechat", "微信"], ["country", "国家"], ["addr", "地址"],
+  ["bank", "收款银行"], ["swift", "SWIFT"], ["accNo", "账号"], ["currency", "币种"], ["note", "备注"],
+];
+
+async function customerPane(pane) {
+  pane.innerHTML = `<div class="empty">加载中…</div>`;
+  try {
+    const r = await api("/customers" + (CUST.q ? "?q=" + encodeURIComponent(CUST.q) : ""));
+    CUST.list = r.customers;
+    CUST.total = r.total;
+  } catch (e) {
+    pane.innerHTML = `<div class="empty">${esc(e.message)}</div>`;
+    return;
+  }
+  pane.innerHTML = custHtml();
+  bindCust(pane);
+}
+
+function custHtml() {
+  const form = CUST.edit !== null ? custFormHtml() : "";
+  const rows = CUST.list.map((c) => `<button class="row-item" data-cu="${esc(c.id)}">
+      <b>${esc(c.name)}</b>
+      <span class="mut">${esc([c.contact, c.phone, c.country].filter(Boolean).join(" · ") || "—")}</span>
+    </button>`).join("");
+  return `<div class="card">
+    <h3>客户 (${CUST.total})</h3>
+    <div class="row">
+      <label>搜索<input id="cu-q" placeholder="名称 / 联系人 / 电话 / 国家" value="${esc(CUST.q)}"></label>
+      <label>&nbsp;<button id="cu-new" class="btn pri" style="width:100%;">＋ 新建客户</button></label>
+    </div>
+    ${rows || `<div class="empty">还没有客户</div>`}
+    ${CUST.q ? `<div class="mut" style="font-size:12px;margin-top:8px;">搜索「${esc(CUST.q)}」</div>` : ""}
+  </div>
+  ${form}`;
+}
+
+function custFormHtml() {
+  const c = CUST.edit || {};
+  const isNew = !c.id;
+  return `<div class="card" id="cu-form">
+    <h3>${isNew ? "新建客户" : "编辑客户"}</h3>
+    <div class="grid">
+      ${CUST_FIELDS.map(([k, label]) => `<label>${label}${k === "name" ? " *" : ""}<input data-cf="${k}" value="${esc(c[k] || "")}"></label>`).join("")}
+    </div>
+    <div style="display:flex;gap:8px;margin-top:12px;">
+      <button id="cu-save" class="btn pri" style="flex:1;">保存</button>
+      <button id="cu-cancel" class="btn">取消</button>
+      ${isNew ? "" : `<button id="cu-del" class="btn danger">删除</button>`}
+    </div>
+  </div>`;
+}
+
+function bindCust(pane) {
+  const q = $("#cu-q", pane);
+  if (q) {
+    q.onkeydown = (e) => { if (e.key === "Enter") { CUST.q = q.value.trim(); render(); } };
+    q.onblur = () => { if (q.value.trim() !== CUST.q) { CUST.q = q.value.trim(); render(); } };
+  }
+  const isNew = CUST.edit !== null && !CUST.edit.id;
+  const nw = $("#cu-new", pane);
+  if (nw) nw.onclick = () => { CUST.edit = {}; render(); };
+  pane.querySelectorAll("[data-cu]").forEach((b) => b.onclick = async () => {
+    try {
+      const r = await api("/customers/" + b.dataset.cu);
+      CUST.edit = r.customer;
+      render();
+    } catch (e) { toast(e.message, "bad"); }
+  });
+  const cancel = $("#cu-cancel", pane);
+  if (cancel) cancel.onclick = () => { CUST.edit = null; render(); };
+  const save = $("#cu-save", pane);
+  if (save) save.onclick = async () => {
+    const body = {};
+    pane.querySelectorAll("[data-cf]").forEach((i) => { body[i.dataset.cf] = i.value.trim(); });
+    if (!body.name) return toast("客户名称必填", "bad");
+    try {
+      if (isNew) await api("/customers", { method: "POST", body, toast: "客户已建立" });
+      else await api("/customers/" + CUST.edit.id, { method: "PATCH", body, toast: "已保存" });
+      CUST.edit = null;
+      await render();
+    } catch (e) { toast(e.message, "bad"); }
+  };
+  const del = $("#cu-del", pane);
+  if (del) del.onclick = async () => {
+    if (!confirm(`删除客户「${CUST.edit.name}」？`)) return;
+    try {
+      await api("/customers/" + CUST.edit.id, { method: "DELETE", toast: "已删除" });
+      CUST.edit = null;
+      await render();
+    } catch (e) { toast(e.message, "bad"); }
+  };
+}
+
+/* ================= 出口 ================= */
+const EXP = { list: [], q: "", labels: {}, stages: [], open: null, editing: null, adding: null };
+const EXP_STAGE_FIELDS = {
+  applied: [["summary", "申请摘要"]],
+  moses: [["ref", "MOSES 编号 / 条码"]],
+  analysis: [["labRef", "化验单编号"], ["grades", "化验品位"]],
+  valuation: [["mvcRef", "估价证编号"], ["netValue", "估定净值 (US$)"]],
+  royalty: [["amount", "矿权费 (US$)"], ["due", "缴纳期限"]],
+  permit: [["permitNo", "许可证号"], ["validUntil", "有效期"]],
+  exported: [["note", "备注"]],
+};
+const EXP_MINERALS = ["Tantalum", "Niobium", "Copper", "Cobalt", "Manganese", "Tin", "Emerald", "Gold", "Other"];
+
+async function exportPane(pane) {
+  pane.innerHTML = `<div class="empty">加载中…</div>`;
+  try {
+    const r = await api("/exports" + (EXP.q ? "?q=" + encodeURIComponent(EXP.q) : ""));
+    EXP.list = r.exports;
+    EXP.labels = r.labels;
+    EXP.stages = r.stages;
+    if (EXP.open && !EXP.list.some((x) => x.id === EXP.open)) EXP.open = null;
+  } catch (e) {
+    pane.innerHTML = `<div class="empty">${esc(e.message)}</div>`;
+    return;
+  }
+  pane.innerHTML = expHtml();
+  bindExp(pane);
+}
+
+const expStageIdx = (x) => Math.max(0, EXP.stages.indexOf(x.status));
+
+function expHtml() {
+  const rows = EXP.list.map((x) => {
+    const idx = expStageIdx(x);
+    const dots = EXP.stages.map((k, i) => `<i class="st-dot${i <= idx ? " on" : ""}" title="${esc(EXP.labels[k] || k)}"></i>`).join("");
+    return `<div class="exp-row">
+      <button class="row-item" data-exp="${esc(x.id)}">
+        <b>${esc(x.date || "")} · ${esc([x.co, x.mineral].filter(Boolean).join(" · ") || "出口单")}</b>
+        <span class="mut">${x.qty ? esc(x.qty + " " + (x.unit || "t")) : ""} ${esc([x.importer, x.dest].filter(Boolean).join(" → "))}</span>
+        <span class="mut">${esc(EXP.labels[x.status] || x.status)}</span>
+      </button>
+      <div class="st-dots">${dots}</div>
+      ${EXP.open === x.id ? expDetailHtml(x) : ""}
+    </div>`;
+  }).join("");
+
+  return `<div class="card">
+    <h3>出口单 (${EXP.list.length})</h3>
+    <div class="row">
+      <label>搜索<input id="exp-q" placeholder="公司 / 矿种 / 进口商 / 目的国" value="${esc(EXP.q)}"></label>
+      <label>&nbsp;<button id="exp-new" class="btn pri" style="width:100%;">＋ 新出口单</button></label>
+    </div>
+    ${EXP.adding ? expNewHtml() : ""}
+    ${rows || `<div class="empty">还没有出口单</div>`}
+  </div>`;
+}
+
+function expNewHtml() {
+  return `<div class="card" id="exp-new-form" style="background:var(--card2);">
+    <h3>新建出口单</h3>
+    <div class="grid">
+      <label>日期<input id="ex-date" type="date" value="${localDay(new Date())}"></label>
+      <label>公司<input id="ex-co" placeholder="公司名"></label>
+      <label>矿种<select id="ex-mineral">${EXP_MINERALS.map((m) => `<option>${m}</option>`).join("")}</select></label>
+      <label>类型<select id="ex-kind"><option value="product">产品</option><option value="sample">样品</option></select></label>
+      <label>数量<input id="ex-qty" type="number" step="0.001" value="0"></label>
+      <label>单位<input id="ex-unit" value="t"></label>
+      <label>进口商<input id="ex-importer"></label>
+      <label>目的国<input id="ex-dest"></label>
+      <label>HS 编码<input id="ex-hs"></label>
+      <label>化验元素<input id="ex-elems" placeholder="Ta2O5, Nb2O5"></label>
+    </div>
+    <label>备注<input id="ex-note"></label>
+    <div style="display:flex;gap:8px;margin-top:12px;">
+      <button id="ex-save" class="btn pri" style="flex:1;">建立</button>
+      <button id="ex-cancel" class="btn">取消</button>
+    </div>
+  </div>`;
+}
+
+function expDetailHtml(x) {
+  const filesByStage = {};
+  (x.files || []).forEach((f) => { (filesByStage[f.stage] = filesByStage[f.stage] || []).push(f); });
+  const stages = EXP.stages.map((k) => {
+    const st = (x.stages || {})[k] || {};
+    const done = !!st.at;
+    const fields = EXP_STAGE_FIELDS[k] || [];
+    const inputs = fields.map(([fk, label]) =>
+      `<label>${label}<input data-es="${k}:${fk}" value="${esc(st[fk] || "")}" placeholder="${done ? "" : "填写后点标记完成"}"></label>`).join("");
+    const files = filesByStage[k] || [];
+    const fileRows = files.map((f) => `<div class="file-row">
+        <a href="/api/exports/${encodeURIComponent(x.id)}/file?k=${encodeURIComponent(f.k)}" target="_blank" rel="noopener">${esc(f.name)}</a>
+        <span class="mut">${Math.max(1, Math.round(f.size / 1024))} KB</span>
+        <button class="btn danger" data-ef-del="${esc(k)}|${esc(f.k)}">删</button>
+      </div>`).join("");
+    return `<div class="exp-stage${done ? " done" : ""}">
+      <div class="exp-stage-h"><b>${esc(EXP.labels[k] || k)}</b>
+        <span class="mut">${done ? "已完成 " + esc(String(st.at).slice(0, 10)) : "未完成"}</span></div>
+      <div class="grid">${inputs}</div>
+      <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+        <button class="btn${done ? "" : " pri"}" data-es-save="${esc(k)}">${done ? "更新本阶段" : "标记完成"}</button>
+        <label class="btn" style="margin:0;display:inline-flex;align-items:center;cursor:pointer;">＋ 上传文件
+          <input type="file" accept="application/pdf,image/*" data-ef-up="${esc(k)}" style="display:none;">
+        </label>
+      </div>
+      ${fileRows}
+    </div>`;
+  }).join("");
+
+  return `<div class="exp-detail">
+    <div class="mut" style="font-size:13px;">${esc([x.qty ? x.qty + " " + (x.unit || "t") : "", x.hs ? "HS " + x.hs : "", x.elems].filter(Boolean).join(" · "))}</div>
+    ${x.note ? `<div class="mut" style="font-size:13px;">备注：${esc(x.note)}</div>` : ""}
+    ${stages}
+    <div style="display:flex;gap:8px;margin-top:10px;">
+      <button class="btn danger" data-exp-del="${esc(x.id)}">删除这张单</button>
+    </div>
+  </div>`;
+}
+
+function bindExp(pane) {
+  const q = $("#exp-q", pane);
+  if (q) {
+    q.onkeydown = (e) => { if (e.key === "Enter") { EXP.q = q.value.trim(); render(); } };
+    q.onblur = () => { if (q.value.trim() !== EXP.q) { EXP.q = q.value.trim(); render(); } };
+  }
+  const nw = $("#exp-new", pane);
+  if (nw) nw.onclick = () => { EXP.adding = true; render(); };
+  const cancel = $("#ex-cancel", pane);
+  if (cancel) cancel.onclick = () => { EXP.adding = false; render(); };
+  const save = $("#ex-save", pane);
+  if (save) save.onclick = async () => {
+    const body = {
+      date: $("#ex-date", pane).value, co: $("#ex-co", pane).value.trim(),
+      mineral: $("#ex-mineral", pane).value, kind: $("#ex-kind", pane).value,
+      qty: +$("#ex-qty", pane).value || 0, unit: $("#ex-unit", pane).value.trim() || "t",
+      importer: $("#ex-importer", pane).value.trim(), dest: $("#ex-dest", pane).value.trim(),
+      hs: $("#ex-hs", pane).value.trim(), elems: $("#ex-elems", pane).value.trim(),
+      note: $("#ex-note", pane).value.trim(),
+    };
+    try {
+      const r = await api("/exports", { method: "POST", body, toast: "出口单已建立" });
+      EXP.adding = false;
+      EXP.open = r.id;
+      await render();
+    } catch (e) { toast(e.message, "bad"); }
+  };
+  pane.querySelectorAll("[data-exp]").forEach((b) => b.onclick = () => {
+    EXP.open = EXP.open === b.dataset.exp ? null : b.dataset.exp;
+    render();
+  });
+  pane.querySelectorAll("[data-es-save]").forEach((b) => b.onclick = async () => {
+    const stage = b.dataset.esSave;
+    const body = { stage, fields: {} };
+    pane.querySelectorAll(`[data-es^="${stage}:"]`).forEach((i) => { body.fields[i.dataset.es.split(":")[1]] = i.value; });
+    try {
+      await api(`/exports/${EXP.open}/stage`, { method: "POST", body, toast: "阶段已更新" });
+      await render();
+    } catch (e) { toast(e.message, "bad"); }
+  });
+  pane.querySelectorAll("[data-ef-up]").forEach((inp) => inp.onchange = async () => {
+    const f = inp.files && inp.files[0];
+    if (!f) return;
+    if (f.size > 20 * 1024 * 1024) return toast("文件太大（限 20MB）", "bad");
+    const data = await new Promise((ok, bad) => {
+      const rd = new FileReader();
+      rd.onload = () => ok(rd.result);
+      rd.onerror = () => bad(new Error("读取文件失败"));
+      rd.readAsDataURL(f);
+    });
+    try {
+      await api(`/exports/${EXP.open}/file`, { method: "POST", body: { stage: inp.dataset.efUp, name: f.name, data }, toast: "已上传" });
+      await render();
+    } catch (e) { toast(e.message, "bad"); }
+  });
+  pane.querySelectorAll("[data-ef-del]").forEach((b) => b.onclick = async () => {
+    const [stage, k] = b.dataset.efDel.split("|");
+    if (!confirm("删除这份文件？")) return;
+    try {
+      await api(`/exports/${EXP.open}/file?k=${encodeURIComponent(k)}`, { method: "DELETE", toast: "已删除" });
+      await render();
+    } catch (e) { toast(e.message, "bad"); }
+  });
+  pane.querySelectorAll("[data-exp-del]").forEach((b) => b.onclick = async () => {
+    if (!confirm("删除这张出口单（含全部文件）？")) return;
+    try {
+      await api("/exports/" + b.dataset.expDel, { method: "DELETE", toast: "已删除" });
+      EXP.open = null;
+      await render();
+    } catch (e) { toast(e.message, "bad"); }
+  });
 }
 
 /* ---------- 启动 ---------- */

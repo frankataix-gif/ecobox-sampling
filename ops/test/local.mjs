@@ -30,7 +30,23 @@ db.exec(schema);
 globalThis.__OPS_PAGE__ = "<!doctype html><title>ops</title>";
 const { default: worker } = await import(pathToFileURL(path.join(ROOT, "worker.js")).href);
 
-const env = { DB: new D1(db), SETUP_TOKEN: "setup-abc", FIN_OWNER: "boss@ecobox.com" };
+// R2 内存替身：只为验证 Worker 的读写逻辑，不模拟 R2 本身
+const R2 = new Map();
+const PHOTOS = {
+  async put(key, bytes, opts = {}) {
+    R2.set(key, { bytes, mime: (opts.httpMetadata && opts.httpMetadata.contentType) || "" });
+    return { key };
+  },
+  async get(key) {
+    const o = R2.get(key);
+    return o ? { body: o.bytes, httpMetadata: { contentType: o.mime } } : null;
+  },
+  async head(key) { return R2.has(key) ? { key } : null; },
+  async delete(key) { R2.delete(key); },
+  async list() { return { objects: [] }; },
+};
+
+const env = { DB: new D1(db), SETUP_TOKEN: "setup-abc", FIN_OWNER: "boss@ecobox.com", PHOTOS };
 
 async function startServer(w, e) {
   const server = http.createServer(async (req, res) => {
@@ -57,8 +73,9 @@ function client(base = BASE) {
   return async (p, opts = {}) => {
     const r = await fetch(base + p, {
       method: opts.method || "GET",
-      headers: { "content-type": "application/json", ...(cookie ? { cookie } : {}), ...(opts.headers || {}) },
-      body: opts.body ? JSON.stringify(opts.body) : undefined,
+      headers: { ...(opts.form ? {} : { "content-type": "application/json" }), ...(cookie ? { cookie } : {}), ...(opts.headers || {}) },
+      body: opts.form || (opts.body ? JSON.stringify(opts.body) : undefined),
+      redirect: opts.redirect || "follow",
     });
     const sc = r.headers.get("set-cookie");
     if (sc) {
@@ -183,12 +200,12 @@ ok(finMod && finMod.t === "费用记录" && finMod.g === "财务", "账目模块
 ok((await client()("/api/modules")).status === 401, "未登录看不到模块目录");
 ok((await boss("/api/me")).data.user.modules.length === keys.length, "管理员默认全开");
 
-const lim = await post(boss, "/api/users", { login: "lim@ecobox.com", name: "李民", password: "lim2026pass", role: "staff", modules: ["board", "lic"] });
+const lim = await post(boss, "/api/users", { login: "lim@ecobox.com", name: "李民", password: "lim2026pass", role: "staff", modules: ["log", "lic"] });
 ok(lim.status === 201, "开账号时能指定模块");
 const limc = client();
 await post(limc, "/api/login", { login: "lim@ecobox.com", password: "lim2026pass" });
 const limMe = (await limc("/api/me")).data.user;
-ok(limMe.modules.slice().sort().join(",") === "board,lang,lic,mine", "员工只拿到勾选的模块 + 我的 + 语言（" + limMe.modules.join(",") + "）");
+ok(limMe.modules.slice().sort().join(",") === "lang,lic,log,mine", "员工只拿到勾选的模块 + 我的 + 语言（" + limMe.modules.join(",") + "）");
 ok(!limMe.modules.includes("users"), "员工没有人员模块");
 
 ok((await patch(boss, "/api/users/" + lim.data.id, { modules: ["log", "sampling", "mine"] })).status === 200, "管理员能改模块");
@@ -325,7 +342,7 @@ ok(Array.isArray((await boss("/api/me")).data.user.shortcuts), "新账号默认�
 const spin = await patch(boss, "/api/me", { shortcuts: ["log", "finance"] });
 ok(spin.status === 200 && spin.data.user.shortcuts.join(",") === "log,finance", "能设快捷，顺序保留");
 ok((await boss("/api/me")).data.user.shortcuts.join(",") === "log,finance", "快捷存在账号上");
-ok((await patch(boss, "/api/me", { shortcuts: ["nope", "log", "log", "board"] })).data.user.shortcuts.join(",") === "log,board", "非法键、重复项被丢掉");
+ok((await patch(boss, "/api/me", { shortcuts: ["nope", "log", "log", "finance"] })).data.user.shortcuts.join(",") === "log,finance", "非法键、重复项被丢掉");
 ok((await patch(boss, "/api/me", { shortcuts: "log" })).status === 400, "快捷必须是数组");
 await patch(boss, "/api/me", { shortcuts: [] });
 
@@ -485,6 +502,83 @@ ok(rm.status === 200 && rm.data.moved.entries === 1, "管理员能把旧账号�
 ok(!db.prepare("SELECT id FROM fin_entries WHERE uid='ghost@old.com'").get(), "旧账号名下的记录搬空了");
 ok((await boss("/api/fin/bootstrap")).data.orphans.length === 0, "合并后不再提示");
 
+/* 矿证：矿权申请助手（/licence.html + /lic/*） */
+const nore = client();
+const anonymous2 = client();
+ok((await nore("/licence.html", { redirect: "manual" })).status === 302, "未登录访问矿证被踢回工作台");
+ok((await post(nore, "/lic/", { action: "read" })).status === 401, "未登录不能读矿证");
+ok((await nore("/lic/media?key=lic/x.pdf")).status === 401, "未登录不能取矿证文件");
+const licRead0 = await post(boss, "/lic/", { action: "read" });
+ok(licRead0.status === 200 && licRead0.data.ok === true, "矿证能读状态");
+const licState = JSON.stringify({ v: 1, companies: [], apps: [], updatedAt: "2026-01-01T00:00:00.000Z" });
+ok((await post(boss, "/lic/", { action: "save", content: licState })).status === 200, "矿证能存状态");
+const licRead1 = await post(boss, "/lic/", { action: "read" });
+ok(JSON.parse(licRead1.data.content).updatedAt === "2026-01-01T00:00:00.000Z", "矿证存进去能读回来");
+ok((await post(boss, "/lic/", { action: "save", content: "nope" })).status === 400, "矿证拒非法 JSON");
+ok((await post(boss, "/lic/", { action: "nope" })).status === 400, "矿证拒未知操作");
+ok((await boss("/lic/media?key=etc/passwd")).status === 400, "矿证只放行 lic/ company/ 前缀");
+const lfd = new FormData();
+lfd.append("file", new Blob([Buffer.from("%PDF-1.4 test")], { type: "application/pdf" }), "证书.pdf");
+const licUp = await boss("/lic/upload", { method: "POST", form: lfd });
+ok(licUp.status === 200 && licUp.data.ok && /^lic\/.+\.pdf$/.test(licUp.data.key), "矿证能传文件 " + JSON.stringify(licUp.data).slice(0, 120));
+ok(R2.has(licUp.data.key), "矿证文件真的进了对象存储");
+ok((await boss("/lic/media?key=" + encodeURIComponent(licUp.data.key))).status === 200, "矿证文件能取回");
+ok(R2.get(licUp.data.key).mime === "application/pdf", "矿证文件带 mime");
+
+/* 打卡：GPS 围栏 + 两段打卡 + 月度统计 */
+ok((await boss("/api/att?ym=2026-01&d=2026-01-05")).status === 200, "打卡能读状态");
+ok((await post(anonymous2, "/api/att/cfg", { lat: -15.4, lng: 28.3 })).status === 401, "未登录不能改打卡设置");
+ok((await post(boss, "/api/att/cfg", { lat: -15.4, lng: 28.3, radius: 300, start: "08:00", end: "17:00", grace: 15 })).status === 200, "管理员能设打卡点");
+const punch1 = await post(boss, "/api/att/punch", { lat: -15.4, lng: 28.3, d: "2026-01-05", hm: "07:55", acc: 8 });
+ok(punch1.status === 200 && punch1.data.phase === "in" && punch1.data.dist === 0, "上班打卡成功 " + JSON.stringify(punch1.data).slice(0, 120));
+ok((await post(boss, "/api/att/punch", { lat: -15.4, lng: 28.3, d: "2026-01-05", hm: "07:56" })).status === 409, "1 分钟内下班打卡被拦");
+db.prepare("UPDATE attendance SET in_at=? WHERE uid=? AND d=?").run(new Date(Date.now() - 9 * 3600e3).toISOString(), "boss@ecobox.com", "2026-01-05");
+const punch2 = await post(boss, "/api/att/punch", { lat: -15.4, lng: 28.3, d: "2026-01-05", hm: "17:05" });
+ok(punch2.status === 200 && punch2.data.phase === "out", "下班打卡成功");
+ok((await post(boss, "/api/att/punch", { lat: -15.4, lng: 28.3, d: "2026-01-05", hm: "17:06" })).status === 409, "当天打满两段后再打被拦");
+const farPunch = await post(boss, "/api/att/punch", { lat: -15.5, lng: 28.3, d: "2026-01-06", hm: "08:01" });
+ok(farPunch.status === 409 && /不在公司范围/.test(farPunch.data.error), "超出范围被拒 " + JSON.stringify(farPunch.data));
+const attState = await boss("/api/att?ym=2026-01&d=2026-01-05");
+ok(attState.data.stats.days === 1 && attState.data.stats.late === 0, "本月统计出勤 1 天不迟到 " + JSON.stringify(attState.data.stats));
+ok(attState.data.records.length === 1 && attState.data.records[0].outHm === "17:05", "打卡记录带上下班时间");
+ok((await post(boss, "/api/att/cfg", { lat: 999, lng: 0 })).status === 400, "坏坐标被拒");
+
+/* 客户 */
+const cuNew = await post(boss, "/api/customers", { name: "Lusaka Buyers Ltd", contact: "Mr Banda", phone: "+260 97 000", country: "Zambia", currency: "USD", accNo: "123456" });
+ok(cuNew.status === 201 && cuNew.data.id, "能建客户");
+const cuId = cuNew.data.id;
+ok((await post(boss, "/api/customers", { name: "  " })).status === 400, "客户名必填");
+const cuList = await boss("/api/customers?q=banda");
+ok(cuList.data.customers.length === 1 && cuList.data.customers[0].id === cuId, "能按联系人搜索");
+const cuPatch = await patch(boss, "/api/customers/" + cuId, { phone: "+260 96 111", note: "长期" });
+ok(cuPatch.status === 200 && cuPatch.data.customer.phone === "+260 96 111", "能改客户");
+ok(cuPatch.data.customer.accNo === "123456", "改电话不会把账号清空");
+ok((await boss("/api/customers/cu-none")).status === 404, "改不存在的客户 404");
+ok((await boss("/api/customers/" + cuId, { method: "DELETE" })).status === 200, "能删客户");
+ok((await boss("/api/customers")).data.total === 0, "删完列表清空");
+
+/* 出口：7 段流程 + 文件 */
+const exNew = await post(boss, "/api/exports", { date: "2026-01-06", co: "EcoBox Mining", mineral: "Tantalum", qty: 20, unit: "t", importer: "Kemet", dest: "China" });
+ok(exNew.status === 201 && exNew.data.id, "能建出口单");
+const exId = exNew.data.id;
+const exList = await boss("/api/exports");
+ok(exList.data.total === 1 && exList.data.stages.length === 7, "出口单列出且带 7 段流程");
+const st1 = await post(boss, "/api/exports/" + exId + "/stage", { stage: "moses", fields: { ref: "MOSES-771" } });
+ok(st1.status === 200 && st1.data.export.status === "moses", "能推进到 MOSES 阶段");
+ok(st1.data.export.stages.moses.ref === "MOSES-771", "阶段字段落库");
+ok((await post(boss, "/api/exports/" + exId + "/stage", { stage: "bogus" })).status === 400, "未知阶段被拒");
+const exUp = await post(boss, "/api/exports/" + exId + "/file", { stage: "moses", name: "moses.pdf", data: "data:application/pdf;base64," + Buffer.from("%PDF-1.4 x").toString("base64") });
+ok(exUp.status === 201 && exUp.data.files.length === 1, "能上传阶段文件");
+ok(R2.has(exUp.data.file.key) && exUp.data.file.key.startsWith("export/" + exId + "/moses/"), "文件落在 export/<id>/<stage>/");
+const exGetFile = await boss("/api/exports/" + exId + "/file?k=" + encodeURIComponent(exUp.data.file.k));
+ok(exGetFile.status === 200, "能取回阶段文件");
+ok((await boss("/api/exports/" + exId + "/file?k=nope")).status === 404, "不存在的文件 404");
+ok((await boss("/api/exports/" + exId)).data.export.files.length === 1, "详情里能看到文件");
+ok((await boss("/api/exports/" + exId + "/file?k=" + encodeURIComponent(exUp.data.file.k), { method: "DELETE" })).status === 200, "能删阶段文件");
+ok(!R2.has(exUp.data.file.key), "删文件时对象存储也清了");
+const exDel = await boss("/api/exports/" + exId, { method: "DELETE" });
+ok(exDel.status === 200 && (await boss("/api/exports")).data.total === 0, "能删出口单");
+
 /* 11. 登出 */
 ok((await post(boss, "/api/logout", {})).status === 200, "登出");
 ok((await boss("/api/me")).data.user === null, "登出后会话失效");
@@ -502,7 +596,7 @@ db2.exec(`CREATE TABLE fin_entries (
   photos TEXT NOT NULL DEFAULT '', to_uid TEXT NOT NULL DEFAULT '',
   created_by INTEGER, created_at TEXT NOT NULL, legacy_id TEXT)`);
 const { default: worker2 } = await import(pathToFileURL(path.join(ROOT, "worker.js")).href + "?migrate=1");
-const s2 = await startServer(worker2, { DB: new D1(db2), SETUP_TOKEN: "setup-xyz", FIN_OWNER: "boss@ecobox.com" });
+const s2 = await startServer(worker2, { DB: new D1(db2), SETUP_TOKEN: "setup-xyz", FIN_OWNER: "boss@ecobox.com", PHOTOS });
 const mig = client(s2.base);
 await post(mig, "/api/setup", { login: "boss@ecobox.com", name: "老板", password: "ecobox2026" }, { "x-setup-token": "setup-xyz" });
 await post(mig, "/api/login", { login: "boss@ecobox.com", password: "ecobox2026" });
@@ -576,6 +670,96 @@ const licPut = await mig("/api/fin/cats", { method: "PUT", body: { life: [], pro
 ok(licPut.status === 200, "分类配置能带矿权维护");
 const cfgCats = (await mig("/api/fin/bootstrap")).data.cats;
 ok(cfgCats.licence.join(",") === "1330NW,1331SE", "矿证列表落库", JSON.stringify(cfgCats));
+/* 20. 生产：产品 / 数量 / 单位 / 品位 / 照片 */
+const prodPost = await post(mig, "/api/logs", {
+  day: "2026-11-01", site: "Serenje 1330NW", product: "钽铌精矿",
+  qty: 5, unit: "kg", ta: 9.5, nb: 8, note: "一台摇床", photos: ["prod/2026-11/a.jpg", "prod/2026-11/b.jpg"],
+});
+ok(prodPost.status === 201, "生产记录能写产量字段");
+const prodRow = db2.prepare("SELECT * FROM logs WHERE id=?").get(prodPost.data.id);
+ok(prodRow.product === "钽铌精矿" && prodRow.qty === 5 && prodRow.unit === "kg", "产品 / 数量 / 单位落库");
+ok(Math.abs(prodRow.ore_t - 0.005) < 1e-9, "公斤折算成吨写进 ore_t（吨口径不变）");
+ok(JSON.parse(prodRow.photos).length === 2, "照片 key 存成 JSON 数组");
+const tonPost = await post(mig, "/api/logs", { day: "2026-11-01", site: "Serenje 1330NW", qty: 3, unit: "t" });
+ok(db2.prepare("SELECT ore_t FROM logs WHERE id=?").get(tonPost.data.id).ore_t === 3, "按吨填就直接进 ore_t");
+const bagPost = await post(mig, "/api/logs", { day: "2026-11-02", site: "Serenje 1330NW", qty: 12, unit: "bag" });
+ok(db2.prepare("SELECT ore_t FROM logs WHERE id=?").get(bagPost.data.id).ore_t === 0, "按袋填不折算吨");
+const manyShot = await post(mig, "/api/logs", { day: "2026-11-02", site: "Serenje 1330NW", qty: 1, photos: Array.from({ length: 9 }, (_, i) => "p" + i + ".jpg") });
+ok(JSON.parse(db2.prepare("SELECT photos FROM logs WHERE id=?").get(manyShot.data.id).photos).length === 6, "照片最多存 6 张");
+const badUnit = await post(mig, "/api/logs", { day: "2026-11-03", site: "Serenje 1330NW", qty: 2, unit: "箱" });
+ok(db2.prepare("SELECT unit FROM logs WHERE id=?").get(badUnit.data.id).unit === "kg", "不认识单位回落到 kg");
+ok((await patch(mig, "/api/logs/" + prodPost.data.id, { note: "改了备注" })).status === 200, "能改生产记录");
+const patchedProd = db2.prepare("SELECT * FROM logs WHERE id=?").get(prodPost.data.id);
+ok(patchedProd.qty === 5 && JSON.parse(patchedProd.photos).length === 2 && patchedProd.ore_t === 0.005, "改备注不动数量 / 照片 / 折算");
+const listProd = (await mig("/api/logs?from=2026-11-01&to=2026-11-01")).data.logs.find((x) => x.id === prodPost.data.id);
+ok(listProd && listProd.product === "钽铌精矿" && JSON.parse(listProd.photos).length === 2, "列表接口带出产量和照片");
+const empProd = client(s2.base);
+await post(empProd, "/api/login", { login: "p@ecobox.com", password: "peter2026" });
+ok((await patch(empProd, "/api/logs/" + prodPost.data.id, { note: "员工改别人的" })).status === 403, "员工不能改别人的生产记录");
+
+/* 21. 公司资料库：建档 / 股东折算 / 权限 / 批量导入 / 删除 */
+const coCreate = await post(mig, "/api/companies", {
+  name: "Test Mining Ltd", reg_no: "120200012345", reg_date: "2019-04-01",
+  address: "Lusaka", share_capital: 100000, phone: "+260 97 0000000",
+  shareholders: [
+    { name: "Zhang San", nationality: "China", id_no: "E123", amount: 90000 },
+    { name: "Local Partner", nationality: "Zambia", id_no: "123456/11/1", amount: 10000 },
+  ],
+  directors: [{ name: "Zhang San", nationality: "China", id_no: "E123", role: "Director" }],
+});
+ok(coCreate.status === 201, "能建公司档案", JSON.stringify(coCreate.data));
+const coId = coCreate.data.company.id;
+ok(coCreate.data.company.id.startsWith("co"), "公司 id 由服务端生成");
+ok(coCreate.data.company.zm_pct === 10, "赞方持股按注册资本折算成 10%", String(coCreate.data.company.zm_pct));
+ok(coCreate.data.company.shareholders[0].pct === 90, "中方 90%");
+const coList = await mig("/api/companies?q=Test%20Mining");
+ok(coList.status === 200 && coList.data.companies.length === 1, "按名字搜到公司");
+ok((await mig("/api/companies?q=1202000")).data.companies.length === 1, "按 PACRA 号也能搜到");
+const coNoName = await post(mig, "/api/companies", { reg_no: "x" });
+ok(coNoName.status === 400, "公司名必填");
+const coPatch = await patch(mig, "/api/companies/" + coId, { phone: "+260 96 1111111", share_capital: 200000 });
+ok(coPatch.status === 200 && coPatch.data.company.phone === "+260 96 1111111", "能改公司信息");
+ok(coPatch.data.company.shareholders[1].pct === 5, "改注册资本后比例重算（5%）");
+const coStaff = client(s2.base);
+await post(coStaff, "/api/login", { login: "p@ecobox.com", password: "peter2026" });
+ok((await post(coStaff, "/api/companies", { name: "Staff Co" })).status === 403, "员工不能建公司");
+ok((await patch(coStaff, "/api/companies/" + coId, { name: "Hacked" })).status === 403, "员工不能改公司");
+ok((await coStaff("/api/companies/" + coId, { method: "DELETE" })).status === 403, "员工不能删公司");
+const coBulk = await post(mig, "/api/companies/bulk", { companies: [
+  { name: "Bulk One Ltd", reg_no: "B1" },
+  { name: "Bulk Two Ltd", reg_no: "B2", shareholders: [{ name: "A", nationality: "Zambia", amount: 5 }] },
+] });
+ok(coBulk.status === 201 && coBulk.data.added === 2, "批量导入 2 家", JSON.stringify(coBulk.data));
+ok((await mig("/api/companies/bulk", { method: "POST", body: { companies: [] } })).status === 400, "空列表拒绝导入");
+ok((await mig("/api/companies/" + coId, { method: "DELETE" })).status === 200, "管理员能删公司");
+ok((await mig("/api/companies/" + coId)).status === 404, "删掉后查不到");
+
+/* 21b. 公司资料（PDF）：上传 / 下载 / 校验 / 删除 */
+const coDoc = await post(mig, "/api/companies", { name: "Doc Co Ltd" });
+const docId = coDoc.data.company.id;
+const pdf = "data:application/pdf;base64," + Buffer.from("%PDF-1.4 hello").toString("base64");
+const docUp = await post(mig, "/api/companies/" + docId + "/doc", { data: pdf, name: "证书.pdf", label: "公司注册证" });
+ok(docUp.status === 201 && docUp.data.docs.length === 1, "能上传 PDF 资料 " + JSON.stringify(docUp.data).slice(0, 200));
+ok(docUp.data.doc && docUp.data.doc.mime === "application/pdf" && docUp.data.doc.size === 14, "资料记了 mime 和字节数");
+ok(docUp.data.doc.key.startsWith("company/" + docId + "/"), "文件落在 company/<id>/ 下");
+ok(R2.has(docUp.data.doc.key), "文件真的进了对象存储");
+const docK = docUp.data.doc.k;
+const docGet = await mig("/api/companies/" + docId + "/doc/" + docK);
+ok(docGet.status === 200 && docGet.headers.get("content-type") === "application/pdf", "能下载资料");
+ok(/attachment|inline/.test(docGet.headers.get("content-disposition") || ""), "下载带 disposition");
+const badMime = await post(mig, "/api/companies/" + docId + "/doc", { data: "data:image/gif;base64,R0lGODlh", name: "a.gif" });
+ok(badMime.status === 400, "不收 gif");
+const badData = await post(mig, "/api/companies/" + docId + "/doc", { data: "not-a-data-url", name: "x.pdf" });
+ok(badData.status === 400, "非 data URL 被拒");
+ok((await post(coStaff, "/api/companies/" + docId + "/doc", { data: pdf, name: "x.pdf" })).status === 403, "员工不能传资料");
+const docDel = await mig("/api/companies/" + docId + "/doc?k=" + docK, { method: "DELETE" });
+ok(docDel.status === 200 && docDel.data.docs.length === 0, "能删资料");
+ok(!R2.has(docUp.data.doc.key), "删资料时对象存储也清了");
+ok((await mig("/api/companies/" + docId + "/doc/" + docK)).status === 404, "删完下载 404");
+const docBulk = await post(mig, "/api/companies", { name: "Doc Bulk Ltd", docs: [{ k: "d1", name: "a.pdf", key: "company/x/d1.pdf", mime: "application/pdf", size: 10 }] });
+ok(docBulk.status === 201 && docBulk.data.company.docs.length === 1, "建公司时可带资料元数据");
+ok((await post(mig, "/api/companies", { name: "Doc Bad Ltd", docs: [{ k: "d1", name: "a.pdf" }] })).data.company.docs.length === 0, "没有 key 的资料条目被丢弃");
+
 const empMerge = client(s2.base);
 await post(empMerge, "/api/login", { login: "p@ecobox.com", password: "peter2026" });
 ok((await empMerge("/api/fin/cats/merge", { method: "POST" })).status === 403, "员工不能合并分类");

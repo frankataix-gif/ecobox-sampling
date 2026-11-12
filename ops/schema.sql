@@ -37,6 +37,12 @@ CREATE TABLE IF NOT EXISTS logs (
   headcount   INTEGER NOT NULL DEFAULT 0,      -- 出勤人数
   ore_t       REAL NOT NULL DEFAULT 0,         -- 矿石 吨
   waste_t     REAL NOT NULL DEFAULT 0,         -- 废石 吨
+  product     TEXT NOT NULL DEFAULT '',        -- 产品（钽铌精矿 / 手工原矿 …）
+  qty         REAL NOT NULL DEFAULT 0,         -- 产量数量（配合 unit）
+  unit        TEXT NOT NULL DEFAULT 'kg',      -- kg | t | bag | truck
+  ta          REAL NOT NULL DEFAULT 0,         -- 钽品位 %
+  nb          REAL NOT NULL DEFAULT 0,         -- 铌品位 %
+  photos      TEXT NOT NULL DEFAULT '',        -- JSON 数组：R2 照片 key（≤6）
   grade       TEXT NOT NULL DEFAULT '',        -- 品位描述（Ta2O5 等）
   cost_usd    REAL NOT NULL DEFAULT 0,         -- 当日支出 USD
   note        TEXT NOT NULL DEFAULT '',
@@ -56,3 +62,103 @@ CREATE TABLE IF NOT EXISTS audit (
   target      TEXT DEFAULT '',
   detail      TEXT DEFAULT ''
 );
+
+
+-- 公司资料库（赞比亚实体：PACRA 登记、股东、董事）
+CREATE TABLE IF NOT EXISTS companies (
+  id            TEXT PRIMARY KEY,
+  name          TEXT NOT NULL,
+  name_en       TEXT NOT NULL DEFAULT '',
+  kind          TEXT NOT NULL DEFAULT 'company',  -- company | person
+  reg_no        TEXT NOT NULL DEFAULT '',         -- PACRA 注册号
+  reg_date      TEXT NOT NULL DEFAULT '',
+  tpin          TEXT NOT NULL DEFAULT '',
+  address       TEXT NOT NULL DEFAULT '',
+  phone         TEXT NOT NULL DEFAULT '',
+  email         TEXT NOT NULL DEFAULT '',
+  share_capital REAL NOT NULL DEFAULT 0,
+  currency      TEXT NOT NULL DEFAULT 'ZMW',
+  shareholders  TEXT NOT NULL DEFAULT '[]',       -- [{name,nationality,id_no,amount,pct}]
+  directors     TEXT NOT NULL DEFAULT '[]',       -- [{name,nationality,id_no,role}]
+  notes         TEXT NOT NULL DEFAULT '',
+  tags          TEXT NOT NULL DEFAULT '',
+  docs          TEXT NOT NULL DEFAULT '[]',       -- [{k,label,name,key,mime,size,at}] 文件在 R2
+  created_at    TEXT NOT NULL DEFAULT '',
+  updated_at    TEXT NOT NULL DEFAULT '',
+  created_by    TEXT NOT NULL DEFAULT '',
+  updated_by    TEXT NOT NULL DEFAULT ''
+);
+CREATE INDEX IF NOT EXISTS companies_name ON companies(name);
+
+-- 打卡（考勤）：办公点 + 每日两段打卡
+CREATE TABLE IF NOT EXISTS att_cfg (
+  id          INTEGER PRIMARY KEY CHECK (id = 1),
+  site_name   TEXT NOT NULL DEFAULT '',
+  lat         REAL NOT NULL DEFAULT 0,
+  lng         REAL NOT NULL DEFAULT 0,
+  radius      INTEGER NOT NULL DEFAULT 300,      -- 允许打卡半径（米）
+  start_t     TEXT NOT NULL DEFAULT '08:00',
+  end_t       TEXT NOT NULL DEFAULT '17:00',
+  grace       INTEGER NOT NULL DEFAULT 15,       -- 迟到宽限（分钟）
+  updated_at  TEXT NOT NULL DEFAULT ''
+);
+
+CREATE TABLE IF NOT EXISTS attendance (
+  uid         TEXT NOT NULL,                     -- users.login
+  d           TEXT NOT NULL,                     -- YYYY-MM-DD（本人本地日期，前端给）
+  name        TEXT NOT NULL DEFAULT '',
+  in_at       TEXT NOT NULL DEFAULT '', in_hm  TEXT NOT NULL DEFAULT '',
+  out_at      TEXT NOT NULL DEFAULT '', out_hm TEXT NOT NULL DEFAULT '',
+  in_lat      REAL NOT NULL DEFAULT 0, in_lng  REAL NOT NULL DEFAULT 0, in_dist  INTEGER NOT NULL DEFAULT 0,
+  out_lat     REAL NOT NULL DEFAULT 0, out_lng REAL NOT NULL DEFAULT 0, out_dist INTEGER NOT NULL DEFAULT 0,
+  acc         REAL NOT NULL DEFAULT 0,
+  site        TEXT NOT NULL DEFAULT '',
+  note        TEXT NOT NULL DEFAULT '',
+  PRIMARY KEY (uid, d)
+);
+CREATE INDEX IF NOT EXISTS attendance_d ON attendance(d);
+
+-- 客户（买方档案）
+CREATE TABLE IF NOT EXISTS customers (
+  id          TEXT PRIMARY KEY,
+  name        TEXT NOT NULL,
+  contact     TEXT NOT NULL DEFAULT '',
+  phone       TEXT NOT NULL DEFAULT '',
+  email       TEXT NOT NULL DEFAULT '',
+  wechat      TEXT NOT NULL DEFAULT '',
+  country     TEXT NOT NULL DEFAULT '',
+  addr        TEXT NOT NULL DEFAULT '',
+  bank        TEXT NOT NULL DEFAULT '',
+  swift       TEXT NOT NULL DEFAULT '',
+  acc_no      TEXT NOT NULL DEFAULT '',
+  currency    TEXT NOT NULL DEFAULT '',
+  note        TEXT NOT NULL DEFAULT '',
+  by_name     TEXT NOT NULL DEFAULT '',
+  created_at  TEXT NOT NULL DEFAULT '',
+  updated_at  TEXT NOT NULL DEFAULT ''
+);
+CREATE INDEX IF NOT EXISTS customers_name ON customers(name);
+
+-- 出口单：7 段流程（applied/moses/analysis/valuation/royalty/permit/exported）
+CREATE TABLE IF NOT EXISTS exports (
+  id          TEXT PRIMARY KEY,
+  date        TEXT NOT NULL DEFAULT '',
+  co          TEXT NOT NULL DEFAULT '',
+  mineral     TEXT NOT NULL DEFAULT '',
+  kind        TEXT NOT NULL DEFAULT 'product',   -- product | sample
+  qty         REAL NOT NULL DEFAULT 0,
+  unit        TEXT NOT NULL DEFAULT 't',
+  importer    TEXT NOT NULL DEFAULT '',
+  dest        TEXT NOT NULL DEFAULT '',
+  status      TEXT NOT NULL DEFAULT 'applied',
+  permit      TEXT NOT NULL DEFAULT '',
+  hs          TEXT NOT NULL DEFAULT '',
+  elems       TEXT NOT NULL DEFAULT '',
+  by_name     TEXT NOT NULL DEFAULT '',
+  note        TEXT NOT NULL DEFAULT '',
+  stages      TEXT NOT NULL DEFAULT '{}',        -- {stage:{at,by,...字段}}
+  files       TEXT NOT NULL DEFAULT '[]',        -- [{k,stage,key,name,mime,size,at}] 文件在 R2
+  created_at  TEXT NOT NULL DEFAULT '',
+  updated_at  TEXT NOT NULL DEFAULT ''
+);
+CREATE INDEX IF NOT EXISTS exports_date ON exports(date);

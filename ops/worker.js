@@ -3,6 +3,7 @@
  */
 
 const PAGE = globalThis.__OPS_PAGE__ || "<!doctype html><meta charset=utf-8><p>页面未构建，请运行 ops/build.py";
+const LIC_PAGE = globalThis.__LIC_PAGE__ || "";
 const BUILD = (() => { const m = String(globalThis.__OPS_PAGE__ || "").match(/const BUILD = "([^"]+)"/); return m ? m[1] : ""; })();
 const COOKIE = "ops_sess";
 /* 未登录时只返回这个最小登录页：不含任何框架 / 数据 */
@@ -166,25 +167,432 @@ async function trPair(env, text) {
   return pair;
 }
 
+/* ================= 打卡（考勤） =================
+ * 逻辑照搬 company-admin 的打卡：GPS 围栏 + 上班/下班两段 + 迟到早退统计。
+ * 时间一律由前端按本人所在时区给（d / hm），服务端只负责校验与存。
+ */
+let attOk = false;
+async function attSchema(env) {
+  if (attOk) return;
+  const ddl = [
+    `CREATE TABLE IF NOT EXISTS att_cfg (
+       id INTEGER PRIMARY KEY CHECK (id = 1),
+       site_name TEXT NOT NULL DEFAULT '',
+       lat REAL NOT NULL DEFAULT 0, lng REAL NOT NULL DEFAULT 0,
+       radius INTEGER NOT NULL DEFAULT 300,
+       start_t TEXT NOT NULL DEFAULT '08:00', end_t TEXT NOT NULL DEFAULT '17:00',
+       grace INTEGER NOT NULL DEFAULT 15,
+       updated_at TEXT NOT NULL DEFAULT '')`,
+    `CREATE TABLE IF NOT EXISTS attendance (
+       uid TEXT NOT NULL, d TEXT NOT NULL, name TEXT NOT NULL DEFAULT '',
+       in_at TEXT NOT NULL DEFAULT '', in_hm TEXT NOT NULL DEFAULT '',
+       out_at TEXT NOT NULL DEFAULT '', out_hm TEXT NOT NULL DEFAULT '',
+       in_lat REAL NOT NULL DEFAULT 0, in_lng REAL NOT NULL DEFAULT 0, in_dist INTEGER NOT NULL DEFAULT 0,
+       out_lat REAL NOT NULL DEFAULT 0, out_lng REAL NOT NULL DEFAULT 0, out_dist INTEGER NOT NULL DEFAULT 0,
+       acc REAL NOT NULL DEFAULT 0, site TEXT NOT NULL DEFAULT '', note TEXT NOT NULL DEFAULT '',
+       PRIMARY KEY (uid, d))`,
+    "CREATE INDEX IF NOT EXISTS attendance_d ON attendance(d)",
+  ];
+  for (const q of ddl) await env.DB.prepare(q).run();
+  attOk = true;
+}
+
+const ATT_DEF = { site_name: "", lat: 0, lng: 0, radius: 300, start: "08:00", end: "17:00", grace: 15 };
+async function attCfg(env) {
+  const r = await env.DB.prepare("SELECT * FROM att_cfg WHERE id=1").first();
+  if (!r) return { ...ATT_DEF };
+  return { site_name: r.site_name, lat: r.lat, lng: r.lng, radius: r.radius, start: r.start_t, end: r.end_t, grace: r.grace };
+}
+function attMeters(lat1, lng1, lat2, lng2) {
+  const R = 6371000, rad = Math.PI / 180;
+  const dLat = (lat2 - lat1) * rad, dLng = (lng2 - lng1) * rad;
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * rad) * Math.cos(lat2 * rad) * Math.sin(dLng / 2) ** 2;
+  return Math.round(2 * R * Math.asin(Math.min(1, Math.sqrt(a))));
+}
+function attMinutes(t) {
+  const m = /^(\d{1,2}):(\d{2})/.exec(String(t || ""));
+  return m ? +m[1] * 60 + +m[2] : 0;
+}
+const attIsDate = (s) => /^\d{4}-\d{2}-\d{2}$/.test(String(s || ""));
+const attRow = (r) => ({
+  uid: r.uid, d: r.d, name: r.name,
+  inAt: r.in_at, inHm: r.in_hm, outAt: r.out_at, outHm: r.out_hm,
+  inLat: r.in_lat, inLng: r.in_lng, inDist: r.in_dist,
+  outLat: r.out_lat, outLng: r.out_lng, outDist: r.out_dist,
+  acc: r.acc, site: r.site, note: r.note,
+});
+const attPhase = (r) => (!r || !r.in_at ? "in" : (!r.out_at ? "out" : "done"));
+function attStats(rows, cfg) {
+  let days = 0, late = 0, early = 0, miss = 0, mins = 0;
+  for (const r of rows) {
+    if (!r.in_at) continue;
+    days++;
+    if (r.in_hm && attMinutes(r.in_hm) > attMinutes(cfg.start) + (+cfg.grace || 0)) late++;
+    if (!r.out_at) { miss++; continue; }
+    const w = (new Date(r.out_at) - new Date(r.in_at)) / 60000;
+    if (w > 0) mins += w;
+    if (r.out_hm && attMinutes(r.out_hm) < attMinutes(cfg.end)) early++;
+  }
+  return { days, late, early, miss, hours: Math.round(mins / 6) / 10 };
+}
+
+async function attApi(req, env, me, seg, url, body) {
+  if (seg[1] === "cfg") {
+    if (req.method === "GET") return json({ cfg: await attCfg(env) });
+    if (me.role !== "admin") return err("只有管理员能改打卡设置", 403);
+    const b = await body();
+    const c = await attCfg(env);
+    const next = {
+      site_name: b.site_name !== undefined ? String(b.site_name).slice(0, 60) : c.site_name,
+      lat: b.lat !== undefined ? +b.lat : c.lat,
+      lng: b.lng !== undefined ? +b.lng : c.lng,
+      radius: b.radius !== undefined ? Math.round(+b.radius) : c.radius,
+      start: b.start !== undefined ? String(b.start) : c.start,
+      end: b.end !== undefined ? String(b.end) : c.end,
+      grace: b.grace !== undefined ? Math.round(+b.grace) : c.grace,
+    };
+    if (!isFinite(next.lat) || !isFinite(next.lng) || Math.abs(next.lat) > 90 || Math.abs(next.lng) > 180) return err("坐标不对");
+    if (!next.lat && !next.lng) return err("先填办公点坐标（或点「用当前位置」）");
+    if (!(next.radius >= 30 && next.radius <= 20000)) return err("打卡范围 30–20000 米");
+    if (!/^\d{2}:\d{2}$/.test(next.start) || !/^\d{2}:\d{2}$/.test(next.end)) return err("时间格式要 HH:MM");
+    if (!(next.grace >= 0 && next.grace <= 120)) return err("宽限分钟 0–120");
+    await env.DB.prepare(
+      `INSERT INTO att_cfg(id,site_name,lat,lng,radius,start_t,end_t,grace,updated_at) VALUES(1,?,?,?,?,?,?,?,?)
+       ON CONFLICT(id) DO UPDATE SET site_name=excluded.site_name, lat=excluded.lat, lng=excluded.lng,
+         radius=excluded.radius, start_t=excluded.start_t, end_t=excluded.end_t, grace=excluded.grace,
+         updated_at=excluded.updated_at`
+    ).bind(next.site_name, next.lat, next.lng, next.radius, next.start, next.end, next.grace, nowISO()).run();
+    await audit(env, me, "att.cfg", "1", JSON.stringify(next));
+    return json({ ok: true, cfg: next });
+  }
+
+  if (seg[1] === "punch" && req.method === "POST") {
+    const cfg = await attCfg(env);
+    if (!cfg.lat && !cfg.lng) return err("还没设置办公点位置，先让管理员在「打卡设置」里填写", 409);
+    const b = await body();
+    const d = attIsDate(b.d) ? b.d : nowISO().slice(0, 10);
+    const hm = /^\d{2}:\d{2}$/.test(String(b.hm || "")) ? b.hm : "";
+    const lat = +b.lat, lng = +b.lng;
+    if (!isFinite(lat) || !isFinite(lng) || (!lat && !lng)) return err("定位失败：请开 GPS / 允许定位后再打卡");
+    const rec = await env.DB.prepare("SELECT * FROM attendance WHERE uid=? AND d=?").bind(me.login, d).first();
+    const phase = attPhase(rec);
+    if (phase === "done") return err("今天已经打完卡了", 409);
+    if (rec && phase === "out" && rec.in_at && Date.now() - new Date(rec.in_at).getTime() < 60000) {
+      return err("刚打过卡，等 1 分钟再试", 409);
+    }
+    const dist = attMeters(lat, lng, cfg.lat, cfg.lng);
+    if (dist > cfg.radius) return err(`不在公司范围：距离 ${dist} 米，需要在 ${cfg.radius} 米内`, 409);
+    const at = nowISO();
+    const acc = isFinite(+b.acc) ? Math.round(+b.acc) : 0;
+    if (phase === "in") {
+      await env.DB.prepare(
+        `INSERT INTO attendance(uid,d,name,in_at,in_hm,in_lat,in_lng,in_dist,acc,site) VALUES(?,?,?,?,?,?,?,?,?,?)
+         ON CONFLICT(uid,d) DO UPDATE SET in_at=excluded.in_at, in_hm=excluded.in_hm, in_lat=excluded.in_lat,
+           in_lng=excluded.in_lng, in_dist=excluded.in_dist, acc=excluded.acc, site=excluded.site`
+      ).bind(me.login, d, me.name || me.login, at, hm, lat, lng, dist, acc, cfg.site_name).run();
+    } else {
+      await env.DB.prepare(
+        "UPDATE attendance SET out_at=?, out_hm=?, out_lat=?, out_lng=?, out_dist=?, acc=?, site=? WHERE uid=? AND d=?"
+      ).bind(at, hm, lat, lng, dist, acc, cfg.site_name, me.login, d).run();
+    }
+    const row = await env.DB.prepare("SELECT * FROM attendance WHERE uid=? AND d=?").bind(me.login, d).first();
+    await audit(env, me, "att.punch." + phase, d, "dist=" + dist);
+    return json({ ok: true, phase, dist, record: attRow(row), cfg });
+  }
+
+  if (seg[1] === "cfg" || seg[1] === "punch") return err("不支持的打卡操作", 405);
+
+  const ymRaw = String(url.searchParams.get("ym") || "");
+  const ym = /^\d{4}-\d{2}$/.test(ymRaw) ? ymRaw : nowISO().slice(0, 7);
+  const today = attIsDate(url.searchParams.get("d")) ? url.searchParams.get("d") : nowISO().slice(0, 10);
+  const all = url.searchParams.get("all") === "1" && me.role === "admin";
+  const rows = all
+    ? (await env.DB.prepare("SELECT * FROM attendance WHERE d LIKE ? ORDER BY d DESC, in_at DESC").bind(ym + "-%").all()).results
+    : (await env.DB.prepare("SELECT * FROM attendance WHERE uid=? AND d LIKE ? ORDER BY d DESC").bind(me.login, ym + "-%").all()).results;
+  const cfg = await attCfg(env);
+  const mine = await env.DB.prepare("SELECT * FROM attendance WHERE uid=? AND d=?").bind(me.login, today).first();
+  return json({
+    ok: true, cfg, ym, today, all, scope: all ? "all" : "me",
+    todayRec: mine ? attRow(mine) : null,
+    phase: attPhase(mine),
+    records: rows.map(attRow),
+    stats: attStats(rows, cfg),
+  });
+}
+
+/* ================= 客户 ================= */
+let custOk = false;
+async function custSchema(env) {
+  if (custOk) return;
+  await env.DB.prepare(
+    `CREATE TABLE IF NOT EXISTS customers (
+       id TEXT PRIMARY KEY, name TEXT NOT NULL,
+       contact TEXT NOT NULL DEFAULT '', phone TEXT NOT NULL DEFAULT '', email TEXT NOT NULL DEFAULT '',
+       wechat TEXT NOT NULL DEFAULT '', country TEXT NOT NULL DEFAULT '', addr TEXT NOT NULL DEFAULT '',
+       bank TEXT NOT NULL DEFAULT '', swift TEXT NOT NULL DEFAULT '', acc_no TEXT NOT NULL DEFAULT '',
+       currency TEXT NOT NULL DEFAULT '', note TEXT NOT NULL DEFAULT '',
+       by_name TEXT NOT NULL DEFAULT '', created_at TEXT NOT NULL DEFAULT '', updated_at TEXT NOT NULL DEFAULT '')`
+  ).run();
+  await env.DB.prepare("CREATE INDEX IF NOT EXISTS customers_name ON customers(name)").run();
+  custOk = true;
+}
+
+const CUST_FIELDS = ["name", "contact", "phone", "email", "wechat", "country", "addr", "bank", "swift", "accNo", "currency", "note"];
+const custRow = (r) => ({
+  id: r.id, name: r.name, contact: r.contact, phone: r.phone, email: r.email, wechat: r.wechat,
+  country: r.country, addr: r.addr, bank: r.bank, swift: r.swift, accNo: r.acc_no,
+  currency: r.currency, note: r.note, byName: r.by_name, updatedAt: r.updated_at,
+});
+const custClean = (b, base = {}) => {
+  const r = { ...base };
+  for (const k of CUST_FIELDS) {
+    if (b[k] !== undefined) r[k] = String(b[k] == null ? "" : b[k]).slice(0, k === "note" ? 1000 : 160).trim();
+  }
+  return r;
+};
+
+async function custApi(req, env, me, seg, url, body) {
+  const id = seg[1] || "";
+  if (!id && req.method === "GET") {
+    const q = String(url.searchParams.get("q") || "").trim().toLowerCase();
+    const rows = (await env.DB.prepare("SELECT * FROM customers ORDER BY updated_at DESC, name").all()).results;
+    const list = rows.map(custRow).filter((c) => !q ||
+      [c.name, c.contact, c.phone, c.email, c.country].some((v) => String(v || "").toLowerCase().includes(q)));
+    return json({ customers: list, total: rows.length });
+  }
+  if (!id && req.method === "POST") {
+    const b = await body();
+    const c = custClean(b, {});
+    if (!c.name) return err("客户名称必填");
+    const cid = "cu" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+    const at = nowISO();
+    await env.DB.prepare(
+      `INSERT INTO customers(id,name,contact,phone,email,wechat,country,addr,bank,swift,acc_no,currency,note,by_name,created_at,updated_at)
+       VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+    ).bind(cid, c.name, c.contact || "", c.phone || "", c.email || "", c.wechat || "", c.country || "", c.addr || "",
+      c.bank || "", c.swift || "", c.accNo || "", c.currency || "", c.note || "", me.name || me.login, at, at).run();
+    await audit(env, me, "customer.create", cid, c.name);
+    return json({ ok: true, id: cid }, 201);
+  }
+  const row = id ? await env.DB.prepare("SELECT * FROM customers WHERE id=?").bind(id).first() : null;
+  if (id && !row) return err("客户不存在", 404);
+  if (id && req.method === "PATCH") {
+    const b = await body();
+    const c = custClean(b, custRow(row));
+    if (!c.name) return err("客户名称必填");
+    await env.DB.prepare(
+      `UPDATE customers SET name=?,contact=?,phone=?,email=?,wechat=?,country=?,addr=?,bank=?,swift=?,acc_no=?,currency=?,note=?,updated_at=? WHERE id=?`
+    ).bind(c.name, c.contact || "", c.phone || "", c.email || "", c.wechat || "", c.country || "", c.addr || "",
+      c.bank || "", c.swift || "", c.accNo || "", c.currency || "", c.note || "", nowISO(), id).run();
+    await audit(env, me, "customer.update", id, c.name);
+    return json({ ok: true, customer: custRow(await env.DB.prepare("SELECT * FROM customers WHERE id=?").bind(id).first()) });
+  }
+  if (id && req.method === "DELETE") {
+    await env.DB.prepare("DELETE FROM customers WHERE id=?").bind(id).run();
+    await audit(env, me, "customer.delete", id, row.name);
+    return json({ ok: true });
+  }
+  return err("不支持的操作", 405);
+}
+
+/* ================= 出口（批次跟踪） =================
+ * 阶段照搬 company-admin：applied → moses → analysis → valuation → royalty → permit → exported
+ */
+let expOk = false;
+async function expSchema(env) {
+  if (expOk) return;
+  await env.DB.prepare(
+    `CREATE TABLE IF NOT EXISTS exports (
+       id TEXT PRIMARY KEY, date TEXT NOT NULL DEFAULT '', co TEXT NOT NULL DEFAULT '',
+       mineral TEXT NOT NULL DEFAULT '', kind TEXT NOT NULL DEFAULT 'product',
+       qty REAL NOT NULL DEFAULT 0, unit TEXT NOT NULL DEFAULT 't',
+       importer TEXT NOT NULL DEFAULT '', dest TEXT NOT NULL DEFAULT '',
+       status TEXT NOT NULL DEFAULT 'applied', permit TEXT NOT NULL DEFAULT '',
+       hs TEXT NOT NULL DEFAULT '', elems TEXT NOT NULL DEFAULT '',
+       by_name TEXT NOT NULL DEFAULT '', note TEXT NOT NULL DEFAULT '',
+       stages TEXT NOT NULL DEFAULT '{}', files TEXT NOT NULL DEFAULT '[]',
+       created_at TEXT NOT NULL DEFAULT '', updated_at TEXT NOT NULL DEFAULT '')`
+  ).run();
+  await env.DB.prepare("CREATE INDEX IF NOT EXISTS exports_date ON exports(date)").run();
+  expOk = true;
+}
+
+const EXP_STAGES = ["applied", "moses", "analysis", "valuation", "royalty", "permit", "exported"];
+const EXP_LABEL = {
+  applied: "已申请", moses: "MOSES 申报", analysis: "化验", valuation: "估价",
+  royalty: "ZRA 清关", permit: "出口许可", exported: "已出运",
+};
+const EXP_FIELDS = ["date", "co", "mineral", "kind", "qty", "unit", "importer", "dest", "permit", "hs", "elems", "note"];
+const expParse = (s, d) => { try { const v = JSON.parse(s || ""); return v && typeof v === "object" ? v : d; } catch { return d; } };
+const expRow = (r) => ({
+  id: r.id, date: r.date, co: r.co, mineral: r.mineral, kind: r.kind,
+  qty: r.qty, unit: r.unit, importer: r.importer, dest: r.dest,
+  status: r.status, permit: r.permit, hs: r.hs, elems: r.elems,
+  byName: r.by_name, note: r.note,
+  stages: expParse(r.stages, {}), files: expParse(r.files, []),
+  createdAt: r.created_at, updatedAt: r.updated_at,
+});
+function expBaseClean(b, base) {
+  const r = { ...base };
+  for (const k of EXP_FIELDS) {
+    if (b[k] === undefined) continue;
+    if (k === "qty") r.qty = Math.max(0, +b.qty || 0);
+    else if (k === "kind") r.kind = b.kind === "sample" ? "sample" : "product";
+    else r[k] = String(b[k] == null ? "" : b[k]).slice(0, k === "note" ? 1000 : 120).trim();
+  }
+  if (r.date && !attIsDate(r.date)) throw new Error("日期格式要 YYYY-MM-DD");
+  return r;
+}
+
+async function expApi(req, env, me, seg, url, body) {
+  const id = seg[1] || "";
+  const sub = seg[2] || "";
+
+  if (!id && req.method === "GET") {
+    const q = String(url.searchParams.get("q") || "").trim().toLowerCase();
+    const rows = (await env.DB.prepare("SELECT * FROM exports ORDER BY date DESC, created_at DESC").all()).results;
+    const list = rows.map(expRow).filter((x) => !q ||
+      [x.co, x.mineral, x.importer, x.dest, x.permit, x.note].some((v) => String(v || "").toLowerCase().includes(q)));
+    return json({ exports: list, total: rows.length, stages: EXP_STAGES, labels: EXP_LABEL });
+  }
+  if (!id && req.method === "POST") {
+    const b = await body();
+    let base;
+    try { base = expBaseClean(b, { date: nowISO().slice(0, 10), co: "", mineral: "", kind: "product", qty: 0, unit: "t", importer: "", dest: "", permit: "", hs: "", elems: "", note: "" }); }
+    catch (e) { return err(e.message); }
+    if (!base.co && !base.mineral) return err("至少填公司或矿种");
+    const xid = "ex" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+    const at = nowISO();
+    const stages = { applied: { at } };
+    await env.DB.prepare(
+      `INSERT INTO exports(id,date,co,mineral,kind,qty,unit,importer,dest,status,permit,hs,elems,by_name,note,stages,files,created_at,updated_at)
+       VALUES(?,?,?,?,?,?,?,?,?,'applied',?,?,?,?,?,?, '[]', ?,?)`
+    ).bind(xid, base.date, base.co, base.mineral || "", base.kind, base.qty, base.unit, base.importer, base.dest,
+      base.permit, base.hs, base.elems, me.name || me.login, base.note, JSON.stringify(stages), at, at).run();
+    await audit(env, me, "export.create", xid, base.co + " " + base.mineral);
+    return json({ ok: true, id: xid }, 201);
+  }
+
+  const row = id ? await env.DB.prepare("SELECT * FROM exports WHERE id=?").bind(id).first() : null;
+  if (id && !row) return err("出口单不存在", 404);
+
+  if (id && !sub && req.method === "GET") return json({ export: expRow(row) });
+
+  if (id && !sub && req.method === "PATCH") {
+    const b = await body();
+    let next;
+    try { next = expBaseClean(b, expRow(row)); }
+    catch (e) { return err(e.message); }
+    await env.DB.prepare(
+      "UPDATE exports SET date=?,co=?,mineral=?,kind=?,qty=?,unit=?,importer=?,dest=?,permit=?,hs=?,elems=?,note=?,updated_at=? WHERE id=?"
+    ).bind(next.date, next.co, next.mineral, next.kind, next.qty, next.unit, next.importer, next.dest,
+      next.permit, next.hs, next.elems, next.note, nowISO(), id).run();
+    await audit(env, me, "export.update", id, next.co);
+    return json({ ok: true, export: expRow(await env.DB.prepare("SELECT * FROM exports WHERE id=?").bind(id).first()) });
+  }
+
+  if (id && !sub && req.method === "DELETE") {
+    const files = expParse(row.files, []);
+    if (env.PHOTOS) for (const f of files) { try { await env.PHOTOS.delete(f.key); } catch {} }
+    await env.DB.prepare("DELETE FROM exports WHERE id=?").bind(id).run();
+    await audit(env, me, "export.delete", id, row.co);
+    return json({ ok: true });
+  }
+
+  if (id && sub === "stage" && req.method === "POST") {
+    const b = await body();
+    const stage = String(b.stage || "");
+    if (!EXP_STAGES.includes(stage)) return err("阶段不认识");
+    const stages = expParse(row.stages, {});
+    const keep = stages[stage] || {};
+    const fields = b.fields && typeof b.fields === "object" ? b.fields : {};
+    const clean = { ...keep, at: nowISO(), by: me.name || me.login };
+    for (const [k, v] of Object.entries(fields)) {
+      if (!/^[a-zA-Z][\w]{0,20}$/.test(k)) continue;
+      clean[k] = String(v == null ? "" : v).slice(0, 300);
+    }
+    stages[stage] = clean;
+    const status = EXP_STAGES[Math.max(EXP_STAGES.indexOf(row.status), EXP_STAGES.indexOf(stage))] || stage;
+    await env.DB.prepare("UPDATE exports SET stages=?, status=?, updated_at=? WHERE id=?")
+      .bind(JSON.stringify(stages), status, nowISO(), id).run();
+    await audit(env, me, "export.stage", id, stage);
+    return json({ ok: true, export: expRow(await env.DB.prepare("SELECT * FROM exports WHERE id=?").bind(id).first()) });
+  }
+
+  if (id && sub === "file" && req.method === "GET") {
+    if (!env.PHOTOS) return err("未配置文件存储", 500);
+    const k = String(url.searchParams.get("k") || "");
+    const f = expParse(row.files, []).find((x) => x.k === k);
+    if (!f) return err("文件不存在", 404);
+    const obj = await env.PHOTOS.get(f.key);
+    if (!obj) return err("文件不存在", 404);
+    return new Response(obj.body, {
+      headers: {
+        "content-type": f.mime || "application/octet-stream",
+        "content-disposition": "inline; filename*=UTF-8''" + encodeURIComponent(f.name || k),
+        "cache-control": "private, max-age=86400",
+      },
+    });
+  }
+
+  if (id && sub === "file" && req.method === "POST") {
+    if (!env.PHOTOS) return err("未配置文件存储", 500);
+    const b = await body();
+    const stage = EXP_STAGES.includes(String(b.stage)) ? String(b.stage) : "moses";
+    const m = /^data:([a-z0-9.+/-]+);base64,([A-Za-z0-9+/=]+)$/i.exec(String(b.data || ""));
+    if (!m) return err("文件格式不对");
+    const mime = m[1].toLowerCase();
+    if (!/^(application\/pdf|image\/(png|jpeg|jpg|webp))$/.test(mime)) return err("只支持 PDF / 图片");
+    const bytes = Uint8Array.from(atob(m[2]), (ch) => ch.charCodeAt(0));
+    if (bytes.length > 25 * 1024 * 1024) return err("文件太大（限 25MB）");
+    const files = expParse(row.files, []);
+    if (files.length >= 60) return err("每单最多 60 份文件");
+    const k = "f" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    const ext = mime === "application/pdf" ? "pdf" : mime.split("/")[1].replace("jpeg", "jpg");
+    const key = "export/" + id + "/" + stage + "/" + k + "." + ext;
+    await env.PHOTOS.put(key, bytes, { httpMetadata: { contentType: mime } });
+    const entry = {
+      k, stage, key, mime, size: bytes.length,
+      name: String(b.name || "").slice(0, 160) || k + "." + ext,
+      at: nowISO().slice(0, 10), by: me.name || me.login,
+    };
+    files.push(entry);
+    await env.DB.prepare("UPDATE exports SET files=?, updated_at=? WHERE id=?").bind(JSON.stringify(files), nowISO(), id).run();
+    await audit(env, me, "export.file.add", id, entry.name);
+    return json({ ok: true, file: entry, files }, 201);
+  }
+
+  if (id && sub === "file" && req.method === "DELETE") {
+    const k = String(url.searchParams.get("k") || "");
+    const files = expParse(row.files, []);
+    const f = files.find((x) => x.k === k);
+    if (!f) return err("文件不存在", 404);
+    if (env.PHOTOS) { try { await env.PHOTOS.delete(f.key); } catch {} }
+    const left = files.filter((x) => x.k !== k);
+    await env.DB.prepare("UPDATE exports SET files=?, updated_at=? WHERE id=?").bind(JSON.stringify(left), nowISO(), id).run();
+    await audit(env, me, "export.file.del", id, f.name);
+    return json({ ok: true, files: left });
+  }
+
+  return err("不支持的操作", 405);
+}
+
 /* ---------- 模块目录：目录页、导航、权限勾选都从这里来 ---------- */
 const MODULES = [
   /* 日常协同 */
   { k: "todo", g: "日常协同", t: "待办", d: "派活 · 归谁 · 每天汇报", d_en: "Assign · owner · daily report", i: "✅", tab: "todo" },
-  { k: "punch", g: "日常协同", t: "打卡", d: "每日出勤 · 班组 · 请假", d_en: "Daily attendance · crew · leave", i: "⏱️", soon: true },
+  { k: "punch", g: "日常协同", t: "打卡", d: "每日出勤 · GPS 围栏 · 迟到早退", d_en: "Daily attendance · GPS fence · late/early", i: "⏱️", tab: "punch" },
   /* 业务 */
-  { k: "log", g: "业务现场", t: "生产", d: "班次产量 · 油耗 · 停机", d_en: "Shift output · fuel · downtime", i: "🏭", tab: "log" },
-  { k: "board", g: "业务现场", t: "看板", d: "本月产量 · 人天 · 支出", d_en: "Output · person-days · spend", i: "📊", tab: "board" },
-  { k: "xrf", g: "业务现场", t: "生产统计", d: "洗选厂产量 · XRF", d_en: "Plant output · XRF", i: "🧪", u: "https://mine-sync.frankataix.workers.dev/mine_production.html" },
+  { k: "log", g: "业务现场", t: "生产", d: "每日产量 · 品位 · 照片", d_en: "Daily output · grade · photos", i: "🏭", tab: "log" },
   { k: "project", g: "业务现场", t: "项目管理", d: "靶区 · 探槽 · 钻孔 · 进度", d_en: "Targets · trenches · drilling · progress", i: "🗺️", soon: true },
-  { k: "export", g: "业务现场", t: "出口", d: "批次 · 过磅 · 发运 · 回款", d_en: "Batches · weighbridge · shipping · payment", i: "🚢", soon: true },
-  { k: "customer", g: "业务现场", t: "客户", d: "买方档案 · 报价 · 合同", d_en: "Buyers · quotes · contracts", i: "🤝", soon: true },
+  { k: "export", g: "业务现场", t: "出口", d: "批次 · MOSES · 化验 · 估价 · 清关 · 许可", d_en: "Batches · MOSES · assay · valuation · ZRA · permit", i: "🚢", tab: "export" },
+  { k: "customer", g: "业务现场", t: "客户", d: "买方档案 · 联系 · 收款账户", d_en: "Buyers · contacts · bank details", i: "🤝", tab: "customer" },
   /* 现场 */
   { k: "sampling", g: "业务现场", t: "矿区考察记录本", d: "离线可用 · 免登录", d_en: "Works offline · no login", i: "🧭", u: "https://frankataix-gif.github.io/ecobox-sampling/sampling_helper.html" },
-  { k: "album", g: "业务现场", t: "现场相册", d: "照片视频共享", d_en: "Shared photos & videos", i: "📸", u: "https://mine-sync.frankataix.workers.dev/field_album.html" },
   /* 资产与合规 */
   { k: "lic", g: "资产", t: "矿山项目介绍", d: "项目 · 地质 · 取样要点", d_en: "Project · geology · sampling tips", i: "📚", u: "https://frankataix-gif.github.io/ecobox-sampling/licences.html" },
-  { k: "permit", g: "资产", t: "矿证", d: "台账 · 到期 · 申请材料", d_en: "Register · expiry · applications", i: "📜", u: "https://mine-sync.frankataix.workers.dev/license_helper.html" },
-  { k: "company", g: "资产", t: "公司", d: "主体 · 证照 · 文档", d_en: "Entity · certificates · docs", i: "🏛️", u: "https://ecobox-docs.frankataix.workers.dev/" },
+  { k: "permit", g: "资产", t: "矿证", d: "台账 · 到期 · 申请材料", d_en: "Register · expiry · applications", i: "📜", u: "/licence.html" },
+  { k: "company", g: "资产", t: "公司", d: "十几家公司 · 股东 · 董事 · 证照", d_en: "Zambian entities · shareholders · directors", i: "🏢", tab: "company" },
   { k: "employer", g: "资产", t: "雇主", d: "合同 · 日薪标准 · 社保工伤", d_en: "Contracts · day rates · NSSF", i: "🧾", soon: true },
   /* 财务 */
   { k: "finance", g: "财务", t: "费用记录", d: "收支 · 备用金 · 成本汇总", d_en: "Income & spend · float · costs", i: "💰", tab: "fin" },
@@ -194,7 +602,7 @@ const MODULES = [
   { k: "mine", g: "系统", t: "设置", d: "账号 · 密码 · 退出登录", d_en: "Account · password · sign out", i: "👤", tab: "mine", always: true, },
 ];
 const MODULE_KEYS = MODULES.map((m) => m.k);
-const MOD_ALIAS = { production: "xrf", docs: "company" }; // 旧键 → 新键
+const MOD_ALIAS = { production: "log", xrf: "log", docs: "company" }; // 旧键 → 新键
 const modOf = (k) => MODULES.find((m) => m.k === k);
 
 /* 实际可用模块：管理员全给；其他人按 users.modules，空 = 默认全部（除管理员专属） */
@@ -245,10 +653,20 @@ async function ensureSchema(env) {
   for (const sql of [
     "ALTER TABLE logs ADD COLUMN note_en TEXT NOT NULL DEFAULT ''",
     "ALTER TABLE logs ADD COLUMN note_zh TEXT NOT NULL DEFAULT ''",
+    "ALTER TABLE logs ADD COLUMN product TEXT NOT NULL DEFAULT ''",
+    "ALTER TABLE logs ADD COLUMN qty REAL NOT NULL DEFAULT 0",
+    "ALTER TABLE logs ADD COLUMN unit TEXT NOT NULL DEFAULT 'kg'",
+    "ALTER TABLE logs ADD COLUMN ta REAL NOT NULL DEFAULT 0",
+    "ALTER TABLE logs ADD COLUMN nb REAL NOT NULL DEFAULT 0",
+    "ALTER TABLE logs ADD COLUMN photos TEXT NOT NULL DEFAULT ''",
   ]) { try { await env.DB.prepare(sql).run(); } catch {} }
   await finSchema(env);
   await feedSchema(env);
   await todoSchema(env);
+  await coSchema(env);
+  await attSchema(env);
+  await custSchema(env);
+  await expSchema(env);
   schemaOk = true;
 }
 
@@ -319,17 +737,36 @@ const loginOf = (b) => String(b.login || b.name || "").trim().toLowerCase(); // 
 const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
 const num = (v, d = 0) => (v === "" || v == null || isNaN(+v) ? d : Math.max(0, +v));
 
+const PROD_UNITS = ["kg", "t", "bag", "truck"];
+const photoKeys = (v) => {
+  const a = Array.isArray(v) ? v : (() => { try { const p = JSON.parse(String(v || "")); return Array.isArray(p) ? p : []; } catch { return []; } })();
+  return a.filter((x) => typeof x === "string" && x).slice(0, 6).map((x) => x.slice(0, 200));
+};
+
 function logBody(b) {
   const day = String(b.day || "").trim();
   if (!DAY_RE.test(day)) return { e: "日期要 YYYY-MM-DD" };
+  const unit = PROD_UNITS.includes(String(b.unit || "")) ? String(b.unit) : "kg";
+  const qty = num(b.qty);
+  /* 产量按 kg/t 折算进 ore_t，汇总口径不用改；袋、车是现场估数，不折算。
+     老记录没有 qty，仍按原来的 ore_t 走，改备注时不会把它清零 */
+  const oreT = qty > 0
+    ? (unit === "t" ? qty : unit === "kg" ? +(qty / 1000).toFixed(3) : num(b.ore_t))
+    : num(b.ore_t);
   const out = {
     day,
     site: String(b.site || "").trim().slice(0, 60),
     shift: String(b.shift || "白班").trim().slice(0, 10),
     crew: String(b.crew || "").trim().slice(0, 60),
     headcount: Math.round(num(b.headcount)),
-    ore_t: num(b.ore_t),
+    ore_t: oreT,
     waste_t: num(b.waste_t),
+    product: String(b.product || "").trim().slice(0, 60),
+    qty,
+    unit,
+    ta: num(b.ta),
+    nb: num(b.nb),
+    photos: JSON.stringify(photoKeys(b.photos)),
     grade: String(b.grade || "").trim().slice(0, 80),
     cost_usd: num(b.cost_usd),
     note: String(b.note || "").trim().slice(0, 1000),
@@ -338,6 +775,276 @@ function logBody(b) {
   return { v: out };
 }
 const canEdit = (user, row) => user.role === "admin" || user.role === "manager" || row.user_id === user.id;
+
+
+/* ---------- 公司资料库（赞比亚实体：PACRA · 股东 · 董事） ---------- */
+let coOk = false;
+async function coSchema(env) {
+  if (coOk) return;
+  await env.DB.prepare(
+    `CREATE TABLE IF NOT EXISTS companies (
+       id TEXT PRIMARY KEY,
+       name TEXT NOT NULL,
+       name_en TEXT NOT NULL DEFAULT '',
+       kind TEXT NOT NULL DEFAULT 'company',
+       reg_no TEXT NOT NULL DEFAULT '',
+       reg_date TEXT NOT NULL DEFAULT '',
+       tpin TEXT NOT NULL DEFAULT '',
+       address TEXT NOT NULL DEFAULT '',
+       phone TEXT NOT NULL DEFAULT '',
+       email TEXT NOT NULL DEFAULT '',
+       share_capital REAL NOT NULL DEFAULT 0,
+       currency TEXT NOT NULL DEFAULT 'ZMW',
+       shareholders TEXT NOT NULL DEFAULT '[]',
+       directors TEXT NOT NULL DEFAULT '[]',
+       notes TEXT NOT NULL DEFAULT '',
+       tags TEXT NOT NULL DEFAULT '',
+       docs TEXT NOT NULL DEFAULT '[]',
+       created_at TEXT NOT NULL DEFAULT '',
+       updated_at TEXT NOT NULL DEFAULT '',
+       created_by TEXT NOT NULL DEFAULT '',
+       updated_by TEXT NOT NULL DEFAULT ''
+     )`
+  ).run();
+  await env.DB.prepare("CREATE INDEX IF NOT EXISTS companies_name ON companies(name)").run();
+  /* 老库补 docs 列（CREATE TABLE IF NOT EXISTS 不会加列） */
+  try { await env.DB.prepare("ALTER TABLE companies ADD COLUMN docs TEXT NOT NULL DEFAULT '[]'").run(); } catch (e) {}
+  coOk = true;
+}
+
+const coNewId = () => "co" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const coParse = (v, d) => { try { const o = JSON.parse(v || ""); return o == null ? d : o; } catch (e) { return d; } };
+const coStr = (v, n = 200) => String(v == null ? "" : v).replace(/\s+/g, " ").trim().slice(0, n);
+const coZm = (nat) => /zambia|赞/i.test(String(nat || ""));
+const coMoney = (v) => Math.max(0, Number(v) || 0);
+
+/* 股东：比例按注册资本（或出资合计）折算，赞方合计另算 */
+function coHolders(list, cap) {
+  const rows = (Array.isArray(list) ? list.slice(0, 30) : []).map((p) => ({
+    name: coStr(p && p.name, 80),
+    nationality: coStr(p && (p.nationality || p.nat), 40),
+    id_no: coStr(p && (p.id_no || p.idNo), 60),
+    amount: coMoney(p && p.amount),
+  })).filter((p) => p.name);
+  const sum = rows.reduce((s, p) => s + p.amount, 0);
+  const total = Math.max(coMoney(cap), sum);
+  return rows.map((p) => ({ ...p, pct: total > 0 ? +(p.amount * 100 / total).toFixed(1) : 0 }));
+}
+
+function coDirectors(list) {
+  return (Array.isArray(list) ? list.slice(0, 30) : []).map((p) => ({
+    name: coStr(p && p.name, 80),
+    nationality: coStr(p && (p.nationality || p.nat), 40),
+    id_no: coStr(p && (p.id_no || p.idNo), 60),
+    role: coStr(p && p.role, 40),
+  })).filter((p) => p.name);
+}
+
+/* 资料条目：R2 对象 key + 展示名，最多 40 份 */
+function coDocs(list) {
+  return (Array.isArray(list) ? list.slice(0, 40) : []).map((d) => ({
+    k: coStr(d && (d.k || d.id), 40),
+    label: coStr(d && d.label, 40),
+    name: coStr(d && (d.name || d.fileName), 160),
+    key: coStr(d && d.key, 200),
+    mime: coStr(d && d.mime, 60),
+    size: coMoney(d && d.size),
+    at: coStr(d && d.at, 20),
+  })).filter((d) => d.k && d.key);
+}
+
+/* 入库前把 body 合到现有行上（PATCH 只改传上来的字段） */
+function coApply(row, b) {
+  const r = { ...row };
+  for (const [k, n] of [["name", 120], ["name_en", 160], ["kind", 20], ["reg_no", 60], ["reg_date", 20],
+    ["tpin", 40], ["address", 300], ["phone", 60], ["email", 120], ["notes", 2000], ["tags", 200], ["currency", 8]]) {
+    if (b[k] !== undefined) r[k] = coStr(b[k], n);
+  }
+  if (b.kind !== undefined && !["company", "person"].includes(r.kind)) r.kind = "company";
+  if (b.share_capital !== undefined) r.share_capital = coMoney(b.share_capital);
+  if (b.shareholders !== undefined) r.shareholders = JSON.stringify(coHolders(b.shareholders, r.share_capital));
+  else if (b.share_capital !== undefined) r.shareholders = JSON.stringify(coHolders(coParse(r.shareholders, []), r.share_capital));
+  if (b.directors !== undefined) r.directors = JSON.stringify(coDirectors(b.directors));
+  if (b.docs !== undefined) r.docs = JSON.stringify(coDocs(b.docs));
+  return r;
+}
+
+const coOut = (r) => {
+  const sh = coParse(r.shareholders, []);
+  return {
+    ...r,
+    shareholders: sh,
+    directors: coParse(r.directors, []),
+    docs: coParse(r.docs, []),
+    zm_pct: +sh.filter((s) => coZm(s.nationality)).reduce((s, x) => s + (Number(x.pct) || 0), 0).toFixed(1),
+  };
+};
+
+async function coSave(env, me, id, b) {
+  const now = nowISO();
+  if (!id) {
+    const base = {
+      id: coNewId(), name: "", name_en: "", kind: "company", reg_no: "", reg_date: "", tpin: "",
+      address: "", phone: "", email: "", share_capital: 0, currency: "ZMW",
+      shareholders: "[]", directors: "[]", notes: "", tags: "", docs: "[]",
+      created_at: now, updated_at: now, created_by: me.login, updated_by: me.login,
+    };
+    const row = coApply(base, b);
+    if (!row.name) return { e: "公司名必填", s: 400 };
+    await env.DB.prepare(
+      `INSERT INTO companies(id,name,name_en,kind,reg_no,reg_date,tpin,address,phone,email,share_capital,currency,shareholders,directors,notes,tags,docs,created_at,updated_at,created_by,updated_by)
+       VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+    ).bind(row.id, row.name, row.name_en, row.kind, row.reg_no, row.reg_date, row.tpin, row.address, row.phone,
+      row.email, row.share_capital, row.currency, row.shareholders, row.directors, row.notes, row.tags, row.docs,
+      row.created_at, row.updated_at, row.created_by, row.updated_by).run();
+    return { id: row.id };
+  }
+  const cur = await env.DB.prepare("SELECT * FROM companies WHERE id=?").bind(id).first();
+  if (!cur) return { e: "公司不存在", s: 404 };
+  const row = coApply(cur, b);
+  if (!row.name) return { e: "公司名必填", s: 400 };
+  await env.DB.prepare(
+    `UPDATE companies SET name=?,name_en=?,kind=?,reg_no=?,reg_date=?,tpin=?,address=?,phone=?,email=?,share_capital=?,currency=?,shareholders=?,directors=?,notes=?,tags=?,docs=?,updated_at=?,updated_by=? WHERE id=?`
+  ).bind(row.name, row.name_en, row.kind, row.reg_no, row.reg_date, row.tpin, row.address, row.phone, row.email,
+    row.share_capital, row.currency, row.shareholders, row.directors, row.notes, row.tags, row.docs, nowISO(), me.login, id).run();
+  return { id };
+}
+
+async function coApi(req, env, me, seg, url, body) {
+  await coSchema(env);
+  if (!modsOf(me).includes("company")) return err("没有公司资料的权限", 403);
+  const id = seg[1] || "";
+  const canWrite = me.role === "admin" || me.role === "manager";
+
+  if (!id && req.method === "GET") {
+    const q = String(url.searchParams.get("q") || "").trim();
+    if (q) {
+      const like = "%" + q + "%";
+      const r = await env.DB.prepare(
+        "SELECT * FROM companies WHERE name LIKE ? OR name_en LIKE ? OR reg_no LIKE ? OR tags LIKE ? OR address LIKE ? OR shareholders LIKE ? OR directors LIKE ? ORDER BY name LIMIT 300"
+      ).bind(like, like, like, like, like, like, like).all();
+      return json({ companies: r.results.map(coOut) });
+    }
+    const r = await env.DB.prepare("SELECT * FROM companies ORDER BY name LIMIT 300").all();
+    return json({ companies: r.results.map(coOut) });
+  }
+
+  if (id === "bulk" && req.method === "POST") {
+    if (!canWrite) return err("只有管理员和负责人能导入", 403);
+    const b = await body();
+    const list = Array.isArray(b.companies) ? b.companies.slice(0, 60) : [];
+    if (!list.length) return err("导入列表是空的");
+    let added = 0;
+    for (const item of list) {
+      const r = await coSave(env, me, "", item || {});
+      if (r.id) added++;
+    }
+    await audit(env, me, "company.bulk", String(added), "");
+    return json({ ok: true, added }, 201);
+  }
+
+  /* 资料：文件存 R2（company/<id>/<docKey>.<ext>），行里只留元数据 */
+  const sub = seg[2] || "";
+  if (id && sub === "doc" && seg[3] && req.method === "GET") {
+    const row = await env.DB.prepare("SELECT docs FROM companies WHERE id=?").bind(id).first();
+    if (!row) return err("公司不存在", 404);
+    const d = coParse(row.docs, []).find((x) => x.k === seg[3]);
+    if (!d) return err("资料不存在", 404);
+    if (!env.PHOTOS) return err("未配置文件存储", 500);
+    const obj = await env.PHOTOS.get(d.key);
+    if (!obj) return err("文件不存在", 404);
+    return new Response(obj.body, {
+      headers: {
+        "content-type": d.mime || (obj.httpMetadata && obj.httpMetadata.contentType) || "application/octet-stream",
+        "content-disposition": "inline; filename*=UTF-8''" + encodeURIComponent(d.name || d.k),
+        "cache-control": "private, max-age=86400",
+      },
+    });
+  }
+
+  if (id && sub === "doc" && req.method === "POST") {
+    if (!canWrite) return err("只有管理员和负责人能传资料", 403);
+    if (!env.PHOTOS) return err("未配置文件存储", 500);
+    const b = await body();
+    const m = /^data:([a-z0-9.+/-]+);base64,([A-Za-z0-9+/=]+)$/i.exec(String(b.data || ""));
+    if (!m) return err("文件格式不对");
+    const mime = m[1].toLowerCase();
+    if (!/^(application\/pdf|image\/(png|jpeg|jpg|webp))$/.test(mime)) return err("只支持 PDF / 图片");
+    const bytes = Uint8Array.from(atob(m[2]), (ch) => ch.charCodeAt(0));
+    if (bytes.length > 25 * 1024 * 1024) return err("文件太大（限 25MB）");
+    const row = await env.DB.prepare("SELECT * FROM companies WHERE id=?").bind(id).first();
+    if (!row) return err("公司不存在", 404);
+    const docs = coParse(row.docs, []);
+    if (docs.length >= 40) return err("每家最多 40 份资料");
+    const k = "d" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    const ext = mime === "application/pdf" ? "pdf" : mime.split("/")[1].replace("jpeg", "jpg");
+    const key = "company/" + id + "/" + k + "." + ext;
+    await env.PHOTOS.put(key, bytes, { httpMetadata: { contentType: mime } });
+    const entry = {
+      k, label: coStr(b.label, 40), name: coStr(b.name, 160) || k + "." + ext,
+      key, mime, size: bytes.length, at: nowISO().slice(0, 10),
+    };
+    docs.push(entry);
+    await env.DB.prepare("UPDATE companies SET docs=?, updated_at=?, updated_by=? WHERE id=?")
+      .bind(JSON.stringify(docs), nowISO(), me.login, id).run();
+    await audit(env, me, "company.doc.add", id, entry.name);
+    return json({ doc: entry, docs }, 201);
+  }
+
+  if (id && sub === "doc" && req.method === "DELETE") {
+    if (!canWrite) return err("只有管理员和负责人能删资料", 403);
+    const k = String(url.searchParams.get("k") || "");
+    const row = await env.DB.prepare("SELECT * FROM companies WHERE id=?").bind(id).first();
+    if (!row) return err("公司不存在", 404);
+    const docs = coParse(row.docs, []);
+    const hit = docs.find((x) => x.k === k);
+    if (!hit) return err("资料不存在", 404);
+    const rest = docs.filter((x) => x.k !== k);
+    await env.DB.prepare("UPDATE companies SET docs=?, updated_at=?, updated_by=? WHERE id=?")
+      .bind(JSON.stringify(rest), nowISO(), me.login, id).run();
+    try { if (env.PHOTOS) await env.PHOTOS.delete(hit.key); } catch (e) {}
+    await audit(env, me, "company.doc.del", id, hit.name);
+    return json({ ok: true, docs: rest });
+  }
+
+  if (!id && req.method === "POST") {
+    if (!canWrite) return err("只有管理员和负责人能建公司", 403);
+    const r = await coSave(env, me, "", await body());
+    if (r.e) return err(r.e, r.s || 400);
+    const row = await env.DB.prepare("SELECT * FROM companies WHERE id=?").bind(r.id).first();
+    await audit(env, me, "company.create", r.id, row.name);
+    return json({ company: coOut(row) }, 201);
+  }
+
+  if (id && req.method === "GET") {
+    const row = await env.DB.prepare("SELECT * FROM companies WHERE id=?").bind(id).first();
+    if (!row) return err("公司不存在", 404);
+    return json({ company: coOut(row) });
+  }
+
+  if (id && req.method === "PATCH") {
+    if (!canWrite) return err("只有管理员和负责人能改公司", 403);
+    const r = await coSave(env, me, id, await body());
+    if (r.e) return err(r.e, r.s || 400);
+    const row = await env.DB.prepare("SELECT * FROM companies WHERE id=?").bind(id).first();
+    await audit(env, me, "company.update", id, row.name);
+    return json({ company: coOut(row) });
+  }
+
+  if (id && req.method === "DELETE") {
+    if (me.role !== "admin") return err("只有管理员能删公司", 403);
+    const row = await env.DB.prepare("SELECT name FROM companies WHERE id=?").bind(id).first();
+    if (!row) return err("公司不存在", 404);
+    const full = await env.DB.prepare("SELECT docs FROM companies WHERE id=?").bind(id).first();
+    await env.DB.prepare("DELETE FROM companies WHERE id=?").bind(id).run();
+    try {
+      if (env.PHOTOS) for (const d of coParse((full && full.docs) || "[]", [])) await env.PHOTOS.delete(d.key);
+    } catch (e) {}
+    await audit(env, me, "company.delete", id, row.name);
+    return json({ ok: true });
+  }
+  return err("不支持的操作", 405);
+}
 
 /* ---------- 路由 ---------- */
 
@@ -1004,7 +1711,7 @@ async function finApi(req, env, me, seg, url, body) {
     const bytes = Uint8Array.from(atob(m[2]), (c) => c.charCodeAt(0));
     if (bytes.length > 8 * 1024 * 1024) return err("图片太大（限 8MB）");
     const ext = m[1] === "image/png" ? "png" : m[1] === "image/webp" ? "webp" : "jpg";
-    const dir = String(b.dir || "") === "feed" ? "feed" : "fin";
+    const dir = ["feed", "prod"].includes(String(b.dir || "")) ? String(b.dir) : "fin";
     const key = `${dir}/${new Date().toISOString().slice(0, 7)}/${crypto.randomUUID()}.${ext}`;
     await env.PHOTOS.put(key, bytes, { httpMetadata: { contentType: m[1] } });
     return json({ key }, 201);
@@ -1085,6 +1792,104 @@ async function runBackup(env) {
   return { key: key, bytes: body.length, kept: keys.length - drop.length };
 }
 
+/* ---------- 矿证：矿权申请助手（licence.html 的数据面） ---------- */
+const LIC_MAX_JSON = 8 * 1024 * 1024;
+
+async function licEnsure(env) {
+  await env.DB.prepare(
+    "CREATE TABLE IF NOT EXISTS licence_state(id INTEGER PRIMARY KEY, json TEXT NOT NULL, updated_at TEXT)"
+  ).run();
+}
+
+/* 纯文本走 Gemini；没配 key 或出错返回空串，前端回退模板 */
+async function aiText(env, system, prompt, maxTokens = 4000, ms = 60000) {
+  const key = env.GEMINI_API_KEY;
+  if (!key || !prompt) return "";
+  try {
+    const r = await fetch(
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + encodeURIComponent(key),
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: system || "You write concise, professional documents." }] },
+          contents: [{ role: "user", parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.4, maxOutputTokens: maxTokens },
+        }),
+        signal: AbortSignal.timeout(ms),
+      }
+    );
+    if (!r.ok) return "";
+    const j = await r.json();
+    return (j.candidates?.[0]?.content?.parts || []).map((p) => p.text || "").join("").trim();
+  } catch (e) {
+    return "";
+  }
+}
+
+async function licRoute(req, env, url) {
+  const u = await currentUser(req, env);
+  if (!u) return err("请先登录", 401);
+  if (req.method !== "GET") {
+    const o = req.headers.get("origin");
+    if (o && new URL(o).host !== url.host) return err("跨站请求被拒绝", 403);
+  }
+  const path = url.pathname;
+
+  if (path === "/lic/media" && req.method === "GET") {
+    const key = url.searchParams.get("key") || "";
+    if (!/^(lic|company)\//.test(key)) return err("key 不合法", 400);
+    const obj = await env.PHOTOS.get(key);
+    if (!obj) return err("文件不存在", 404);
+    const h = new Headers();
+    h.set("content-type", (obj.httpMetadata && obj.httpMetadata.contentType) || "application/octet-stream");
+    h.set("cache-control", "private, max-age=120");
+    h.set("x-content-type-options", "nosniff");
+    return new Response(obj.body, { headers: h });
+  }
+
+  if (path === "/lic/upload" && req.method === "POST") {
+    const form = await req.formData();
+    const f = form.get("file");
+    if (!f || typeof f.arrayBuffer !== "function") return err("没有文件", 400);
+    if (f.size > 30 * 1024 * 1024) return err("文件太大（限 30MB）", 413);
+    const ext = (String(f.name || "").match(/\.[a-z0-9]{1,8}$/i) || [".bin"])[0].toLowerCase();
+    const key = "lic/" + Date.now() + "_" + Math.random().toString(36).slice(2, 8) + ext;
+    await env.PHOTOS.put(key, await f.arrayBuffer(), {
+      httpMetadata: { contentType: f.type || "application/octet-stream" },
+    });
+    return json({ ok: true, key });
+  }
+
+  if (path === "/lic/" && req.method === "POST") {
+    const b = await req.json().catch(() => ({}));
+    if (b.action === "read") {
+      await licEnsure(env);
+      const row = await env.DB.prepare("SELECT json FROM licence_state WHERE id=1").first();
+      return json({ ok: true, content: row ? row.json : "" });
+    }
+    if (b.action === "save") {
+      const content = String(b.content || "");
+      if (!content) return err("内容为空", 400);
+      if (content.length > LIC_MAX_JSON) return err("数据太大", 413);
+      try { JSON.parse(content); } catch (e) { return err("不是合法 JSON", 400); }
+      await licEnsure(env);
+      await env.DB.prepare(
+        "INSERT INTO licence_state(id,json,updated_at) VALUES(1,?,?) " +
+        "ON CONFLICT(id) DO UPDATE SET json=excluded.json, updated_at=excluded.updated_at"
+      ).bind(content, nowISO()).run();
+      return json({ ok: true });
+    }
+    if (b.action === "draft") {
+      const text = await aiText(env, String(b.system || ""), String(b.prompt || ""), 4096);
+      return text ? json({ ok: true, text }) : json({ ok: false, error: "AI 不可用" });
+    }
+    return err("未知操作", 400);
+  }
+
+  return err("not found", 404);
+}
+
 export default {
   async fetch(req, env) {
     const url = new URL(req.url);
@@ -1096,6 +1901,13 @@ export default {
       const html = u ? PAGE : LOGIN_PAGE;
       return new Response(html, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } });
     }
+    if (path === "/licence.html" || path === "/licence") {
+      let u = null;
+      try { await ensureSchema(env); u = await currentUser(req, env); } catch (e) {}
+      if (!u) return new Response("", { status: 302, headers: { location: "/" } });
+      return new Response(LIC_PAGE, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } });
+    }
+    if (path.startsWith("/lic/")) return licRoute(req, env, url);
     if (!path.startsWith("/api/")) return err("not found", 404);
 
     // 写操作只接受同源页面（防 CSRF）
@@ -1214,6 +2026,14 @@ export default {
       /* ---------- 待办 ---------- */
       if (seg[0] === "todos") return await todoApi(req, env, me, seg, body);
 
+      /* ---------- 公司资料库 ---------- */
+      if (seg[0] === "companies") return await coApi(req, env, me, seg, url, body);
+
+      /* ---------- 打卡 / 客户 / 出口 ---------- */
+      if (seg[0] === "att") return await attApi(req, env, me, seg, url, body);
+      if (seg[0] === "customers") return await custApi(req, env, me, seg, url, body);
+      if (seg[0] === "exports") return await expApi(req, env, me, seg, url, body);
+
       /* 同事名单：派活儿要用，任何登录用户都能读（只有姓名/账号/岗位） */
       if (seg[0] === "people" && req.method === "GET") {
         const r = await env.DB.prepare("SELECT login,name,role FROM users WHERE deleted=0 AND active=1 ORDER BY name").all();
@@ -1252,9 +2072,9 @@ export default {
         if (e) return err(e);
         const tr = await trPair(env, v.note);
         const r = await env.DB.prepare(
-          `INSERT INTO logs(day,site,shift,crew,headcount,ore_t,waste_t,grade,cost_usd,note,note_en,note_zh,user_id,created_at,updated_at)
-           VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
-        ).bind(v.day, v.site, v.shift, v.crew, v.headcount, v.ore_t, v.waste_t, v.grade, v.cost_usd, v.note, tr.en, tr.zh, me.id, nowISO(), nowISO()).run();
+          `INSERT INTO logs(day,site,shift,crew,headcount,ore_t,waste_t,product,qty,unit,ta,nb,photos,grade,cost_usd,note,note_en,note_zh,user_id,created_at,updated_at)
+           VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+        ).bind(v.day, v.site, v.shift, v.crew, v.headcount, v.ore_t, v.waste_t, v.product, v.qty, v.unit, v.ta, v.nb, v.photos, v.grade, v.cost_usd, v.note, tr.en, tr.zh, me.id, nowISO(), nowISO()).run();
         await audit(env, me, "log.create", String(r.meta.last_row_id), v.site + " " + v.day);
         return json({ id: r.meta.last_row_id }, 201);
       }
@@ -1267,8 +2087,8 @@ export default {
         if (e) return err(e);
         const tr = await trPair(env, v.note);
         await env.DB.prepare(
-          `UPDATE logs SET day=?,site=?,shift=?,crew=?,headcount=?,ore_t=?,waste_t=?,grade=?,cost_usd=?,note=?,note_en=?,note_zh=?,updated_at=? WHERE id=?`
-        ).bind(v.day, v.site, v.shift, v.crew, v.headcount, v.ore_t, v.waste_t, v.grade, v.cost_usd, v.note, tr.en, tr.zh, nowISO(), row.id).run();
+          `UPDATE logs SET day=?,site=?,shift=?,crew=?,headcount=?,ore_t=?,waste_t=?,product=?,qty=?,unit=?,ta=?,nb=?,photos=?,grade=?,cost_usd=?,note=?,note_en=?,note_zh=?,updated_at=? WHERE id=?`
+        ).bind(v.day, v.site, v.shift, v.crew, v.headcount, v.ore_t, v.waste_t, v.product, v.qty, v.unit, v.ta, v.nb, v.photos, v.grade, v.cost_usd, v.note, tr.en, tr.zh, nowISO(), row.id).run();
         await audit(env, me, "log.update", String(row.id), v.site + " " + v.day);
         return json({ ok: true });
       }

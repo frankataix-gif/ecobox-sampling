@@ -59,6 +59,28 @@
 - `imp=1` = 重要（前端 ★ 置顶段）；`due` 只收 `YYYY-MM-DD`
 - 建表在 `todoSchema()` 里用 `CREATE TABLE IF NOT EXISTS` + ALTER 兜底跑，跟 `fin_entries` 一样靠首次请求自迁移（部署脚本的 D1 校验接口没权限，403 属正常）
 
+**打卡（`/api/att`，`att_cfg` + `attendance`）—— GPS 围栏 + 两段打卡**
+- 办公点与班次存 `att_cfg`（单行，`id=1`）：`lat/lng/radius/site_name/start_t/end_t/grace`；只有 admin 能改（`PUT /api/att/cfg`）。
+- 每人每天一行（`PRIMARY KEY(uid,d)`），`uid` 存 **login**；`in_at/out_at` 是 ISO 瞬时，`in_hm/out_hm` 是**本人本地** `HH:MM`（迟到早退只认它，服务端是 UTC，不能拿 `in_at` 算钟点）。
+- `d` 与 `hm` 由前端给（`localDay()` + `toTimeString()`）；服务端只做格式校验与兜底。
+- `POST /api/att/punch {lat,lng,acc,d,hm}`：`phase` 依次 `in → out → done`；`attMeters()` 算球面距离，超出 `radius` 回 409；同一天 `out` 与 `in` 相隔 < 1 分钟也 409（防误触）；两段都必须在范围内。
+- `GET /api/att?ym=YYYY-MM&d=YYYY-MM-DD[&all=1]` 回 `cfg / todayRec / phase / records / stats{days,late,early,miss,hours}`；`all=1` 仅 admin（全公司）。
+- 统计口径：`late` = `in_hm > start + grace`；`early` = `out_hm < end`；`miss` = 有上班没下班；工时 = `out_at-in_at` 累加。
+- 前端：`punchPane()`（`ATT` 状态），`gpsFix()` 取定位；管理员的「打卡设置」卡可直接「用当前位置」填经纬度。
+
+**客户（`/api/customers`，`customers`）**
+- 单表档案：`name` 必填，其余 `contact/phone/email/wechat/country/addr/bank/swift/accNo/currency/note`。
+- `GET`（`?q=` 匹配名称/联系人/电话/邮箱/国家）· `POST` · `PATCH :id` · `DELETE :id`；`id = "cu" + base36`。
+- 列名 `acc_no`，接口/前端一律 `accNo`（`CUST_FIELDS` 用 camel，写库时映射）。
+- 前端 `customerPane()`（`CUST`）：搜索 + 列表 + 卡片内联表单，删前 `confirm`。
+
+**出口（`/api/exports`，`exports`）—— 7 段流程**
+- 阶段常量 `EXP_STAGES = applied → moses → analysis → valuation → royalty → permit → exported`，`EXP_LABEL` 给中文；数值 `status` 只前进不回退（`Math.max(当前序号, 本段序号)`）。
+- `stages` 存 JSON `{stage:{at,by,...自定义字段}}`；`POST /api/exports/:id/stage {stage,fields}` 只允许 `[a-zA-Z]\w{0,20}` 的键。
+- `files` 存 JSON `[{k,stage,key,name,mime,size,at}]`，实体在 R2 `export/<id>/<stage>/<k>.<ext>`；走 `POST/GET/DELETE /api/exports/:id/file`（dataURL 上传，PDF/图片，≤25MB，每单 ≤60 份）。删单时连 R2 对象一起删。
+- 前端 `exportPane()`（`EXP`）：列表按状态点亮 `.st-dot`，展开即 7 段表单 + 每段「标记完成 / 更新本阶段 / ＋上传文件」；`EXP_STAGE_FIELDS` 定义每段要填什么。
+- 没做的：原应用的「读 PDF 条码自动建单」还没搬（需要 pdf 解析，另行安排）。
+
 **人员接口**（`/api/users`，仅 admin）
 `GET` 列表（只列 `deleted=0`） · `POST` 开通 · `PATCH :id`（姓名/账号/电话/角色/密码/模块） · `DELETE :id` 删除
 
@@ -167,6 +189,24 @@
 15. 两级分类：**归属**（生活 / 项目 / 矿权维护 / 往来）→ **分类** 联动；生活 10 项（交通 加油 小费 餐饮住宿 通讯 办公 员工补贴 生活开销 维修 其它，维修以车辆为主），项目 = 外协劳务（包工头）+ Serenje 钽铌矿项目，矿权维护待录矿证；往来科目不计费用；老分类由「合并老分类」一次性归并
 
 **待办**：迁移旧「ECOOBOX 公司管理」的财务数据；下线旧应用。
+
+**公司（公司资料库，`/api/companies`）—— 「资产」板块**
+
+- 表 `companies`：`id / name / name_en / kind / reg_no / reg_date / tpin / address / phone / email / share_capital / currency / shareholders / directors / notes / tags / docs / created_at / updated_at / created_by / updated_by`
+- **股东/董事/资料存 JSON 文本**（不建子表），出入库统一走 `coApply()` / `coOut()`；前端明细页读模式只渲染只读表格
+- **资料（证照 PDF）**：`docs = [{k,label,name,key,mime,size,at}]`，**文件本体在 R2**（`env.PHOTOS`，key = `company/<公司id>/<k>.<ext>`），行里只存元数据
+  - `POST /api/companies/:id/doc {data(dataURL),name,mime,label}` → `201 {doc,docs}`，限 PDF/PNG/JPEG/WebP、单份 ≤25MB、每家 ≤40 份
+  - `GET /api/companies/:id/doc/:k` → 文件流（`content-disposition: inline`，要登录；k 必须命中 `docs` 才给，防路径穿越）
+  - `DELETE /api/companies/:id/doc?k=` → 同时删 R2 对象；删公司时连带清空该公司全部资料
+  - 前端 `#company` 明细页「资料」卡片：上传（`#co_doc_up`）/ 点击预览 / `data-codel` 删除，列表行显示 `📄份数`
+- 建表在 `coSchema(env)` 里用 `CREATE TABLE IF NOT EXISTS`，**首次带登录态请求自动建** → 不需要 D1 迁移，API token 缺 D1 权限也能用
+- 占比：`coHolders()` 分母 = **max(注册资本, 出资合计)**（PACRA 常见「资本填面值、金额填实缴」，只按资本算会算出 949%）；`zm_pct` = 赞比亚籍股东占比之和；「占比合计」偏离 100 超 0.5 才标红
+- 数据（2026-11）：**生产已入库 15 家**，来自 mine-sync `data/license_apps.json`（`POST https://mine-sync.frankataix.workers.dev/ {action:'read',path:'data/license_apps.json'}`，16 条里 1 条是自然人，跳过）。已做：`regDate` → ISO、`capital` 去千分位、国籍 Title Case、`note` + 公司秘书并入 `notes`；每家公司随附 7–8 份证照（**共 106 份 / 253.8 MB 已迁入 R2**，源为 mine-sync `/media?key=`）
+- 写库通道：API token **没有 D1 权限**（`/d1/.../query` 报 7403），需要直插时临时部署一个绑定同 D1 的一次性 Worker 写，写完立刻 `DELETE /workers/scripts/<name>`（2026-11 导 15 家就是这么做的）
+- **一次性 Worker 不能 fetch 另一个 `*.workers.dev`**：同 zone 互调直接 `error code: 1042` → 搬迁文件必须由本地下载后 base64 POST 给临时 Worker 落 R2（2026-11 迁 106 份资料就是这么做的，253.8 MB）
+- 搜索 `?q=` 命中 name / name_en / reg_no / tags / address **+ shareholders、directors 的 JSON 原文**（所以能按股东名反查公司）
+- 批量导入 `POST /api/companies/bulk {companies:[...]}`；股东 `{name,nationality,id_no,amount}`、董事 `{name,nationality,id_no,role}`；前端「批量导入」面板带「填充示例」
+- 权限：读要 `company` 模块权限；写限 `admin`/`manager`；删除限 `admin`；写操作走同源校验
 
 ## 四、数据模型不变式（用户反复强调，不许动摇）
 
