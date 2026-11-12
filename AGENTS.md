@@ -32,7 +32,11 @@
 
 - 源码 `ops/index.html` + `ops/worker.js` → `python ops/build.py` → `ops/dist/worker.js`（页面内联进 worker）。
 - Worker `ecobox-ops`；account `dff446b2b98a38ac2b82263e3ff14da9`；D1 `9c9f6539-a564-461c-8ba8-e04a2f7eb198`；R2 `ecobox-finance`（binding `PHOTOS`）。
-- URL：`https://ecobox-ops.frankataix.workers.dev/`
+- 入口：**`https://ops.ecoboxmine.com/`**（主，Workers 自定义域）；备用 `https://ecobox-ops.frankataix.workers.dev/`
+- 绑自定义域：token 没有 DNS 编辑权限（`GET /zones/:id/dns_records` → 403），但 `PUT /accounts/:acc/workers/domains`
+  `{zone_id,hostname,service,environment}` 可用，CF 会自动建 CNAME + 证书（2026-11 用这招绑的 `ops.`）。
+- `*.workers.dev` 会被部分 DNS / 广告拦截 / 运营商拦截 → 手机打不开时先换自定义域，别先怀疑 worker。
+- zone `ecoboxmine.com` 已开 `always_use_https=on`；**apex / www 至今没有 DNS 记录**（访问即 `getaddrinfo failed`）。
 
 **数据表**：`users` `sessions` `logs` `posts` `fin_entries` `fin_accounts` `fin_cfg`
 
