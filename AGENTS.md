@@ -37,6 +37,10 @@
   `{zone_id,hostname,service,environment}` 可用，CF 会自动建 CNAME + 证书（2026-11 用这招绑的 `ops.`）。
 - `*.workers.dev` 会被部分 DNS / 广告拦截 / 运营商拦截 → 手机打不开时先换自定义域，别先怀疑 worker。
 - zone `ecoboxmine.com` 已开 `always_use_https=on`；**apex / www 至今没有 DNS 记录**（访问即 `getaddrinfo failed`）。
+- zone `ecoboxmine.com` 的 `rum` 已关（CF Web Analytics 注入会给页面塞 `static.cloudflareinsights.com`，
+  国内这域名会拖慢/超时）→ 工作台页面现在零第三方请求。
+- 中国大陆可达性（2026-11 实测）：阿里/腾讯 DoH 解析正常（未被污染），HK/SG/JP 节点 13–17ms 200 OK；
+  免费版无中国内网节点，国内实际走 HK/SG/LAX，典型 150–300ms、高峰期有丢包。首屏 `index.html` 256KB → gzip 74KB。
 
 **数据表**：`users` `sessions` `logs` `posts` `fin_entries` `fin_accounts` `fin_cfg`
 
