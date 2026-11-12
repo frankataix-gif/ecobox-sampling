@@ -1253,7 +1253,7 @@ async function todoSchema(env) {
        creator TEXT NOT NULL DEFAULT '', creator_name TEXT NOT NULL DEFAULT '',
        due TEXT NOT NULL DEFAULT '', status TEXT NOT NULL DEFAULT 'todo', imp INTEGER NOT NULL DEFAULT 0,
        done_at TEXT NOT NULL DEFAULT '', created_at TEXT NOT NULL, updated_at TEXT NOT NULL,
-       deleted INTEGER NOT NULL DEFAULT 0)`
+       deleted INTEGER NOT NULL DEFAULT 0, files TEXT NOT NULL DEFAULT '[]')`
   ).run();
   await env.DB.prepare(
     `CREATE TABLE IF NOT EXISTS todo_notes (
@@ -1273,6 +1273,7 @@ async function todoSchema(env) {
     "ALTER TABLE todos ADD COLUMN last_flag TEXT NOT NULL DEFAULT ''",
     "ALTER TABLE todos ADD COLUMN assign_at TEXT NOT NULL DEFAULT ''",
     "ALTER TABLE todos ADD COLUMN self_set INTEGER NOT NULL DEFAULT 0",
+    "ALTER TABLE todos ADD COLUMN files TEXT NOT NULL DEFAULT '[]'",
   ]) { try { await env.DB.prepare(sql).run(); } catch {} }
   /* 指派即开工：老数据里停在「待开始」的并进「进行中」，起点取创建时间 */
   try {
@@ -1290,6 +1291,9 @@ async function todoSchema(env) {
 const TODO_SCOPES = ["self", "person", "company"];
 const TODO_STATUS = ["todo", "doing", "done"];
 const newId = (p) => p + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const TODO_FILES = (r) => { try { const v = JSON.parse(r.files || "[]"); return Array.isArray(v) ? v : []; } catch { return []; } };
+const TODO_MIME = /^(application\/pdf|image\/(png|jpeg|jpg|webp|gif)|text\/plain|text\/csv|application\/zip|application\/msword|application\/vnd\.ms-excel|application\/vnd\.ms-powerpoint|application\/vnd\.openxmlformats-officedocument\.(wordprocessingml\.document|spreadsheetml\.sheet|presentationml\.presentation))$/;
+const TODO_EXT = { "application/pdf": "pdf", "image/png": "png", "image/jpeg": "jpg", "image/jpg": "jpg", "image/webp": "webp", "image/gif": "gif", "text/plain": "txt", "text/csv": "csv", "application/zip": "zip", "application/msword": "doc", "application/vnd.ms-excel": "xls", "application/vnd.ms-powerpoint": "ppt", "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "xlsx", "application/vnd.openxmlformats-officedocument.presentationml.presentation": "pptx" };
 const dayOk = (s) => !s || /^\d{4}-\d{2}-\d{2}$/.test(s);
 
 async function todoApi(req, env, me, seg, body) {
@@ -1304,7 +1308,7 @@ async function todoApi(req, env, me, seg, body) {
     const ns = await env.DB.prepare("SELECT * FROM todo_notes ORDER BY created_at").all();
     const by = {};
     for (const n of ns.results) (by[n.todo_id] = by[n.todo_id] || []).push(n);
-    return json({ me: meId, todos: rows.results.map((r) => ({ ...r, notes: by[r.id] || [] })) });
+    return json({ me: meId, todos: rows.results.map((r) => ({ ...r, notes: by[r.id] || [], files: TODO_FILES(r) })) });
   }
 
   if (!id && req.method === "POST") {
@@ -1434,6 +1438,66 @@ async function todoApi(req, env, me, seg, body) {
       .bind(newId("n"), row.id, meId, me.name, text, nowISO()).run();
     await env.DB.prepare("UPDATE todos SET updated_at=? WHERE id=?").bind(nowISO(), row.id).run();
     return json({ ok: true }, 201);
+  }
+
+  /* 附件：一项待办可以挂多个文件，实体在 R2 todo/<id>/<k>.<ext> */
+  if (id && sub === "file") {
+    const files = TODO_FILES(row);
+    const qs = new URL(req.url).searchParams;
+    const want = seg[3] || qs.get("k") || "";
+    /* 公司事项没指定人时，跟留言一样谁都能补附件 */
+    const canEdit = mine || isAdmin || me.role === "manager" || (row.scope === "company" && !row.owner);
+    if (req.method === "GET") {
+      const f = files.find((x) => x.k === want);
+      if (!f) return err("附件不存在", 404);
+      if (!env.PHOTOS) return err("未配置文件存储", 500);
+      const obj = await env.PHOTOS.get(f.key);
+      if (!obj) return err("附件不存在", 404);
+      /* 只有图片和 PDF 允许直接内嵌预览，其余一律走下载，避免 HTML/SVG 在本域执行 */
+      const inline = /^(image\/|application\/pdf)/.test(f.mime || "");
+      return new Response(obj.body, {
+        headers: {
+          "content-type": f.mime || "application/octet-stream",
+          "content-disposition": (inline ? "inline" : "attachment") + "; filename*=UTF-8''" + encodeURIComponent(f.name || want),
+          "cache-control": "private, max-age=86400",
+        },
+      });
+    }
+    if (!canEdit) return err("只有发起人、执行人或负责人能改附件", 403);
+    if (req.method === "POST") {
+      if (!env.PHOTOS) return err("未配置文件存储", 500);
+      const b = await body();
+      const m = /^data:([a-z0-9.+/-]+);base64,([A-Za-z0-9+/=]+)$/i.exec(String(b.data || ""));
+      if (!m) return err("文件格式不对");
+      const mime = m[1].toLowerCase();
+      if (!TODO_MIME.test(mime)) return err("不支持这种文件（PDF / 图片 / Office / 文本 / ZIP）");
+      const bytes = Uint8Array.from(atob(m[2]), (ch) => ch.charCodeAt(0));
+      if (bytes.length > 25 * 1024 * 1024) return err("文件太大（限 25MB）");
+      if (files.length >= 20) return err("每项最多 20 个附件");
+      const k = "a" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+      const ext = (TODO_EXT[mime] || mime.split("/")[1] || "bin").replace(/[^a-z0-9]/g, "").slice(0, 8);
+      const key = "todo/" + id + "/" + k + "." + ext;
+      await env.PHOTOS.put(key, bytes, { httpMetadata: { contentType: mime } });
+      const entry = {
+        k, key, mime, size: bytes.length,
+        name: String(b.name || "").slice(0, 160) || k + "." + ext,
+        at: nowISO().slice(0, 10), by: me.name || me.login, by_login: meId,
+      };
+      files.push(entry);
+      await env.DB.prepare("UPDATE todos SET files=?, updated_at=? WHERE id=?").bind(JSON.stringify(files), nowISO(), id).run();
+      await audit(env, me, "todo.file.add", id, entry.name);
+      return json({ ok: true, file: entry, files }, 201);
+    }
+    if (req.method === "DELETE") {
+      const f = files.find((x) => x.k === want);
+      if (!f) return err("附件不存在", 404);
+      if (env.PHOTOS) { try { await env.PHOTOS.delete(f.key); } catch {} }
+      const left = files.filter((x) => x.k !== want);
+      await env.DB.prepare("UPDATE todos SET files=?, updated_at=? WHERE id=?").bind(JSON.stringify(left), nowISO(), id).run();
+      await audit(env, me, "todo.file.del", id, f.name || want);
+      return json({ ok: true, files: left });
+    }
+    return err("不支持的操作", 405);
   }
 
   return err("not found", 404);

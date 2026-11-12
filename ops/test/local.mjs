@@ -463,6 +463,37 @@ ok((await tdStaff("/api/todos/" + tdGive.data.id, { method: "DELETE" })).status 
 ok((await boss("/api/todos/" + tdMine.data.id, { method: "DELETE" })).status === 200, "发起人能删自己的待办");
 ok(!(await boss("/api/todos")).data.todos.some((t) => t.id === tdMine.data.id), "删掉的待办不再返回");
 ok((await patch(boss, "/api/todos/nope", { title: "x" })).status === 404, "改不存在的待办 404");
+/* 附件：每项待办都能挂文件（PDF / 图片 / Office / 文本 / ZIP），实体在 R2 */
+const PDFDATA = "data:application/pdf;base64," + Buffer.from("%PDF-1.4 test").toString("base64");
+const up1 = await post(boss, "/api/todos/" + tdCo.data.id + "/file", { data: PDFDATA, name: "报税发票.pdf" });
+ok(up1.status === 201 && up1.data.files.length === 1, "能给待办加附件");
+ok(up1.data.file.key.startsWith("todo/" + tdCo.data.id + "/") && /\.pdf$/.test(up1.data.file.key), "附件按 todo/<id>/ 存 R2");
+ok(up1.data.files[0].name === "报税发票.pdf" && up1.data.files[0].size === 13 && up1.data.files[0].by_login === "boss@ecobox.com", "附件带名称/大小/上传人");
+const withFile = (await boss("/api/todos")).data.todos.find((t) => t.id === tdCo.data.id);
+ok(withFile.files.length === 1 && withFile.files[0].k === up1.data.file.k, "列表带回附件清单");
+const dl1 = await boss("/api/todos/" + tdCo.data.id + "/file/" + up1.data.file.k);
+ok(dl1.status === 200 && String(dl1.data).includes("%PDF-1.4 test"), "能下载附件原文件");
+ok(/inline/.test(dl1.headers.get("content-disposition") || ""), "PDF 走内嵌预览");
+const up2 = await post(tdStaff, "/api/todos/" + tdCo.data.id + "/file", { data: "data:text/csv;base64," + Buffer.from("a,b\n1,2").toString("base64"), name: "品位.csv" });
+ok(up2.status === 201 && up2.data.files.length === 2, "公司事项谁都能补附件");
+const dl2 = await boss("/api/todos/" + tdCo.data.id + "/file/" + up2.data.file.k);
+ok(/attachment/.test(dl2.headers.get("content-disposition") || ""), "CSV 等走下载，不在本域内嵌");
+ok((await post(boss, "/api/todos/" + tdCo.data.id + "/file", { data: "data:text/html;base64," + Buffer.from("<b>x</b>").toString("base64"), name: "x.html" })).status === 400, "HTML 附件被拒");
+ok((await post(boss, "/api/todos/" + tdCo.data.id + "/file", { data: "nope" })).status === 400, "不是 dataURL 被拦下");
+ok((await boss("/api/todos/" + tdCo.data.id + "/file/nofile")).status === 404, "不存在的附件 404");
+/* 附件也认人：不相干的员工只能看，不能改 */
+await post(boss, "/api/users", { login: "out@ecobox.com", name: "外人", password: "outpass2026", role: "staff" });
+const outStaff = client();
+await post(outStaff, "/api/login", { login: "out@ecobox.com", password: "outpass2026" });
+ok((await outStaff("/api/todos/" + tdCo.data.id + "/file/" + up1.data.file.k)).status === 200, "同事能看到附件");
+ok((await post(outStaff, "/api/todos/" + tdGive.data.id + "/file", { data: PDFDATA, name: "x.pdf" })).status === 403, "无关员工不能给别人派下的活加附件");
+ok((await outStaff("/api/todos/" + tdGive.data.id + "/file/" + up1.data.file.k, { method: "DELETE" })).status === 403, "无关员工不能删附件");
+const delF = await boss("/api/todos/" + tdCo.data.id + "/file/" + up2.data.file.k, { method: "DELETE" });
+ok(delF.status === 200 && delF.data.files.length === 1, "能删附件");
+ok(!R2.has(up2.data.file.key), "删附件同时清掉 R2 对象");
+const afterDel = (await boss("/api/todos")).data.todos.find((t) => t.id === tdCo.data.id);
+ok(afterDel.files.length === 1 && afterDel.files[0].k === up1.data.file.k, "删掉的附件不再返回");
+
 const mods = (await boss("/api/modules")).data.modules;
 const todoMod = mods.find((m) => m.k === "todo");
 ok(todoMod && todoMod.tab === "todo" && !todoMod.soon, "待办模块已开通（不是待开放）");

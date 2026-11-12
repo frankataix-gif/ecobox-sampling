@@ -100,6 +100,17 @@ td.n{text-align:right;font-variant-numeric:tabular-nums}
 .td-cin{display:flex;gap:6px;margin-top:6px}
 .td-cin input{flex:1;min-width:0}
 .td-cin button{font-size:12px;padding:4px 10px}
+/* 附件 */
+.td-atts{margin-top:8px;border-top:1px dashed var(--line);padding-top:6px}
+.td-atts-head{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--mut)}
+.td-att-add{margin-left:auto;border:1px solid var(--line);border-radius:8px;padding:3px 9px;font-size:12px;background:var(--card);color:var(--ink);cursor:pointer;white-space:nowrap}
+.td-att{display:flex;align-items:center;gap:8px;margin-top:5px;font-size:12.5px}
+.td-att-ic{flex:none;font-size:14px}
+.td-att a{flex:1;min-width:0;display:grid;text-decoration:none;color:var(--ink)}
+.td-att a b{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.td-att a i{font-style:normal;font-size:11px;color:var(--mut)}
+.td-att-x{flex:none;background:transparent;border:0;color:var(--mut);font-size:16px;line-height:1;padding:0 4px}
+.td-attn{font-size:12px;color:var(--mut);align-self:center}
 .td-imp{background:#fef3c7;color:#b45309}
 .td-co{background:#e0e7ff;color:#1d4ed8}
 .td-self{background:#dcfce7;color:#15803d}
@@ -1776,6 +1787,43 @@ function noteLine(n) {
   return `<div class="td-note-line"><b>${esc(n.name)}</b>${esc(n.body)}<span class="mut"> · ${t}</span></div>`;
 }
 
+const TD_MIME = { pdf: "application/pdf", png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", webp: "image/webp",
+  gif: "image/gif", txt: "text/plain", csv: "text/csv", zip: "application/zip", doc: "application/msword",
+  xls: "application/vnd.ms-excel", ppt: "application/vnd.ms-powerpoint",
+  docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation" };
+const tdExt = (name) => String(name || "").split(".").pop().toLowerCase();
+const tdMime = (f) => TD_MIME[tdExt(f.name)] || (/^(image|text)\//.test(f.type || "") ? f.type : "");
+const tdSize = (n) => { const s = Number(n) || 0; return !s ? "" : s < 1024 ? s + " B" : s < 1048576 ? Math.round(s / 1024) + " KB" : (s / 1048576).toFixed(1) + " MB"; };
+
+function tdAttRow(f, id, canDel) {
+  const img = /^image\//.test(f.mime || "");
+  const pdf = /pdf/i.test(f.mime || "");
+  const href = "/api/todos/" + encodeURIComponent(id) + "/file/" + encodeURIComponent(f.k);
+  return `<div class="td-att">
+      <span class="td-att-ic">${img ? "🖼" : pdf ? "📄" : "📎"}</span>
+      <a href="${esc(href)}" target="_blank" rel="noopener"><b>${esc(f.name || f.k)}</b><i>${esc(tdSize(f.size))}${f.by ? " · " + esc(f.by) : ""}${f.at ? " · " + esc(f.at) : ""}</i></a>
+      ${canDel ? `<button class="ghost td-att-x" data-td-fdel="${esc(f.k)}" data-td-fid="${esc(id)}" title="${esc(tr("删除"))}">×</button>` : ""}
+    </div>`;
+}
+
+async function tdUpload(id, f) {
+  if (f.size > 25 * 1024 * 1024) throw new Error(tr("文件太大（限 25MB）"));
+  const mime = tdMime(f);
+  if (!mime) throw new Error(tr("不支持这种文件（PDF / 图片 / Office / 文本 / ZIP）"));
+  const data = await new Promise((res, rej) => {
+    const rd = new FileReader();
+    rd.onload = () => res(rd.result);
+    rd.onerror = () => rej(new Error(tr("读取失败")));
+    rd.readAsDataURL(f);
+  });
+  const r = await api("/todos/" + encodeURIComponent(id) + "/file", {
+    method: "POST", quiet: true, body: { data, name: f.name, mime },
+  });
+  return r.files;
+}
+
 function todoCard(t) {
   const st = t.status === "done" ? "done" : "doing";
   const dl = t.due ? daysLeft(t.due) : null;
@@ -1800,6 +1848,7 @@ function todoCard(t) {
   ].filter(Boolean).join("");
   const who = t.owner ? t.owner_name || t.owner : tr("未指派");
   const all = t.notes || [];
+  const files = t.files || [];
   const lastRep = [...all].reverse().find((n) => n.kind === "report" || n.kind === "cmt" || n.kind === "start");
   const notes = all.slice(-6).map(noteLine).join("");
   const open = !!TD_OPEN[t.id];
@@ -1819,7 +1868,13 @@ function todoCard(t) {
         ${t.note ? `<div class="td-body">${esc(t.note)}</div>` : ""}
         ${lastRep ? `<div class="td-fb"><span class="mut">${esc(lastRep.name)} · ${esc(NOTE_TIME(lastRep))}</span> ${esc(lastRep.body)}</div>` : ""}
         ${open ? `<div class="td-log">${notes || `<div class="mut">${esc(tr("还没有留言"))}</div>`}
-          <div class="td-cin"><input class="td-cmt" data-td-input="${t.id}" maxlength="500" placeholder="${esc(tr("写留言…"))}"><button data-td-send="${t.id}">${esc(tr("发送"))}</button></div></div>` : ""}
+          <div class="td-cin"><input class="td-cmt" data-td-input="${t.id}" maxlength="500" placeholder="${esc(tr("写留言…"))}"><button data-td-send="${t.id}">${esc(tr("发送"))}</button></div>
+          <div class="td-atts">
+            <div class="td-atts-head"><span>📎 ${esc(tr("附件"))}${files.length ? " " + files.length : ""}</span>
+              ${canTouch(t) ? `<label class="td-att-add">＋ ${esc(tr("附件"))}<input type="file" multiple hidden data-td-file="${t.id}" accept=".pdf,.png,.jpg,.jpeg,.webp,.gif,.txt,.csv,.zip,.doc,.docx,.xls,.xlsx,.ppt,.pptx,image/*,application/pdf"></label>` : ""}</div>
+            ${files.length ? files.map((f) => tdAttRow(f, t.id, canTouch(t))).join("")
+      : `<div class="mut" style="font-size:12px;margin-top:4px">${esc(tr("还没有附件"))}</div>`}
+          </div></div>` : ""}
       </div>
       <div class="td-ops">
         <button data-td-star="${t.id}" class="${t.imp ? "on" : ""}" title="${esc(tr("重要"))}">★</button>
@@ -1830,6 +1885,7 @@ function todoCard(t) {
       ${isOwner && st !== "done" ? `<button class="pri" data-td-report="${t.id}">📝 ${esc(tr("汇报"))}</button>` : ""}
       ${canTouch(t) && st !== "done" ? `<button${isOwner ? "" : ' class="pri"'} data-td-fin="${t.id}">${esc(tr("完成"))}</button>` : ""}
       <button data-td-cmt="${t.id}">💬 ${all.length || ""} ${esc(tr("留言"))}</button>
+      ${files.length ? `<span class="td-attn">📎 ${files.length}</span>` : ""}
     </div>
   </div>`;
 }
@@ -2041,6 +2097,24 @@ function bindTodo() {
     if (!text) { toast(tr("写点内容再发"), "bad"); return; }
     try { await api("/todos/" + encodeURIComponent(id) + "/notes", { method: "POST", body: { text }, quiet: true }); await loadTodos(); render(); }
     catch (e) { toast(e.message, "bad"); }
+  });
+  pane.querySelectorAll("[data-td-file]").forEach((inp) => inp.onchange = async () => {
+    const id = inp.dataset.tdFile;
+    const list = [...(inp.files || [])];
+    if (!list.length) return;
+    inp.disabled = true;
+    for (const f of list) {
+      try { await tdUpload(id, f); }
+      catch (e) { toast(e.message || tr("上传失败"), "bad"); }
+    }
+    await loadTodos(); render();
+  });
+  pane.querySelectorAll("[data-td-fdel]").forEach((b) => b.onclick = async () => {
+    if (!confirm(tr("删除这个附件？"))) return;
+    try {
+      await api("/todos/" + encodeURIComponent(b.dataset.tdFid) + "/file/" + encodeURIComponent(b.dataset.tdFdel), { method: "DELETE", quiet: true });
+      await loadTodos(); render();
+    } catch (e) { toast(e.message, "bad"); }
   });
 }
 

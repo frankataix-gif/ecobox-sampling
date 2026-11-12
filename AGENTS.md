@@ -58,6 +58,11 @@
 - 权限：`owner` 和 `creator` 能改状态/标题，`admin`/`manager` 全能改；**删除只给 `creator` 和 `admin`**（执行人不能删别人派的活）
 - `imp=1` = 重要（前端 ★ 置顶段）；`due` 只收 `YYYY-MM-DD`
 - 建表在 `todoSchema()` 里用 `CREATE TABLE IF NOT EXISTS` + ALTER 兜底跑，跟 `fin_entries` 一样靠首次请求自迁移（部署脚本的 D1 校验接口没权限，403 属正常）
+- **附件**（「每一项都能挂文件」）：`todos.files` 存 JSON 数组（`k/key/mime/size/name/at/by/by_login`），实体在 R2 `todo/<id>/<k>.<ext>`
+  - `POST /api/todos/:id/file` `{data: dataURL, name}`，`GET /api/todos/:id/file/:k`（也认 `?k=`），`DELETE /api/todos/:id/file/:k`
+  - 只收 PDF / 图片 / Office / `text/plain|csv` / ZIP（`TODO_MIME`），单个 ≤ 25MB，每项 ≤ 20 个；**图片和 PDF 内嵌预览，其它一律 `content-disposition: attachment`**，避免 HTML/SVG 在本域执行
+  - 谁能传：`mine || admin || manager || (公司事项且没 owner)`，跟留言一个口径；无关同事只能看/下载
+  - 前端：卡片展开区（`.td-atts`）里「＋ 附件」多选上传、文件名可点开、× 删除；卡片底部 `📎 N` 计数。`tdMime()` 按扩展名补 MIME（浏览器给的 `file.type` 常为空，尤其 .docx/.xlsx）
 
 **打卡（`/api/att`，`att_cfg` + `attendance`）—— GPS 围栏 + 两段打卡**
 - 办公点与班次存 `att_cfg`（单行，`id=1`）：`lat/lng/radius/site_name/start_t/end_t/grace`；只有 admin 能改（`PUT /api/att/cfg`）。
