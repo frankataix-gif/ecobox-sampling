@@ -480,6 +480,8 @@ const dl2 = await boss("/api/todos/" + tdCo.data.id + "/file/" + up2.data.file.k
 ok(/attachment/.test(dl2.headers.get("content-disposition") || ""), "CSV 等走下载，不在本域内嵌");
 ok((await post(boss, "/api/todos/" + tdCo.data.id + "/file", { data: "data:text/html;base64," + Buffer.from("<b>x</b>").toString("base64"), name: "x.html" })).status === 400, "HTML 附件被拒");
 ok((await post(boss, "/api/todos/" + tdCo.data.id + "/file", { data: "nope" })).status === 400, "不是 dataURL 被拦下");
+const bigRes = await post(boss, "/api/todos/" + tdCo.data.id + "/file", { data: "data:application/pdf;base64," + "A".repeat(34 * 1024 * 1024), name: "huge.pdf" });
+ok(bigRes.status === 400 && /线下提供/.test(bigRes.data.error || ""), "超过 25MB 提示线下提供 " + bigRes.status);
 ok((await boss("/api/todos/" + tdCo.data.id + "/file/nofile")).status === 404, "不存在的附件 404");
 /* 附件也认人：不相干的员工只能看，不能改 */
 await post(boss, "/api/users", { login: "out@ecobox.com", name: "外人", password: "outpass2026", role: "staff" });

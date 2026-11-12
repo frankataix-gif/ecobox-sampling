@@ -544,7 +544,7 @@ async function expApi(req, env, me, seg, url, body) {
     const mime = m[1].toLowerCase();
     if (!/^(application\/pdf|image\/(png|jpeg|jpg|webp))$/.test(mime)) return err("只支持 PDF / 图片");
     const bytes = Uint8Array.from(atob(m[2]), (ch) => ch.charCodeAt(0));
-    if (bytes.length > 25 * 1024 * 1024) return err("文件太大（限 25MB）");
+    if (bytes.length > 25 * 1024 * 1024) return err("文件超过 25MB，请线下提供（U 盘 / 网盘 / 邮件）");
     const files = expParse(row.files, []);
     if (files.length >= 60) return err("每单最多 60 份文件");
     const k = "f" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
@@ -971,7 +971,7 @@ async function coApi(req, env, me, seg, url, body) {
     const mime = m[1].toLowerCase();
     if (!/^(application\/pdf|image\/(png|jpeg|jpg|webp))$/.test(mime)) return err("只支持 PDF / 图片");
     const bytes = Uint8Array.from(atob(m[2]), (ch) => ch.charCodeAt(0));
-    if (bytes.length > 25 * 1024 * 1024) return err("文件太大（限 25MB）");
+    if (bytes.length > 25 * 1024 * 1024) return err("文件超过 25MB，请线下提供（U 盘 / 网盘 / 邮件）");
     const row = await env.DB.prepare("SELECT * FROM companies WHERE id=?").bind(id).first();
     if (!row) return err("公司不存在", 404);
     const docs = coParse(row.docs, []);
@@ -1472,7 +1472,7 @@ async function todoApi(req, env, me, seg, body) {
       const mime = m[1].toLowerCase();
       if (!TODO_MIME.test(mime)) return err("不支持这种文件（PDF / 图片 / Office / 文本 / ZIP）");
       const bytes = Uint8Array.from(atob(m[2]), (ch) => ch.charCodeAt(0));
-      if (bytes.length > 25 * 1024 * 1024) return err("文件太大（限 25MB）");
+      if (bytes.length > 25 * 1024 * 1024) return err("文件超过 25MB，请线下提供（U 盘 / 网盘 / 邮件）");
       if (files.length >= 20) return err("每项最多 20 个附件");
       const k = "a" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
       const ext = (TODO_EXT[mime] || mime.split("/")[1] || "bin").replace(/[^a-z0-9]/g, "").slice(0, 8);

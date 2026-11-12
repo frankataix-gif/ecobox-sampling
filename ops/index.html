@@ -654,6 +654,7 @@ const isEN = () => LANG === "en";
 
 /* 界面文案：中文原文 → 英文。只在英文模式下走这里；查不到就保留中文。 */
 const EN = {
+  "文件超过 25MB，请线下提供（U 盘 / 网盘 / 邮件）": "File over 25MB — please hand it over offline (USB / cloud drive / email)",
   "占比合计": "Share total",
   "可用字段": "Fields",
   "填充示例": "Fill sample",
@@ -1809,7 +1810,7 @@ function tdAttRow(f, id, canDel) {
 }
 
 async function tdUpload(id, f) {
-  if (f.size > 25 * 1024 * 1024) throw new Error(tr("文件太大（限 25MB）"));
+  if (f.size > 25 * 1024 * 1024) throw new Error(tr("文件超过 25MB，请线下提供（U 盘 / 网盘 / 邮件）"));
   const mime = tdMime(f);
   if (!mime) throw new Error(tr("不支持这种文件（PDF / 图片 / Office / 文本 / ZIP）"));
   const data = await new Promise((res, rej) => {
@@ -2340,7 +2341,7 @@ function bindPendDel() {
 const coKB = (n) => { const s = Number(n) || 0; return s > 1048576 ? (s / 1048576).toFixed(1) + " MB" : s ? Math.round(s / 1024) + " KB" : ""; };
 
 async function coUploadDoc(cid, f) {
-  if (f.size > 25 * 1024 * 1024) throw new Error(tr("文件太大（限 25MB）"));
+  if (f.size > 25 * 1024 * 1024) throw new Error(tr("文件超过 25MB，请线下提供（U 盘 / 网盘 / 邮件）"));
   const data = await new Promise((res, rej) => {
     const rd = new FileReader();
     rd.onload = () => res(rd.result);
