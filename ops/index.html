@@ -3732,7 +3732,7 @@ function finHtml() {
   const coView = who === FINCO;
   const actions = !ro ? `<div class="fin-acts">
     ${!isAll && !coView && (FIN.canAll || FIN.owner) ? `<button id="fin_transfer">${esc(tr(`🔀 调拨`))}</button>` : ""}
-    ${canAll ? `<button id="fin_cosend">${esc(tr(`🏦 公司调款`))}</button>` : ""}
+    ${FIN.canCo ? `<button id="fin_cosend">${esc(tr(`🏦 公司调款`))}</button>` : ""}
     ${!coView ? `<button id="fin_move">${esc(tr(`🔁 取现`))}</button>` : ""}
     ${FIN.owner && !coView ? `<button id="fin_give">${esc(tr(`🤝 给员工`))}</button>` : ""}
     <button id="fin_mark"${FINMARK ? ` class="pri"` : ""}>${FINMARK ? "✅ 标完了" : "🧾 补票"}</button>
@@ -4264,8 +4264,6 @@ function finSheet(presetTo, presetKind, editEntry) {
   const canAll = FIN.canAll;
   const viewUid = FINWHO && FINWHO !== "ALL" ? FINWHO : FIN.me.uid;
   const people = canAll ? finPeople().map((u) => u.login) : [FIN.me.uid];
-  /* 公司账户：只有财务 / 管理员 / 负责人能记，归属下拉里多一项 */
-  const ownerList = FIN.canCo ? [...people, FINCO] : people;
   /* 归属（大类）→ 分类（细类）：两级联动，项目/矿权维护的自定义项来自 fin_cfg.cats */
   const opt = (k) => `<option value="${esc(k)}">${esc(finCatName(k))}</option>`;
   const catsOf = (ft) => {
@@ -4311,10 +4309,12 @@ function finSheet(presetTo, presetKind, editEntry) {
         </div>
         <div class="mut" id="ff_inv_hint" style="display:none;margin:6px 0 0">${esc(tr(`有发票要上传发票照片（最多 6 张）`))}</div>
       </div>
-      ${canAll ? `<label>${esc(tr(`记在谁名下`))}</label><select id="ff_uid">${ownerList.map((p) => `<option value="${esc(p)}" ${p === (edit ? d.uid : viewUid) ? "selected" : ""}>${esc(finNameOf(p))}</option>`).join("")}</select>` : ""}
+      <label>${esc(tr(`记在谁名下`))}</label>${(!edit && FIN.canCo)
+        ? `<select id="ff_uid"><option value="${esc(FIN.me.uid)}" ${viewUid !== FINCO ? "selected" : ""}>${esc(finNameOf(FIN.me.uid))}</option><option value="${FINCO}" ${viewUid === FINCO ? "selected" : ""}>${esc(tr(`公司账户`))}</option></select>`
+        : `<div class="mut" style="margin:-2px 0 2px">${esc(finNameOf(edit ? d.uid : FIN.me.uid))}</div>`}
     </div>
     <div id="ff_fl" class="hide">
-      <div class="r"><div><label>${esc(tr(`从谁出`))}</label><select id="ff_giver">${people.map((p) => `<option value="${esc(p)}" ${p === (edit ? d.uid : FIN.me.uid) ? "selected" : ""}>${esc(finNameOf(p))}</option>`).join("")}</select></div>
+      <div class="r"><div><label>${esc(tr(`从谁出`))}</label><div class="mut" style="margin:-2px 0 2px">${esc(finNameOf(edit ? d.uid : FIN.me.uid))}</div></div>
       <div><label>${esc(tr(`从哪个口`))}</label><select id="ff_from"><option value="cash">${esc(tr(`现金`))}</option><option value="card">${esc(tr(`银行`))}</option></select></div></div>
       <label>${esc(tr(`发给谁`))}</label><select id="ff_to">${people.filter((p) => p !== (edit ? d.uid : FIN.me.uid)).map((p) => `<option value="${esc(p)}">${esc(finNameOf(p))}</option>`).join("")}</select>
     </div>
@@ -4350,8 +4350,7 @@ function finSheet(presetTo, presetKind, editEntry) {
     $("#ff_ch", box).value = d.ch || "cash";
     $("#ff_from", box).value = d.ch || "cash";
     if ($("#ff_to", box)) $("#ff_to", box).value = d.to_uid || "";
-    if ($("#ff_uid", box)) $("#ff_uid", box).value = d.uid || viewUid;
-    if ($("#ff_giver", box)) $("#ff_giver", box).value = d.uid || viewUid;
+    if ($("#ff_uid", box)) $("#ff_uid", box).value = d.uid || FIN.me.uid;
   } else if (presetTo) {
     if ($("#ff_to", box)) $("#ff_to", box).value = presetTo;
   }
@@ -4411,8 +4410,7 @@ function finSheet(presetTo, presetKind, editEntry) {
         await api("/fin/entries/" + encodeURIComponent(edit.id), { method: "PATCH", body: b, toast: "记录已修改" });
       } else {
         b.kind = kind;
-        b.uid = kind === "float" ? ($("#ff_giver", box) ? $("#ff_giver", box).value : FIN.me.uid)
-          : (canAll && $("#ff_uid", box) ? $("#ff_uid", box).value : viewUid);
+        b.uid = ($("#ff_uid", box) && $("#ff_uid", box).value) || FIN.me.uid;
         await api("/fin/entries", { method: "POST", body: b, toast: kind === "float" ? "备用金已记录" : "已记账 " + finMoney(b.amount) + " ZMW" });
       }
       if (!edit) saveFinLast({ cat: b.cat, ch: b.ch, ft: b.ft === "ledger" ? "life" : b.ft });
@@ -4460,7 +4458,9 @@ function finTransferSheet(editEntry, presetFrom) {
   const people = finPeople();
   const coOpt = { login: FINCO, name: "公司账户", role: "", co: true };
   const canMove = FIN.canAll || FIN.owner;
-  const funds = canMove ? [coOpt, ...people] : people.filter((p) => p.login === FIN.me.uid);
+  /* 调拨只从自己（或公司账户，有权限的人）出去：不给别人记账 */
+  const meOpt = { login: FIN.me.uid, name: finNameOf(FIN.me.uid) };
+  const funds = canMove ? (FIN.canCo ? [meOpt, coOpt] : [meOpt]) : [meOpt];
   const fromList = edit && !funds.some((p) => p.login === edit.uid) ? [...funds, { login: edit.uid, name: finNameOf(edit.uid) }] : funds;
   const from0 = edit ? edit.uid : (presetFrom || FIN.me.uid);
   const box = document.createElement("div");

@@ -1765,8 +1765,10 @@ async function finApi(req, env, me, seg, url, body) {
     if (!(amount > 0)) return err("金额要大于 0");
     if (kind === "float" && !isOwner) return err("只有财务负责人能发备用金", 403);
     if (kind === "transfer" && !all && !isOwner) return err("只有财务负责人能登记人员转账", 403);
-    let uid = all && b.uid ? String(b.uid) : own;
-    if (kind === "move") uid = own;   // 取现/存现只动自己账户
+    /* 记账只记自己：归属永远是本人；公司账户是共用的一级户，只有有记账权的人能往里记 */
+    const want = String(b.uid || "").slice(0, 64);
+    if (want && want !== own && !(canCo && want === CO)) return err("只能记自己的账", 403);
+    const uid = want === CO ? CO : own;
     if (uid === CO && !canCo) return err("只有财务 / 管理员能记公司账户", 403);
     const toUid = (kind === "float" || kind === "transfer") ? String(b.to_uid || "") : "";
     if (kind === "float" && !toUid) return err("备用金要选发给谁");
@@ -1776,10 +1778,7 @@ async function finApi(req, env, me, seg, url, body) {
       if (toUid === uid) return err("转出人和转入人不能是同一个人");
     }
     const scope = await finVisible(env, me);
-    if (scope) {
-      if (!scope.has(uid)) return err("只能记负责人和员工的账", 403);
-      if (toUid && !scope.has(toUid)) return err("只能转给负责人和员工", 403);
-    }
+    if (scope && toUid && !scope.has(toUid)) return err("只能转给负责人和员工", 403);
     const photos = Array.isArray(b.photos) ? b.photos.slice(0, 6).map(String) : [];
     const note = String(b.note || "");
     if (kind !== "move" && kind !== "transfer" && !note.trim()) return err("备注要填");

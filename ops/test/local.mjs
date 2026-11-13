@@ -242,14 +242,16 @@ const sp = await post(peter, "/api/fin/entries", { kind: "transfer", uid: "peter
 ok(sp.status === 403, "员工不能登记人员转账");
 ok(!db.prepare("SELECT id FROM fin_entries WHERE kind='transfer' AND uid='peter@ecobox.com'").get(), "员工转账没有落库");
 
-const m2 = await post(mgr, "/api/fin/entries", { kind: "transfer", uid: "lim@ecobox.com", ch: "cash",
+const m2 = await post(mgr, "/api/fin/entries", { kind: "transfer", uid: "m@ecobox.com", ch: "cash",
   to_uid: "peter@ecobox.com", to_ch: "cash", amount: 50, date: today });
-ok(m2.status === 201, "负责人能在负责人 / 员工之间转账");
+ok(m2.status === 201, "负责人能从自己账号转账给员工");
 const m2row = db.prepare("SELECT * FROM fin_entries WHERE id=?").get(m2.data.id);
-ok(m2row && m2row.uid === "lim@ecobox.com" && m2row.to_uid === "peter@ecobox.com", "负责人转账按指定两人落库");
-const mgrToBoss = await post(mgr, "/api/fin/entries", { kind: "transfer", uid: "boss@ecobox.com", ch: "cash",
-  to_uid: "peter@ecobox.com", to_ch: "cash", amount: 5, date: today });
-ok(mgrToBoss.status === 403, "负责人不能记管理员 / 财务的账", "status=" + mgrToBoss.status);
+ok(m2row && m2row.uid === "m@ecobox.com" && m2row.to_uid === "peter@ecobox.com", "负责人转账按自己 + 指定员工落库");
+const mgrToBoss = await post(mgr, "/api/fin/entries", { kind: "transfer", uid: "m@ecobox.com", ch: "cash",
+  to_uid: "boss@ecobox.com", to_ch: "cash", amount: 5, date: today });
+ok(mgrToBoss.status === 403, "负责人不能转给管理员（超出可见范围）", "status=" + mgrToBoss.status);
+ok((await post(mgr, "/api/fin/entries", { kind: "out", uid: "lim@ecobox.com", ch: "cash", date: today,
+  amount: 4, cat: "misc", ft: "life", note: "负责人替员工记" })).status === 403, "负责人不能替员工记账");
 const pboot = (await peter("/api/fin/bootstrap")).data.entries;
 ok(pboot.some((e) => e.kind === "transfer" && e.to_uid === "peter@ecobox.com" && e.amount === 50), "转入人在 bootstrap 看到转账");
 ok(pboot.every((e) => e.uid === "peter@ecobox.com" || e.to_uid === "peter@ecobox.com"), "员工只看到与自己有关的记录");
@@ -324,7 +326,9 @@ const finC = client();
 ok((await post(finC, "/api/login", { login: "fin@ecobox.com", password: "finance2026" })).status === 200, "财务能登录");
 const fb = (await finC("/api/fin/bootstrap")).data;
 ok(fb.canAll === true && fb.owner === false, "财务：能看全部账，但不是负责人", JSON.stringify({ canAll: fb.canAll, owner: fb.owner }));
-ok((await post(finC, "/api/fin/entries", { kind: "out", uid: "boss@ecobox.com", date: today, amount: 12, cat: "meal", ch: "cash", note: "财务代记" })).status === 201, "财务能替别人记账");
+ok((await post(finC, "/api/fin/entries", { kind: "out", uid: "boss@ecobox.com", date: today, amount: 12, cat: "meal", ch: "cash", note: "财务代记" })).status === 403, "财务也不能替别人记账");
+const finOwn = await post(finC, "/api/fin/entries", { kind: "out", uid: "fin@ecobox.com", date: today, amount: 12, cat: "meal", ch: "cash", note: "财务自己记" });
+ok(finOwn.status === 201, "财务记自己的账正常");
 const admCoEntry = await post(boss, "/api/fin/entries", { kind: "out", uid: "boss@ecobox.com", date: today, amount: 7, cat: "meal", ch: "cash", note: "老板记的" });
 ok((await finC("/api/fin/entries/" + admCoEntry.data.id + "/inv", { method: "PUT", body: { inv: 1 } })).status === 200, "财务能标别人的票");
 ok((await finC("/api/users")).status === 403, "财务不能管账号");
@@ -346,8 +350,11 @@ const mgrCo = await post(mgr, "/api/fin/entries", { kind: "out", uid: "__company
 ok(mgrCo.status === 403, "管理层不能直接把费用记到公司账户", "status=" + mgrCo.status);
 const staffCo = await post(peter, "/api/fin/entries", { kind: "out", uid: "__company", ch: "card", date: today,
   amount: 3, cat: "misc", ft: "life", note: "员工想记公司账户" });
-ok(staffCo.status === 201, "员工记账照常成功（归属被改回自己）", "status=" + staffCo.status);
-ok(db.prepare("SELECT uid FROM fin_entries WHERE id=?").get(staffCo.data.id).uid === "peter@ecobox.com", "员工的 uid 参数被忽略，仍记在自己名下");
+ok(staffCo.status === 403, "员工不能往公司账户记账", "status=" + staffCo.status);
+ok((await post(peter, "/api/fin/entries", { kind: "out", uid: "peter@ecobox.com", ch: "cash", date: today,
+  amount: 2, cat: "misc", ft: "life", note: "彼得自己买水" })).status === 201, "员工记自己的账");
+ok((await post(boss, "/api/fin/entries", { kind: "out", uid: "peter@ecobox.com", ch: "cash", date: today,
+  amount: 6, cat: "misc", ft: "life", note: "管理员替员工记" })).status === 403, "管理员也不能替别人记账");
 ok(!(await peter("/api/fin/bootstrap")).data.entries.some((e) => e.id === coOut.data.id), "员工看不到公司账户的费用");
 ok((await peter("/api/fin/bootstrap")).data.canCo !== true, "员工没有公司账户记账权");
 ok((await post(boss, "/api/fin/entries", { kind: "out", uid: "__company", ch: "card", date: today,
