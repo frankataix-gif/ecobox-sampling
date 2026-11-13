@@ -162,3 +162,11 @@ CREATE TABLE IF NOT EXISTS exports (
   updated_at  TEXT NOT NULL DEFAULT ''
 );
 CREATE INDEX IF NOT EXISTS exports_date ON exports(date);
+
+-- 登录限速：同一账号 + 同一 IP 的失败记录，10 分钟内满 5 次锁 10 分钟
+CREATE TABLE IF NOT EXISTS login_fail (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  k           TEXT NOT NULL,                   -- 账号|IP
+  at          TEXT NOT NULL                    -- ISO 时间
+);
+CREATE INDEX IF NOT EXISTS login_fail_k_at ON login_fail(k, at);

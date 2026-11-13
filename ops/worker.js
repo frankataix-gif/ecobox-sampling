@@ -27,34 +27,38 @@ button:disabled{opacity:.6}
 .hide{display:none}
 </style></head><body>
 <div class="card">
-  <h1>ecobox 经营台账</h1>
-  <p class="mut" id="sub">赞比亚公司日常经营管理 · 每人一个账号</p>
+  <h1 data-en="ecobox books">ecobox 经营台账</h1>
+  <p class="mut" id="sub" data-en="Daily operations for the Zambia company · one account per person">赞比亚公司日常经营管理 · 每人一个账号</p>
   <form id="lf" autocomplete="on">
-    <label>账号</label><input id="l_login" type="text" autocomplete="username" required placeholder="邮箱 / 手机号 / 姓名">
-    <label>密码</label><input id="l_pass" type="password" autocomplete="current-password" required>
+    <label data-en="Login">账号</label><input id="l_login" type="text" autocomplete="username" required placeholder="邮箱 / 手机号 / 姓名" data-en-ph="Email / phone / name">
+    <label data-en="Password">密码</label><input id="l_pass" type="password" autocomplete="current-password" required>
     <div class="err" id="err"></div>
-    <button id="l_btn" type="submit">登录</button>
+    <button id="l_btn" type="submit" data-en="Sign in">登录</button>
   </form>
   <form id="sf" class="hide" autocomplete="on">
-    <label>初始化口令</label><input id="s_token" autocomplete="off" required>
-    <label>姓名</label><input id="s_name" required>
-    <label>账号（可留空，默认用姓名）</label><input id="s_login" autocomplete="username" placeholder="邮箱 / 手机号 / 姓名">
-    <label>密码（≥8 位）</label><input id="s_pass" type="password" autocomplete="new-password" required>
+    <label data-en="Setup code">初始化口令</label><input id="s_token" autocomplete="off" required>
+    <label data-en="Name">姓名</label><input id="s_name" required>
+    <label data-en="Login (optional — defaults to the name)">账号（可留空，默认用姓名）</label><input id="s_login" autocomplete="username" placeholder="邮箱 / 手机号 / 姓名" data-en-ph="Email / phone / name">
+    <label data-en="Password (≥8 characters)">密码（≥8 位）</label><input id="s_pass" type="password" autocomplete="new-password" required>
     <div class="err" id="err2"></div>
-    <button id="s_btn" type="submit">创建管理员</button>
+    <button id="s_btn" type="submit" data-en="Create admin">创建管理员</button>
   </form>
-  <p class="mut" style="margin:14px 0 0">还没有账号？找管理员开通。</p>
+  <p class="mut" style="margin:14px 0 0" data-en="No account yet? Ask an admin to set one up.">还没有账号？找管理员开通。</p>
 </div>
 <script>
 (function(){
   var q=function(s){return document.querySelector(s)};
-  var post=function(url,body,headers){return fetch(url,{method:"POST",credentials:"same-origin",headers:Object.assign({"content-type":"application/json"},headers||{}),body:JSON.stringify(body)}).then(function(r){return r.json().then(function(d){if(!r.ok)throw new Error(d.error||"操作失败");return d})})};
+  var EN=false;try{EN=localStorage.getItem("ops_lang")==="en"}catch(e){}
+  if(EN){document.documentElement.lang="en";document.title="ecobox sign in";
+    document.querySelectorAll("[data-en]").forEach(function(el){el.textContent=el.getAttribute("data-en")});
+    document.querySelectorAll("[data-en-ph]").forEach(function(el){el.placeholder=el.getAttribute("data-en-ph")});}
+  var post=function(url,body,headers){return fetch(url,{method:"POST",credentials:"same-origin",headers:Object.assign({"content-type":"application/json"},headers||{}),body:JSON.stringify(body)}).then(function(r){return r.json().then(function(d){if(!r.ok)throw new Error(d.error||(EN?"Request failed":"操作失败"));return d})})};
   q("#lf").onsubmit=function(e){e.preventDefault();q("#err").textContent="";q("#l_btn").disabled=true;
     post("/api/login",{login:q("#l_login").value,password:q("#l_pass").value}).then(function(){location.reload()}).catch(function(x){q("#err").textContent=x.message;q("#l_btn").disabled=false})};
   q("#sf").onsubmit=function(e){e.preventDefault();q("#err2").textContent="";q("#s_btn").disabled=true;
     post("/api/setup",{login:q("#s_login").value,name:q("#s_name").value,password:q("#s_pass").value},{"x-setup-token":q("#s_token").value.trim()}).then(function(){location.reload()}).catch(function(x){q("#err2").textContent=x.message;q("#s_btn").disabled=false})};
   fetch("/api/status").then(function(r){return r.json()}).then(function(st){
-    if(st.setup_needed){q("#lf").classList.add("hide");q("#sf").classList.remove("hide");q("#sub").textContent="第一次使用：用部署时给出的初始化口令建第一个管理员";q("#s_token").focus();}
+    if(st.setup_needed){q("#lf").classList.add("hide");q("#sf").classList.remove("hide");q("#sub").textContent=EN?"First run: use the setup code from deployment to create the first admin account.":"第一次使用：用部署时给出的初始化口令建第一个管理员";q("#s_token").focus();}
     else{q("#l_login").focus();}
   }).catch(function(){});
 })();
@@ -64,6 +68,8 @@ button:disabled{opacity:.6}
 const SESSION_DAYS = 30;
 const ITER = 100000; // Workers WebCrypto 上限就是 10 万，超过会直接抛错
 const ROLES = ["admin", "manager", "finance", "staff"];
+const LOGIN_MAX_FAIL = 5;      // 同一账号 + 同一 IP，窗口内最多失败几次
+const LOGIN_WINDOW_MIN = 10;   // 超过这个次数即锁定，锁定时长同此
 
 /* ---------- 小工具 ---------- */
 const enc = new TextEncoder();
@@ -596,6 +602,7 @@ const MODULES = [
   { k: "employer", g: "资产", t: "雇主", d: "合同 · 日薪标准 · 社保工伤", d_en: "Contracts · day rates · NSSF", i: "🧾", soon: true },
   /* 财务 */
   { k: "finance", g: "财务", t: "费用记录", d: "收支 · 备用金 · 成本汇总", d_en: "Income & spend · float · costs", i: "💰", tab: "fin" },
+  { k: "bank", g: "财务", t: "银行账单", d: "上传水单 · 核对金额与科目", d_en: "Upload statements · reconcile totals & categories", i: "🏦", tab: "bank" },
   /* 系统 */
   { k: "lang", g: "系统", t: "语言", d: "中文 / English", d_en: "Chinese / English", i: "🌐", tab: "lang", always: true },
   { k: "users", g: "系统", t: "会员设置", d: "会员 · 权限 · 参数", d_en: "Members · permissions · settings", i: "⚙️", tab: "users", adminOnly: true },
@@ -667,6 +674,7 @@ async function ensureSchema(env) {
   await attSchema(env);
   await custSchema(env);
   await expSchema(env);
+  await loginGuardSchema(env);
   schemaOk = true;
 }
 
@@ -691,6 +699,28 @@ async function finSchema(env) {
        card REAL NOT NULL DEFAULT 0, since TEXT NOT NULL DEFAULT '',
        updated_at TEXT NOT NULL DEFAULT '')`,
     `CREATE TABLE IF NOT EXISTS fin_cfg (k TEXT PRIMARY KEY, v TEXT NOT NULL)`,
+    `CREATE TABLE IF NOT EXISTS fin_bank_stmt (
+       id TEXT PRIMARY KEY, uid TEXT NOT NULL DEFAULT '__company',
+       bank TEXT NOT NULL DEFAULT '', acct_no TEXT NOT NULL DEFAULT '', ccy TEXT NOT NULL DEFAULT 'ZMW',
+       pf TEXT NOT NULL DEFAULT '', pt TEXT NOT NULL DEFAULT '',
+       open_bal REAL NOT NULL DEFAULT 0, close_bal REAL NOT NULL DEFAULT 0,
+       total_in REAL NOT NULL DEFAULT 0, total_out REAL NOT NULL DEFAULT 0,
+       file_key TEXT NOT NULL DEFAULT '', file_name TEXT NOT NULL DEFAULT '',
+       pages INTEGER NOT NULL DEFAULT 0, txn_n INTEGER NOT NULL DEFAULT 0,
+       status TEXT NOT NULL DEFAULT 'open', note TEXT NOT NULL DEFAULT '',
+       parse_by TEXT NOT NULL DEFAULT '', created_by TEXT NOT NULL DEFAULT '',
+       created_at TEXT NOT NULL DEFAULT '', checked_by TEXT NOT NULL DEFAULT '',
+       checked_at TEXT NOT NULL DEFAULT '', old INTEGER NOT NULL DEFAULT 0,
+       deleted INTEGER NOT NULL DEFAULT 0)`,
+    `CREATE INDEX IF NOT EXISTS fin_bank_stmt_uid ON fin_bank_stmt(uid)`,
+    `CREATE TABLE IF NOT EXISTS fin_bank_tx (
+       id TEXT PRIMARY KEY, stmt_id TEXT NOT NULL, d TEXT NOT NULL DEFAULT '',
+       descr TEXT NOT NULL DEFAULT '', ref TEXT NOT NULL DEFAULT '',
+       debit REAL NOT NULL DEFAULT 0, credit REAL NOT NULL DEFAULT 0, bal REAL NOT NULL DEFAULT 0,
+       cat TEXT NOT NULL DEFAULT '', entry_id TEXT NOT NULL DEFAULT '',
+       state TEXT NOT NULL DEFAULT 'new', note TEXT NOT NULL DEFAULT '',
+       ord INTEGER NOT NULL DEFAULT 0)`,
+    `CREATE INDEX IF NOT EXISTS fin_bank_tx_stmt ON fin_bank_tx(stmt_id)`,
   ];
   for (const q of ddl) await env.DB.prepare(q).run();
   try { await env.DB.prepare("ALTER TABLE fin_entries ADD COLUMN to_ch TEXT NOT NULL DEFAULT ''").run(); } catch {}
@@ -729,6 +759,38 @@ async function newSession(env, user, req) {
 async function audit(env, user, action, target = "", detail = "") {
   await env.DB.prepare("INSERT INTO audit(at,user_id,action,target,detail) VALUES(?,?,?,?,?)")
     .bind(nowISO(), user ? user.id : null, action, target, detail).run();
+}
+
+/* ---------- 登录限速：同一账号 + 同一 IP，10 分钟内错 5 次锁 10 分钟 ---------- */
+let loginGuardOk = false;
+async function loginGuardSchema(env) {
+  if (loginGuardOk) return;
+  await env.DB.prepare(
+    `CREATE TABLE IF NOT EXISTS login_fail (
+       id INTEGER PRIMARY KEY AUTOINCREMENT, k TEXT NOT NULL, at TEXT NOT NULL)`
+  ).run();
+  await env.DB.prepare("CREATE INDEX IF NOT EXISTS login_fail_k_at ON login_fail(k, at)").run();
+  loginGuardOk = true;
+}
+
+const loginIp = (req) => (req.headers.get("cf-connecting-ip") || "").slice(0, 45);
+const loginKey = (login, req) => String(login).toLowerCase() + "|" + loginIp(req);
+
+/* 还要等多少秒才能再试；0 = 没锁 */
+async function loginWait(env, key) {
+  const since = new Date(Date.now() - LOGIN_WINDOW_MIN * 60000).toISOString();
+  const r = await env.DB.prepare("SELECT COUNT(*) c, MAX(at) last FROM login_fail WHERE k=? AND at>?")
+    .bind(key, since).first();
+  if (!r || r.c < LOGIN_MAX_FAIL) return 0;
+  const left = Date.parse(r.last) + LOGIN_WINDOW_MIN * 60000 - Date.now();
+  return left > 0 ? Math.ceil(left / 1000) : 0;
+}
+
+async function loginFailAdd(env, key) {
+  const now = nowISO();
+  await env.DB.prepare("INSERT INTO login_fail(k,at) VALUES(?,?)").bind(key, now).run();
+  // 顺手清掉一天前的记录，表不会无限长
+  await env.DB.prepare("DELETE FROM login_fail WHERE at<?").bind(new Date(Date.now() - 864e5).toISOString()).run();
 }
 
 /* ---------- 校验 ---------- */
@@ -1262,6 +1324,7 @@ async function todoSchema(env) {
   ).run();
   for (const sql of [
     "ALTER TABLE todo_notes ADD COLUMN flag TEXT NOT NULL DEFAULT ''",
+    "ALTER TABLE todo_notes ADD COLUMN reply_to TEXT NOT NULL DEFAULT ''",
   ]) { try { await env.DB.prepare(sql).run(); } catch {} }
   for (const sql of [
     "ALTER TABLE todos ADD COLUMN imp INTEGER NOT NULL DEFAULT 0",
@@ -1274,6 +1337,14 @@ async function todoSchema(env) {
     "ALTER TABLE todos ADD COLUMN assign_at TEXT NOT NULL DEFAULT ''",
     "ALTER TABLE todos ADD COLUMN self_set INTEGER NOT NULL DEFAULT 0",
     "ALTER TABLE todos ADD COLUMN files TEXT NOT NULL DEFAULT '[]'",
+    "ALTER TABLE todos ADD COLUMN submit_at TEXT NOT NULL DEFAULT ''",
+    "ALTER TABLE todos ADD COLUMN submit_by TEXT NOT NULL DEFAULT ''",
+    "ALTER TABLE todos ADD COLUMN submit_note TEXT NOT NULL DEFAULT ''",
+    "ALTER TABLE todos ADD COLUMN review_at TEXT NOT NULL DEFAULT ''",
+    "ALTER TABLE todos ADD COLUMN review_by TEXT NOT NULL DEFAULT ''",
+    "ALTER TABLE todos ADD COLUMN review_note TEXT NOT NULL DEFAULT ''",
+    "ALTER TABLE todos ADD COLUMN review_result TEXT NOT NULL DEFAULT ''",
+    "ALTER TABLE todos ADD COLUMN rounds INTEGER NOT NULL DEFAULT 0",
   ]) { try { await env.DB.prepare(sql).run(); } catch {} }
   /* 指派即开工：老数据里停在「待开始」的并进「进行中」，起点取创建时间 */
   try {
@@ -1289,7 +1360,8 @@ async function todoSchema(env) {
 }
 
 const TODO_SCOPES = ["self", "person", "company"];
-const TODO_STATUS = ["todo", "doing", "done"];
+/* doing 进行中 → submitted 已提交待审核 → done 审核通过；驳回回到 doing */
+const TODO_STATUS = ["doing", "submitted", "done"];
 const newId = (p) => p + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 const TODO_FILES = (r) => { try { const v = JSON.parse(r.files || "[]"); return Array.isArray(v) ? v : []; } catch { return []; } };
 const TODO_MIME = /^(application\/pdf|image\/(png|jpeg|jpg|webp|gif)|text\/plain|text\/csv|application\/zip|application\/msword|application\/vnd\.ms-excel|application\/vnd\.ms-powerpoint|application\/vnd\.openxmlformats-officedocument\.(wordprocessingml\.document|spreadsheetml\.sheet|presentationml\.presentation))$/;
@@ -1375,10 +1447,18 @@ async function todoApi(req, env, me, seg, body) {
     if (scope === "self") { owner = row.creator; ownerName = row.creator_name; }
     /* 改派 = 换归属，同样只给管理层 */
     if (owner !== row.owner && !isAdmin && me.role !== "manager") return err("只有管理员或负责人能改派", 403);
-    /* 只有「进行中 / 已完成」两种状态；老客户端传 todo 一律当进行中 */
-    let status = b.status === undefined ? row.status : (b.status === "done" ? "done" : "doing");
-    if (!TODO_STATUS.includes(status)) status = row.status;
-    if (b.status !== undefined && !mine && !isAdmin && me.role !== "manager") return err("只有相关人能改状态", 403);
+    /* 状态归工作流管：执行人只能「提交完成申请」，派活的人审核通过才算完成。
+       直接改状态只留给发起人/管理员（确认完成、重开）。 */
+    let status = row.status;
+    if (b.status !== undefined) {
+      if (!mine && !isAdmin && me.role !== "manager") return err("只有发起人、执行人或负责人能改状态", 403);
+      const want = b.status === "done" ? "done" : b.status === "submitted" ? "submitted" : "doing";
+      /* 完成只能由派活的人确认（管理员可代审）；执行人即使已提交申请，也不能自己把状态改成完成 */
+      if (want === "done" && row.creator !== meId && !isAdmin)
+        return err("完成后要由派活的人审核确认；执行人请点「提交完成」", 403);
+      if (want === "submitted") return err("请用「提交完成申请」", 400);
+      status = want;
+    }
     const doneAt = status === "done" ? (row.status === "done" ? row.done_at : nowISO()) : "";
     const moved = owner !== row.owner;
     const now = nowISO();
@@ -1393,7 +1473,7 @@ async function todoApi(req, env, me, seg, body) {
     const say = (kind, body) => env.DB.prepare("INSERT INTO todo_notes(id,todo_id,uid,name,kind,body,created_at) VALUES(?,?,?,?,?,?,?)")
       .bind(newId("n"), row.id, meId, me.name, kind, body, now);
     if (moved) await say("assign", owner ? `改派给 ${ownerName || owner}，汇报重新开始` : "改回公司事项，大家一起跟").run();
-    else if (status !== row.status) await say("sys", status === "done" ? "标记完成" : "重新打开").run();
+    else if (status !== row.status) await say("sys", status === "done" ? "确认完成" : "重新打开").run();
     await audit(env, me, "todo.update", row.id, title);
     return json({ ok: true, status, owner });
   }
@@ -1401,6 +1481,7 @@ async function todoApi(req, env, me, seg, body) {
   /* 每日汇报：派给谁就由谁报；公司事项没指派时，谁都能跟一句（但不算某人汇报，也不改归属） */
   if (id && (sub === "start" || sub === "report") && req.method === "POST") {
     if (row.status === "done") return err("已经完成了，不用再汇报", 400);
+    if (row.status === "submitted") return err("已提交完成申请，等审核；要补充就留言", 400);
     const b = await body();
     const flag = ["progress", "blocked", "idle"].includes(b.flag) ? b.flag : "progress";
     let text = String(b.text || "").trim().slice(0, 1000);
@@ -1423,6 +1504,68 @@ async function todoApi(req, env, me, seg, body) {
     return json({ ok: true, status: row.status, flag, reported: assigned });
   }
 
+  /* 提交完成申请：只有干活的人能提交；派活的人审核通过才算完成 */
+  if (id && sub === "submit" && req.method === "POST") {
+    if (row.status === "done") return err("已经完成了", 400);
+    if (row.status === "submitted") return err("已经提交了，等发起人审核", 409);
+    const selfTask = row.creator === meId && (!row.owner || row.owner === meId);
+    const isOwner = !!row.owner && row.owner === meId;
+    const coOpen = row.scope === "company" && !row.owner && (isAdmin || me.role === "manager");
+    if (!isOwner && !selfTask && !coOpen) {
+      return err(row.owner ? `这条派给 ${row.owner_name || row.owner} 了，由他提交完成` : "只有负责人能提交完成", 403);
+    }
+    const b = await body();
+    const note = String(b.note || "").trim().slice(0, 1000);
+    const now = nowISO();
+    const rounds = (row.rounds || 0) + 1;
+    const say = (kind, body) => env.DB.prepare("INSERT INTO todo_notes(id,todo_id,uid,name,kind,body,created_at) VALUES(?,?,?,?,?,?,?)")
+      .bind(newId("n"), row.id, meId, me.name, kind, body, now);
+    if (selfTask) {
+      /* 自己给自己排的，提交即完成，不用自己审自己 */
+      await env.DB.prepare(
+        `UPDATE todos SET status='done', done_at=?, submit_at=?, submit_by=?, submit_note=?,
+           review_at=?, review_by=?, review_result='pass', review_note=?, rounds=?, updated_at=? WHERE id=?`
+      ).bind(now, now, meId, note, now, meId, "自己排的活，提交即完成", rounds, now, row.id).run();
+      await say("submit", note || "完成").run();
+      await audit(env, me, "todo.submit", row.id, row.title);
+      return json({ ok: true, status: "done", rounds, self: true });
+    }
+    await env.DB.prepare(
+      `UPDATE todos SET status='submitted', submit_at=?, submit_by=?, submit_note=?, review_at='',
+         review_by='', review_result='', review_note='', rounds=?, updated_at=? WHERE id=?`
+    ).bind(now, meId, note, rounds, now, row.id).run();
+    await say("submit", note || "提交完成申请，等审核").run();
+    await audit(env, me, "todo.submit", row.id, row.title);
+    return json({ ok: true, status: "submitted", rounds });
+  }
+
+  /* 审核：只有派活的人（管理员可代）能批；驳回必须写原因，任务回到进行中继续做 */
+  if (id && sub === "review" && req.method === "POST") {
+    if (row.creator !== meId && !isAdmin) return err("只有派活的人能审核", 403);
+    if (row.status !== "submitted") return err("这条还没有提交完成申请", 400);
+    const b = await body();
+    const pass = b.pass === true || b.pass === 1 || b.pass === "1" || b.pass === "true";
+    const note = String(b.note || "").trim().slice(0, 1000);
+    if (!pass && !note) return err("驳回要写清哪里还没做完", 400);
+    const now = nowISO();
+    const say = (kind, body, flag) => env.DB.prepare("INSERT INTO todo_notes(id,todo_id,uid,name,kind,flag,body,created_at) VALUES(?,?,?,?,?,?,?,?)")
+      .bind(newId("n"), row.id, meId, me.name, kind, flag || "", body, now);
+    if (pass) {
+      await env.DB.prepare(
+        "UPDATE todos SET status='done', done_at=?, review_at=?, review_by=?, review_result='pass', review_note=?, updated_at=? WHERE id=?"
+      ).bind(now, now, meId, note, now, row.id).run();
+      await say("review", note || "审核通过，任务完成", "pass").run();
+    } else {
+      await env.DB.prepare(
+        `UPDATE todos SET status='doing', done_at='', submit_at='', submit_by='',
+           review_at=?, review_by=?, review_result='reject', review_note=?, updated_at=? WHERE id=?`
+      ).bind(now, meId, note, now, row.id).run();
+      await say("review", note, "reject").run();
+    }
+    await audit(env, me, pass ? "todo.approve" : "todo.reject", row.id, row.title);
+    return json({ ok: true, status: pass ? "done" : "doing" });
+  }
+
   if (id && !sub && req.method === "DELETE") {
     if (row.creator !== meId && !isAdmin) return err("只有发起人或管理员能删", 403);
     await env.DB.prepare("UPDATE todos SET deleted=1,updated_at=? WHERE id=?").bind(nowISO(), row.id).run();
@@ -1434,8 +1577,14 @@ async function todoApi(req, env, me, seg, body) {
     const b = await body();
     const text = String(b.text || "").trim().slice(0, 1000);
     if (!text) return err("写点内容再发");
-    await env.DB.prepare("INSERT INTO todo_notes(id,todo_id,uid,name,kind,body,created_at) VALUES(?,?,?,?,'cmt',?,?)")
-      .bind(newId("n"), row.id, meId, me.name, text, nowISO()).run();
+    /* 回复某条留言：只认同一条待办下的留言 id，串了就当普通留言 */
+    let replyTo = String(b.reply_to || "").trim().slice(0, 40);
+    if (replyTo) {
+      const q = await env.DB.prepare("SELECT id FROM todo_notes WHERE id=? AND todo_id=?").bind(replyTo, row.id).first();
+      if (!q) replyTo = "";
+    }
+    await env.DB.prepare("INSERT INTO todo_notes(id,todo_id,uid,name,kind,body,created_at,reply_to) VALUES(?,?,?,?,'cmt',?,?,?)")
+      .bind(newId("n"), row.id, meId, me.name, text, nowISO(), replyTo).run();
     await env.DB.prepare("UPDATE todos SET updated_at=? WHERE id=?").bind(nowISO(), row.id).run();
     return json({ ok: true }, 201);
   }
@@ -1503,6 +1652,12 @@ async function todoApi(req, env, me, seg, body) {
   return err("not found", 404);
 }
 
+/* 水单列表：带「已核笔数」和「逐笔合计与表头期末的差额」 */
+const FIN_BANK_SEL = "SELECT s.*,"
+  + " (SELECT COUNT(*) FROM fin_bank_tx t WHERE t.stmt_id=s.id AND t.state='matched') ok_n,"
+  + " ROUND(s.open_bal + (SELECT COALESCE(SUM(t.credit)-SUM(t.debit),0) FROM fin_bank_tx t WHERE t.stmt_id=s.id) - s.close_bal, 2) gap"
+  + " FROM fin_bank_stmt s WHERE s.deleted=0";
+
 async function finCfgGet(env, k, dflt) {
   const r = await env.DB.prepare("SELECT v FROM fin_cfg WHERE k=?").bind(k).first();
   if (!r) return dflt;
@@ -1529,6 +1684,8 @@ async function renameLogin(env, from, to) {
     "UPDATE todo_notes SET uid=? WHERE uid=?", "UPDATE posts SET uid=? WHERE uid=?"]) {
     try { moved.todos += ch(await env.DB.prepare(sql).bind(to, from).run()); } catch (e) {}
   }
+  /* 银行水单也挂在账号名上，改名要跟着搬，否则「我的水单」会空 */
+  try { await env.DB.prepare("UPDATE fin_bank_stmt SET uid=? WHERE uid=?").bind(to, from).run(); } catch (e) {}
   return moved;
 }
 
@@ -1539,6 +1696,8 @@ async function finApi(req, env, me, seg, url, body) {
   const all = finSeeAll(me);
   const isAdmin = me.role === "admin";
   const isOwner = me.login === (env.FIN_OWNER || "frank");   // 财务负责人：唯一能改余额/对账/删记录的人
+  /* 银行水单是敏感资料：只有管理员 / 财务 / 负责人能看全部、能上传核对 */
+  const bankAll = me.role === "admin" || me.role === "finance" || isOwner;
 
   /* 一次性拉全部 */
   if (sub === "bootstrap" && req.method === "GET") {
@@ -1568,6 +1727,11 @@ async function finApi(req, env, me, seg, url, body) {
       entries,
       users,
       orphans,
+      bank: (bankAll
+        ? await env.DB.prepare(FIN_BANK_SEL + " ORDER BY s.pt DESC, s.created_at DESC").all()
+        : await env.DB.prepare(FIN_BANK_SEL + " AND s.uid=? ORDER BY s.pt DESC, s.created_at DESC").bind(own).all()
+      ).results,
+      bankAll,
       accounts: all ? acc.results : acc.results.filter((a) => a.uid === own),
       cats: await finCfgGet(env, "cats", FIN_DEFAULT_CATS),
       opening: await finCfgGet(env, "opening", { date: "", cash: 0, card: 0 }),
@@ -1763,6 +1927,172 @@ async function finApi(req, env, me, seg, url, body) {
       date: DAY_RE.test(String(b.date || "")) ? b.date : "",
       cash: num(b.cash), card: num(b.card),
     });
+    return json({ ok: true });
+  }
+
+  /* ---------- 银行账单（水单）：上传 → 核对金额 + 核对科目 ---------- */
+  const bankStmtOf = (id) =>
+    env.DB.prepare("SELECT * FROM fin_bank_stmt WHERE id=? AND deleted=0").bind(String(id)).first();
+  const bank2 = (v) => Math.round((Number(v) || 0) * 100) / 100;
+  const bankTxIns = (stmtId, t, i) => env.DB.prepare(
+    `INSERT INTO fin_bank_tx(id,stmt_id,d,descr,ref,debit,credit,bal,cat,entry_id,state,note,ord)
+     VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`
+  ).bind(crypto.randomUUID().replace(/-/g, "").slice(0, 20), stmtId,
+    DAY_RE.test(String(t.d || "")) ? t.d : "", String(t.descr || "").slice(0, 300),
+    String(t.ref || "").slice(0, 40), bank2(t.debit), bank2(t.credit), bank2(t.bal),
+    String(t.cat || "").slice(0, 60), String(t.entry_id || "").slice(0, 40),
+    ["new", "matched", "ignored"].includes(t.state) ? t.state : "new",
+    String(t.note || "").slice(0, 300), i);
+
+  /* 取水单原件（只有能看这份账的人才给） */
+  if (sub === "bank" && seg[2] === "file" && seg[3] && req.method === "GET") {
+    const st = await bankStmtOf(seg[3]);
+    if (!st) return err("水单不存在", 404);
+    if (!bankAll && st.uid !== own) return err("没有权限", 403);
+    if (!env.PHOTOS || !st.file_key) return err("没有原始文件", 404);
+    const obj = await env.PHOTOS.get(st.file_key);
+    if (!obj) return err("文件不存在", 404);
+    const name = String(st.file_name || "statement.pdf").replace(/[^\w.\-]+/g, "_");
+    return new Response(obj.body, {
+      headers: {
+        "content-type": (obj.httpMetadata && obj.httpMetadata.contentType) || "application/pdf",
+        "content-disposition": `inline; filename="${name}"`,
+        "cache-control": "private, max-age=600",
+      },
+    });
+  }
+
+  /* 列表 */
+  if (sub === "bank" && !seg[2] && req.method === "GET") {
+    const bankSel = FIN_BANK_SEL;
+    const rows = await (bankAll
+      ? env.DB.prepare(bankSel + " ORDER BY s.pt DESC, s.created_at DESC")
+      : env.DB.prepare(bankSel + " AND s.uid=? ORDER BY s.pt DESC, s.created_at DESC").bind(own)
+    ).all();
+    return json({ stmts: rows.results, bankAll });
+  }
+
+  /* 建档（同一主体同一期间再传 = 覆盖：旧记录标记 old=1，仍可回看） */
+  if (sub === "bank" && !seg[2] && req.method === "POST") {
+    const b = await body();
+    const uid = String(b.uid || (bankAll ? "__company" : own)).slice(0, 64);
+    if (!bankAll && uid !== own) return err("只能传自己的水单", 403);
+    const pf = DAY_RE.test(String(b.pf || "")) ? b.pf : "";
+    const pt = DAY_RE.test(String(b.pt || "")) ? b.pt : "";
+    if (!pf || !pt) return err("水单期间要填（起止日期）");
+    if (pf > pt) return err("期间开始不能晚于结束");
+    const txs = Array.isArray(b.txs) ? b.txs.slice(0, 2000) : [];
+    const id = crypto.randomUUID().replace(/-/g, "").slice(0, 20);
+    await env.DB.prepare("UPDATE fin_bank_stmt SET old=1 WHERE uid=? AND pf=? AND pt=? AND deleted=0")
+      .bind(uid, pf, pt).run();
+    await env.DB.prepare(
+      `INSERT INTO fin_bank_stmt(id,uid,bank,acct_no,ccy,pf,pt,open_bal,close_bal,total_in,total_out,
+         file_key,file_name,pages,txn_n,status,note,parse_by,created_by,created_at,old)
+       VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0)`
+    ).bind(id, uid, String(b.bank || "").slice(0, 60), String(b.acct_no || "").slice(0, 40),
+      String(b.ccy || "ZMW").slice(0, 8), pf, pt, bank2(b.open_bal), bank2(b.close_bal),
+      bank2(b.total_in), bank2(b.total_out), "", "", 0, txs.length,
+      ["open", "checked", "diff"].includes(b.status) ? b.status : "open",
+      String(b.note || "").slice(0, 500), String(b.parse_by || "").slice(0, 40), own, nowISO()).run();
+    for (let i = 0; i < txs.length; i++) await bankTxIns(id, txs[i], i).run();
+    return json({ id, txn_n: txs.length }, 201);
+  }
+
+  /* 上传原件（PDF / 图片，data URL） */
+  if (sub === "bank" && seg[2] && seg[3] === "file" && req.method === "POST") {
+    if (!env.PHOTOS) return err("未配置文件存储", 500);
+    const st = await bankStmtOf(seg[2]);
+    if (!st) return err("水单不存在", 404);
+    if (!bankAll && st.uid !== own) return err("没有权限", 403);
+    const b = await body();
+    const m = /^data:(application\/pdf|image\/[a-z0-9.+-]+);base64,([A-Za-z0-9+/=]+)$/i.exec(String(b.data || ""));
+    if (!m) return err("只收 PDF 或图片");
+    const bytes = Uint8Array.from(atob(m[2]), (c) => c.charCodeAt(0));
+    if (bytes.length > 12 * 1024 * 1024) return err("文件太大（限 12MB）");
+    const ext = m[1] === "application/pdf" ? "pdf" : (String(m[1].split("/")[1] || "jpg").replace(/[^a-z0-9]/g, "") || "jpg");
+    const key = `bank/${st.id}/${Date.now()}.${ext}`;
+    await env.PHOTOS.put(key, bytes, { httpMetadata: { contentType: m[1] } });
+    await env.DB.prepare("UPDATE fin_bank_stmt SET file_key=?, file_name=?, pages=? WHERE id=?")
+      .bind(key, String(b.name || "").slice(0, 160), Number(b.pages) || 0, st.id).run();
+    return json({ key, size: bytes.length }, 201);
+  }
+
+  /* 重写逐笔（解析结果或手工补录） */
+  if (sub === "bank" && seg[2] && seg[3] === "tx" && req.method === "POST") {
+    if (!bankAll) return err("只有管理员/财务能改水单", 403);
+    const st = await bankStmtOf(seg[2]);
+    if (!st) return err("水单不存在", 404);
+    const b = await body();
+    if (!Array.isArray(b.txs)) return err("txs 要用数组");
+    const txs = b.txs.slice(0, 2000);
+    await env.DB.prepare("DELETE FROM fin_bank_tx WHERE stmt_id=?").bind(st.id).run();
+    for (let i = 0; i < txs.length; i++) await bankTxIns(st.id, txs[i], i).run();
+    await env.DB.prepare("UPDATE fin_bank_stmt SET txn_n=? WHERE id=?").bind(txs.length, st.id).run();
+    return json({ ok: true, txn_n: txs.length });
+  }
+
+  /* 单笔：改科目 / 配对 / 忽略 */
+  if (sub === "bank" && seg[2] === "tx" && seg[3] && req.method === "PATCH") {
+    if (!bankAll) return err("只有管理员/财务能改水单", 403);
+    const b = await body();
+    const row = await env.DB.prepare("SELECT * FROM fin_bank_tx WHERE id=?").bind(String(seg[3])).first();
+    if (!row) return err("这笔不存在", 404);
+    const sets = [];
+    const vals = [];
+    if (b.cat !== undefined) { sets.push("cat=?"); vals.push(String(b.cat || "").slice(0, 60)); }
+    if (b.entry_id !== undefined) { sets.push("entry_id=?"); vals.push(String(b.entry_id || "").slice(0, 40)); }
+    if (b.state !== undefined) {
+      sets.push("state=?");
+      vals.push(["new", "matched", "ignored"].includes(b.state) ? b.state : "new");
+    }
+    if (b.note !== undefined) { sets.push("note=?"); vals.push(String(b.note || "").slice(0, 300)); }
+    if (!sets.length) return err("没有要改的字段");
+    await env.DB.prepare(`UPDATE fin_bank_tx SET ${sets.join(",")} WHERE id=?`).bind(...vals, row.id).run();
+    return json({ ok: true });
+  }
+
+  /* 明细 */
+  if (sub === "bank" && seg[2] && seg[2] !== "file" && seg[2] !== "tx" && !seg[3] && req.method === "GET") {
+    const st = await bankStmtOf(seg[2]);
+    if (!st) return err("水单不存在", 404);
+    if (!bankAll && st.uid !== own) return err("没有权限", 403);
+    const txs = (await env.DB.prepare("SELECT * FROM fin_bank_tx WHERE stmt_id=? ORDER BY ord").bind(st.id).all()).results;
+    return json({ stmt: st, txs });
+  }
+
+  /* 改状态 / 备注 / 表头数字 */
+  if (sub === "bank" && seg[2] && seg[2] !== "file" && seg[2] !== "tx" && !seg[3] && req.method === "PATCH") {
+    if (!bankAll) return err("只有管理员/财务能改水单", 403);
+    const st = await bankStmtOf(seg[2]);
+    if (!st) return err("水单不存在", 404);
+    const b = await body();
+    const sets = [], vals = [];
+    const numFields = ["open_bal", "close_bal", "total_in", "total_out"];
+    for (const f of numFields) if (b[f] !== undefined) { sets.push(`${f}=?`); vals.push(bank2(b[f])); }
+    for (const f of ["bank", "acct_no", "ccy", "note", "parse_by"]) {
+      if (b[f] !== undefined) { sets.push(`${f}=?`); vals.push(String(b[f] || "").slice(0, f === "note" ? 500 : 80)); }
+    }
+    if (b.pf !== undefined && DAY_RE.test(String(b.pf))) { sets.push("pf=?"); vals.push(b.pf); }
+    if (b.pt !== undefined && DAY_RE.test(String(b.pt))) { sets.push("pt=?"); vals.push(b.pt); }
+    if (b.status !== undefined) {
+      const stt = ["open", "checked", "diff"].includes(b.status) ? b.status : "open";
+      sets.push("status=?"); vals.push(stt);
+      sets.push("checked_by=?"); vals.push(stt === "checked" ? own : "");
+      sets.push("checked_at=?"); vals.push(stt === "checked" ? nowISO() : "");
+    }
+    if (!sets.length) return err("没有要改的字段");
+    await env.DB.prepare(`UPDATE fin_bank_stmt SET ${sets.join(",")} WHERE id=?`).bind(...vals, st.id).run();
+    return json({ ok: true });
+  }
+
+  /* 删除（软删；原件一起删） */
+  if (sub === "bank" && seg[2] && seg[2] !== "file" && seg[2] !== "tx" && !seg[3] && req.method === "DELETE") {
+    if (!bankAll) return err("只有管理员/财务能删水单", 403);
+    const st = await bankStmtOf(seg[2]);
+    if (!st) return err("水单不存在", 404);
+    await env.DB.prepare("UPDATE fin_bank_stmt SET deleted=1 WHERE id=?").bind(st.id).run();
+    await env.DB.prepare("DELETE FROM fin_bank_tx WHERE stmt_id=?").bind(st.id).run();
+    if (env.PHOTOS && st.file_key) { try { await env.PHOTOS.delete(st.file_key); } catch (e) {} }
     return json({ ok: true });
   }
 
@@ -2026,9 +2356,22 @@ export default {
 
       if (seg[0] === "login" && req.method === "POST") {
         const b = await body();
-        const u = await env.DB.prepare("SELECT * FROM users WHERE lower(login)=lower(?)").bind(String(b.login || b.name || "").trim()).first();
-        if (!u || !u.active || u.deleted) return err("账号或密码不对", 401);
-        if (!(await pwdVerify(String(b.password || ""), u))) return err("账号或密码不对", 401);
+        const login = String(b.login || b.name || "").trim();
+        const key = loginKey(login, req);
+        const wait = await loginWait(env, key);
+        if (wait > 0) {
+          return err(`尝试次数过多，请 ${Math.ceil(wait / 60)} 分钟后再试`, 429, { "retry-after": String(wait) });
+        }
+        const u = await env.DB.prepare("SELECT * FROM users WHERE lower(login)=lower(?)").bind(login).first();
+        if (!u || !u.active || u.deleted) {
+          await loginFailAdd(env, key);
+          return err("账号或密码不对", 401);
+        }
+        if (!(await pwdVerify(String(b.password || ""), u))) {
+          await loginFailAdd(env, key);
+          return err("账号或密码不对", 401);
+        }
+        await env.DB.prepare("DELETE FROM login_fail WHERE k=?").bind(key).run();
         await env.DB.prepare("UPDATE users SET last_login=? WHERE id=?").bind(nowISO(), u.id).run();
         const token = await newSession(env, u, req);
         return json({ user: publicUser(u) }, 200, { "set-cookie": sessCookie(token, SESSION_DAYS * 86400) });

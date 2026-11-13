@@ -54,6 +54,7 @@ td.n{text-align:right;font-variant-numeric:tabular-nums}
 
 /* 待办：卡片列表，手机上单列不横向滚 */
 .td-filters{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 4px}
+.td-rule{font-size:12px;color:var(--mut);margin:6px 0 2px;line-height:1.5}
 .td-chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:5px 11px;font-size:12.5px;color:var(--mut);cursor:pointer;display:inline-flex;align-items:center;gap:5px}
 .td-chip i{font-style:normal;font-size:11px;font-weight:700;color:inherit;opacity:.6}
 .td-chip.on{background:var(--ink);border-color:var(--ink);color:#fff}
@@ -274,6 +275,32 @@ td.n{text-align:right;font-variant-numeric:tabular-nums}
 .fin-fr.hd{border-top:none;padding-top:2px;color:var(--mut);font-size:11px}
 .fin-fr.tot{border-top:2px solid var(--ink);font-weight:700}
 .fin-fr.tot>i{color:var(--ink)}
+/* 银行水单 */
+.fin-fr.bk{cursor:pointer}
+.fin-fr.bk:hover{background:rgba(0,0,0,.03)}
+.fin-fr.bk.dim{opacity:.55}
+.fin-fr>i.bad{color:#b91c1c;font-weight:600}
+.fin-fr>i.ok{color:#0f766e;font-weight:600}
+.fin-fr.bad{background:rgba(185,28,28,.05)}
+.bk-list{max-height:52vh;overflow:auto}
+.bk-tx{border-top:1px solid var(--line);padding:8px 0}
+.bk-tx .l1{display:flex;gap:8px;align-items:baseline}
+.bk-tx .l1 .d{color:var(--mut);font-size:12px;flex:0 0 auto;font-variant-numeric:tabular-nums}
+.bk-tx .l1 .m{flex:1 1 auto;min-width:0;font-size:13px;line-height:1.35}
+.bk-tx .l1 b{flex:0 0 auto;font-variant-numeric:tabular-nums}
+.bk-tx .l1 b.out{color:#b91c1c}
+.bk-tx .l1 b.in{color:#0f766e}
+.bk-tx .l2{display:flex;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap}
+.bk-tx .l2 select{max-width:150px}
+.bk-tx .l2 em{font-style:normal;font-size:11px}
+.bk-tx.ignored{opacity:.5}
+.bk-tx.matched{background:rgba(15,118,110,.05)}
+.bk-chk{border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:12px;line-height:1.7;margin:6px 0;font-variant-numeric:tabular-nums}
+.bk-chk b{margin-left:8px;white-space:nowrap}
+.bk-chk b.ok{color:#0f766e}
+.bk-chk.bad{border-color:#fecaca}
+.bk-chk.bad b{color:#b91c1c}
+.bk-gap{font-style:normal;color:#b91c1c;font-weight:600}
 .fin-anabar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 10px}
 .fin-anabar button{padding:6px 12px;font-size:12px;border-radius:999px}
 .fin-anabar .mut{font-size:11px}
@@ -557,6 +584,57 @@ a{color:#111}
 .file-row{display:flex;gap:8px;align-items:center;font-size:13px;margin-top:6px}
 .file-row a{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 label.btn{display:inline-flex;align-items:center;justify-content:center;font-size:13.5px;color:inherit;background:var(--card);border:1px solid var(--line);border-radius:9px;padding:8px 12px;margin:0}
+/* ---------- 待办：状态机 + 详情抽屉 ---------- */
+.td-st{flex:none;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--chip);color:var(--ink);white-space:nowrap;margin-top:2px}
+.td-st.doing{background:#e0f2fe;color:#0369a1}
+.td-st.sub{background:#fef3c7;color:#b45309}
+.td-st.done{background:#dcfce7;color:#15803d}
+.td-card.sub{box-shadow:inset 3px 0 0 #f59e0b}
+.td-card .td-star{flex:none;background:transparent;border:0;color:#cbd5e1;font-size:15px;padding:2px 4px;cursor:pointer}
+.td-card .td-star.on{color:#f59e0b}
+.td-wait{color:#b45309;font-weight:600}
+.td-alert-rev{background:#fffbeb;border-color:#fde68a;color:#92400e}
+.td-num.rev b{color:#b45309}
+.td-sec.pend{color:#b45309}
+.td-msg{font-size:12.5px;color:#374151;padding:7px 0;border-bottom:1px dashed var(--line)}
+.td-msg:last-child{border-bottom:0}
+.td-mhead{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--mut)}
+.td-mhead b{color:var(--ink)}
+.td-nreply{margin-left:auto;background:transparent;border:0;color:var(--mut);font-size:11.5px;cursor:pointer;padding:0 2px}
+.td-nreply:hover{color:#0369a1}
+.td-quote{font-size:11.5px;color:var(--mut);border-left:2px solid var(--line);padding-left:6px;margin:3px 0}
+.td-k-sub{font-style:normal;color:#0369a1;font-weight:600;margin-right:5px}
+.td-k-rev{font-style:normal;color:#15803d;font-weight:600;margin-right:5px}
+.td-k-rev.rej{color:#b45309}
+.td-pdim{position:fixed;inset:0;background:rgba(15,23,42,.35);z-index:70}
+.td-panel{position:fixed;top:0;right:0;bottom:0;width:min(460px,100%);background:#fff;z-index:71;display:flex;flex-direction:column;box-shadow:-8px 0 30px rgba(15,23,42,.18);animation:tdIn .16s ease-out}
+@keyframes tdIn{from{transform:translateX(16px);opacity:.6}to{transform:none;opacity:1}}
+@media(max-width:640px){.td-panel{width:100%}}
+.td-phead{display:flex;gap:8px;align-items:flex-start;padding:12px 14px;border-bottom:1px solid var(--line)}
+.td-phead .td-ph{flex:1;min-width:0}
+.td-phead h3{margin:0 0 4px;font-size:15px;line-height:1.35;overflow-wrap:anywhere}
+.td-phead .mut{font-size:12px}
+.td-phead button.px{flex:none;background:transparent;border:0;font-size:20px;line-height:1;color:var(--mut);cursor:pointer;padding:0 2px}
+.td-pbody{flex:1;overflow:auto;padding:10px 14px;-webkit-overflow-scrolling:touch}
+.td-ptags{display:flex;gap:5px;flex-wrap:wrap;margin:0 0 8px}
+.td-pnote{font-size:13px;color:#374151;white-space:pre-wrap;overflow-wrap:anywhere;background:#f8fafc;border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-bottom:10px}
+.td-psec{display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;color:var(--mut);margin:12px 0 4px}
+.td-psec i{font-style:normal;background:var(--chip);border-radius:999px;padding:0 6px;color:var(--ink)}
+.td-pfoot{border-top:1px solid var(--line);padding:10px 14px 14px;background:#fff}
+.td-pbar{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.td-pbar button{font-size:12.5px;padding:6px 12px}
+.td-composer textarea{width:100%;min-height:56px;resize:vertical}
+.td-crow{display:flex;align-items:center;gap:8px;margin-top:6px}
+.td-crow .pri{margin-left:auto}
+.td-quick{display:flex;gap:5px;margin-bottom:6px;flex-wrap:wrap}
+.td-quick button{font-size:12px;padding:3px 9px;border-radius:999px}
+.td-replying{display:flex;align-items:center;gap:6px;font-size:12px;color:#0369a1;background:#e0f2fe;border-radius:8px;padding:4px 8px;margin-bottom:6px}
+.td-replying span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.td-replying button{background:transparent;border:0;color:#0369a1;font-size:14px;cursor:pointer}
+.td-actbox{background:#f8fafc;border:1px solid var(--line);border-radius:10px;padding:10px}
+.td-actbox textarea{width:100%;min-height:60px;margin-top:6px}
+.td-act-t{font-weight:600;font-size:13px;margin-bottom:2px}
+body.td-open{overflow:hidden}
 </style>
 </head>
 <body>
@@ -608,6 +686,7 @@ label.btn{display:inline-flex;align-items:center;justify-content:center;font-siz
 
 <script>
 const BUILD = "__BUILD__";
+
 let UPD_SEEN = false;
 let UPD_AT = 0;
 async function checkUpdate(force) {
@@ -622,7 +701,7 @@ async function checkUpdate(force) {
       UPD_SEEN = true;
       const d = document.createElement("div");
       d.id = "upd_ver";
-      d.innerHTML = "<span>有新版本</span><button>立即更新</button>";
+      d.innerHTML = `<span>${esc(tr(`有新版本`))}</span><button>${esc(tr(`立即更新`))}</button>`;
       d.querySelector("button").onclick = () => {
         try { caches.keys().then((ks) => ks.forEach((k) => caches.delete(k))); } catch (e) {}
         location.reload();
@@ -654,6 +733,7 @@ const isEN = () => LANG === "en";
 
 /* 界面文案：中文原文 → 英文。只在英文模式下走这里；查不到就保留中文。 */
 const EN = {
+  "规则：负责人点「提交完成」，发起人审核通过才算完成": "How it works: the owner taps “Submit complete”, and the creator approves before it counts as done",
   "文件超过 25MB，请线下提供（U 盘 / 网盘 / 邮件）": "File over 25MB — please hand it over offline (USB / cloud drive / email)",
   "占比合计": "Share total",
   "可用字段": "Fields",
@@ -964,6 +1044,330 @@ const EN = {
   "还没有待办，点右下角「＋」记一条。": "No tasks yet. Tap ＋ to add one.",
   "这个筛选下没有内容。": "Nothing under this filter.",
   "已切换为 English": "Switched to English", "已切换为中文": "已切换为中文",
+  "MOSES 编号 / 条码": "MOSES no. / barcode",
+  "Serenje 钽铌矿项目": "Serenje Ta-Nb project",
+  "⚪ 今天没动": "⚪ No movement today",
+  "🟠 卡住了": "🟠 Blocked",
+  "🟢 推进了": "🟢 Progressed",
+  "上班打卡": "Clock in",
+  "上班打卡成功": "Clocked in",
+  "下班打卡": "Clock out",
+  "下班打卡成功": "Clocked out",
+  "今天已打卡完成": "Both punches done today",
+  "估价证编号": "Valuation certificate no.",
+  "估定净值 (US$)": "Assessed value (US$)",
+  "公司名称": "Company name",
+  "化验单编号": "Assay report no.",
+  "化验品位": "Assay grade",
+  "历史账户": "Legacy accounts",
+  "国家": "Country",
+  "外协劳务：付给包工头的工作目标款（不是本公司员工工资）。留合同/工作范围 + 收据，最好要票": "Subcontracted labour: paid to a foreman for a work package (not payroll). Keep the contract/scope plus receipts — invoices preferred.",
+  "定位失败，到空旷处再试": "Location failed — try again in the open",
+  "定位被拒绝：请在浏览器里允许定位": "Location denied — allow it in the browser",
+  "客户名称必填": "Customer name is required",
+  "客户已建立": "Customer created",
+  "家庭开支 = 私人：钱从账户出，但不计入公司费用、不用发票": "Household = personal: money leaves the account but is not a company cost and needs no invoice",
+  "密码已修改": "Password changed",
+  "已填入当前位置，记得保存": "Filled in your current location — remember to save",
+  "已改，对方需要用新密码重登": "Changed — they must sign in again with the new password",
+  "往来": "Transfers",
+  "微信": "WeChat",
+  "打卡设置已保存": "Attendance settings saved",
+  "收款银行": "Receiving bank",
+  "日常": "Daily",
+  "有效期": "Valid until",
+  "未设": "Not set",
+  "正在定位…": "Locating…",
+  "现金 → 银行": "Cash → bank",
+  "生活开销": "Living costs",
+  "申请摘要": "Application summary",
+  "矿权维护": "Licence upkeep",
+  "矿权费 (US$)": "Licence fee (US$)",
+  "缴纳期限": "Due date",
+  "联系人": "Contact",
+  "许可证号": "Licence no.",
+  "这台设备/浏览器不支持定位": "This device/browser does not support location",
+  "银行 → 现金": "Bank → cash",
+  "删掉这条生产记录？不能撤销。": "Delete this production record? This cannot be undone.",
+  "删除这条记录？": "Delete this record?",
+  "删除这条动态？": "Delete this post?",
+  "删除这份文件？": "Delete this file?",
+  "删除这张出口单（含全部文件）？": "Delete this export order (with all files)?",
+  "全部票据": "All receipts",
+  "调出和调入不能是同一户": "Source and destination must differ",
+  "金额要大于 0": "Amount must be greater than 0",
+  "照片还在上传，等一两秒再点保存": "Photos are still uploading — wait a second, then save",
+  "选个日期": "Pick a date",
+  "选了「有发票」就要上传发票照片": "You picked “Invoiced” — upload the invoice photo",
+  "矿权维护还没分类，先点「改分类」加矿证": "Licence upkeep has no category yet — tap “Edit category” to add the licence",
+  "备用金已记录": "Float recorded",
+  "已取现": "Withdrawal recorded",
+  "已存现": "Deposit recorded",
+  "调拨已修改": "Transfer updated",
+  "赞": "Like",
+  "账号": "Login",
+  "密码": "Password",
+  "账号（可留空，默认用姓名）": "Login (optional — defaults to the name)",
+  "密码（≥8 位）": "Password (≥8 characters)",
+  "创建管理员": "Create admin",
+  "ECOBOX 工作台": "ECOBOX Console",
+  "ecobox 初始化": "ecobox setup",
+  "ecobox 经营台账": "ecobox books",
+  "赞比亚公司日常经营管理 · 每人一个账号": "Daily operations for the Zambia company · one account per person",
+  "第一次使用：用部署时给出的「初始化口令」建第一个管理员账号。": "First run: use the setup code from deployment to create the first admin account.",
+  "无票支出税前不能扣除，已在表里单列；CSV 用 Excel 直接打开。": "Spending without an invoice is not tax-deductible and is listed separately; the CSV opens directly in Excel.",
+  "收到备用金 − 之后的支出 = 手上还剩多少；备用金本身不算花费。": "Float received − later spending = what is still on hand; the float itself is not a cost.",
+  "公司 / 矿种 / 进口商 / 目的国": "Company / mineral / importer / destination",
+  "名称 / 联系人 / 电话 / 国家": "Name / contact / phone / country",
+  "已发 − 已花，仍算在员工手上": "Issued − spent, still counted as held by the employee",
+  "🏦 公司账户 · 对账基准": "🏦 Company account · reconciliation base",
+  "· 户与户之间搬钱，不算花费": "· moving money between accounts is not spending",
+  "· 调拨不减总额，消费才减": "· transfers do not reduce the total, only spending does",
+  "· 按用途分类 · 报税用": "· grouped by purpose · used for tax filing",
+  "（暂无，先「改分类」添加）": "(none yet — add one with “Edit category”)",
+  "🧾 员工往来（备用金）": "🧾 Staff float account",
+  "取现 · 银行 → 现金": "Withdraw · bank → cash",
+  "存现 · 现金 → 银行": "Deposit · cash → bank",
+  "⬇ 支出明细 CSV": "⬇ Expenses CSV",
+  "⬇ 资金流水 CSV": "⬇ Cash flow CSV",
+  "🔀 资金调拨核对": "🔀 Transfer reconciliation",
+  "产品 / 来源": "Product / source",
+  "🏦 资金总览": "🏦 Funds overview",
+  "🏦 公司调款": "🏦 Company transfer",
+  "🖼 从相册选": "🖼 From album",
+  "本月还没有记录": "Nothing recorded this month",
+  "允许范围（米）": "Allowed radius (m)",
+  "🤝 给员工": "🤝 To employee",
+  "宽限（分钟）": "Grace (minutes)",
+  "＋ 新建客户": "＋ New customer",
+  "＋ 新出口单": "＋ New export order",
+  "还没有出口单": "No export orders yet",
+  "＋ 上传文件": "＋ Upload file",
+  "＋ 记一笔": "＋ New record",
+  "未报备用金": "Float not reported",
+  "🔀 调拨": "🔀 Transfer",
+  "🔁 取现": "🔁 Withdraw",
+  "📷 拍照": "📷 Take photo",
+  "只看我自己": "Only mine",
+  "办公点名称": "Office name",
+  "用当前位置": "Use current location",
+  "还没有客户": "No customers yet",
+  "新建出口单": "New export order",
+  "HS 编码": "HS code",
+  "删除这张单": "Delete this order",
+  "＋ 照片": "＋ Photo",
+  "今日工时": "Hours today",
+  "出勤天数": "Days attended",
+  "打卡设置": "Attendance settings",
+  "上班时间": "Start time",
+  "下班时间": "End time",
+  "保存设置": "Save settings",
+  "化验元素": "Assay elements",
+  "全公司": "Whole company",
+  "公司名": "Company name",
+  "进口商": "Importer",
+  "目的国": "Destination",
+  "进到": "Into",
+  "迟到": "Late",
+  "早退": "Left early",
+  "上班": "Clock in",
+  "下班": "Clock out",
+  "工时": "Hours",
+  "月份": "Month",
+  "范围": "Scope",
+  "距离": "Distance",
+  "地点": "Site",
+  "纬度": "Latitude",
+  "经度": "Longitude",
+  "矿种": "Mineral",
+  "样品": "Sample",
+  "建立": "Create",
+  "🧾 补票中：点每行的「有票 / 无票」，点一下即存": "🧾 Tagging invoices: tap “Invoiced / No invoice” on each row — saved instantly",
+  "不支持这种文件（PDF / 图片 / Office / 文本 / ZIP）": "This file type is not supported (PDF / image / Office / text / ZIP)",
+  "给自己排一件今天要推进的事：做完点「提交完成」，每天点一下「汇报」。": "Pick one thing to push today: tap “Submit complete” when it is done, and tap “Report” once a day.",
+  "提交后进入「待审核」，等派活的人确认；自己给自己排的活提交即完成。": "After submitting it waits under “Pending review” for the assigner to confirm; a task you assigned yourself is done as soon as you submit.",
+  "通过就结案；驳回要写清哪里还没做完，任务回到「进行中」继续做。": "Approve to close it; if you reject, say what is still missing and the task goes back to “In progress”.",
+  "派下去就归他；他做完要提交完成申请，你审核通过才算结束。": "It belongs to whoever you assign; they submit it when done, and it ends once you approve.",
+  "还没有资料（PDF / 图片，单份 ≤25MB）": "No documents yet (PDF / image, up to 25MB each)",
+  "写一句……（Ctrl+Enter 发送）": "Write a line… (Ctrl+Enter to send)",
+  "先挑好，点保存建好公司后自动上传": "Pick the files now — they upload automatically once the company is saved",
+  "交付了什么、放哪了（选填）": "What you delivered, and where it is (optional)",
+  "驳回要写清哪里还没做完": "Say what is still missing before rejecting",
+  "已驳回，任务回到进行中": "Rejected — the task is back to In progress",
+  "选择资料文件（可多选）": "Choose files (multiple allowed)",
+  "审核意见（驳回必填）": "Review note (required to reject)",
+  "已提交，等对方审核": "Submitted — waiting for review",
+  "· 保存后自动上传": "· uploads automatically when saved",
+  "已通过，任务完成": "Approved — task closed",
+  "删除这个附件？": "Delete this attachment?",
+  "删除这份资料？": "Delete this document?",
+  "审核这条任务": "Review this task",
+  "提交完成申请": "Submit for completion",
+  "补充说明……": "Add a note…",
+  "过程与留言": "History & comments",
+  "还没有附件": "No attachments yet",
+  "已审核通过": "Approved",
+  "回复这条": "Reply to this",
+  "提交完成": "Submit complete",
+  "读取失败": "Could not read the file",
+  "等我审核": "Waiting for my review",
+  "对方已交": "Submitted by them",
+  "没有待审": "Nothing to review",
+  "取消回复": "Cancel reply",
+  "上传失败": "Upload failed",
+  "清空搜索": "Clear",
+  "上传资料": "Upload documents",
+  "去审核": "Review now",
+  "已上传": "Uploaded",
+  "回复": "Reply",
+  "审核": "Review",
+  "打开": "Open",
+  "待审": "Pending",
+  "通过": "Approve",
+  "驳回": "Reject",
+  "重开": "Reopen",
+  "修改": "Edit",
+  "附件": "Attachments",
+  "结案": "Closed",
+  "查询": "Search",
+  "资料": "Documents",
+  "PACRA 号": "PACRA no.",
+  "早上好": "Good morning",
+  "中午好": "Good afternoon",
+  "下午好": "Good afternoon",
+  "晚上好": "Good evening",
+  "公斤": "kg",
+  "吨": "t",
+  "袋": "bags",
+  "车": "truckloads",
+  "张": "photos",
+  "有": "Yes",
+  "正常": "Normal",
+  "精矿": "Concentrate",
+  "出口单": "Export order",
+  "出口单已建立": "Export order created",
+  "待审核": "Pending review",
+  "待我处理": "For me",
+  "新建客户": "New customer",
+  "编辑客户": "Edit customer",
+  "更新本阶段": "Update this stage",
+  "阶段已更新": "Stage updated",
+  "请填矿区/项目（在「现场信息」里）": "Enter site / project (in “Site info”)",
+  "请让管理员设置": "Ask an admin to set it",
+  "读取文件失败": "Could not read the file",
+  "文件太大（限 20MB）": "File too large (max 20MB)",
+  "已刷新到最新": "Refreshed to latest",
+  "在下方「打卡设置」里填，或点「用当前位置」": "fill it in “Check-in settings” below, or tap “Use current location”",
+  "· 对账": "· Reconcile",
+  "🏢 公司": "🏢 Company",
+  "🚢 出口": "🚢 Export",
+  "🧾 补票": "🧾 Attach invoice",
+  "⛏ 生产": "⛏ Production",
+  "✅ 标完了": "✅ Done",
+  "boss@ecobox.com · 现金 · buy diesel": "boss@ecobox.com · cash · buy diesel",
+  "未打下班": "not clocked out",
+  "转出后": "After transfer out",
+  "转入后": "After transfer in",
+  "🏦 银行账单（水单核对）": "🏦 Bank statements (reconciliation)",
+  "🏦 银行账单": "🏦 Bank statements",
+  "份待核对": "to reconcile",
+  "还没上传": "none yet",
+  "＋ 上传水单": "＋ Upload statement",
+  "上传公司 / 业务员的银行水单，系统自动比对期初、进账、出账、期末，并逐笔给科目建议。": "Upload company / staff bank statements — the system compares opening, credits, debits and closing, and suggests a category per line.",
+  "历史版本（同期间重传留下的）": "Old versions (kept when the same period is re-uploaded)",
+  "笔": "entries",
+  "旧版本": "old",
+  "差": "Diff",
+  "已核对": "Reconciled",
+  "有差异": "Has differences",
+  "待核对": "To reconcile",
+  "银行": "Bank",
+  "上传银行水单": "Upload bank statement",
+  "账户主体": "Account owner",
+  "水单文件（PDF 或图片）": "Statement file (PDF or image)",
+  "或者把水单文字粘贴到这里": "…or paste the statement text here",
+  "币种": "Currency",
+  "期间起": "Period from",
+  "期间止": "Period to",
+  "期初余额": "Opening balance",
+  "贷方合计": "Total credits",
+  "借方合计": "Total debits",
+  "期末余额": "Closing balance",
+  "解析在本机浏览器完成，水单内容不会发给第三方。": "Parsing runs in your browser — the statement is never sent to a third party.",
+  "解析到": "Parsed",
+  "借方": "Debits",
+  "贷方": "Credits",
+  "图片水单不能自动解析，请按水单手工填上面的数字": "Image statements can’t be parsed automatically — type the totals in",
+  "读取中…": "Reading…",
+  "在线解析失败（网络或浏览器不支持），可以粘贴水单文字，或直接手填": "Could not parse online (network or browser) — paste the text or fill the totals in",
+  "期间要填": "Period is required",
+  "上传原件…": "Uploading file…",
+  "水单已保存": "Statement saved",
+  "核对人": "Checked by",
+  "看水单原件": "View original file",
+  "还没有原件（只记了数字）": "No original file (totals only)",
+  "项目": "Item",
+  "水单": "Statement",
+  "系统": "System",
+  "差异": "Diff",
+  "项对不上，先查是漏记还是记错账户": "lines don’t match — check for missing entries or a wrong account",
+  "标有差异": "Mark with differences",
+  "差异说明 / 备注": "Difference note / remark",
+  "逐笔核对（改科目 / 配对 / 忽略）": "Line by line (category / match / ignore)",
+  "这份水单没有逐笔明细": "No line items on this statement",
+  "科目已改": "Category updated",
+  "已对": "Matched",
+  "配对": "Match",
+  "忽略": "Ignore",
+  "配对了": "Matched",
+  "已标记为核对完成": "Marked as reconciled",
+  "已标记为有差异": "Marked as having differences",
+  "备注已保存": "Note saved",
+  "删除这份水单？原件也会删掉": "Delete this statement? The original file is deleted too",
+  "水单已删除": "Statement deleted",
+  "未分类": "Uncategorised",
+  "银行手续费": "Bank charges",
+  "员工工资": "Staff wages",
+  "贷方（进账）": "Credits (in)",
+  "借方（出账）": "Debits (out)",
+  "借方合计对不上": "total debits don’t add up",
+  "贷方合计对不上": "total credits don’t add up",
+  "期初+贷−借 ≠ 期末": "opening + credits − debits ≠ closing",
+  "读不出文件": "Could not read the file",
+  "项对不上": "to check",
+  "水单份数": "Statements",
+  "进 / 出": "In / out",
+  "期初": "Opening",
+  "已核": "Checked",
+  "进": "in",
+  "出": "out",
+  "全部核完，已标记核对完成": "Everything checked — marked as reconciled",
+  "没有原件（只记了数字）": "No original file (numbers only)",
+  "逐笔（按日期）": "Lines by date",
+  "（没写摘要）": "(no description)",
+  "和期末一致": "matches the closing balance",
+  "和期末差": "off the closing balance",
+  "逐笔合计和表头期末对不上，多半有行没解析出来，请对照原件补": "Lines don’t add up to the statement closing balance — some rows are probably missing; check the PDF",
+  "还没核": "Not checked yet",
+  "缺行": "rows missing",
+  "全部标已核": "Mark all checked",
+  "保存核对": "Save checks",
+  "已核笔数": "Lines checked",
+  "不管这行": "Skip this line",
+  "↺ 恢复": "↺ Undo skip",
+  "✓ 已核": "✓ Checked",
+  "☐ 待核": "☐ To check",
+  "已核对出账": "Reconciled outflow",
+  "还没有水单。点上面的「＋ 上传水单」，选 PDF 或图片，系统自动把期初、进账、出账、期末抽出来。":
+    "No statements yet. Tap “＋ Upload statement”, pick a PDF or an image, and the opening balance, credits, debits and closing balance are filled in automatically.",
+  "你还没有上传过水单。点上面的「＋ 上传水单」开始；水单只有你和管理层看得到。":
+    "You haven’t uploaded a statement yet. Tap “＋ Upload statement” to start; only you and management can see it.",
+  "水单解析只在本机浏览器里做，原文不上传第三方；原件存在私有存储里，只有有权限的人能看。":
+    "The statement is parsed in your browser only — the text never goes to a third party. The original is kept in private storage, visible to authorised people only.",
+  "这个账户还没有费用记录，先记几笔再用这里自动比对（现在只看水单本身的借贷平衡）":
+    "This account has no expense entries yet, so there is nothing to compare against (only the statement’s own debits/credits balance is checked).",
+  "上传水单、核对四项金额、逐笔给科目，都在单独的「银行账单」页里。":
+    "Uploading statements, checking the four totals and tagging each line all live on the separate “Bank statements” page.",
 };
 
 const EN_RULES = [
@@ -999,6 +1403,70 @@ const EN_RULES = [
   [/^(.+) · 本月收入$/, "$1 · Income this month"],
   [/^公司 ([\d.,]+) · 本月有票 (.*) \/ 无票 (.*)$/, "Company $1 · Invoiced this month $2 / no invoice $3"],
   [/^· 📊 核对与报表$/, "· 📊 Reconciliation & reports"],
+  [/^第 (\d+) 轮$/, "Round $1"],
+  [/^等 (.+) 审核$/, "waiting for $1 to review"],
+  [/^(\d+) 条等你审核$/, (m) => m[1] + " waiting for your review"],
+  [/^(\d+) 个附件$/, (m) => m[1] + (m[1] === "1" ? " attachment" : " attachments")],
+  [/^已上传 (\d+) 个附件$/, (m) => "Uploaded " + m[1] + (m[1] === "1" ? " attachment" : " attachments")],
+  [/^已保存，资料 (\d+) 份已上传$/, (m) => "Saved — " + m[1] + (m[1] === "1" ? " document" : " documents") + " uploaded"],
+  [/^(\d+) 份资料上传失败：(.+)$/, (m) => m[1] + (m[1] === "1" ? " document" : " documents") + " failed: " + m[2].replace(/、/g, ", ")],
+  [/^点打卡时自动定位，需在 (.+) 米范围内(.*?)；两段打卡都要在范围内。$/, (m) => "Location is taken when you clock in; stay within " + m[1] + " m" + (m[2] || "").replace(/（/g, " (").replace(/）/g, ")") + ". Both punches must be inside the radius."],
+  [/^勾上的才会出现在这个人的目录里。(.*)$/, (m) => "Only ticked modules show up in this person's directory." + (m[1] && m[1].includes("管理员") ? " Admins get everything by default." : "")],
+  [/^(.+) · 可用模块$/, (m) => tr(m[1]) + " · modules"],
+  [/^收到 (.+)（来自 (.+)） − 已花 (.+)$/, "Received $1 (from $2) − spent $3"],
+  [/^⚠ 有 (.+) 条记录挂在旧账号名下$/, "⚠ $1 records sit under a deleted account"],
+  [/^还没设置办公点位置 —— (.+)$/, (m) => "Office location is not set yet — " + (m[1].includes("管理员") ? "ask an admin to set it" : "fill it in Attendance settings below, or tap “Use current location”")],
+  [/^📊 支出汇总 · (.+)中$/, (m) => "📊 Spending summary · " + tr(m[1])],
+  [/^现金 (.+) · 银行 (.+)$/, "Cash $1 · Bank $2"],
+  [/^(.+) 📊 核对与报表$/, "$1 📊 Reconciliation & reports"],
+  [/^(.+)（不计入公司费用）$/, (m) => tr(m[1]) + " (excluded from company cost)"],
+  [/^(.+)科目，不计入公司费用$/, (m) => tr(m[1]) + " account · excluded from company cost"],
+  [/^🔒 只读 · (.+)$/, "🔒 Read-only · $1"],
+  [/^并到我名下（(.+)）$/, "Merge into my name ($1)"],
+  [/^今日打卡 · (.+)$/, "Today's punches · $1"],
+  [/^本月统计 · (.+)$/, "This month · $1"],
+  [/^生产记录（(.+)）$/, "Production records ($1)"],
+  [/^(.+) · (.+)支出$/, (m) => tr(m[1]) + " · " + tr(m[2]) + " spend"],
+  [/^出口单 \((.+)\)$/, "Export orders ($1)"],
+  [/^(.+) 天有记录$/, "$1 days logged"],
+  [/^(.+)·不计费用$/, (m) => tr(m[1]) + " · not a company cost"],
+  [/^合计 (.+) 笔$/, "Total $1"],
+  [/^(.+)还没有记录$/, (m) => tr(m[1]) + " — no records yet"],
+  [/^客户 \((.+)\)$/, "Customers ($1)"],
+  [/^近 (.+) 天$/, "Last $1 days"],
+  [/^对账日 (.+)$/, "Reconciliation date $1"],
+  [/^搜索「(.+)」$/, "Search “$1”"],
+  [/^另有 (.+)$/, "+ $1 more"],
+  [/^合计 (.+)$/, "Total $1"],
+  [/^备注：(.+)$/, "Note: $1"],
+  [/^(\d+) 天$/, (m) => m[1] + (m[1] === "1" ? " day" : " days")],
+  [/^(\d+) 天没汇报$/, (m) => m[1] + (m[1] === "1" ? " day silent" : " days silent")],
+  [/^(\d+) 项没汇报$/, (m) => m[1] + (m[1] === "1" ? " unreported" : " unreported")],
+  [/^确定删除「(.+)」？$/, (m) => "Delete “" + m[1] + "”? "],
+  [/^删除客户「(.+)」？$/, (m) => "Delete customer “" + m[1] + "”?"],
+  [/^删除账号「(.+)」？[\s\S]*$/, (m) => "Delete account “" + m[1] + "”?\nThey can no longer sign in, but their daily reports and ledger entries stay."],
+  [/^把「(.+)」名下的 (.+) 条记录并到 (.+)（(.+)）名下？[\s\S]*$/, (m) => "Move " + m[2] + " records from “" + m[1] + "” to " + m[3] + " (" + m[4] + ")?\nThis cannot be split again."],
+  [/^🏠 私人 (.+)$/, "🏠 Personal $1"],
+  [/^🤝 借款 借出 (.+) · 已还 (.+)$/, "🤝 Loan out $1 · repaid $2"],
+  [/^本页 有票 (.+) \/ 无票 (.+)$/, "This page: invoiced $1 / no invoice $2"],
+  [/^(.+) 笔 · 合计 (.+) ZMW$/, "$1 entries · total $2 ZMW"],
+  [/^已导出 (.+) 笔支出明细$/, "Exported $1 expense entries"],
+  [/^已导出 (.+) 笔资金流水$/, "Exported $1 cash-flow rows"],
+  [/^已合并 (.+) 条记录$/, "Merged $1 records"],
+  [/^合并 (.+) 条，归属修正 (.+) 条$/, "Merged $1 records, fixed $2 owners"],
+  [/^(.+) 条 借款\/家庭开支 的归属改为「往来」$/, (m) => m[1] + " loan/household rows moved to “Transfers”"],
+  [/^已记账 (.+) ZMW$/, "Recorded $1 ZMW"],
+  [/^已调拨 (.+) ZMW$/, "Transferred $1 ZMW"],
+  [/^未打下班 (\d+) 天$/, (m) => `not clocked out for ${m[1]} ${m[1] === "1" ? "day" : "days"}`],
+  [/^「(.+)」(\d+) 条$/, (m) => `“${m[1]}” ${m[2]} ${m[2] === "1" ? "entry" : "entries"}`],
+  [/^有 (\d+) 张照片没传上，先别保存$/, (m) => `${m[1]} photo(s) failed to upload — save after uploading`],
+  [/^现金 (.+) · 银行 (.+)$/, (m) => `Cash ${m[1]} · Bank ${m[2]}`],
+  [/^· 转出 (.+) · 转入 (.+)$/, (m) => `· Out ${m[1]} · In ${m[2]}`],
+  [/^· 私人 (.+)$/, "· Personal $1"],
+  [/^· 借出 (.+)$/, "· Lent $1"],
+  [/^公司 (.+)$/, "Company $1"],
+  [/^(.+) (\d+) 条 → (.+)$/, (m) => `${m[1]} ${m[2]} ${m[2] === "1" ? "entry" : "entries"} → ${m[3]}`],
+  [/^(\d+) (公斤|吨|袋|车|张)$/, (m) => `${m[1]} ${{ 公斤: "kg", 吨: "t", 袋: "bags", 车: "truckloads", 张: "photos" }[m[2]]}`],
 ];
 
 function tr(s) {
@@ -1037,6 +1505,15 @@ function tx(o, field) {
 /* 把当前 DOM 里能对上的中文文案翻成英文（渲染后调用；观察器兜住异步内容） */
 function applyLang(root) {
   if (!isEN() || !root) return;
+  if (root.nodeType === 3) {
+    const raw = root.nodeValue || "";
+    const key = raw.trim();
+    if (key && /[\u4e00-\u9fff]/.test(key)) {
+      const out = tr(key);
+      if (out !== key) root.nodeValue = raw.replace(key, out);
+    }
+    return;
+  }
   const scope = root.nodeType === 1 ? root : document.body;
   const walker = document.createTreeWalker(scope, NodeFilter.SHOW_TEXT, null);
   const nodes = [];
@@ -1048,6 +1525,7 @@ function applyLang(root) {
     const out = tr(key);
     if (out !== key) n.nodeValue = raw.replace(key, out);
   }
+  if (/[\u4e00-\u9fff]/.test(document.title)) document.title = tr(document.title);
   for (const el of scope.querySelectorAll("[placeholder],[title],[aria-label]")) {
     for (const a of ["placeholder", "title", "aria-label"]) {
       const v = el.getAttribute(a);
@@ -1066,7 +1544,7 @@ function watchLang() {
   LANG_OBS = new MutationObserver((muts) => {
     for (const m of muts) {
       if (m.type === "characterData") applyLang(m.target.parentElement || document.body);
-      else for (const n of m.addedNodes) if (n.nodeType === 1) applyLang(n);
+      else for (const n of m.addedNodes) if (n.nodeType === 1 || n.nodeType === 3) applyLang(n);
     }
   });
   LANG_OBS.observe(document.body, { childList: true, subtree: true, characterData: true });
@@ -1171,6 +1649,7 @@ async function showApp() {
   }
   if (S.user && (S.user.lang === "zh" || S.user.lang === "en")) {
     LANG = S.user.lang;
+    applyLang(document.body);
     try { localStorage.setItem(LANG_KEY, LANG); } catch (e) {}
   }
   document.documentElement.lang = isEN() ? "en" : "zh-CN";
@@ -1220,7 +1699,7 @@ let MODS = []; // 服务器 /api/modules 下发的模块目录
 const allowed = (k) =>
   !!k && !!S.user && (S.user.role === "admin" || (S.user.modules || []).includes(k));
 const TAB_KEY = { todo: "todo", log: "log", company: "company", users: "users", mine: "mine", fin: "finance", lang: "lang",
-  punch: "punch", export: "export", customer: "customer" };
+  punch: "punch", export: "export", customer: "customer", bank: "bank" };
 const modDesc = (m) => (isEN() && m.d_en ? m.d_en : m.d);
 
 /* 快捷（置顶）：存在账号上，换设备也跟着走 */
@@ -1246,8 +1725,8 @@ function modCard(x) {
   const on = pinned(x.k);
   const label = esc(tr(on ? "取消快捷" : "设为快捷"));
   const pin = `<span class="pin${on ? " on" : ""}" data-pin="${esc(x.k)}" role="button" tabindex="-1" aria-label="${label}" title="${label}">${on ? "★" : "☆"}</span>`;
-  /* 红点 = 逾期 + 今天还没汇报，就是今天必须动手的件数 */
-  const todoN = x.k === "todo" ? lateForMe().length + needReport().length : 0;
+  /* 红点 = 逾期 + 今天还没汇报 + 等我审核，就是今天必须动手的件数 */
+  const todoN = x.k === "todo" ? lateForMe().length + needReport().length + awaitingReview().length : 0;
   const dot = todoN ? `<em class="td-dot" title="${esc(tr("逾期 + 今天还没汇报"))}">${todoN}</em>` : "";
   const inner = `<i>${x.i}</i><b>${esc(tr(x.t))}${dot}</b><span>${esc(modDesc(x))}</span>${pin}`;
   return x.tab
@@ -1273,21 +1752,21 @@ function homeHtml() {
   }).join("");
   return `<div class="hello">${hi}，${esc(S.user.name)}</div>
     <div class="mut" style="margin-bottom:4px">${esc(tr("点右上角 ☆ 把常用的放到最上面的「快捷」。"))}</div>
-    ${quick}${secs || '<div class="empty">还没有可用模块，找管理员开通</div>'}`;
+    ${quick}${secs || '<div class="empty">${esc(tr(`还没有可用模块，找管理员开通`))}</div>'}`;
 }
 
 /* 管理员给某人勾模块 */
 function openModPicker(u) {
   const has = u.modules || [];
   const box = $("#modbox");
-  box.innerHTML = `<h3 style="margin:0 0 4px">${esc(u.name)} · 可用模块</h3>
-    <p class="mut" style="margin:0 0 8px">勾上的才会出现在这个人的目录里。${u.role === "admin" ? "管理员默认全开。" : ""}</p>
+  box.innerHTML = `<h3 style="margin:0 0 4px">${esc(tr(`${esc(u.name)} · 可用模块`))}</h3>
+    <p class="mut" style="margin:0 0 8px">${esc(tr(`勾上的才会出现在这个人的目录里。${u.role === "admin" ? "管理员默认全开。" : ""}`))}</p>
     ${MODS.map((m) => `<label style="display:flex;align-items:center;gap:8px;margin:7px 0;font-size:14px;color:inherit">
         <input type="checkbox" data-k="${m.k}" style="width:auto" ${has.includes(m.k) ? "checked" : ""} ${m.adminOnly || m.soon ? "disabled" : ""}>
         <span>${m.i} ${esc(tr(m.t))}</span><span class="mut" style="margin-left:auto;text-align:right">${m.soon ? "待开放" : esc(modDesc(m))}</span>
       </label>`).join("")}
     <div class="err" id="mod_err"></div>
-    <div class="acts" style="margin-top:12px"><button class="pri" id="mod_save">保存</button><button class="ghost" id="mod_close">关闭</button></div>`;
+    <div class="acts" style="margin-top:12px"><button class="pri" id="mod_save">${esc(tr(`保存`))}</button><button class="ghost" id="mod_close">${esc(tr(`关闭`))}</button></div>`;
   $("#moddlg").classList.remove("hide");
   $("#mod_close").onclick = () => $("#moddlg").classList.add("hide");
   $("#mod_save").onclick = async () => {
@@ -1524,7 +2003,7 @@ function prodDailyPanelHtml(days, panel) {
       <b>${prodNum(p.cum)} ${esc(prodUnitName(panel.unit))}</b>
       <em>${p.ta == null && p.nb == null ? "" : `Ta ${prodGradeTxt(p.ta)} · Nb ${prodGradeTxt(p.nb)}`}</em></span>`).join("");
   return `<div class="pd-panel">
-    <div class="pd-sub">按品种 · 当日产出（${esc(prodUnitName(panel.unit))}）</div>
+    <div class="pd-sub">${esc(tr(`按品种 · 当日产出（${esc(prodUnitName(panel.unit))}）`))}</div>
     ${prodDailyBarsHtml(days, panel)}
     <div class="pd-x mut"><span>${days[0].slice(5)}</span><span>${days[days.length - 1].slice(5)}</span></div>
     <div class="pd-leg col">${leg}</div>
@@ -1538,7 +2017,7 @@ function prodDayTableHtml(days, all, unit, panel) {
   if (!rows.length) return "";
   const prods = panel ? panel.products : [];
   const shown = rows.slice(0, 20);
-  const head = `<tr><th>日期</th>${prods.map((p) => `<th class="n"><i class="pd-dot" style="background:${p.color}"></i>${esc(p.name || "未填产品")}</th>`).join("")}<th class="n">合计</th><th class="n">累计</th><th class="n">累计 Ta %</th><th class="n">累计 Nb %</th></tr>`;
+  const head = `<tr><th>${esc(tr(`日期`))}</th>${prods.map((p) => `<th class="n"><i class="pd-dot" style="background:${p.color}"></i>${esc(p.name || "未填产品")}</th>`).join("")}<th class="n">${esc(tr(`合计`))}</th><th class="n">${esc(tr(`累计`))}</th><th class="n">${esc(tr(`累计 Ta %`))}</th><th class="n">${esc(tr(`累计 Nb %`))}</th></tr>`;
   const body = shown.map((d) => {
     const v = map.get(d);
     const cells = prods.map((p) => `<td class="n">${p.daily.get(d) ? prodNum(p.daily.get(d)) : "·"}</td>`).join("");
@@ -1546,39 +2025,39 @@ function prodDayTableHtml(days, all, unit, panel) {
       <td class="n">${prodGradeTxt(v.ta)}</td><td class="n">${prodGradeTxt(v.nb)}</td></tr>`;
   }).join("");
   return `<div class="pd-daytab">
-    <div class="pd-sub">按日明细（${esc(prodUnitName(unit))}口径）</div>
+    <div class="pd-sub">${esc(tr(`按日明细（${esc(prodUnitName(unit))}口径）`))}</div>
     <table>${head}${body}</table>
-    ${rows.length > shown.length ? `<div class="pd-note mut">只列最近 ${shown.length} 天</div>` : ""}
+    ${rows.length > shown.length ? `<div class="pd-note mut">${esc(tr(`只列最近 ${shown.length} 天`))}</div>` : ""}
   </div>`;
 }
 
 function prodChartHtml() {
   const { days, win, all, unit, points, cum, ta, nb } = prodChartData();
-  const wins = PROD_WINDOWS.map((n) => `<button class="td-chip${n === PROD_WIN ? " on" : ""}" data-win="${n}">${n} 天</button>`).join("");
+  const wins = PROD_WINDOWS.map((n) => `<button class="td-chip${n === PROD_WIN ? " on" : ""}" data-win="${n}">${esc(tr(`${n} 天`))}</button>`).join("");
   if (!win.length) {
-    return `<div class="card" id="prod_chart"><h3>产量走势 · 累计</h3><div class="pd-win">${wins}</div>
-      <div class="empty">这段时间没有产量记录</div></div>`;
+    return `<div class="card" id="prod_chart"><h3>${esc(tr(`产量走势 · 累计`))}</h3><div class="pd-win">${wins}</div>
+      <div class="empty">${esc(tr(`这段时间没有产量记录`))}</div></div>`;
   }
   const today = localDay(new Date());
   const todayTot = prodTotals(win.filter((r) => r.day === today));
   const otherUnits = win.some((r) => prodQty(r).u !== unit);
   const head = `<div class="pd-tot">
-      <span class="pd-sum"><i>今日</i> <b>${esc(todayTot.main)}</b></span>
-      ${todayTot.rest ? `<span class="mut">另有 ${esc(todayTot.rest)}</span>` : ""}
-      <span class="pd-avg"><i>累计</i> <b>${prodNum(cum)} ${esc(prodUnitName(unit))}</b>
+      <span class="pd-sum"><i>${esc(tr(`今日`))}</i> <b>${esc(todayTot.main)}</b></span>
+      ${todayTot.rest ? `<span class="mut">${esc(tr(`另有 ${esc(todayTot.rest)}`))}</span>` : ""}
+      <span class="pd-avg"><i>${esc(tr(`累计`))}</i> <b>${prodNum(cum)} ${esc(prodUnitName(unit))}</b>
         ${ta == null && nb == null ? "" : `<em>Ta ${prodGradeTxt(ta)} · Nb ${prodGradeTxt(nb)}</em>`}</span>
     </div>`;
   const panelsAll = prodDailyPanels(days, all);
   const panels = panelsAll.map((p) => prodDailyPanelHtml(days, p)).join("");
   const refPanel = panelsAll.find((p) => p.unit === unit);
   return `<div class="card" id="prod_chart">
-    <h3>产量走势 · 累计 <span class="mut" style="font-weight:400">近 ${PROD_WIN} 天</span></h3>
+    <h3>${esc(tr(`产量走势 · 累计`))} <span class="mut" style="font-weight:400">${esc(tr(`近 ${PROD_WIN} 天`))}</span></h3>
     <div class="pd-win">${wins}</div>
     ${head}
     ${prodCumSvg(points)}
     <div class="pd-x mut"><span>${days[0].slice(5)}</span><span>${days[days.length - 1].slice(5)}</span></div>
-    <div class="pd-leg"><span><i class="pd-k1"></i>累计产量（${esc(prodUnitName(unit))}）</span><span><i class="pd-k2"></i>累计 Ta%</span><span><i class="pd-k3"></i>累计 Nb%</span></div>
-    ${otherUnits ? `<div class="pd-note mut">累计只按单一单位统计，袋/吨等其它单位不计入</div>` : ""}
+    <div class="pd-leg"><span><i class="pd-k1"></i>${esc(tr(`累计产量（${esc(prodUnitName(unit))}）`))}</span><span><i class="pd-k2"></i>${esc(tr(`累计 Ta%`))}</span><span><i class="pd-k3"></i>${esc(tr(`累计 Nb%`))}</span></div>
+    ${otherUnits ? `<div class="pd-note mut">${esc(tr(`累计只按单一单位统计，袋/吨等其它单位不计入`))}</div>` : ""}
     ${panels}
     ${prodDayTableHtml(days, all, unit, refPanel)}
   </div>`;
@@ -1595,7 +2074,7 @@ function prodRowHtml(r) {
     ${r.note ? `<div class="n">${esc(tx(r, "note"))}</div>` : ""}
     ${photos.length ? `<div class="pd-ths">${photos.map((k) => `<img src="/api/fin/photo/${esc(k)}" data-pdv="/api/fin/photo/${esc(k)}" alt="">`).join("")}</div>` : ""}
     <div class="m"><span class="u">${esc(r.user_name || "")}${r.site ? " · " + esc(r.site) : ""}</span>
-      ${prodMine(r) ? `<button data-edit="${r.id}">改</button><button class="danger" data-del="${r.id}">删</button>` : ""}
+      ${prodMine(r) ? `<button data-edit="${r.id}">${esc(tr(`改`))}</button><button class="danger" data-del="${r.id}">${esc(tr(`删`))}</button>` : ""}
     </div>
   </div>`;
 }
@@ -1609,22 +2088,22 @@ function prodHtml() {
   rows.forEach((r) => { const k = r.day || "—"; if (!groups.has(k)) groups.set(k, []); groups.get(k).push(r); });
   let list = "";
   groups.forEach((g, k) => {
-    list += `<div class="pd-day"><b>${esc(prodDayLabel(k))}</b><span class="s">合计 ${prodTotal(g)}</span></div>`;
+    list += `<div class="pd-day"><b>${esc(prodDayLabel(k))}</b><span class="s">${esc(tr(`合计 ${prodTotal(g)}`))}</span></div>`;
     list += g.map(prodRowHtml).join("");
   });
   const tToday = prodTotals(todayRows), tMonth = prodTotals(monthRows);
-  const kpi = (label, t) => `<div class="kpi"><i>${label}</i><b>${t.main}</b>${t.rest ? `<i>另有 ${esc(t.rest)}</i>` : ""}</div>`;
+  const kpi = (label, t) => `<div class="kpi"><i>${label}</i><b>${t.main}</b>${t.rest ? `<i>${esc(tr(`另有 ${esc(t.rest)}`))}</i>` : ""}</div>`;
   return `<div class="grid">
       ${kpi("今日产量", tToday)}
       ${kpi("本月", tMonth)}
-      <div class="kpi"><i>本月记录</i><b>${monthRows.length} 笔</b><i>${new Set(monthRows.map((r) => r.day)).size} 天有记录</i></div>
+      <div class="kpi"><i>${esc(tr(`本月记录`))}</i><b>${esc(tr(`${monthRows.length} 笔`))}</b><i>${esc(tr(`${new Set(monthRows.map((r) => r.day)).size} 天有记录`))}</i></div>
     </div>
     ${prodChartHtml()}
     <div class="card">
-      <h3>生产记录（${rows.length}）</h3>
-      ${rows.length ? list : `<div class="empty">还没有记录，点右下角「记一笔」</div>`}
+      <h3>${esc(tr(`生产记录（${rows.length}）`))}</h3>
+      ${rows.length ? list : `<div class="empty">${esc(tr(`还没有记录，点右下角「记一笔」`))}</div>`}
     </div>
-    <button class="pd-fab" id="prod_new">＋ 记一笔</button>`;
+    <button class="pd-fab" id="prod_new">${esc(tr(`＋ 记一笔`))}</button>`;
 }
 
 function bindProd(pane) {
@@ -1651,35 +2130,35 @@ function prodSheet(rec) {
   box.className = "fin-dim";
   box.innerHTML = `<div class="fin-sheet">
     <h3>${rec ? "修改生产记录" : "记一笔"}</h3>
-    <label>日期</label><input id="pg_date" type="date" value="${esc(rec ? d.day : localDay(new Date()))}">
-    <span class="pd-lbl">产品</span>
+    <label>${esc(tr(`日期`))}</label><input id="pg_date" type="date" value="${esc(rec ? d.day : localDay(new Date()))}">
+    <span class="pd-lbl">${esc(tr(`产品`))}</span>
     <div class="pd-picks">${PROD_PRESETS.map((p) => `<button type="button" class="chip" data-prod="${esc(p)}">${esc(p)}</button>`).join("")}</div>
-    <input id="pg_prod" placeholder="产品 / 来源" value="${esc(d.product || "")}">
+    <input id="pg_prod" placeholder="${esc(tr(`产品 / 来源`))}" value="${esc(d.product || "")}">
     <div class="r" style="margin-top:8px">
-      <div><label>数量</label><input id="pg_qty" type="text" inputmode="decimal" placeholder="0" value="${rec && q.n ? prodNum(q.n) : ""}"></div>
-      <div><label>单位</label><select id="pg_unit">${PROD_UNITS.map(([k, n]) => `<option value="${k}"${k === q.u ? " selected" : ""}>${n} ${k}</option>`).join("")}</select></div>
+      <div><label>${esc(tr(`数量`))}</label><input id="pg_qty" type="text" inputmode="decimal" placeholder="0" value="${rec && q.n ? prodNum(q.n) : ""}"></div>
+      <div><label>${esc(tr(`单位`))}</label><select id="pg_unit">${PROD_UNITS.map(([k, n]) => `<option value="${k}"${k === q.u ? " selected" : ""}>${n} ${k}</option>`).join("")}</select></div>
     </div>
     <div class="r" style="margin-top:8px">
-      <div><label>Ta 品位 %</label><input id="pg_ta" type="text" inputmode="decimal" placeholder="0" value="${d.ta ? esc(d.ta) : ""}"></div>
-      <div><label>Nb 品位 %</label><input id="pg_nb" type="text" inputmode="decimal" placeholder="0" value="${d.nb ? esc(d.nb) : ""}"></div>
+      <div><label>${esc(tr(`Ta 品位 %`))}</label><input id="pg_ta" type="text" inputmode="decimal" placeholder="0" value="${d.ta ? esc(d.ta) : ""}"></div>
+      <div><label>${esc(tr(`Nb 品位 %`))}</label><input id="pg_nb" type="text" inputmode="decimal" placeholder="0" value="${d.nb ? esc(d.nb) : ""}"></div>
     </div>
-    <label>备注</label><input id="pg_note" value="${esc(tx(d, "note"))}">
+    <label>${esc(tr(`备注`))}</label><input id="pg_note" value="${esc(tx(d, "note"))}">
     ${finPhotoHtml("pg")}
     <details style="margin-top:10px">
-      <summary class="mut">现场信息（选填：矿区 / 班次 / 人数 / 废石 / 支出）</summary>
+      <summary class="mut">${esc(tr(`现场信息（选填：矿区 / 班次 / 人数 / 废石 / 支出）`))}</summary>
       <div class="r" style="margin-top:8px">
-        <div><label>矿区/项目</label><input id="pg_site" list="sites" value="${esc(site)}"></div>
-        <div><label>班次</label><select id="pg_shift">${["白班", "夜班", "全天"].map((x) => `<option${x === (d.shift || "白班") ? " selected" : ""}>${x}</option>`).join("")}</select></div>
+        <div><label>${esc(tr(`矿区/项目`))}</label><input id="pg_site" list="sites" value="${esc(site)}"></div>
+        <div><label>${esc(tr(`班次`))}</label><select id="pg_shift">${["白班", "夜班", "全天"].map((x) => `<option${x === (d.shift || "白班") ? " selected" : ""}>${x}</option>`).join("")}</select></div>
       </div>
       <datalist id="sites">${SITES.map((s) => `<option>${esc(s)}</option>`).join("")}</datalist>
       <div class="row3" style="margin-top:8px">
-        <div><label>出勤人数</label><input id="pg_people" type="number" min="0" step="1" value="${d.headcount || ""}"></div>
-        <div><label>废石（吨）</label><input id="pg_waste" type="number" min="0" step="0.1" value="${d.waste_t || ""}"></div>
-        <div><label>支出（USD）</label><input id="pg_cost" type="number" min="0" step="0.01" value="${d.cost_usd || ""}"></div>
+        <div><label>${esc(tr(`出勤人数`))}</label><input id="pg_people" type="number" min="0" step="1" value="${d.headcount || ""}"></div>
+        <div><label>${esc(tr(`废石（吨）`))}</label><input id="pg_waste" type="number" min="0" step="0.1" value="${d.waste_t || ""}"></div>
+        <div><label>${esc(tr(`支出（USD）`))}</label><input id="pg_cost" type="number" min="0" step="0.01" value="${d.cost_usd || ""}"></div>
       </div>
     </details>
     <p class="mut" id="pg_msg" style="min-height:1em;margin:8px 0 0"></p>
-    <div class="r" style="margin-top:8px"><button class="ghost" id="pg_x">取消</button><button class="pri" id="pg_save">${rec ? "保存修改" : "保存"}</button></div>
+    <div class="r" style="margin-top:8px"><button class="ghost" id="pg_x">${esc(tr(`取消`))}</button><button class="pri" id="pg_save">${rec ? "保存修改" : "保存"}</button></div>
   </div>`;
   document.body.appendChild(box);
 
@@ -1729,28 +2208,46 @@ function prodSheet(rec) {
 }
 
 async function delProd(id) {
-  if (!confirm("删掉这条生产记录？不能撤销。")) return;
+  if (!confirm(tr("删掉这条生产记录？不能撤销。"))) return;
   try { await api("/logs/" + id, { method: "DELETE", toast: "生产记录已删除" }); await render(); }
   catch (e) { toast(e.message, "bad"); }
 }
 
 /* ---------- 待办 ---------- */
-const TODO_FILTERS = [["all", "全部"], ["mine", "我负责"], ["made", "我发起"], ["company", "公司事项"], ["late", "已逾期"], ["done", "已完成"]];
-let TODOS = [], TPEOPLE = [], TD_OPEN = {};
+/* 一条待办就是一个闭环：谁派的 → 派给谁 → 干的人汇报 / 提交完成申请 → 派的人审核 → 完成或打回。
+   执行人不能自己按完成（服务端也拦）；只有派活的人审核通过才算结束。 */
+const TODO_FILTERS = [["todo", "待我处理"], ["review", "等我审核"], ["made", "我发起"], ["company", "公司事项"], ["late", "已逾期"], ["done", "已完成"], ["all", "全部"]];
+let TODOS = [], TPEOPLE = [], TD_PANEL = "", TD_ACT = null, TD_REPLY = null, TD_RAW = "", TD_POLL = null, TD_SCROLL = null;
+
+const TD_ST = {
+  doing: { t: "进行中", c: "doing" },
+  submitted: { t: "待审核", c: "sub" },
+  done: { t: "已完成", c: "done" },
+};
+const tdSt = (t) => TD_ST[t.status] || TD_ST.doing;
 const daysLeft = (due) => Math.round((new Date(due + "T00:00:00") - new Date(iso(new Date()) + "T00:00:00")) / 864e5);
-const isMine = (t) => t.owner === (S.user && S.user.login);
-const canTouch = (t) => isMine(t) || t.creator === S.user.login || S.user.role === "admin" || S.user.role === "manager";
-/* 派活是管理层的事；员工只给自己排（避免互相甩活） */
-const canAssign = () => ["admin", "manager"].includes(S.user.role);
+const tdMe = () => (S.user && S.user.login) || "";
+const isMine = (t) => !!t.owner && t.owner === tdMe();
+const isMaker = (t) => !!t.creator && t.creator === tdMe();
+const canManage = () => ["admin", "manager"].includes((S.user || {}).role);
+const isAdmin = () => (S.user || {}).role === "admin";
+const canTouch = (t) => isMine(t) || isMaker(t) || canManage();
+/* 谁能提交完成：干活的人；自己排的活由自己提交（提交即完成）；公司事项没指派时管理层说了算 */
+const canSubmit = (t) =>
+  t.status === "doing" && (isMine(t) || (isMaker(t) && !t.owner) || (t.scope === "company" && !t.owner && canManage()));
+/* 谁能审核：派活的人，管理员可代审 */
+const canReview = (t) => t.status === "submitted" && (isMaker(t) || isAdmin());
+const awaitingReview = () => TODOS.filter((t) => t.status === "submitted" && isMaker(t));
 
 async function loadTodos() {
-  const r = await api("/todos");
+  const r = await api("/todos", { quiet: true });
   TODOS = r.todos || [];
-  if (!TPEOPLE.length) TPEOPLE = (await api("/people")).people || [];
+  TD_RAW = JSON.stringify(TODOS);
+  if (!TPEOPLE.length) { try { TPEOPLE = (await api("/people", { quiet: true })).people || []; } catch (e) {} }
 }
 
 const overdue = (t) => t.status !== "done" && !!t.due && daysLeft(t.due) < 0;
-const lateForMe = () => TODOS.filter((t) => overdue(t) && (isMine(t) || t.creator === (S.user && S.user.login) || (t.scope === "company" && !t.owner)));
+const lateForMe = () => TODOS.filter((t) => overdue(t) && (isMine(t) || isMaker(t) || (t.scope === "company" && !t.owner)));
 const NOTE_TIME = (n) => String(n.created_at || "").slice(5, 16).replace("T", " ");
 
 const REPORT_FLAGS = { progress: "推进了", blocked: "卡住了", idle: "今天没动" };
@@ -1762,13 +2259,13 @@ const reportAge = (t) => {
   if (!base) return 0;
   return Math.max(0, Math.round((new Date(todayStr() + "T00:00:00") - new Date(String(base).slice(0, 10) + "T00:00:00")) / 864e5));
 };
-const myOpen = () => TODOS.filter((t) => t.status !== "done" && t.owner === S.user.login);
-const needReport = () => myOpen().filter((t) => !reportedToday(t));
+const myOpen = () => TODOS.filter((t) => t.status !== "done" && isMine(t));
+const needReport = () => myOpen().filter((t) => t.status === "doing" && !reportedToday(t));
 /* 连续汇报天数：从今天（今天还没报就从昨天）往前数，连着有汇报的天数 */
 function reportStreak() {
   const days = new Set();
   for (const t of TODOS) for (const n of t.notes || []) {
-    if (n.kind === "report" && n.uid === S.user.login) days.add(String(n.created_at || "").slice(0, 10));
+    if (n.kind === "report" && n.uid === tdMe()) days.add(String(n.created_at || "").slice(0, 10));
   }
   let n = 0;
   const d = new Date();
@@ -1777,15 +2274,22 @@ function reportStreak() {
   return n;
 }
 
-function noteLine(n) {
-  const t = esc(NOTE_TIME(n));
-  if (n.kind === "sys") return `<div class="td-note-line"><b>${esc(n.name)}</b><i class="mut">${esc(tr(n.body))}</i><span class="mut"> · ${t}</span></div>`;
-  if (n.kind === "assign") return `<div class="td-note-line"><b>${esc(n.name)}</b><i class="td-go">${esc(n.body)}</i><span class="mut"> · ${t}</span></div>`;
-  if (n.kind === "report") {
+const noteById = (t, id) => (t && (t.notes || []).find((n) => n.id === id)) || null;
+function noteLine(n, t, noReply) {
+  const time = esc(NOTE_TIME(n));
+  const q = n.reply_to ? noteById(t, n.reply_to) : null;
+  const quote = q ? `<div class="td-quote">↩ ${esc(q.name)}：${esc(String(q.body || "").slice(0, 80))}</div>` : "";
+  const btn = noReply ? "" : `<button class="td-nreply" data-td-reply="${esc(n.id)}" title="${esc(tr("回复这条"))}">↩ ${esc(tr("回复"))}</button>`;
+  let body;
+  if (n.kind === "sys") body = `<i class="mut">${esc(tr(n.body))}</i>`;
+  else if (n.kind === "assign") body = `<i class="td-go">${esc(n.body)}</i>`;
+  else if (n.kind === "report") {
     const label = REPORT_FLAGS[n.flag] || REPORT_FLAGS.progress;
-    return `<div class="td-note-line"><b>${esc(n.name)}</b><i class="td-flag td-flag-${esc(n.flag || "progress")}">${esc(tr(label))}</i>${esc(n.body)}<span class="mut"> · ${t}</span></div>`;
-  }
-  return `<div class="td-note-line"><b>${esc(n.name)}</b>${esc(n.body)}<span class="mut"> · ${t}</span></div>`;
+    body = `<i class="td-flag td-flag-${esc(n.flag || "progress")}">${esc(tr(label))}</i>${esc(n.body)}`;
+  } else if (n.kind === "submit") body = `<i class="td-k-sub">📤 ${esc(tr("提交完成"))}</i>${esc(n.body)}`;
+  else if (n.kind === "review") body = `<i class="td-k-rev${n.flag === "reject" ? " rej" : ""}">${n.flag === "reject" ? "↩" : "✅"} ${esc(tr("审核"))}</i>${esc(n.body)}`;
+  else body = esc(n.body);
+  return `<div class="td-msg">${quote}<div class="td-mhead"><b>${esc(n.name)}</b><span class="mut">${time}</span>${btn}</div>${body}</div>`;
 }
 
 const TD_MIME = { pdf: "application/pdf", png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", webp: "image/webp",
@@ -1825,68 +2329,55 @@ async function tdUpload(id, f) {
   return r.files;
 }
 
+/* 卡片：一眼看清「谁的事、到哪一步、等我做什么」 */
 function todoCard(t) {
-  const st = t.status === "done" ? "done" : "doing";
+  const st = tdSt(t);
   const dl = t.due ? daysLeft(t.due) : null;
-  const late = st !== "done" && dl !== null && dl < 0;
+  const late = t.status !== "done" && dl !== null && dl < 0;
   const dueTxt = dl === null ? ""
-    : st === "done" ? esc(t.due)
-      : dl < 0 ? `${esc(tr("逾期"))} ${-dl} ${esc(tr("天"))}`
+    : t.status === "done" ? esc(t.due)
+      : dl < 0 ? `${esc(tr("逾期"))} ${esc(tr(`${-dl} 天`))}`
         : dl === 0 ? esc(tr("今天到期"))
-          : esc(String(t.due).slice(5)) + (dl <= 7 ? ` · ${dl} ${esc(tr("天"))}` : "");
-  const isOwner = !!t.owner && t.owner === S.user.login;
+          : esc(String(t.due).slice(5)) + (dl <= 7 ? ` · ${esc(tr(`${dl} 天`))}` : "");
   const age = reportAge(t);
-  const rep = st === "done" ? ""
-    : isOwner && reportedToday(t) ? `<span class="td-rep ok">✓ ${esc(tr("今天已汇报"))}</span>`
-      : isOwner ? `<span class="td-rep${age >= 2 ? " bad" : ""}">${age ? `${age} ${esc(tr("天没汇报"))}` : esc(tr("今天还没汇报"))}</span>`
-        : "";
+  const rep = t.status !== "doing" ? ""
+    : isMine(t) ? (reportedToday(t) ? `<span class="td-rep ok">✓ ${esc(tr("今天已汇报"))}</span>`
+      : `<span class="td-rep${age >= 2 ? " bad" : ""}">${age ? `${esc(tr(`${age} 天没汇报`))}` : esc(tr("今天还没汇报"))}</span>`)
+      : "";
   const tags = [
     t.imp ? `<span class="pill td-imp">★ ${esc(tr("重要"))}</span>` : "",
     t.self_set ? `<span class="pill td-self">${esc(tr("自定"))}</span>` : "",
     t.scope === "company" ? `<span class="pill td-co">${esc(tr("公司事项"))}</span>` : "",
     t.scope === "person" ? `<span class="pill">${esc(tr("指派"))}</span>` : "",
-    st === "done" ? `<span class="pill">${esc(tr("已完成"))}</span>` : "",
+    t.rounds ? `<span class="pill">${esc(tr(`第 ${t.rounds} 轮`))}</span>` : "",
   ].filter(Boolean).join("");
   const who = t.owner ? t.owner_name || t.owner : tr("未指派");
   const all = t.notes || [];
-  const files = t.files || [];
-  const lastRep = [...all].reverse().find((n) => n.kind === "report" || n.kind === "cmt" || n.kind === "start");
-  const notes = all.slice(-6).map(noteLine).join("");
-  const open = !!TD_OPEN[t.id];
-  const box = `class="td-check${st === "done" ? " on" : ""}" data-td-done="${t.id}" aria-label="${esc(tr(st === "done" ? "重新打开" : "标记完成"))}"`;
-  return `<div class="td-card${st === "done" ? " done" : ""}${late ? " late" : ""}" data-td="${t.id}">
+  const last = [...all].reverse().find((n) => ["cmt", "report", "submit", "review"].includes(n.kind));
+  const acts = [];
+  if (canSubmit(t)) acts.push(`<button class="pri" data-td-act="submit" data-td-id="${t.id}">📤 ${esc(tr("提交完成"))}</button>`);
+  if (canReview(t)) acts.push(`<button class="pri" data-td-act="review" data-td-id="${t.id}">✅ ${esc(tr("审核"))}</button>`);
+  if (isMine(t) && t.status === "doing") acts.push(`<button data-td-act="report" data-td-id="${t.id}">📝 ${esc(tr("汇报"))}</button>`);
+  return `<div class="td-card ${st.c}${late ? " late" : ""}" data-td-open="${t.id}">
     <div class="td-row">
-      <button ${box}>${st === "done" ? "✓" : ""}</button>
+      <span class="td-st ${st.c}">${esc(tr(st.t))}</span>
       <div class="td-mid">
         <div class="td-title">${esc(t.title)}</div>
         <div class="td-meta">
           <span class="td-who${t.owner ? "" : " none"}"><i>${esc(String(who).trim().slice(0, 1))}</i>${esc(who)}</span>
-          ${dueTxt ? `<span class="td-due${late ? " late" : dl === 0 && st !== "done" ? " today" : ""}">🗓 ${dueTxt}</span>` : ""}
+          ${dueTxt ? `<span class="td-due${late ? " late" : dl === 0 && t.status !== "done" ? " today" : ""}">🗓 ${dueTxt}</span>` : ""}
+          ${t.status === "submitted" ? `<span class="td-wait">⏳ ${esc(tr(`等 ${t.creator_name || t.creator} 审核`))}</span>` : ""}
           ${rep}
           ${t.creator && t.creator !== t.owner ? `<span>· ${esc(tr("发起"))} ${esc(t.creator_name || t.creator)}</span>` : ""}
         </div>
         ${tags ? `<div class="td-tags">${tags}</div>` : ""}
-        ${t.note ? `<div class="td-body">${esc(t.note)}</div>` : ""}
-        ${lastRep ? `<div class="td-fb"><span class="mut">${esc(lastRep.name)} · ${esc(NOTE_TIME(lastRep))}</span> ${esc(lastRep.body)}</div>` : ""}
-        ${open ? `<div class="td-log">${notes || `<div class="mut">${esc(tr("还没有留言"))}</div>`}
-          <div class="td-cin"><input class="td-cmt" data-td-input="${t.id}" maxlength="500" placeholder="${esc(tr("写留言…"))}"><button data-td-send="${t.id}">${esc(tr("发送"))}</button></div>
-          <div class="td-atts">
-            <div class="td-atts-head"><span>📎 ${esc(tr("附件"))}${files.length ? " " + files.length : ""}</span>
-              ${canTouch(t) ? `<label class="td-att-add">＋ ${esc(tr("附件"))}<input type="file" multiple hidden data-td-file="${t.id}" accept=".pdf,.png,.jpg,.jpeg,.webp,.gif,.txt,.csv,.zip,.doc,.docx,.xls,.xlsx,.ppt,.pptx,image/*,application/pdf"></label>` : ""}</div>
-            ${files.length ? files.map((f) => tdAttRow(f, t.id, canTouch(t))).join("")
-      : `<div class="mut" style="font-size:12px;margin-top:4px">${esc(tr("还没有附件"))}</div>`}
-          </div></div>` : ""}
+        ${last ? `<div class="td-fb"><span class="mut">${esc(last.name)} · ${esc(NOTE_TIME(last))}</span> ${esc(String(last.body || "").slice(0, 70))}</div>` : ""}
       </div>
-      <div class="td-ops">
-        <button data-td-star="${t.id}" class="${t.imp ? "on" : ""}" title="${esc(tr("重要"))}">★</button>
-        ${canTouch(t) ? `<button data-td-edit="${t.id}" title="${esc(tr("改"))}">✎</button>` : ""}
-      </div>
+      <button class="td-star${t.imp ? " on" : ""}" data-td-star="${t.id}" title="${esc(tr("重要"))}">★</button>
     </div>
     <div class="td-foot">
-      ${isOwner && st !== "done" ? `<button class="pri" data-td-report="${t.id}">📝 ${esc(tr("汇报"))}</button>` : ""}
-      ${canTouch(t) && st !== "done" ? `<button${isOwner ? "" : ' class="pri"'} data-td-fin="${t.id}">${esc(tr("完成"))}</button>` : ""}
-      <button data-td-cmt="${t.id}">💬 ${all.length || ""} ${esc(tr("留言"))}</button>
-      ${files.length ? `<span class="td-attn">📎 ${files.length}</span>` : ""}
+      ${acts.join("")}
+      <button data-td-open="${t.id}">💬 ${all.length || ""} ${esc(tr("打开"))}</button>
     </div>
   </div>`;
 }
@@ -1897,30 +2388,28 @@ function todoSection(title, list, cls) {
 }
 
 function todoHtml() {
-  const me = S.user.login;
-  const f = S.todoFilter || (canAssign() ? "all" : "mine");
+  const me = tdMe();
+  const f = S.todoFilter || (canManage() ? "all" : "todo");
   const openAll = TODOS.filter((t) => t.status !== "done");
-  const mineOpen = openAll.filter((t) => t.owner === me);
+  const mineOpen = openAll.filter(isMine);
   const lateAll = TODOS.filter(overdue);
-  const weekOf = (t) => t.status !== "done" && !!t.due && daysLeft(t.due) >= 0 && daysLeft(t.due) <= 7;
   const match = (t) => {
     if (f.startsWith("p:")) return t.owner === f.slice(2);
-    if (f === "need") return t.owner === me && t.status !== "done" && !reportedToday(t);
-    if (f === "late") return overdue(t);
+    if (f === "review") return t.status === "submitted" && isMaker(t);
     if (f === "done") return t.status === "done";
-    if (f === "week") return weekOf(t);
-    if (t.status === "done") return f === "all";
-    if (f === "mine") return t.owner === me;
-    if (f === "made") return t.creator === me;
-    if (f === "company") return t.scope === "company";
-    return true;
+    if (f === "late") return overdue(t);
+    if (f === "company") return t.scope === "company" && t.status !== "done";
+    if (f === "made") return isMaker(t) && t.status !== "done";
+    if (f === "todo") return isMine(t) && t.status !== "done";
+    if (f === "all") return true;
+    return t.status !== "done";
   };
   const list = TODOS.filter(match);
   const byDue = (a, b) => (a.due || "9999-12-31").localeCompare(b.due || "9999-12-31");
-  const need = list.filter((t) => t.status !== "done" && t.owner === me && !reportedToday(t));
-  const rest0 = list.filter((t) => !need.includes(t));
-  const imp = rest0.filter((t) => t.status !== "done" && t.imp).sort(byDue);
-  const rest = rest0.filter((t) => t.status !== "done" && !t.imp && !need.includes(t));
+  const pend = list.filter((t) => t.status === "submitted");
+  const open = list.filter((t) => t.status === "doing");
+  const imp = open.filter((t) => t.imp).sort(byDue);
+  const rest = open.filter((t) => !t.imp);
   const late = rest.filter((t) => t.due && daysLeft(t.due) < 0).sort(byDue);
   const today = rest.filter((t) => t.due && daysLeft(t.due) === 0);
   const soon = rest.filter((t) => t.due && daysLeft(t.due) > 0).sort(byDue);
@@ -1930,31 +2419,32 @@ function todoHtml() {
   const cnt = (k) => k === "all" ? TODOS.length
     : k === "done" ? TODOS.length - openAll.length
       : k === "late" ? lateAll.length
-        : k === "mine" ? mineOpen.length
-          : k === "made" ? TODOS.filter((t) => t.creator === me && t.status !== "done").length
-            : k === "company" ? openAll.filter((t) => t.scope === "company").length : 0;
+        : k === "review" ? awaitingReview().length
+          : k === "todo" ? mineOpen.length
+            : k === "made" ? TODOS.filter((t) => isMaker(t) && t.status !== "done").length
+              : k === "company" ? openAll.filter((t) => t.scope === "company").length : 0;
   const chip = ([k, label]) => `<button class="td-chip${f === k ? " on" : ""}" data-td-filter="${k}">${esc(tr(label))}<i>${cnt(k)}</i></button>`;
 
   const needN = needReport().length;
   const myLate = mineOpen.filter(overdue).length;
+  const revN = awaitingReview().length;
   const kpi = [
-    [tr("我负责"), mineOpen.length, tr("在办"), "mine", false],
+    [tr("我负责"), mineOpen.length, tr("在办"), "todo", false],
+    [tr("等我审核"), revN, revN ? tr("对方已交") : tr("没有待审"), "review", revN > 0],
     [tr("今天未汇报"), needN, needN ? tr("今天还没报") : tr("都报过了"), "need", needN > 0],
     [tr("已逾期"), myLate, myLate ? tr("尽快处理") : tr("没有逾期"), "late", myLate > 0],
-    [tr("7 天内到期"), mineOpen.filter(weekOf).length, tr("含今天"), "week", false],
   ].map(([t, n, s, k, bad]) =>
     `<button class="${bad ? "bad " : ""}${f === k ? "on" : ""}" data-td-filter="${k}"><span>${esc(t)}</span><b>${n}</b><span>${esc(s)}</span></button>`).join("");
 
-  /* 主动性：自己给自己排的任务 + 连续汇报天数 */
-  const selfN = TODOS.filter((t) => t.self_set && t.status !== "done" && t.owner === me).length;
+  const selfN = TODOS.filter((t) => t.self_set && t.status !== "done" && isMine(t)).length;
   const streak = reportStreak();
   const selfbar = `<div class="td-selfbar">
       <span>🌱 ${esc(tr("我给自己排了"))} <b>${selfN}</b> ${esc(tr("项"))}</span>
-      <span>${streak ? `🔥 ${esc(tr("连续汇报"))} <b>${streak}</b> ${esc(tr("天"))}` : esc(tr("今天报一项，开始连击"))}</span>
-      <button data-td-filter="mine">${esc(tr("看我的"))} →</button></div>`;
+      <span>${streak ? `🔥 ${esc(tr("连续汇报"))} <b>${streak}</b> ${esc(tr(`${streak} 天`))}` : esc(tr("今天报一项，开始连击"))}</span>
+      <button data-td-filter="todo">${esc(tr("看我的"))} →</button></div>`;
 
-  const body = imp.length + late.length + today.length + soon.length + none.length + fin.length + need.length
-    ? todoSection("📝 " + tr("今天还没汇报"), need, "need") +
+  const body = list.length
+    ? todoSection("⏳ " + tr("等我审核"), pend, "pend") +
       todoSection("★ " + tr("重要"), imp) + todoSection("⚠ " + tr("已逾期"), late, "late") +
       todoSection(tr("今天到期"), today) + todoSection(tr("接下来"), soon) +
       todoSection(tr("无截止"), none) + todoSection("✓ " + tr("已完成"), fin, "done")
@@ -1962,13 +2452,16 @@ function todoHtml() {
 
   const lm = lateForMe();
   const banner = lm.length
-    ? `<div class="td-alert">⚠ ${lm.length} ${esc(tr("条已逾期"))} · ${esc(tr("最久"))} ${Math.max(...lm.map((t) => -daysLeft(t.due)))} ${esc(tr("天"))}
+    ? `<div class="td-alert">⚠ ${lm.length} ${esc(tr("条已逾期"))} · ${esc(tr("最久"))} ${esc(tr(`${Math.max(...lm.map((t) => -daysLeft(t.due)))} 天`))}
         <button data-td-filter="late">${esc(tr("看已逾期"))} →</button></div>`
     : "";
+  const rv = revN ? `<div class="td-alert td-alert-rev">⏳ ${esc(tr(`${revN} 条等你审核`))}
+        <button data-td-filter="review">${esc(tr("去审核"))} →</button></div>` : "";
   const who = f.startsWith("p:") ? `<div class="td-who-bar">${esc(tr("正在看"))} ${esc(nameOf(f.slice(2)))} ${esc(tr("的任务"))}
       <button data-td-filter="all">${esc(tr("看全部"))}</button></div>` : "";
-  return statsBoard(f) + banner + `<div class="td-sec">👤 ${esc(tr("我的今天"))}</div><div class="td-kpi">${kpi}</div>${selfbar}
-    <div class="td-filters">${TODO_FILTERS.map(chip).join("")}</div>${who}` + body +
+  return statsBoard(f) + rv + banner + `<div class="td-sec">👤 ${esc(tr("我的今天"))}</div><div class="td-kpi">${kpi}</div>${selfbar}
+    <div class="td-filters">${TODO_FILTERS.map(chip).join("")}</div>${who}
+    <div class="td-rule">ℹ️ ${esc(tr("规则：负责人点「提交完成」，发起人审核通过才算完成"))}</div>` + body +
     `<button class="fin-fab" id="td_new">＋ ${esc(tr("新待办"))}</button>`;
 }
 
@@ -1980,25 +2473,27 @@ const nameOf = (login) => {
 
 /* 置顶统计：谁手上还有多少事（未完成 / 未跟踪 / 逾期）。所有人都看得见，自己排第一个 */
 function statsBoard(f) {
-  const me = S.user.login;
+  const me = tdMe();
   const agg = {};
   for (const t of TODOS) {
     if (t.status === "done" || !t.owner) continue;
-    const p = agg[t.owner] = agg[t.owner] || { login: t.owner, name: t.owner_name || nameOf(t.owner), open: 0, need: 0, late: 0 };
+    const p = agg[t.owner] = agg[t.owner] || { login: t.owner, name: t.owner_name || nameOf(t.owner), open: 0, need: 0, late: 0, rev: 0 };
     p.open++;
-    if (!reportedToday(t)) p.need++;
+    if (t.status === "doing" && !reportedToday(t)) p.need++;
+    if (t.status === "submitted") p.rev++;
     if (overdue(t)) p.late++;
   }
   const rows = Object.values(agg);
-  if (!agg[me]) rows.push({ login: me, name: S.user.name || me, open: 0, need: 0, late: 0 });
+  if (!agg[me]) rows.push({ login: me, name: S.user.name || me, open: 0, need: 0, late: 0, rev: 0 });
   rows.sort((a, b) => (a.login === me ? -1 : b.login === me ? 1 : b.need - a.need || b.open - a.open));
   const tot = rows.reduce((s, r) => ({ open: s.open + r.open, need: s.need + r.need }), { open: 0, need: 0 });
   const rowsHtml = rows.map((r) => {
-    const k = r.login === me ? "mine" : "p:" + r.login;
+    const k = r.login === me ? "todo" : "p:" + r.login;
     return `<button class="td-brow${r.login === me ? " me" : ""}${f === k ? " on" : ""}" data-td-filter="${esc(k)}">
         <i>${esc(String(r.name).trim().slice(0, 1))}</i>
         <b>${esc(r.name)}${r.login === me ? `<em>${esc(tr("我"))}</em>` : ""}</b>
         <span class="td-num">${esc(tr("未完成"))} <b>${r.open}</b></span>
+        ${r.rev ? `<span class="td-num rev">${esc(tr("待审"))} <b>${r.rev}</b></span>` : ""}
         <span class="td-num${r.need ? " bad" : ""}">${esc(tr("未跟踪"))} <b>${r.need}</b></span>
         ${r.late ? `<span class="td-num late">${esc(tr("逾期"))} <b>${r.late}</b></span>` : ""}
       </button>`;
@@ -2009,22 +2504,298 @@ function statsBoard(f) {
       <div class="td-board-list">${rowsHtml}</div></div>`;
 }
 
+/* ---------- 详情抽屉：留言 / 回复 / 汇报 / 提交 / 审核都在这里，不用来回切页 ---------- */
+function tdOpenPanel(id) {
+  TD_PANEL = id;
+  TD_ACT = null;
+  TD_REPLY = null;
+  if (!document.getElementById("td_pdim")) {
+    document.body.insertAdjacentHTML("beforeend",
+      `<div class="td-pdim" id="td_pdim"></div><aside class="td-panel" id="td_panel"></aside>`);
+    document.getElementById("td_pdim").onclick = tdClosePanel;
+  }
+  document.body.classList.add("td-open");
+  paintPanel();
+}
+
+function tdClosePanel() {
+  TD_PANEL = ""; TD_ACT = null; TD_REPLY = null; TD_SCROLL = null;
+  ["td_pdim", "td_panel"].forEach((k) => { const el = document.getElementById(k); if (el) el.remove(); });
+  document.body.classList.remove("td-open");
+}
+
+function tdActBox(t) {
+  const rev = TD_ACT && TD_ACT.type === "review";
+  return `<div class="td-actbox">
+    <div class="td-act-t">${esc(tr(rev ? "审核这条任务" : "提交完成申请"))}</div>
+    <div class="mut" style="font-size:12px">${esc(tr(rev
+      ? "通过就结案；驳回要写清哪里还没做完，任务回到「进行中」继续做。"
+      : "提交后进入「待审核」，等派活的人确认；自己给自己排的活提交即完成。"))}</div>
+    <textarea id="td_act_text" maxlength="1000" placeholder="${esc(tr(rev ? "审核意见（驳回必填）" : "交付了什么、放哪了（选填）"))}"></textarea>
+    <div class="acts">
+      ${rev ? `<button class="pri" id="td_act_pass">${esc(tr("通过"))}</button><button class="danger" id="td_act_rej">${esc(tr("驳回"))}</button>`
+        : `<button class="pri" id="td_act_ok">${esc(tr("提交"))}</button>`}
+      <button id="td_act_no">${esc(tr("取消"))}</button>
+    </div>
+    <div class="err" id="td_act_err"></div>
+  </div>`;
+}
+
+function tdPanelHtml(t) {
+  const st = tdSt(t);
+  const dl = t.due ? daysLeft(t.due) : null;
+  const late = t.status !== "done" && dl !== null && dl < 0;
+  const all = t.notes || [];
+  const files = t.files || [];
+  const tags = [
+    t.imp ? `<span class="pill td-imp">★ ${esc(tr("重要"))}</span>` : "",
+    t.scope === "company" ? `<span class="pill td-co">${esc(tr("公司事项"))}</span>` : "",
+    t.scope === "person" ? `<span class="pill">${esc(tr("指派"))}</span>` : "",
+    t.self_set ? `<span class="pill td-self">${esc(tr("自定"))}</span>` : "",
+  ].filter(Boolean).join("");
+  const dueTxt = dl === null ? tr("无截止") : late ? `${tr("逾期")} ${tr(`${-dl} 天`)}` : dl === 0 ? tr("今天到期") : `${esc(t.due)} · ${tr(`${dl} 天`)}`;
+  const bar = [
+    canSubmit(t) ? `<button class="pri" data-td-act="submit" data-td-id="${t.id}">📤 ${esc(tr("提交完成"))}</button>` : "",
+    canReview(t) ? `<button class="pri" data-td-act="review" data-td-id="${t.id}">✅ ${esc(tr("审核"))}</button>` : "",
+    t.status === "done" && (isMaker(t) || isAdmin()) ? `<button data-td-act="reopen" data-td-id="${t.id}">↺ ${esc(tr("重开"))}</button>` : "",
+    canTouch(t) ? `<button data-td-act="edit" data-td-id="${t.id}">✎ ${esc(tr("修改"))}</button>` : "",
+  ].filter(Boolean).join("");
+  const composer = TD_ACT ? tdActBox(t) : `<div class="td-composer">
+      ${TD_REPLY ? `<div class="td-replying"><span>↩ ${esc(tr("回复"))} ${esc(TD_REPLY.name)}：${esc(String(TD_REPLY.text || "").slice(0, 40))}</span><button data-td-xreply title="${esc(tr("取消回复"))}">✕</button></div>` : ""}
+      ${isMine(t) && t.status === "doing" ? `<div class="td-quick">${Object.keys(REPORT_FLAGS).map((k) =>
+        `<button data-td-flag="${k}">${esc(tr(REPORT_FLAGS[k]))}</button>`).join("")}</div>` : ""}
+      <textarea id="td_pin" maxlength="1000" placeholder="${esc(tr(t.status === "submitted" ? "补充说明……" : "写一句……（Ctrl+Enter 发送）"))}"></textarea>
+      <div class="td-crow">
+        ${canTouch(t) ? `<label class="td-att-add">📎 ${esc(tr("附件"))}<input type="file" multiple hidden data-td-pfile="${t.id}" accept=".pdf,.png,.jpg,.jpeg,.webp,.gif,.txt,.csv,.zip,.doc,.docx,.xls,.xlsx,.ppt,.pptx,image/*,application/pdf"></label>` : ""}
+        <span class="mut" style="font-size:11.5px">${files.length ? esc(tr(`${files.length} 个附件`)) : ""}</span>
+        <button class="pri" id="td_psend">${esc(tr("发送"))}</button>
+      </div>
+    </div>`;
+  return `<div class="td-phead">
+      <span class="td-st ${st.c}" style="margin-top:3px">${esc(tr(st.t))}</span>
+      <div class="td-ph">
+        <h3>${esc(t.title)}</h3>
+        <div class="mut">${t.creator ? esc(t.creator_name || t.creator) : "—"} → ${t.owner ? esc(t.owner_name || t.owner) : esc(tr("未指派"))} · ${dueTxt}${t.rounds ? ` · ${esc(tr(`第 ${t.rounds} 轮`))}` : ""}</div>
+      </div>
+      <button class="px" data-pclose title="${esc(tr("关闭"))}">✕</button>
+    </div>
+    <div class="td-pbody">
+      ${tags ? `<div class="td-ptags">${tags}</div>` : ""}
+      ${t.note ? `<div class="td-pnote">${esc(t.note)}</div>` : ""}
+      <div class="td-psec">💬 ${esc(tr("过程与留言"))} <i>${all.length}</i></div>
+      ${all.length ? all.map((n) => noteLine(n, t)).join("") : `<div class="mut" style="font-size:12.5px">${esc(tr("还没有留言"))}</div>`}
+      <div class="td-psec">📎 ${esc(tr("附件"))} <i>${files.length}</i></div>
+      ${files.length ? files.map((f) => tdAttRow(f, t.id, canTouch(t))).join("") : `<div class="mut" style="font-size:12.5px">${esc(tr("还没有附件"))}</div>`}
+      ${t.status === "done" && t.done_at ? `<div class="td-psec">✅ ${esc(tr("结案"))}</div><div class="mut" style="font-size:12.5px">${esc(String(t.done_at).slice(0, 16).replace("T", " "))} · ${esc(tr(t.review_result === "pass" ? "已审核通过" : "已完成"))}</div>` : ""}
+    </div>
+    <div class="td-pfoot">${bar ? `<div class="td-pbar">${bar}</div>` : ""}${composer}</div>`;
+}
+
+function paintPanel() {
+  const box = document.getElementById("td_panel");
+  if (!box) return;
+  const t = TODOS.find((x) => x.id === TD_PANEL);
+  if (!t) { tdClosePanel(); return; }
+  const pb = box.querySelector(".td-pbody");
+  const ps = pb ? pb.scrollTop : 0;
+  box.innerHTML = tdPanelHtml(t);
+  bindPanel(t);
+  const nb = box.querySelector(".td-pbody");
+  if (nb) nb.scrollTop = TD_SCROLL != null ? TD_SCROLL : ps;
+  TD_SCROLL = null;
+}
+
+function bindPanel(t) {
+  const box = document.getElementById("td_panel");
+  if (!box) return;
+  const pc = box.querySelector("[data-pclose]");
+  if (pc) pc.onclick = tdClosePanel;
+  box.querySelectorAll("[data-td-reply]").forEach((b) => b.onclick = () => {
+    const n = (t.notes || []).find((x) => x.id === b.dataset.tdReply);
+    if (!n) return;
+    TD_REPLY = { id: n.id, name: n.name, text: n.body };
+    paintPanel();
+    const inp = document.getElementById("td_pin");
+    if (inp) inp.focus();
+  });
+  const xr = box.querySelector("[data-td-xreply]");
+  if (xr) xr.onclick = () => { TD_REPLY = null; paintPanel(); };
+  box.querySelectorAll("[data-td-flag]").forEach((b) => b.onclick = async () => {
+    const pin = document.getElementById("td_pin");
+    const text = (pin && pin.value || "").trim();
+    try {
+      await api("/todos/" + encodeURIComponent(t.id) + "/report", { method: "POST", body: { flag: b.dataset.tdFlag, text }, quiet: true });
+      toast(tr("已上报，今天这项算报了"));
+      await tdRefresh(true);
+    } catch (e) { toast(e.message, "bad"); }
+  });
+  const send = async () => {
+    const pin = document.getElementById("td_pin");
+    const text = (pin && pin.value || "").trim();
+    if (!text) { toast(tr("写点内容再发"), "bad"); return; }
+    const data = { text };
+    if (TD_REPLY) data.reply_to = TD_REPLY.id;
+    try {
+      await api("/todos/" + encodeURIComponent(t.id) + "/notes", { method: "POST", body: data, quiet: true });
+      TD_REPLY = null;
+      await tdRefresh(true);
+    } catch (e) { toast(e.message, "bad"); }
+  };
+  const ps = box.querySelector("#td_psend");
+  if (ps) ps.onclick = send;
+  const pin = box.querySelector("#td_pin");
+  if (pin) pin.onkeydown = (e) => { if ((e.ctrlKey || e.metaKey) && e.key === "Enter") { e.preventDefault(); send(); } };
+  box.querySelectorAll("[data-td-pfile]").forEach((inp) => inp.onchange = async () => {
+    const list = [...(inp.files || [])];
+    if (!list.length) return;
+    inp.disabled = true;
+    let n = 0;
+    for (const f of list) {
+      try { await tdUpload(t.id, f); n++; } catch (e) { toast(e.message || tr("上传失败"), "bad"); }
+    }
+    if (n) toast(tr(`已上传 ${n} 个附件`));
+    await tdRefresh();
+  });
+  box.querySelectorAll("[data-td-fdel]").forEach((b) => b.onclick = async () => {
+    if (!confirm(tr("删除这个附件？"))) return;
+    try {
+      await api("/todos/" + encodeURIComponent(b.dataset.tdFid) + "/file/" + encodeURIComponent(b.dataset.tdFdel), { method: "DELETE", quiet: true });
+      await tdRefresh();
+    } catch (e) { toast(e.message, "bad"); }
+  });
+  box.querySelectorAll("[data-td-act]").forEach((b) => b.onclick = () => {
+    const type = b.dataset.tdAct;
+    if (type === "edit") { todoSheet(t); return; }
+    if (type === "reopen") return todoPatch(t.id, { status: "doing" });
+    TD_ACT = { type, id: t.id };
+    paintPanel();
+  });
+  const no = box.querySelector("#td_act_no");
+  if (no) no.onclick = () => { TD_ACT = null; paintPanel(); };
+  const val = () => {
+    const el = document.getElementById("td_act_text");
+    return (el && el.value || "").trim();
+  };
+  const subm = async () => {
+    try {
+      const r = await api("/todos/" + encodeURIComponent(t.id) + "/submit", { method: "POST", body: { note: val() }, quiet: true });
+      TD_ACT = null;
+      toast(r.status === "done" ? tr("已完成") : tr("已提交，等对方审核"));
+      await tdRefresh(true);
+    } catch (e) { const el = document.getElementById("td_act_err"); if (el) el.textContent = e.message; }
+  };
+  const review = async (pass) => {
+    const note = val();
+    if (!pass && !note) { const el = document.getElementById("td_act_err"); if (el) el.textContent = tr("驳回要写清哪里还没做完"); return; }
+    try {
+      await api("/todos/" + encodeURIComponent(t.id) + "/review", { method: "POST", body: { pass, note }, quiet: true });
+      TD_ACT = null;
+      toast(pass ? tr("已通过，任务完成") : tr("已驳回，任务回到进行中"));
+      await tdRefresh(true);
+    } catch (e) { const el = document.getElementById("td_act_err"); if (el) el.textContent = e.message; }
+  };
+  const ok = box.querySelector("#td_act_ok");
+  if (ok) ok.onclick = subm;
+  const ap = box.querySelector("#td_act_pass");
+  if (ap) ap.onclick = () => review(true);
+  const rj = box.querySelector("#td_act_rej");
+  if (rj) rj.onclick = () => review(false);
+  const ta = box.querySelector("#td_act_text");
+  if (ta) ta.focus();
+}
+
+/* 局部刷新：只重画列表和抽屉，保住滚动位置和面板 */
+async function tdRefresh(toEnd) {
+  const y = window.scrollY;
+  const pb = document.querySelector("#td_panel .td-pbody");
+  await loadTodos();
+  if (S.tab === "todo") {
+    $("#pane").innerHTML = todoHtml();
+    bindTodo();
+  }
+  if (TD_PANEL) paintPanel();
+  const nb = document.querySelector("#td_panel .td-pbody");
+  if (nb && toEnd) nb.scrollTop = nb.scrollHeight;
+  window.scrollTo(0, y);
+}
+
+/* 有人回复时自动出现：待办页每 20 秒对一次，内容变了才重画 */
+function tdPollStart() {
+  tdPollStop();
+  TD_POLL = setInterval(async () => {
+    if (document.hidden || S.tab !== "todo") return;
+    try {
+      const r = await api("/todos", { quiet: true });
+      const raw = JSON.stringify(r.todos || []);
+      if (raw === TD_RAW) return;
+      TODOS = r.todos || [];
+      TD_RAW = raw;
+      const y = window.scrollY;
+      const pb = document.querySelector("#td_panel .td-pbody");
+      const ps = pb ? pb.scrollTop : 0;
+      $("#pane").innerHTML = todoHtml();
+      bindTodo();
+      if (TD_PANEL) paintPanel();
+      const nb = document.querySelector("#td_panel .td-pbody");
+      if (nb) nb.scrollTop = ps;
+      window.scrollTo(0, y);
+    } catch (e) {}
+  }, 20000);
+}
+function tdPollStop() { if (TD_POLL) clearInterval(TD_POLL); TD_POLL = null; }
+
+function bindTodo() {
+  const pane = $("#pane");
+  if ($("#td_new")) $("#td_new").onclick = () => todoSheet(null);
+  pane.querySelectorAll("[data-td-filter]").forEach((b) => b.onclick = (e) => {
+    e.stopPropagation();
+    S.todoFilter = b.dataset.tdFilter;
+    render();
+  });
+  pane.querySelectorAll("[data-td-open]").forEach((b) => b.onclick = (e) => {
+    e.stopPropagation();
+    tdOpenPanel(b.dataset.tdOpen);
+  });
+  pane.querySelectorAll("[data-td-star]").forEach((b) => b.onclick = (e) => {
+    e.stopPropagation();
+    const t = TODOS.find((x) => x.id === b.dataset.tdStar) || {};
+    todoPatch(b.dataset.tdStar, { imp: t.imp ? 0 : 1 });
+  });
+  pane.querySelectorAll("[data-td-act]").forEach((b) => b.onclick = (e) => {
+    e.stopPropagation();
+    const t = TODOS.find((x) => x.id === b.dataset.tdId);
+    if (!t) return;
+    if (b.dataset.tdAct === "report") return tdReport(t);
+    tdOpenPanel(t.id);
+    TD_ACT = { type: b.dataset.tdAct, id: t.id };
+    paintPanel();
+  });
+}
+
+async function todoPatch(id, patch) {
+  try {
+    await api("/todos/" + encodeURIComponent(id), { method: "PATCH", body: patch, quiet: true });
+    await tdRefresh();
+  } catch (e) { toast(e.message, "bad"); }
+}
+
+/* 新建 / 修改 */
 function todoSheet(t) {
   const cur = t || { title: "", note: "", scope: "self", owner: "", due: "", imp: 0 };
-  const opt = (p) => `<option value="${esc(p.login)}"${p.login === cur.owner ? " selected" : ""}>${esc(p.name)}${p.login === S.user.login ? " (" + esc(tr("我")) + ")" : ""}</option>`;
+  const opt = (p) => `<option value="${esc(p.login)}"${p.login === cur.owner ? " selected" : ""}>${esc(p.name)}${p.login === tdMe() ? " (" + esc(tr("我")) + ")" : ""}</option>`;
   document.body.insertAdjacentHTML("beforeend", `<div class="fd-dim" id="td_dim"></div>
     <div class="fd-sheet" id="td_sheet">
       <div class="fd-sh"><h3>${esc(tr(t ? "修改待办" : "新待办"))}</h3><button id="td_x">${esc(tr("取消"))}</button></div>
       <label>${esc(tr("要做什么"))}</label><input id="tdf_title" maxlength="200" value="${esc(cur.title)}" placeholder="${esc(tr("例：把 1330NW 的取样照片传完"))}">
-      <div class="mut" style="font-size:12.5px;margin:-2px 0 8px">${esc(tr(canAssign()
-        ? "派下去就归他，从今天开始算汇报；对方每天要交一句进展。"
-        : "给自己排一件今天要推进的事，做完点「完成」，每天点一下「汇报」。"))}</div>
+      <div class="mut" style="font-size:12.5px;margin:-2px 0 8px">${esc(tr(canManage()
+        ? "派下去就归他；他做完要提交完成申请，你审核通过才算结束。"
+        : "给自己排一件今天要推进的事：做完点「提交完成」，每天点一下「汇报」。"))}</div>
       <div class="row">
         <div><label>${esc(tr("谁来做"))}</label>
           <select id="tdf_scope">
             <option value="self"${cur.scope === "self" ? " selected" : ""}>${esc(tr("我自己"))}</option>
-            ${!canAssign() && cur.scope !== "self" ? `<option value="${esc(cur.scope)}" selected disabled>${esc(tr("别人派的"))}</option>` : ""}
-            ${canAssign() ? `<option value="person"${cur.scope === "person" ? " selected" : ""}>${esc(tr("派给同事"))}</option>
+            ${!canManage() && cur.scope !== "self" ? `<option value="${esc(cur.scope)}" selected disabled>${esc(tr("别人派的"))}</option>` : ""}
+            ${canManage() ? `<option value="person"${cur.scope === "person" ? " selected" : ""}>${esc(tr("派给同事"))}</option>
             <option value="company"${cur.scope === "company" ? " selected" : ""}>${esc(tr("公司事项（大家跟）"))}</option>` : ""}
           </select></div>
         <div id="tdf_owner_box"${cur.scope === "person" ? "" : ' class="hide"'}><label>${esc(tr("执行人"))}</label>
@@ -2037,7 +2808,7 @@ function todoSheet(t) {
       <label>${esc(tr("说明（给同事看的具体要求）"))}</label><textarea id="tdf_note" placeholder="${esc(tr("做到什么程度算完、要找谁、注意什么"))}">${esc(cur.note)}</textarea>
       <div class="err" id="tdf_err"></div>
       <div class="acts" style="margin-top:10px"><button class="pri" id="tdf_save">${esc(tr("保存"))}</button><button id="tdf_cancel">${esc(tr("取消"))}</button></div>
-      ${t && (t.creator === S.user.login || S.user.role === "admin") ? `<button class="danger" id="tdf_del" style="margin-top:14px;width:100%">${esc(tr("删除这条待办"))}</button>` : ""}
+      ${t && (t.creator === tdMe() || isAdmin()) ? `<button class="danger" id="tdf_del" style="margin-top:14px;width:100%">${esc(tr("删除这条待办"))}</button>` : ""}
     </div>`);
   const close = () => { ["td_dim", "td_sheet"].forEach((id) => { const el = document.getElementById(id); if (el) el.remove(); }); };
   $("#td_x").onclick = close;
@@ -2061,8 +2832,7 @@ function todoSheet(t) {
       if (t) await api("/todos/" + encodeURIComponent(t.id), { method: "PATCH", body: b });
       else await api("/todos", { method: "POST", body: b });
       close();
-      await loadTodos();
-      render();
+      await tdRefresh();
     } catch (e) { $("#tdf_err").textContent = e.message; }
   };
   $("#tdf_title").focus();
@@ -2072,56 +2842,10 @@ function todoSheet(t) {
     try {
       await api("/todos/" + encodeURIComponent(t.id), { method: "DELETE", toast: tr("已删除") });
       close();
-      await loadTodos();
-      render();
+      tdClosePanel();
+      await tdRefresh();
     } catch (e) { $("#tdf_err").textContent = e.message; }
   };
-}
-
-function bindTodo() {
-  const pane = $("#pane");
-  if ($("#td_new")) $("#td_new").onclick = () => todoSheet(null);
-  pane.querySelectorAll("[data-td-filter]").forEach((b) => b.onclick = () => { S.todoFilter = b.dataset.tdFilter; render(); });
-  pane.querySelectorAll("[data-td-edit]").forEach((b) => b.onclick = () => todoSheet(TODOS.find((t) => t.id === b.dataset.tdEdit)));
-  pane.querySelectorAll("[data-td-cmt]").forEach((b) => b.onclick = () => { TD_OPEN[b.dataset.tdCmt] = !TD_OPEN[b.dataset.tdCmt]; render(); });
-  pane.querySelectorAll("[data-td-star]").forEach((b) => b.onclick = () => todoPatch(b.dataset.tdStar, { imp: (TODOS.find((t) => t.id === b.dataset.tdStar) || {}).imp ? 0 : 1 }));
-  pane.querySelectorAll("[data-td-done]").forEach((b) => b.onclick = () => {
-    const t = TODOS.find((x) => x.id === b.dataset.tdDone);
-    todoPatch(t.id, { status: t.status === "done" ? "doing" : "done" });
-  });
-  pane.querySelectorAll("[data-td-report]").forEach((b) => b.onclick = () => tdReport(TODOS.find((x) => x.id === b.dataset.tdReport)));
-  pane.querySelectorAll("[data-td-fin]").forEach((b) => b.onclick = () => todoPatch(b.dataset.tdFin, { status: "done" }));
-  pane.querySelectorAll("[data-td-send]").forEach((b) => b.onclick = async () => {
-    const id = b.dataset.tdSend;
-    const inp = pane.querySelector(`[data-td-input="${id}"]`);
-    const text = (inp && inp.value || "").trim();
-    if (!text) { toast(tr("写点内容再发"), "bad"); return; }
-    try { await api("/todos/" + encodeURIComponent(id) + "/notes", { method: "POST", body: { text }, quiet: true }); await loadTodos(); render(); }
-    catch (e) { toast(e.message, "bad"); }
-  });
-  pane.querySelectorAll("[data-td-file]").forEach((inp) => inp.onchange = async () => {
-    const id = inp.dataset.tdFile;
-    const list = [...(inp.files || [])];
-    if (!list.length) return;
-    inp.disabled = true;
-    for (const f of list) {
-      try { await tdUpload(id, f); }
-      catch (e) { toast(e.message || tr("上传失败"), "bad"); }
-    }
-    await loadTodos(); render();
-  });
-  pane.querySelectorAll("[data-td-fdel]").forEach((b) => b.onclick = async () => {
-    if (!confirm(tr("删除这个附件？"))) return;
-    try {
-      await api("/todos/" + encodeURIComponent(b.dataset.tdFid) + "/file/" + encodeURIComponent(b.dataset.tdFdel), { method: "DELETE", quiet: true });
-      await loadTodos(); render();
-    } catch (e) { toast(e.message, "bad"); }
-  });
-}
-
-async function todoPatch(id, patch) {
-  try { await api("/todos/" + encodeURIComponent(id), { method: "PATCH", body: patch, quiet: true }); await loadTodos(); render(); }
-  catch (e) { toast(e.message, "bad"); }
 }
 
 /* 每日汇报：三下五除二 —— 推进了 / 卡住了 / 今天没动，点一下就算报过；想细说再写字 */
@@ -2149,8 +2873,7 @@ function tdReport(t) {
       await api("/todos/" + encodeURIComponent(t.id) + "/report", { method: "POST", body: { text, flag }, quiet: true });
       close();
       toast(tr("已上报，今天这项算报了"));
-      await loadTodos();
-      render();
+      await tdRefresh(true);
     } catch (e) { $("#tdr_err").textContent = e.message; }
   };
   document.querySelectorAll("[data-tdr-flag]").forEach((b) => b.onclick = () => send(b.dataset.tdrFlag));
@@ -2165,7 +2888,7 @@ function maybeLateAlert() {
   const lm = lateForMe();
   const nr = needReport();
   const byOwner = {};
-  if (canAssign()) {
+  if (canManage()) {
     for (const t of TODOS) {
       if (t.status === "done" || !t.owner || t.owner === S.user.login || reportedToday(t)) continue;
       const p = byOwner[t.owner] = byOwner[t.owner] || { name: t.owner_name || nameOf(t.owner), n: 0 };
@@ -2177,12 +2900,12 @@ function maybeLateAlert() {
   const key = "tdal_" + S.user.login + "_" + iso(new Date());
   try { if (localStorage.getItem(key)) return; } catch (e) {}
   const line = (t, right) => `<div class="td-al-line"><b>${esc(t.title)}</b><span class="${right.cls}">${right.txt}</span></div>`;
-  const lateRows = lm.slice(0, 5).map((t) => line(t, { cls: "td-late", txt: `${-daysLeft(t.due)} ${tr("天")}` })).join("");
+  const lateRows = lm.slice(0, 5).map((t) => line(t, { cls: "td-late", txt: tr(`${-daysLeft(t.due)} 天`) })).join("");
   const needRows = nr.slice(0, 5).map((t) => line(t, {
     cls: reportAge(t) >= 2 ? "td-late" : "mut",
-    txt: reportAge(t) ? `${reportAge(t)} ${tr("天没汇报")}` : tr("今天还没汇报"),
+    txt: reportAge(t) ? tr(`${reportAge(t)} 天没汇报`) : tr("今天还没汇报"),
   })).join("");
-  const teamRows = team.map((p) => `<div class="td-al-line"><b>${esc(p.name)}</b><span class="td-late">${p.n} ${esc(tr("项没汇报"))}</span></div>`).join("");
+  const teamRows = team.map((p) => `<div class="td-al-line"><b>${esc(p.name)}</b><span class="td-late">${esc(tr(`${p.n} 项没汇报`))}</span></div>`).join("");
   const head = nr.length ? `📝 ${tr("今天还没汇报")} ${nr.length} ${tr("项")}`
     : lm.length ? `⚠ ${lm.length} ${tr("条已逾期")}`
       : `👀 ${team.length} ${tr("位同事今天还没汇报")}`;
@@ -2213,37 +2936,37 @@ function usersHtml() {
   const cards = S.users.map((u) => (u.id === S.editUid ? userEditHtml(u) : `
     <div class="ucard">
       <div class="uhead">
-        <div><span class="uname">${esc(u.name)}</span>${u.active ? "" : ' <span class="pill">停用</span>'}
+        <div><span class="uname">${esc(u.name)}</span>${u.active ? "" : ' <span class="pill">${esc(tr(`停用`))}</span>'}
           <div class="mut">${esc(u.login)}${u.phone ? " · " + esc(u.phone) : ""}</div></div>
         <span class="pill${u.role === "admin" ? " me" : u.role === "finance" ? " fin" : ""}">${roleName(u.role)}</span>
       </div>
       <div class="uacts">
-        <button data-mods="${u.id}">权限</button>
-        <button data-edit-user="${u.id}">编辑</button>
-        <button data-pwd="${u.id}">改密码</button>
+        <button data-mods="${u.id}">${esc(tr(`权限`))}</button>
+        <button data-edit-user="${u.id}">${esc(tr(`编辑`))}</button>
+        <button data-pwd="${u.id}">${esc(tr(`改密码`))}</button>
         <button data-active="${u.id}">${u.active ? "停用" : "启用"}</button>
-        <button class="danger" data-del-user="${u.id}">删除</button>
+        <button class="danger" data-del-user="${u.id}">${esc(tr(`删除`))}</button>
       </div>
     </div>`)).join("");
-  return `<div class="card"><h3>新增账号</h3>
-    <div class="row"><div><label>姓名</label><input id="u_name"></div><div><label>账号</label><input id="u_login" placeholder="可留空，默认用姓名"></div></div>
-    <div class="row"><div><label>初始密码（≥8 位）</label><input id="u_pass" type="text"></div><div><label>角色</label><select id="u_role">${roleOpts("staff")}</select></div></div>
-    <label>电话（选填）</label><input id="u_phone">
+  return `<div class="card"><h3>${esc(tr(`新增账号`))}</h3>
+    <div class="row"><div><label>${esc(tr(`姓名`))}</label><input id="u_name"></div><div><label>${esc(tr(`账号`))}</label><input id="u_login" placeholder="${esc(tr(`可留空，默认用姓名`))}"></div></div>
+    <div class="row"><div><label>${esc(tr(`初始密码（≥8 位）`))}</label><input id="u_pass" type="text"></div><div><label>${esc(tr(`角色`))}</label><select id="u_role">${roleOpts("staff")}</select></div></div>
+    <label>${esc(tr(`电话（选填）`))}</label><input id="u_phone">
     <div class="ok" id="u_ok"></div><div class="err" id="u_err"></div>
-    <button class="pri" id="u_add" style="margin-top:8px;width:100%">开通账号</button>
+    <button class="pri" id="u_add" style="margin-top:8px;width:100%">${esc(tr(`开通账号`))}</button>
   </div>
-  <div class="card"><h3>账号（${S.users.length}）</h3>
-    <div class="ulist">${cards || '<div class="empty">还没有账号</div>'}</div>
-    <p class="mut">员工只能改自己录的日报；负责人和管理员能改全部；财务能看全部账目并替任何人记账，但改不了余额、分类和期初（负责人专属）。只有管理员能管账号。删除后此人不能再登录，但他录过的日报和账目都保留。</p>
+  <div class="card"><h3>${esc(tr(`账号（${S.users.length}）`))}</h3>
+    <div class="ulist">${cards || '<div class="empty">${esc(tr(`还没有账号`))}</div>'}</div>
+    <p class="mut">${esc(tr(`员工只能改自己录的日报；负责人和管理员能改全部；财务能看全部账目并替任何人记账，但改不了余额、分类和期初（负责人专属）。只有管理员能管账号。删除后此人不能再登录，但他录过的日报和账目都保留。`))}</p>
   </div>`;
 }
 
 function userEditHtml(u) {
   return `<div class="ucard">
-    <div class="row"><div><label>姓名</label><input id="eu_name" value="${esc(u.name)}"></div><div><label>账号</label><input id="eu_login" value="${esc(u.login)}"></div></div>
-    <div class="row"><div><label>角色</label><select id="eu_role">${roleOpts(u.role)}</select></div><div><label>电话</label><input id="eu_phone" value="${esc(u.phone || "")}"></div></div>
+    <div class="row"><div><label>${esc(tr(`姓名`))}</label><input id="eu_name" value="${esc(u.name)}"></div><div><label>${esc(tr(`账号`))}</label><input id="eu_login" value="${esc(u.login)}"></div></div>
+    <div class="row"><div><label>${esc(tr(`角色`))}</label><select id="eu_role">${roleOpts(u.role)}</select></div><div><label>${esc(tr(`电话`))}</label><input id="eu_phone" value="${esc(u.phone || "")}"></div></div>
     <div class="err" id="eu_err"></div>
-    <div class="uacts"><button class="pri" id="eu_save">保存</button><button id="eu_cancel">取消</button></div>
+    <div class="uacts"><button class="pri" id="eu_save">${esc(tr(`保存`))}</button><button id="eu_cancel">${esc(tr(`取消`))}</button></div>
   </div>`;
 }
 
@@ -2278,7 +3001,7 @@ function coRowHtml(c) {
   const sh = (c.shareholders || []).map((s) => `${esc(s.name)}${s.pct ? " " + Math.round(s.pct) + "%" : ""}`).join("；");
   return `<button class="co-row" data-co="${esc(c.id)}">
     <div class="co-main">
-      <b>${esc(c.name)}${c.kind === "person" ? ' <span class="pill">' + esc(tr("个人")) + "</span>" : ""}${(c.docs || []).length ? ' <span class="mut" style="font-weight:600">📄' + (c.docs || []).length + "</span>" : ""}</b>
+      <b>${esc(c.name)}${c.kind === "person" ? ' <span class="pill">' + esc(tr("个人")) + '</span>' : ""}${(c.docs || []).length ? ' <span class="mut" style="font-weight:600">📄' + (c.docs || []).length + "</span>" : ""}</b>
       <span>${c.reg_no ? "PACRA " + esc(c.reg_no) : esc(tr("PACRA 未填"))}${c.phone ? " · " + esc(c.phone) : ""}</span>
       <span class="co-sh">${sh || esc(tr("股东未填"))}</span>
     </div>
@@ -2572,13 +3295,13 @@ function bindCompany(pane) {
       }
       await loadCompanies();
       render();
-      if (up) toast(tr("已保存") + "，" + tr("资料") + " " + up + " " + tr("份已上传"));
+      if (up) toast(tr(`已保存，资料 ${up} 份已上传`));
       else toast(tr("已保存"));
-      if (bad.length) toast(bad.length + " " + tr("份资料上传失败") + "：" + bad.join("、"), "bad");
+      if (bad.length) toast(tr(`${bad.length} 份资料上传失败：${bad.join("、")}`), "bad");
     } catch (e) { toast(e.message, "bad"); }
   });
   if ($("#co_del")) $("#co_del").onclick = go(async () => {
-    if (!confirm(tr("确定删除") + "「" + CO.cur.name + "」？")) return;
+    if (!confirm(tr(`确定删除「${CO.cur.name}」？`))) return;
     try {
       await api("/companies/" + CO.cur.id, { method: "DELETE" });
       CO.cur = null;
@@ -2597,24 +3320,24 @@ function bindCompany(pane) {
 
 /* ---------- 我的 ---------- */
 function mineHtml() {
-  return `<div class="card"><h3>我的账号</h3>
+  return `<div class="card"><h3>${esc(tr(`我的账号`))}</h3>
     <table>
-      <tr><th>姓名</th><td>${esc(S.user.name)}</td></tr>
-      <tr><th>账号</th><td>${esc(S.user.login)}</td></tr>
-      <tr><th>角色</th><td>${ROLE_ZH[S.user.role] || "员工"}</td></tr>
-      <tr><th>上次登录</th><td>${esc((S.user.last_login || "").slice(0, 16).replace("T", " ") || "—")}</td></tr>
+      <tr><th>${esc(tr(`姓名`))}</th><td>${esc(S.user.name)}</td></tr>
+      <tr><th>${esc(tr(`账号`))}</th><td>${esc(S.user.login)}</td></tr>
+      <tr><th>${esc(tr(`角色`))}</th><td>${ROLE_ZH[S.user.role] || "员工"}</td></tr>
+      <tr><th>${esc(tr(`上次登录`))}</th><td>${esc((S.user.last_login || "").slice(0, 16).replace("T", " ") || "—")}</td></tr>
     </table></div>
-  <div class="card"><h3>改密码</h3>
-    <label>原密码</label><input id="p_old" type="password">
-    <label>新密码（≥8 位）</label><input id="p_new" type="password">
+  <div class="card"><h3>${esc(tr(`改密码`))}</h3>
+    <label>${esc(tr(`原密码`))}</label><input id="p_old" type="password">
+    <label>${esc(tr(`新密码（≥8 位）`))}</label><input id="p_new" type="password">
     <div class="err" id="p_err"></div><div class="ok" id="p_ok"></div>
-    <button class="pri" id="p_save" style="margin-top:8px">保存</button>
-    <p class="mut">改完其它设备上的登录会失效，需要用新密码重登。</p>
+    <button class="pri" id="p_save" style="margin-top:8px">${esc(tr(`保存`))}</button>
+    <p class="mut">${esc(tr(`改完其它设备上的登录会失效，需要用新密码重登。`))}</p>
   </div>
-  <div class="card"><h3>关于</h3><p class="mut" style="margin:0">页面版本 ${esc(BUILD)}</p></div>
-  <div class="card"><h3>退出</h3>
-    <p class="mut" style="margin:0 0 8px">退出后需要重新用账号密码登录。</p>
-    <button class="danger" id="p_out" style="width:100%">退出登录</button>
+  <div class="card"><h3>${esc(tr(`关于`))}</h3><p class="mut" style="margin:0">${esc(tr(`页面版本 ${esc(BUILD)}`))}</p></div>
+  <div class="card"><h3>${esc(tr(`退出`))}</h3>
+    <p class="mut" style="margin:0 0 8px">${esc(tr(`退出后需要重新用账号密码登录。`))}</p>
+    <button class="danger" id="p_out" style="width:100%">${esc(tr(`退出登录`))}</button>
   </div>`;
 }
 
@@ -2640,14 +3363,14 @@ const saveFinView = () => {
   try { localStorage.setItem("ops_fin_view", JSON.stringify({ who: FINWHO, range: FINR, inv: FININV, ana: FINANA })); } catch (e) {}
 };
 const FIN_CAT_ZH = { transport: "交通", fuel: "加油", tip: "小费", meal: "餐饮住宿", comms: "通讯", office: "办公",
-  allow: "员工补贴", pliving: "生活开销", repair: "维修", misc: "其它",
+  bankfee: "银行手续费", allow: "员工补贴", pliving: "生活开销", repair: "维修", misc: "其它",
   sub: "外协劳务（包工头）", serenje: "Serenje 钽铌矿项目",
   loan: "借款", home: "家庭开支",
   /* 老分类：只用来显示还没合并的历史记录 */
   lodging: "住宿", daily: "日常", postage: "邮费", other: "其它" };
 /* 归属（大类）→ 分类（细类）：改这里就是改「记一笔」的下拉 */
 const FIN_FT = [
-  ["life", "生活", ["transport", "fuel", "tip", "meal", "comms", "office", "allow", "pliving", "repair", "misc"]],
+  ["life", "生活", ["transport", "fuel", "tip", "meal", "comms", "office", "bankfee", "allow", "pliving", "repair", "misc"]],
   ["project", "项目", ["sub", "serenje"]],
   ["licence", "矿权维护", []],
   ["ledger", "往来（不计费用）", ["loan", "home"]],
@@ -2673,7 +3396,7 @@ const finCatName = (k) => {
 const finKindName = (k) => (k === "in" ? "收入" : k === "float" ? "备用金" : k === "move" ? "取现/存现" : k === "transfer" ? "人员转账" : "支出");
 
 /* 账户：对账余额 + 之后的流入/流出，拆成「来源 − 花费 = 剩余」 */
-function finAcct(uid, skipId) {
+function finAcct(uid, skipId, upto) {
   const a = (FIN.accounts || []).find((x) => x.uid === uid) || {};
   const since = a.since || "";
   const src = { cash: Number(a.cash) || 0, card: Number(a.card) || 0 };
@@ -2681,6 +3404,7 @@ function finAcct(uid, skipId) {
   const chOf = (ch) => (ch === "card" ? "card" : "cash");
   for (const e of FIN.entries) {
     if (skipId && e.id === skipId) continue;
+    if (upto && String(e.date) > upto) continue;
     if (since && String(e.date) <= since) continue;
     const amt = Number(e.amount) || 0;
     const ch = chOf(e.ch);
@@ -2711,6 +3435,122 @@ function finFloatOf(uid) {
     used: used.reduce((s, e) => s + (Number(e.amount) || 0), 0),
     giver: got[0].uid, since,
   };
+}
+
+/* ---------- 银行水单：解析 + 与系统账对账 ---------- */
+const BANK_MON = { JAN: 1, FEB: 2, MAR: 3, APR: 4, MAY: 5, JUN: 6, JUL: 7, AUG: 8, SEP: 9, OCT: 10, NOV: 11, DEC: 12 };
+const BANK_DATE_LINE = /^(\d{2}-(?:[A-Z]{3}|\d{2})-\d{4})\s+(\d{2}-(?:[A-Z]{3}|\d{2})-\d{4})\b/;
+const BANK_AMT_PAIR = /(-?[\d,]+\.\d{2})\s+(-?[\d,]+\.\d{2})\s*$/;
+const bankNum = (s) => {
+  const v = Number(String(s == null ? "" : s).replace(/,/g, ""));
+  return isFinite(v) ? Math.round(v * 100) / 100 : 0;
+};
+/* 水单日期 → YYYY-MM-DD（支持 12-11-2026 和 12-NOV-2026） */
+function bankISO(s) {
+  const m = /^(\d{2})-([A-Z]{3}|\d{2})-(\d{4})$/.exec(String(s || "").trim());
+  if (!m) return "";
+  const mo = /^\d+$/.test(m[2]) ? Number(m[2]) : BANK_MON[m[2]];
+  if (!mo) return "";
+  return `${m[3]}-${String(mo).padStart(2, "0")}-${m[1]}`;
+}
+
+/* 摘要关键词 → 分类（只是建议，界面上可改） */
+const BANK_CAT_HINTS = [
+  [/SAFEEINCOME|PORD|TXN ?CHARGE|CHARGES?|COMMISSION|MONTHLY FEE|LEDGER FEE/i, "bankfee"],
+  [/SALARY|SLARY|WAGES|PAYROLL/i, "u:员工工资"],
+  [/DONATION/i, "misc"],
+  [/\bLAND\b|\bCADASTRE\b|\bCAD\b|\bSURVEY\b/i, "serenje"],
+  [/FUEL|PETROL|DIESEL|PUMA|ENGEN|\bTOTAL\b|\bSPAR\b/i, "fuel"],
+  [/TYRE|TIRE|SPARE|REPAIR|WORKSHOP/i, "repair"],
+  [/AIRTIME|AIRTEL|MTN|ZAMTEL|BUNDLE/i, "comms"],
+  [/RESTAURANT|HOTEL|LODGE|FOOD|CAFE|MEAL/i, "meal"],
+  [/TAXI|UBER|BOLT|TRANSPORT|FREIGHT|LOGISTIC/i, "transport"],
+  [/OFFICE|STATIONERY|PRINT/i, "office"],
+];
+function bankSuggestCat(descr) {
+  for (const [re, cat] of BANK_CAT_HINTS) if (re.test(descr)) return cat;
+  return "";
+}
+
+/* pdf.js 抽出来的文本（按行）→ 表头 + 逐笔。
+   方向不用列坐标，用余额差：同一笔里余额下降=借方，上升=贷方。 */
+function bankParseText(raw) {
+  const lines = String(raw || "").split(/\r?\n/).map((s) => s.replace(/\s+/g, " ").trim()).filter(Boolean);
+  const all = lines.join("\n");
+  const one = (re) => { const m = re.exec(all); return m ? m[1] : ""; };
+  const meta = {
+    bank: /FIRST\s*CAPITAL/i.test(all) ? "First Capital Bank"
+      : /E-banking Account Statement|IZB/i.test(all) ? "IZB Bank" : "",
+    acct_no: one(/Account number\s*:?\s*(\d{6,})/i) || one(/Account Number\s*:?\s*(\d{6,})/i),
+    ccy: /ZAMBIAN KWACHA/i.test(all) ? "ZMW"
+      : (one(/Currency\s*:?\s*([A-Z]{3})\b/i) || one(/Account Ccy\s*:?\s*([A-Z]{3})\b/i)),
+    pf: "", pt: "", open_bal: "", close_bal: "", total_in: "", total_out: "",
+  };
+  const p1 = /Statement Period\s*:?\s*(\d{2}-[A-Z0-9]{2,3}-\d{4})\s*(?:To|-|~)\s*(\d{2}-[A-Z0-9]{2,3}-\d{4})/i.exec(all);
+  const p2 = /From Date\s*:?\s*(\d{2}-[A-Z]{3}-\d{4})[\s\S]{0,40}?To Date\s*:?\s*(\d{2}-[A-Z]{3}-\d{4})/i.exec(all);
+  if (p1) { meta.pf = bankISO(p1[1]); meta.pt = bankISO(p1[2]); }
+  else if (p2) { meta.pf = bankISO(p2[1]); meta.pt = bankISO(p2[2]); }
+  const ob = one(/Opening balance\s*:?\s*(-?[\d,]+\.\d{2})/i) || one(/Opening Balance\s*:?\s*(-?[\d,]+\.\d{2})/i);
+  const cb = one(/Closing balance\s*:?\s*(-?[\d,]+\.\d{2})/i) || one(/Closing Balance\s*:?\s*(-?[\d,]+\.\d{2})/i);
+  if (ob) meta.open_bal = bankNum(ob);
+  if (cb) meta.close_bal = bankNum(cb);
+  /* 借贷合计：IZB 在一行里写「借方 贷方」两个数，FCB 分两行写 Credits / Debits */
+  const tIz = /Total\s*:\s*([\d,]+\.\d{2})\s+([\d,]+\.\d{2})/.exec(all);
+  const cF = /Credits\s*:?\s*([\d,]+\.\d{2})/i.exec(all);
+  const dF = /Debits\s*:?\s*([\d,]+\.\d{2})/i.exec(all);
+  if (tIz) { meta.total_out = bankNum(tIz[1]); meta.total_in = bankNum(tIz[2]); }
+  else { if (cF) meta.total_in = bankNum(cF[1]); if (dF) meta.total_out = bankNum(dF[1]); }
+
+  const txs = [];
+  let cur = null;
+  for (const ln of lines) {
+    const dm = BANK_DATE_LINE.exec(ln);
+    if (dm) {
+      if (cur) txs.push(cur);
+      cur = { d: bankISO(dm[1]), descr: ln.slice(dm[0].length).trim(), ref: "", debit: 0, credit: 0, bal: 0, amount: 0 };
+    } else if (cur) {
+      cur.descr += " " + ln;
+    }
+    if (cur) {
+      const am = BANK_AMT_PAIR.exec(cur.descr);
+      if (am) {
+        cur.bal = bankNum(am[2]);
+        cur.amount = Math.abs(bankNum(am[1]));
+        cur.descr = cur.descr.slice(0, am.index).trim();
+        const rm = /\b(S\d{6})\s*$/.exec(cur.descr);
+        if (rm) { cur.ref = rm[1]; cur.descr = cur.descr.slice(0, rm.index).trim(); }
+        txs.push(cur);
+        cur = null;
+      }
+    }
+  }
+  if (cur) txs.push(cur);
+
+  /* 有的银行倒序（最新在上），有的正序：统一成从旧到新 */
+  if (txs.length > 1 && txs[0].d > txs[txs.length - 1].d) txs.reverse();
+
+  let prev = meta.open_bal === "" ? null : bankNum(meta.open_bal);
+  for (const t of txs) {
+    if (prev === null) { prev = t.bal; continue; }
+    const delta = Math.round((prev - t.bal) * 100) / 100;
+    if (delta >= 0) t.debit = t.amount; else t.credit = t.amount;
+    prev = t.bal;
+  }
+  const calc = {
+    debit: txs.reduce((s, t) => s + (t.debit || 0), 0),
+    credit: txs.reduce((s, t) => s + (t.credit || 0), 0),
+    n: txs.length,
+  };
+  let warn = "";
+  if (meta.total_out !== "" && Math.abs(calc.debit - bankNum(meta.total_out)) > 0.05) warn = "借方合计对不上";
+  else if (meta.total_in !== "" && Math.abs(calc.credit - bankNum(meta.total_in)) > 0.05) warn = "贷方合计对不上";
+  else if (meta.open_bal !== "" && meta.close_bal !== "" &&
+    Math.abs(bankNum(meta.open_bal) + calc.credit - calc.debit - bankNum(meta.close_bal)) > 0.05) warn = "期初+贷−借 ≠ 期末";
+  for (const t of txs) {
+    t.descr = t.descr.replace(/\s{2,}/g, " ").trim();
+    if (!t.cat) t.cat = bankSuggestCat(t.descr);
+  }
+  return { meta, txs, calc, warn };
 }
 
 /* 常用花费人：列表置顶（顺序即优先），其余保持原顺序 */
@@ -2819,14 +3659,14 @@ function finHtml() {
     const canMark = isExp && !offBook && (FIN.owner || FIN.canAll || e.uid === FIN.me.uid);
     const hasPh = (e.photos || []).length > 0;
     const invTag = !isExp ? ""
-      : offBook ? `<i class="fin-inv ${offBook === "往来" ? "l" : "p"}" title="${offBook}科目，不计入公司费用">${offBook}·不计费用</i>`
+      : offBook ? `<i class="fin-inv ${offBook === "往来" ? "l" : "p"}" title="${esc(tr(`${offBook}科目，不计入公司费用`))}">${esc(tr(`${offBook}·不计费用`))}</i>`
       : Number(e.inv)
-        ? (hasPh ? `<i class="fin-inv y">有票</i>` : `<i class="fin-inv w" title="还没上传发票照片">有票·缺图</i>`)
-        : `<i class="fin-inv n">无票</i>`;
+        ? (hasPh ? `<i class="fin-inv y">${esc(tr(`有票`))}</i>` : `<i class="fin-inv w" title="${esc(tr(`还没上传发票照片`))}">${esc(tr(`有票·缺图`))}</i>`)
+        : `<i class="fin-inv n">${esc(tr(`无票`))}</i>`;
     const markBtns = FINMARK && canMark
       ? `<div class="fin-mark">
-          <button data-setinv="${esc(e.id)}" data-inv="1" class="${Number(e.inv) ? "on" : ""}">有票</button>
-          <button data-setinv="${esc(e.id)}" data-inv="0" class="${Number(e.inv) ? "" : "on"}">无票</button>
+          <button data-setinv="${esc(e.id)}" data-inv="1" class="${Number(e.inv) ? "on" : ""}">${esc(tr(`有票`))}</button>
+          <button data-setinv="${esc(e.id)}" data-inv="0" class="${Number(e.inv) ? "" : "on"}">${esc(tr(`无票`))}</button>
         </div>` : "";
     return `<div class="fin-row fin-${e.kind}">
       <div class="d">${esc(String(e.date).slice(5))}</div>
@@ -2835,7 +3675,7 @@ function finHtml() {
         ${ph ? `<div class="ph">${ph}</div>` : ""}
         ${markBtns}</div>
       <div class="a">${sign}${finMoney(e.amount)}<small>${esc(label)}</small></div>
-      ${(FIN.owner || FIN.canAll || e.uid === FIN.me.uid) ? `<button class="ghost fin-more" data-finmore="${e.id}" title="更多">⋯</button>` : ""}
+      ${(FIN.owner || FIN.canAll || e.uid === FIN.me.uid) ? `<button class="ghost fin-more" data-finmore="${e.id}" title="${esc(tr(`更多`))}">⋯</button>` : ""}
     </div>`;
   }).join("");
 
@@ -2844,13 +3684,13 @@ function finHtml() {
     const a = finAcct(p.login);
     const row = (FIN.accounts || []).find((x) => x.uid === p.login) || {};
     const acts = [];
-    if (FIN.owner) acts.push(`<button class="ghost" data-recon="${esc(p.login)}">对账</button>`);
-    if (FIN.owner) acts.push(`<button class="ghost" data-give="${esc(p.login)}">给员工</button>`);
+    if (FIN.owner) acts.push(`<button class="ghost" data-recon="${esc(p.login)}">${esc(tr(`对账`))}</button>`);
+    if (FIN.owner) acts.push(`<button class="ghost" data-give="${esc(p.login)}">${esc(tr(`给员工`))}</button>`);
     return `<div class="fin-acct" data-acct="${esc(p.login)}">
       <div class="n">${esc(p.name || p.login)} <span class="mut">${esc(roleLabel(p))}${row.since ? " · 对账 " + esc(row.since) : ""}</span></div>
       <div class="g">
-        <div><label>现金</label><b>${finMoney(a.cash)}</b><small>来源 ${finMoney(a.src.cash)} − 花费 ${finMoney(a.out.cash)}</small></div>
-        <div><label>银行</label><b>${finMoney(a.card)}</b><small>来源 ${finMoney(a.src.card)} − 花费 ${finMoney(a.out.card)}</small></div>
+        <div><label>${esc(tr(`现金`))}</label><b>${finMoney(a.cash)}</b><small>${esc(tr(`来源 ${finMoney(a.src.cash)} − 花费 ${finMoney(a.out.cash)}`))}</small></div>
+        <div><label>${esc(tr(`银行`))}</label><b>${finMoney(a.card)}</b><small>${esc(tr(`来源 ${finMoney(a.src.card)} − 花费 ${finMoney(a.out.card)}`))}</small></div>
       </div>
       ${acts.length ? `<div class="acts">${acts.join("")}</div>` : ""}
     </div>`;
@@ -2860,9 +3700,9 @@ function finHtml() {
   const acctHtml = isAll ? "" : `<div class="sec">${isMe ? "我的账户" : esc(finNameOf(who)) + " 账户"}</div>` + personCard();
 
   const withAcct = (FIN.accounts || []).filter((a) => a.uid !== FINCO && (Number(a.cash) || Number(a.card)));
-  const scopeChips = [`<button data-fscope="" class="${isMe ? "on" : ""}">我</button>`];
+  const scopeChips = [`<button data-fscope="" class="${isMe ? "on" : ""}">${esc(tr(`我`))}</button>`];
   if (canAll) {
-    scopeChips.push(`<button data-fscope="ALL" class="${isAll ? "on" : ""}">全部</button>`);
+    scopeChips.push(`<button data-fscope="ALL" class="${isAll ? "on" : ""}">${esc(tr(`全部`))}</button>`);
     for (const a of withAcct) {
       const p = people.find((x) => x.login === a.uid) || { login: a.uid, name: a.name || a.uid, role: "", ghost: true };
       scopeChips.push(`<button data-fscope="${esc(p.login)}" class="${FINWHO === p.login ? "on" : ""}">${esc(p.name || p.login)}</button>`);
@@ -2877,33 +3717,33 @@ function finHtml() {
   const totCash = coBal.cash + pplBal.cash, totCard = coBal.card + pplBal.card;
   const floatLeft = people.reduce((s, p) => { const f = finFloatOf(p.login); return s + (f ? Math.max(0, f.got - f.used) : 0); }, 0);
   const coHtml = !canAll ? "" : `<div class="fin-acct">
-    <div class="n">🏦 资金总览 <span class="mut" style="font-weight:400;font-size:12px">· 调拨不减总额，消费才减</span></div>
+    <div class="n">${esc(tr(`🏦 资金总览`))} <span class="mut" style="font-weight:400;font-size:12px">${esc(tr(`· 调拨不减总额，消费才减`))}</span></div>
     <div class="g" style="margin-top:8px">
-      <div><label>公司账户</label><b>${finMoney(coBal.cash + coBal.card)}</b><small>对账日 ${esc(coRow.since || "未设")}</small></div>
-      <div><label>员工手上</label><b>${finMoney(pplBal.cash + pplBal.card)}</b><small>现金 ${finMoney(pplBal.cash)} · 银行 ${finMoney(pplBal.card)}</small></div>
+      <div><label>${esc(tr(`公司账户`))}</label><b>${finMoney(coBal.cash + coBal.card)}</b><small>${esc(tr(`对账日 ${esc(coRow.since || "未设")}`))}</small></div>
+      <div><label>${esc(tr(`员工手上`))}</label><b>${finMoney(pplBal.cash + pplBal.card)}</b><small>${esc(tr(`现金 ${finMoney(pplBal.cash)} · 银行 ${finMoney(pplBal.card)}`))}</small></div>
     </div>
     <div class="g" style="margin-top:8px">
-      <div><label>公司资金总额</label><b>${finMoney(totCash + totCard)}</b><small>现金 ${finMoney(totCash)} · 银行 ${finMoney(totCard)}</small></div>
-      <div><label>未报备用金</label><b>${finMoney(floatLeft)}</b><small>已发 − 已花，仍算在员工手上</small></div>
+      <div><label>${esc(tr(`公司资金总额`))}</label><b>${finMoney(totCash + totCard)}</b><small>${esc(tr(`现金 ${finMoney(totCash)} · 银行 ${finMoney(totCard)}`))}</small></div>
+      <div><label>${esc(tr(`未报备用金`))}</label><b>${finMoney(floatLeft)}</b><small>${esc(tr(`已发 − 已花，仍算在员工手上`))}</small></div>
     </div>
   </div>`;
 
   const actions = !ro ? `<div class="fin-acts">
-    ${!isAll && (FIN.canAll || FIN.owner) ? `<button id="fin_transfer">🔀 调拨</button>` : ""}
-    ${canAll ? `<button id="fin_cosend">🏦 公司调款</button>` : ""}
-    <button id="fin_move">🔁 取现</button>
-    ${FIN.owner ? `<button id="fin_give">🤝 给员工</button>` : ""}
+    ${!isAll && (FIN.canAll || FIN.owner) ? `<button id="fin_transfer">${esc(tr(`🔀 调拨`))}</button>` : ""}
+    ${canAll ? `<button id="fin_cosend">${esc(tr(`🏦 公司调款`))}</button>` : ""}
+    <button id="fin_move">${esc(tr(`🔁 取现`))}</button>
+    ${FIN.owner ? `<button id="fin_give">${esc(tr(`🤝 给员工`))}</button>` : ""}
     <button id="fin_mark"${FINMARK ? ` class="pri"` : ""}>${FINMARK ? "✅ 标完了" : "🧾 补票"}</button>
   </div>` : "";
 
-  const roHint = ro ? `<div class="mut" style="margin:0 0 8px">🔒 只读 · ${esc(finNameOf(who))}</div>` : "";
+  const roHint = ro ? `<div class="mut" style="margin:0 0 8px">${esc(tr(`🔒 只读 · ${esc(finNameOf(who))}`))}</div>` : "";
 
   const floatUids = isAll ? people.map((p) => p.login) : [who];
   const floats = floatUids.map((uid) => [uid, finFloatOf(uid)]).filter(([, f]) => f);
   const floatHtml = floats.length ? `<div class="fin-acct">
-    <div class="n">🧾 员工往来（备用金）</div>
-    ${floats.map(([uid, f]) => `<div class="g" style="margin-top:8px"><div><label>${esc(finNameOf(uid))}</label><b>${finMoney(f.got - f.used)}</b><small>收到 ${finMoney(f.got)}（来自 ${esc(finNameOf(f.giver))}） − 已花 ${finMoney(f.used)}</small></div></div>`).join("")}
-    <div class="mut" style="margin-top:6px">收到备用金 − 之后的支出 = 手上还剩多少；备用金本身不算花费。</div>
+    <div class="n">${esc(tr(`🧾 员工往来（备用金）`))}</div>
+    ${floats.map(([uid, f]) => `<div class="g" style="margin-top:8px"><div><label>${esc(finNameOf(uid))}</label><b>${finMoney(f.got - f.used)}</b><small>${esc(tr(`收到 ${finMoney(f.got)}（来自 ${esc(finNameOf(f.giver))}） − 已花 ${finMoney(f.used)}`))}</small></div></div>`).join("")}
+    <div class="mut" style="margin-top:6px">${esc(tr(`收到备用金 − 之后的支出 = 手上还剩多少；备用金本身不算花费。`))}</div>
   </div>` : "";
 
   const trList = list.filter((e) => e.kind === "transfer");
@@ -2911,9 +3751,9 @@ function finHtml() {
   const trOut = trList.filter((e) => isAll || e.uid === who).reduce((s, e) => s + (Number(e.amount) || 0), 0);
   const trIn = trList.filter((e) => isAll || e.to_uid === who).reduce((s, e) => s + (Number(e.amount) || 0), 0);
   const trHtml = trList.length ? `<div class="fin-acct">
-    <div class="n">🔀 资金调拨核对</div>
+    <div class="n">${esc(tr(`🔀 资金调拨核对`))}</div>
     <div class="mut" style="margin-top:6px">${trList.length} 笔 · 合计 ${finMoney(trSum)} ZMW${isAll
-      ? ` · 转出 ${finMoney(trOut)} = 转入 ${finMoney(trIn)} ✓ 公司总额不变`
+      ? ` · ${tr("转出")} ${finMoney(trOut)} = ${tr("转入")} ${finMoney(trIn)} ✓ ${tr("公司总额不变")}`
       : ` · 转出 ${finMoney(trOut)} · 转入 ${finMoney(trIn)}`}</div>
   </div>` : "";
 
@@ -2929,29 +3769,38 @@ function finHtml() {
     byCat.set(k, o);
   }
   const catRows = [...byCat.values()].sort((a, b) => (b.yes + b.no) - (a.yes + a.no))
-    .map((o) => `<div class="fin-fr"><span>${esc(finCatName(o.k))}<small class="mut"> ${o.n} 笔</small></span><b>${finMoney(o.yes + o.no)}</b><i>${finMoney(o.yes)}</i><i>${finMoney(o.no)}</i></div>`).join("");
+    .map((o) => `<div class="fin-fr"><span>${esc(finCatName(o.k))}<small class="mut"> ${esc(tr(`${o.n} 笔`))}</small></span><b>${finMoney(o.yes + o.no)}</b><i>${finMoney(o.yes)}</i><i>${finMoney(o.no)}</i></div>`).join("");
   const sumYes = expOut.filter((e) => Number(e.inv)).reduce((s, e) => s + (Number(e.amount) || 0), 0);
   const sumNo = expOut.filter((e) => !Number(e.inv)).reduce((s, e) => s + (Number(e.amount) || 0), 0);
   const catHtml = expOut.length ? `<div class="fin-acct">
-          <div class="n">📊 支出汇总 · ${FINR_ZH[FINR]}中 <span class="mut" style="font-weight:400;font-size:12px">· 按用途分类 · 报税用</span></div>
-    <div class="fin-fr hd"><span>用途</span><b>金额</b><i>有票</i><i>无票</i></div>
+          <div class="n">${esc(tr(`📊 支出汇总 · ${FINR_ZH[FINR]}中`))} <span class="mut" style="font-weight:400;font-size:12px">${esc(tr(`· 按用途分类 · 报税用`))}</span></div>
+    <div class="fin-fr hd"><span>${esc(tr(`用途`))}</span><b>${esc(tr(`金额`))}</b><i>${esc(tr(`有票`))}</i><i>${esc(tr(`无票`))}</i></div>
     ${catRows}
-    <div class="fin-fr tot"><span>合计 ${expOut.length} 笔</span><b>${finMoney(sumYes + sumNo)}</b><i>${finMoney(sumYes)}</i><i>${finMoney(sumNo)}</i></div>
-    <div class="acts"><button class="ghost" id="fin_csv_items">⬇ 支出明细 CSV</button><button class="ghost" id="fin_csv_flow">⬇ 资金流水 CSV</button></div>
-    <div class="mut" style="margin-top:6px">无票支出税前不能扣除，已在表里单列；CSV 用 Excel 直接打开。</div>
+    <div class="fin-fr tot"><span>${esc(tr(`合计 ${expOut.length} 笔`))}</span><b>${finMoney(sumYes + sumNo)}</b><i>${finMoney(sumYes)}</i><i>${finMoney(sumNo)}</i></div>
+    <div class="acts"><button class="ghost" id="fin_csv_items">${esc(tr(`⬇ 支出明细 CSV`))}</button><button class="ghost" id="fin_csv_flow">${esc(tr(`⬇ 资金流水 CSV`))}</button></div>
+    <div class="mut" style="margin-top:6px">${esc(tr(`无票支出税前不能扣除，已在表里单列；CSV 用 Excel 直接打开。`))}</div>
   </div>` : "";
+
+  /* 银行账单是一个独立模块，这里只留入口 */
+  const bankOwn = (FIN.bank || []).filter((s) => !Number(s.old));
+  const bankPending = bankOwn.filter((s) => s.status !== "checked").length;
+  const bankEntry = `<div class="fin-acct"><div class="n">${esc(tr("🏦 银行账单"))}
+        <span class="mut" style="font-weight:400;font-size:12px">${bankOwn.length ? `${bankPending} ${esc(tr("份待核对"))}` : esc(tr("还没上传"))}</span>
+        <button class="ghost" data-go="bank" style="margin-left:auto">${esc(tr("打开"))}</button></div>
+      <div class="mut" style="margin-top:6px">${esc(tr("上传水单、核对四项金额、逐笔给科目，都在单独的「银行账单」页里。"))}</div>
+    </div>`;
 
   FINVIEW = { list, isAll, who };
   const orph = FIN.orphans || [];
   const orphanHtml = canAll && orph.length ? `<div class="fin-orph">
-    <b>⚠ 有 ${orph.reduce((s, o) => s + o.n, 0)} 条记录挂在旧账号名下</b>
+    <b>${esc(tr(`⚠ 有 ${orph.reduce((s, o) => s + o.n, 0)} 条记录挂在旧账号名下`))}</b>
     <div class="mut">${orph.map((o) => `「${esc(o.name)}」${o.n} 条`).join("、")} —— 改过账号名会出现这种情况，记录本身没丢。</div>
-    ${FIN.me.role === "admin" ? `<div class="acts">${orph.map((o) => `<button class="ghost" data-orphan="${esc(o.uid)}">并到我名下（${o.n}）</button>`).join("")}</div>` : ""}
+    ${FIN.me.role === "admin" ? `<div class="acts">${orph.map((o) => `<button class="ghost" data-orphan="${esc(o.uid)}">${esc(tr(`并到我名下（${o.n}）`))}</button>`).join("")}</div>` : ""}
   </div>` : "";
-  const anaSum = canAll ? `公司 ${finMoney(coBal.cash + coBal.card)} · ` : "";
+  const anaSum = canAll ? `${tr("公司")} ${finMoney(coBal.cash + coBal.card)} · ` : "";
   const anaBar = `<div class="fin-anabar">
-    <button class="ghost" id="fin_ana">${FINANA ? "▾" : "▸"} 📊 核对与报表</button>
-    <span class="mut">${anaSum}${FINR_ZH[FINR]}有票 ${finMoney(sumYes)} / 无票 ${finMoney(sumNo)}${sum.home ? ` · 私人 ${finMoney(sum.home)}` : ""}${(sum.loanOut - sum.loanIn) ? ` · 借出 ${finMoney(sum.loanOut - sum.loanIn)}` : ""}</span>
+    <button class="ghost" id="fin_ana">${esc(tr(`${FINANA ? "▾" : "▸"} 📊 核对与报表`))}</button>
+    <span class="mut">${anaSum}${FINR_ZH[FINR]}${tr("有票")} ${finMoney(sumYes)} / ${tr("无票")} ${finMoney(sumNo)}${sum.home ? ` · 私人 ${finMoney(sum.home)}` : ""}${(sum.loanOut - sum.loanIn) ? ` · 借出 ${finMoney(sum.loanOut - sum.loanIn)}` : ""}</span>
   </div>`;
   return `${tabs}${roHint}
     ${orphanHtml}
@@ -2961,44 +3810,408 @@ function finHtml() {
     ${actions}
     <div class="fin-seg">${["day", "week", "month", "year"].map((k) => `<button data-finrange="${k}" class="${FINR === k ? "on" : ""}">${FINR_ZH[k]}</button>`).join("")}</div>
     <div class="fin-ptab">${[["all", "全部票据"], ["yes", "有发票"], ["no", "无发票"]].map(([k, t]) => `<button data-finv="${k}" class="${FININV === k ? "on" : ""}">${t}</button>`).join("")}</div>
-    ${FINMARK ? `<div class="mut" style="margin:-4px 0 10px">🧾 补票中：点每行的「有票 / 无票」，点一下即存 · <span id="fin_markcnt"></span></div>` : ""}
+    ${FINMARK ? `<div class="mut" style="margin:-4px 0 10px">${esc(tr(`🧾 补票中：点每行的「有票 / 无票」，点一下即存`))} · <span id="fin_markcnt"></span></div>` : ""}
     <div class="fin-kpi">
-      <div><span>${isAll ? "全部" : esc(finNameOf(who))} · ${FINR_ZH[FINR]}支出</span><b>${finMoney(sum.out)}</b></div>
-      <div><span>收入</span><b>${finMoney(sum.in)}</b></div>
-      <div><span>备用金流转</span><b>${finMoney(sum.float)}</b></div>
-      <div><span>笔数</span><b>${list.length}</b></div>
+      <div><span>${esc(tr(`${isAll ? "全部" : esc(finNameOf(who))} · ${FINR_ZH[FINR]}支出`))}</span><b>${finMoney(sum.out)}</b></div>
+      <div><span>${esc(tr(`收入`))}</span><b>${finMoney(sum.in)}</b></div>
+      <div><span>${esc(tr(`备用金流转`))}</span><b>${finMoney(sum.float)}</b></div>
+      <div><span>${esc(tr(`笔数`))}</span><b>${list.length}</b></div>
     </div>
-    ${offNote ? `<div class="mut" style="margin:-4px 0 10px">${offNote}（不计入公司费用）</div>` : ""}
-    <div class="fin-list">${rows || `<div class="empty">${FINR_ZH[FINR]}还没有记录</div>`}</div>
-    ${!ro && !isAll ? `<button class="fin-fab" id="fin_add">＋ 记一笔</button>` : ""}
-    ${FIN.owner && !ro ? `<div class="sec">设置</div>
-      <div class="fin-acct"><div class="n">期初余额</div>
+    ${offNote ? `<div class="mut" style="margin:-4px 0 10px">${esc(tr(`${offNote}（不计入公司费用）`))}</div>` : ""}
+    <div class="fin-list">${rows || `<div class="empty">${esc(tr(`${FINR_ZH[FINR]}还没有记录`))}</div>`}</div>
+    ${!ro && !isAll ? `<button class="fin-fab" id="fin_add">${esc(tr(`＋ 记一笔`))}</button>` : ""}
+    ${bankEntry}
+    ${FIN.owner && !ro ? `<div class="sec">${esc(tr(`设置`))}</div>
+      <div class="fin-acct"><div class="n">${esc(tr(`期初余额`))}</div>
         <div class="g">
-          <div><label>日期</label><input type="date" id="fo_date" value="${esc(FIN.opening.date || "")}"></div>
-          <div><label>现金</label><input type="number" id="fo_cash" value="${FIN.opening.cash || 0}"></div>
-          <div><label>银行</label><input type="number" id="fo_card" value="${FIN.opening.card || 0}"></div>
+          <div><label>${esc(tr(`日期`))}</label><input type="date" id="fo_date" value="${esc(FIN.opening.date || "")}"></div>
+          <div><label>${esc(tr(`现金`))}</label><input type="number" id="fo_cash" value="${FIN.opening.cash || 0}"></div>
+          <div><label>${esc(tr(`银行`))}</label><input type="number" id="fo_card" value="${FIN.opening.card || 0}"></div>
         </div>
-        <div class="acts"><button class="ghost" id="fo_save">保存期初</button>
-        <button class="ghost" id="fin_cats">改分类</button>
-        <button class="ghost" id="fin_merge">合并老分类</button></div>
+        <div class="acts"><button class="ghost" id="fo_save">${esc(tr(`保存期初`))}</button>
+        <button class="ghost" id="fin_cats">${esc(tr(`改分类`))}</button>
+        <button class="ghost" id="fin_merge">${esc(tr(`合并老分类`))}</button></div>
       </div>
-      <div class="fin-acct"><div class="n">🏦 公司账户 · 对账基准</div>
+      <div class="fin-acct"><div class="n">${esc(tr(`🏦 公司账户 · 对账基准`))}</div>
         <div class="g">
-          <div><label>对账日</label><input type="date" id="fco_date" value="${esc(coRow.since || "")}"></div>
-          <div><label>银行余额</label><input type="number" step="0.01" id="fco_card" value="${Number(coRow.card) || 0}"></div>
+          <div><label>${esc(tr(`对账日`))}</label><input type="date" id="fco_date" value="${esc(coRow.since || "")}"></div>
+          <div><label>${esc(tr(`银行余额`))}</label><input type="number" step="0.01" id="fco_card" value="${Number(coRow.card) || 0}"></div>
         </div>
-        <div class="acts"><button class="ghost" id="fco_save">保存公司账户</button></div>
-        <div class="mut" style="margin-top:6px">填「这天公司账户实际有多少钱」，之后的调拨、消费自动累加；对账日之前的记录不计入。</div>
+        <div class="acts"><button class="ghost" id="fco_save">${esc(tr(`保存公司账户`))}</button></div>
+        <div class="mut" style="margin-top:6px">${esc(tr(`填「这天公司账户实际有多少钱」，之后的调拨、消费自动累加；对账日之前的记录不计入。`))}</div>
       </div>` : ""}
     ${!ro && !isAll ? `<div style="height:56px"></div>` : ""}`;
 }
 
+/* ---------- 银行账单：上传 / 核对 ---------- */
+const bankFileDataUrl = (f) => new Promise((res, rej) => {
+  const r = new FileReader();
+  r.onload = () => res(String(r.result || ""));
+  r.onerror = () => rej(new Error("读不出文件"));
+  r.readAsDataURL(f);
+});
+const bankDayDiff = (a, b) => Math.abs((new Date(a + "T12:00:00Z") - new Date(b + "T12:00:00Z")) / 864e5);
+
+/* pdf.js 只在第一次解析时从 CDN 拉（不塞进页面包），失败就退回粘贴文字 */
+let BANK_PDFJS = null;
+async function bankPdfText(file) {
+  if (!BANK_PDFJS) {
+    BANK_PDFJS = import("https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.min.mjs").then((m) => {
+      m.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.worker.min.mjs";
+      return m;
+    });
+  }
+  const pdfjs = await BANK_PDFJS;
+  const buf = new Uint8Array(await file.arrayBuffer());
+  const doc = await pdfjs.getDocument({ data: buf }).promise;
+  const lines = [];
+  for (let p = 1; p <= doc.numPages; p++) {
+    const page = await doc.getPage(p);
+    const tc = await page.getTextContent();
+    let line = "", lastY = null;
+    for (const it of tc.items) {
+      const y = Math.round(it.transform[5]);
+      if (lastY !== null && Math.abs(y - lastY) > 2) { if (line.trim()) lines.push(line.trim()); line = ""; }
+      line += it.str + " ";
+      lastY = y;
+      if (it.hasEOL) { if (line.trim()) lines.push(line.trim()); line = ""; }
+    }
+    if (line.trim()) lines.push(line.trim());
+  }
+  return { text: lines.join("\n"), pages: doc.numPages };
+}
+
+const bankCatKeys = () => {
+  const l = [...(FIN_FT_CATS.life || []), ...((FIN.cats && FIN.cats.life) || []),
+    ...(FIN_FT_CATS.project || []), ...((FIN.cats && FIN.cats.project) || []),
+    ...((FIN.cats && FIN.cats.licence) || []), "loan", "home", "u:员工工资"];
+  return [...new Set(l)];
+};
+const bankCatSel = (cur, id) => `<select data-bkcat="${esc(id)}"><option value="">${esc(tr(`未分类`))}</option>${
+  bankCatKeys().map((k) => `<option value="${esc(k)}"${k === cur ? " selected" : ""}>${esc(tr(finCatName(k)))}</option>`).join("")}</select>`;
+
+/* ---------- 银行账单（独立页） ---------- */
+let BANKME = false; // 财务负责人：只看自己上传的
+
+const bankRowHtml = (s, dim) => {
+  const okN = Number(s.ok_n) || 0, tot = Number(s.txn_n) || 0;
+  const st = s.status === "checked" ? "checked" : "open";
+  const who = s.uid === FINCO ? tr("公司账户") : finNameOf(s.uid);
+  const gap = Math.abs(Number(s.gap) || 0) > 0.01 && Number(s.close_bal) ? `<em class="bk-gap"> · ⚠ ${esc(tr("缺行"))}</em>` : "";
+  return `<div class="fin-fr bk${dim ? " dim" : ""}${s.uid === FIN.me.uid ? " mine" : ""}" data-bankopen="${esc(s.id)}">
+      <span>${esc(who)} · ${esc(s.bank || tr("银行"))}<small class="mut"> ${esc(s.pf)}→${esc(s.pt)} · ${s.txn_n || 0} ${esc(tr("笔"))}${dim ? " · " + esc(tr("旧版本")) : ""}${gap}</small></span>
+      <b>${finMoney(s.close_bal)}</b>
+      <i class="${tot && okN >= tot ? "ok" : ""}">${okN}/${tot}</i>
+      <i>${esc(st === "checked" ? tr("已核对") : st === "diff" ? tr("有差异") : tr("待核对"))}</i>
+    </div>`;
+};
+
+function bankPageHtml() {
+  const all = FIN.bank || [];
+  const mine = all.filter((s) => s.uid === FIN.me.uid);
+  const show = FIN.bankAll && !BANKME ? all : mine;
+  const own = show.filter((s) => !Number(s.old));
+  const old = show.filter((s) => Number(s.old));
+  const pend = own.filter((s) => s.status !== "checked").length;
+  const okSum = own.reduce((a, s) => a + (Number(s.ok_n) || 0), 0);
+  const txnSum = own.reduce((a, s) => a + (Number(s.txn_n) || 0), 0);
+  const outSum = own.filter((s) => s.status === "checked").reduce((a, s) => a + (Number(s.total_out) || 0), 0);
+  const seg = FIN.bankAll ? `<div class="fin-seg">${[["", "全部"], ["me", "我的"]].map(([k, t]) =>
+    `<button data-bankme="${k}" class="${(k === "me" ? BANKME : !BANKME) ? "on" : ""}">${esc(tr(t))}</button>`).join("")}</div>` : "";
+  const head = `<div class="acts" style="margin:0 0 10px">
+      <button id="bank_new">${esc(tr("＋ 上传水单"))}</button>
+    </div>`;
+  const kpi = `<div class="fin-kpi">
+      <div><span>${esc(tr("待核对"))}</span><b>${pend}</b></div>
+      <div><span>${esc(tr("已核笔数"))}</span><b>${okSum}/${txnSum}</b></div>
+      <div><span>${esc(tr("水单份数"))}</span><b>${own.length}</b></div>
+      <div><span>${esc(tr("已核对出账"))}</span><b>${finMoney(outSum)}</b></div>
+    </div>`;
+  const empty = `<div class="empty">${esc(tr(FIN.bankAll && !BANKME
+    ? "还没有水单。点上面的「＋ 上传水单」，选 PDF 或图片，系统自动把期初、进账、出账、期末抽出来。"
+    : "你还没有上传过水单。点上面的「＋ 上传水单」开始；水单只有你和管理层看得到。"))}</div>`;
+  return `${seg}${head}${kpi}
+    <div class="fin-list">${own.length ? own.map((s) => bankRowHtml(s, false)).join("") : empty}</div>
+    ${old.length ? `<div class="sec">${esc(tr("历史版本（同期间重传留下的）"))}</div>
+      <div class="fin-list">${old.slice(0, 12).map((s) => bankRowHtml(s, true)).join("")}</div>` : ""}
+    <div class="mut" style="margin-top:12px">${esc(tr("水单解析只在本机浏览器里做，原文不上传第三方；原件存在私有存储里，只有有权限的人能看。"))}</div>`;
+}
+
+function bindBank(pane) {
+  const nw = $("#bank_new");
+  if (nw) nw.onclick = () => finBankSheet();
+  pane.querySelectorAll("[data-bankopen]").forEach((b) => (b.onclick = () => finBankOpen(b.dataset.bankopen)));
+  pane.querySelectorAll("[data-bankme]").forEach((b) => (b.onclick = () => { BANKME = b.dataset.bankme === "me"; render(); }));
+}
+
+async function bankPane(pane) {
+  pane.innerHTML = `<div class="empty">${esc(tr("加载中…"))}</div>`;
+  try { await loadFin(); } catch (e) { pane.innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
+  pane.innerHTML = bankPageHtml();
+  bindBank(pane);
+}
+
+function finBankSheet() {
+  const people = finPeople();
+  const me = (FIN.me && FIN.me.uid) || "";
+  /* 谁上传就记谁名下；管理层可以选公司账户或替别人传 */
+  const uidOpts = [];
+  if (FIN.bankAll) uidOpts.push(`<option value="__company">${esc(tr(`公司账户`))}</option>`);
+  for (const p of people) if (FIN.bankAll || p.login === me) uidOpts.push(`<option value="${esc(p.login)}"${p.login === me ? " selected" : ""}>${esc(p.name || p.login)}</option>`);
+  if (!uidOpts.length) uidOpts.push(`<option value="${esc(me)}" selected>${esc(tr(`我`))}</option>`);
+  const box = document.createElement("div");
+  box.className = "fin-dim";
+  box.innerHTML = `<div class="fin-sheet">
+    <h3>${esc(tr(`上传银行水单`))}</h3>
+    <label>${esc(tr(`账户主体`))}</label>
+    <select id="bk_uid">${uidOpts.join("")}</select>
+    <label>${esc(tr(`水单文件（PDF 或图片）`))}</label>
+    <input id="bk_file" type="file" accept="application/pdf,image/*">
+    <div class="mut" id="bk_msg" style="margin:6px 0"></div>
+    <div id="bk_paste_wrap" class="hide">
+      <label>${esc(tr(`或者把水单文字粘贴到这里`))}</label>
+      <textarea id="bk_paste" rows="4" style="width:100%;box-sizing:border-box"></textarea>
+    </div>
+    <div class="row3">
+      <div><label>${esc(tr(`银行`))}</label><input id="bk_bank"></div>
+      <div><label>${esc(tr(`账号`))}</label><input id="bk_acct"></div>
+      <div><label>${esc(tr(`币种`))}</label><input id="bk_ccy" value="ZMW"></div>
+    </div>
+    <div class="r">
+      <div><label>${esc(tr(`期间起`))}</label><input id="bk_pf" type="date"></div>
+      <div><label>${esc(tr(`期间止`))}</label><input id="bk_pt" type="date"></div>
+    </div>
+    <div class="row3">
+      <div><label>${esc(tr(`期初余额`))}</label><input id="bk_open" type="number" step="0.01"></div>
+      <div><label>${esc(tr(`贷方合计`))}</label><input id="bk_in" type="number" step="0.01"></div>
+      <div><label>${esc(tr(`借方合计`))}</label><input id="bk_out" type="number" step="0.01"></div>
+    </div>
+    <div class="r">
+      <div><label>${esc(tr(`期末余额`))}</label><input id="bk_close" type="number" step="0.01"></div>
+      <div><label>${esc(tr(`备注`))}</label><input id="bk_note"></div>
+    </div>
+    <div class="acts"><button id="bk_save">${esc(tr(`保存`))}</button><button class="ghost" id="bk_cancel">${esc(tr(`取消`))}</button></div>
+    <div class="mut" style="margin-top:6px">${esc(tr(`解析在本机浏览器完成，水单内容不会发给第三方。`))}</div>
+  </div>`;
+  document.body.appendChild(box);
+  const msg = (t, bad) => { const el = $("#bk_msg", box); el.textContent = t; el.style.color = bad ? "#b91c1c" : ""; };
+  let parsed = null, file = null, pages = 0;
+  const fill = (m) => {
+    if (!m) return;
+    if (m.bank) $("#bk_bank", box).value = m.bank;
+    if (m.acct_no) $("#bk_acct", box).value = m.acct_no;
+    if (m.ccy) $("#bk_ccy", box).value = m.ccy;
+    if (m.pf) $("#bk_pf", box).value = m.pf;
+    if (m.pt) $("#bk_pt", box).value = m.pt;
+    if (m.open_bal !== "") $("#bk_open", box).value = m.open_bal;
+    if (m.close_bal !== "") $("#bk_close", box).value = m.close_bal;
+    if (m.total_in !== "") $("#bk_in", box).value = m.total_in;
+    if (m.total_out !== "") $("#bk_out", box).value = m.total_out;
+  };
+  const useText = (text) => {
+    const r = bankParseText(text);
+    parsed = r.txs.length ? { txs: r.txs } : null;
+    fill(r.meta);
+    msg(`${tr(`解析到`)} ${r.calc.n} ${tr(`笔`)} · ${tr(`借方`)} ${finMoney(r.calc.debit)} / ${tr(`贷方`)} ${finMoney(r.calc.credit)}${r.warn ? " · ⚠ " + r.warn : ""}`, !!r.warn);
+  };
+  $("#bk_file", box).onchange = async (e) => {
+    file = e.target.files[0] || null;
+    parsed = null;
+    if (!file) return;
+    if (!/pdf/i.test(file.type) && !/\.pdf$/i.test(file.name)) { msg(tr(`图片水单不能自动解析，请按水单手工填上面的数字`)); return; }
+    msg(tr(`读取中…`));
+    try {
+      const r = await bankPdfText(file);
+      pages = r.pages;
+      useText(r.text);
+    } catch (err) {
+      msg(tr(`在线解析失败（网络或浏览器不支持），可以粘贴水单文字，或直接手填`), true);
+      $("#bk_paste_wrap", box).classList.remove("hide");
+    }
+  };
+  $("#bk_paste", box).oninput = (e) => { const t = e.target.value; if (t.trim().length > 80) useText(t); };
+  $("#bk_cancel", box).onclick = () => box.remove();
+  box.onclick = (e) => { if (e.target === box) box.remove(); };
+  $("#bk_save", box).onclick = async () => {
+    const b = {
+      uid: $("#bk_uid", box).value,
+      bank: $("#bk_bank", box).value.trim(),
+      acct_no: $("#bk_acct", box).value.trim(),
+      ccy: $("#bk_ccy", box).value.trim() || "ZMW",
+      pf: $("#bk_pf", box).value, pt: $("#bk_pt", box).value,
+      open_bal: +$("#bk_open", box).value || 0,
+      close_bal: +$("#bk_close", box).value || 0,
+      total_in: +$("#bk_in", box).value || 0,
+      total_out: +$("#bk_out", box).value || 0,
+      note: $("#bk_note", box).value.trim(),
+      parse_by: parsed ? "auto" : "manual",
+      txs: parsed ? parsed.txs : [],
+    };
+    if (!b.pf || !b.pt) return msg(tr(`期间要填`), true);
+    const btn = $("#bk_save", box);
+    btn.disabled = true;
+    try {
+      const r = await api("/fin/bank", { method: "POST", body: b, quiet: true });
+      if (file) {
+        msg(tr(`上传原件…`));
+        const data = await bankFileDataUrl(file);
+        await api(`/fin/bank/${r.id}/file`, { method: "POST", body: { data, name: file.name, pages }, quiet: true });
+      }
+      box.remove();
+      await loadFin(); render();
+      toast(tr(`水单已保存`));
+      finBankOpen(r.id);
+    } catch (err) {
+      msg(err.message, true);
+      btn.disabled = false;
+    }
+  };
+}
+
+/* 水单明细：按日期一笔笔列出来，人工逐笔标「已核」→ 保存 */
+async function finBankOpen(id) {
+  const box = document.createElement("div");
+  box.className = "fin-dim";
+  box.innerHTML = `<div class="fin-sheet"><h3>${esc(tr(`加载中…`))}</h3></div>`;
+  document.body.appendChild(box);
+  let d = null;
+  try { d = await api("/fin/bank/" + encodeURIComponent(id), { quiet: true }); }
+  catch (e) { box.remove(); return toast(e.message, "bad"); }
+  const stmt = d.stmt;
+  const canEdit = !!FIN.bankAll;
+  const nb = (v) => Number(v) || 0;
+  const one = (v) => Math.round(v * 100) / 100;
+  let note = stmt.note || "";
+  /* 按日期从旧到新；同一天保持录入顺序 */
+  const txs = (d.txs || []).map((t, i) => Object.assign({}, t, { _o: i }))
+    .sort((a, b) => String(a.d).localeCompare(String(b.d)) || a._o - b._o)
+    .map((t) => ({
+      id: t.id, d: t.d || "", descr: t.descr || "", ref: t.ref || "",
+      debit: nb(t.debit), credit: nb(t.credit), bal: nb(t.bal),
+      cat: t.cat || "", entry_id: t.entry_id || "", state: t.state || "new", note: t.note || "",
+    }));
+  const open0 = nb(stmt.open_bal), close1 = nb(stmt.close_bal);
+  const hasClose = stmt.close_bal !== "" && stmt.close_bal !== null && stmt.close_bal !== undefined;
+  const who = stmt.uid === FINCO ? tr(`公司账户`) : finNameOf(stmt.uid);
+  const find = (tid) => txs.find((x) => x.id === tid);
+
+  const wire = () => {
+    box.onclick = (e) => { if (e.target === box) box.remove(); };
+    $("#bk_close", box).onclick = () => box.remove();
+    const nEl = $("#bk_note2", box);
+    nEl.oninput = () => { note = nEl.value; };
+    box.querySelectorAll("[data-bkok]").forEach((b) => (b.onclick = () => {
+      const t = find(b.dataset.bkok);
+      t.state = t.state === "matched" ? "new" : "matched";
+      paint();
+    }));
+    box.querySelectorAll("[data-bkign]").forEach((b) => (b.onclick = () => {
+      const t = find(b.dataset.bkign);
+      t.state = t.state === "ignored" ? "new" : "ignored";
+      paint();
+    }));
+    box.querySelectorAll("[data-bkcat]").forEach((sel) => {
+      sel.onchange = () => { const t = find(sel.dataset.bkcat); if (t) t.cat = sel.value; };
+    });
+    if ($("#bk_all", box)) $("#bk_all", box).onclick = () => {
+      txs.forEach((t) => { if (t.state !== "ignored") t.state = "matched"; });
+      paint();
+    };
+    if ($("#bk_save", box)) $("#bk_save", box).onclick = async () => {
+      const btn = $("#bk_save", box);
+      btn.disabled = true;
+      const allDone = txs.length > 0 && txs.every((t) => t.state === "matched" || t.state === "ignored");
+      try {
+        await api(`/fin/bank/${encodeURIComponent(stmt.id)}/tx`, { method: "POST", body: { txs }, quiet: true });
+        await api("/fin/bank/" + encodeURIComponent(stmt.id), {
+          method: "PATCH", body: { note, ...(allDone ? { status: "checked" } : {}) }, quiet: true,
+        });
+        box.remove();
+        await loadFin(); render();
+        toast(allDone ? tr(`全部核完，已标记核对完成`) : `${tr(`已保存`)} ${txs.filter((t) => t.state === "matched").length}/${txs.length}`);
+      } catch (e) { btn.disabled = false; toast(e.message, "bad"); }
+    };
+    if ($("#bk_diff", box)) $("#bk_diff", box).onclick = async () => {
+      try {
+        await api("/fin/bank/" + encodeURIComponent(stmt.id), { method: "PATCH", body: { status: "diff", note }, quiet: true });
+        box.remove(); await loadFin(); render(); toast(tr(`已标记为有差异`));
+      } catch (e) { toast(e.message, "bad"); }
+    };
+    if ($("#bk_del", box)) $("#bk_del", box).onclick = async () => {
+      if (!confirm(tr(`删除这份水单？原件也会删掉`))) return;
+      try {
+        await api("/fin/bank/" + encodeURIComponent(stmt.id), { method: "DELETE", quiet: true });
+        box.remove(); await loadFin(); render(); toast(tr(`水单已删除`));
+      } catch (e) { toast(e.message, "bad"); }
+    };
+  };
+
+  const paint = () => {
+    const sumIn = one(txs.reduce((a, t) => a + t.credit, 0));
+    const sumOut = one(txs.reduce((a, t) => a + t.debit, 0));
+    const calc = one(open0 + sumIn - sumOut);
+    const gap = one(calc - close1);
+    const okN = txs.filter((t) => t.state === "matched").length;
+    const skipN = txs.filter((t) => t.state === "ignored").length;
+    const pend = txs.filter((t) => t.state === "new");
+    const pendIn = one(pend.reduce((a, t) => a + t.credit, 0));
+    const pendOut = one(pend.reduce((a, t) => a + t.debit, 0));
+    const stName = stmt.status === "checked" ? tr(`已核对`) : stmt.status === "diff" ? tr(`有差异`) : tr(`待核对`);
+    const chk = hasClose
+      ? `<div class="bk-chk${Math.abs(gap) > 0.01 ? " bad" : ""}">${esc(tr(`期初`))} ${finMoney(open0)} + ${esc(tr(`进`))} ${finMoney(sumIn)} − ${esc(tr(`出`))} ${finMoney(sumOut)} = ${finMoney(calc)}
+          ${Math.abs(gap) > 0.01 ? `<b>${esc(tr(`和期末差`))} ${finMoney(gap)}</b>` : `<b class="ok">✓ ${esc(tr(`和期末一致`))}</b>`}</div>`
+        + (Math.abs(gap) > 0.01
+          ? `<div class="mut" style="margin:-4px 0 8px">${esc(tr(`逐笔合计和表头期末对不上，多半有行没解析出来，请对照原件补`))}</div>`
+          : "")
+      : "";
+    let run = open0;
+    const rows = txs.map((t) => {
+      run = one(run + t.credit - t.debit);
+      const bal = t.bal || run;
+      const amt = t.debit || t.credit;
+      return `<div class="bk-tx ${esc(t.state)}">
+        <div class="l1"><span class="d">${esc(String(t.d).slice(5) || "—")}</span>
+          <span class="m">${esc(t.descr || tr(`（没写摘要）`))}${t.ref ? ` <small class="mut">${esc(t.ref)}</small>` : ""}</span>
+          <b class="${amt ? (t.debit ? "out" : "in") : "mut"}">${amt ? (t.debit ? "-" : "+") + finMoney(amt) : "—"}</b></div>
+        <div class="l2"><em class="mut">${esc(tr(`余额`))} ${finMoney(bal)}</em>
+          ${canEdit ? bankCatSel(t.cat, t.id) : `<em>${esc(finCatName(t.cat))}</em>`}
+          ${canEdit ? `<button class="ghost" data-bkok="${esc(t.id)}">${esc(t.state === "matched" ? tr(`✓ 已核`) : tr(`☐ 待核`))}</button>` : ""}
+          ${canEdit ? `<button class="ghost" data-bkign="${esc(t.id)}">${esc(t.state === "ignored" ? tr(`↺ 恢复`) : tr(`不管这行`))}</button>` : ""}
+        </div></div>`;
+    }).join("");
+    box.innerHTML = `<div class="fin-sheet">
+      <h3>${esc(who)} · ${esc(stmt.bank || tr(`银行`))}</h3>
+      <div class="mut" style="margin-bottom:8px">${esc(stmt.pf)} → ${esc(stmt.pt)} · ${esc(stmt.acct_no || "")} · ${esc(stmt.ccy || "ZMW")} · ${txs.length} ${esc(tr(`笔`))} · ${esc(stName)}${stmt.checked_by ? ` · ${esc(tr(`核对人`))} ${esc(finNameOf(stmt.checked_by))}` : ""}</div>
+      ${chk}
+      <div class="acts" style="margin:8px 0">
+        ${stmt.file_key ? `<a class="ghost" href="/api/fin/bank/file/${encodeURIComponent(stmt.id)}" target="_blank" rel="noopener">${esc(tr(`看水单原件`))}</a>` : `<span class="mut">${esc(tr(`没有原件（只记了数字）`))}</span>`}
+        ${canEdit ? `<button class="ghost" id="bk_diff">${esc(tr(`标有差异`))}</button>` : ""}
+        ${canEdit ? `<button class="ghost dz" id="bk_del">${esc(tr(`删除`))}</button>` : ""}
+      </div>
+      <div class="fin-fr hd"><span>${esc(tr(`逐笔（按日期）`))}</span><b>${esc(tr(`进 / 出`))}</b><i>${esc(tr(`已核`))}</i><i>${esc(tr(`笔`))}</i></div>
+      <div class="fin-fr"><span>${esc(tr(`合计`))}</span><b>+${finMoney(sumIn)} / -${finMoney(sumOut)}</b><i>${okN}${skipN ? `+${skipN}` : ""}</i><i>${txs.length}</i></div>
+      <div class="bk-list">${rows || `<div class="empty">${esc(tr(`这份水单没有逐笔明细`))}</div>`}</div>
+      <div class="mut" style="margin:8px 0">${esc(tr(`还没核`))}：${esc(tr(`进`))} ${finMoney(pendIn)} · ${esc(tr(`出`))} ${finMoney(pendOut)}</div>
+      <label>${esc(tr(`差异说明 / 备注`))}</label>
+      <input id="bk_note2" value="${esc(note)}">
+      <div class="acts" style="margin:8px 0 4px">
+        ${canEdit ? `<button class="ghost" id="bk_all">${esc(tr(`全部标已核`))}</button>` : ""}
+        ${canEdit ? `<button id="bk_save">${esc(tr(`保存核对`))}</button>` : ""}
+        <button class="ghost" id="bk_close">${esc(tr(`关闭`))}</button>
+      </div>
+    </div>`;
+    wire();
+  };
+
+  paint();
+}
+
 /* ---------- 照片区（记一笔 / 编辑 / 取现 共用） ---------- */
 function finPhotoHtml(p) {
-  return `<label>单据照片 <span id="${p}_phn" style="font-weight:400;color:var(--mut)">0/6</span></label>
+  return `<label>${esc(tr(`单据照片`))} <span id="${p}_phn" style="font-weight:400;color:var(--mut)">0/6</span></label>
     <div class="r" style="gap:8px;margin-bottom:6px">
-      <button class="ghost" type="button" id="${p}_cam">📷 拍照</button>
-      <button class="ghost" type="button" id="${p}_alb">🖼 从相册选</button>
+      <button class="ghost" type="button" id="${p}_cam">${esc(tr(`📷 拍照`))}</button>
+      <button class="ghost" type="button" id="${p}_alb">${esc(tr(`🖼 从相册选`))}</button>
     </div>
     <input id="${p}_cam_in" type="file" accept="image/*" capture="environment" style="display:none">
     <input id="${p}_alb_in" type="file" accept="image/*" multiple style="display:none">
@@ -3009,7 +4222,7 @@ function finPhotoWire(box, p, initial, dir) {
   const state = { list: Array.isArray(initial) ? initial.slice(0, 6) : [], busy: false };
   const phBox = $("#" + p + "_ph", box), phN = $("#" + p + "_phn", box), msgEl = $("#" + p + "_msg", box);
   const draw = () => {
-    phBox.innerHTML = state.list.map((k, i) => `<span class="pht"><img src="/api/fin/photo/${k}" data-phv="/api/fin/photo/${k}" alt=""><b data-delph="${i}" title="移除">×</b></span>`).join("");
+    phBox.innerHTML = state.list.map((k, i) => `<span class="pht"><img src="/api/fin/photo/${k}" data-phv="/api/fin/photo/${k}" alt=""><b data-delph="${i}" title="${esc(tr(`移除`))}">×</b></span>`).join("");
     phN.textContent = state.list.length + "/6";
     phBox.querySelectorAll("[data-delph]").forEach((b) => b.onclick = (ev) => { ev.stopPropagation(); state.list.splice(+b.dataset.delph, 1); draw(); });
     phBox.querySelectorAll("[data-phv]").forEach((im) => im.onclick = () => finView(im.dataset.phv));
@@ -3021,7 +4234,7 @@ function finPhotoWire(box, p, initial, dir) {
     state.busy = true;
     try {
       for (let i = 0; i < list.length; i++) {
-        if (msgEl) msgEl.textContent = "上传中…（" + i + "/" + list.length + "）";
+        if (msgEl) msgEl.textContent = tr("上传中…") + " (" + i + "/" + list.length + ")";
         const key = await finUpload(list[i], msgEl, dir);
         if (key) state.list.push(key); else fail++;
         draw();
@@ -3060,7 +4273,7 @@ function finSheet(presetTo, presetKind, editEntry) {
   const catsHtml = (ft, cur) => {
     const list = catsOf(ft);
     if (cur && !list.includes(cur)) list.unshift(cur);
-    return list.length ? list.map(opt).join("") : `<option value="">（暂无，先「改分类」添加）</option>`;
+    return list.length ? list.map(opt).join("") : `<option value="">${esc(tr(`（暂无，先「改分类」添加）`))}</option>`;
   };
   const ftHtml = FIN_FT.map(([k, n]) => `<option value="${esc(k)}">${esc(n)}</option>`).join("");
   const last = editEntry ? null : finLastUse();
@@ -3073,37 +4286,37 @@ function finSheet(presetTo, presetKind, editEntry) {
   box.className = "fin-dim";
   box.innerHTML = `<div class="fin-sheet">
     <h3>${edit ? "修改记录" : "记一笔"}</h3>
-    <label>类型</label>
-    <select id="ff_kind"${edit ? " disabled" : ""}><option value="out">支出</option><option value="in">收入</option>${FIN.owner ? `<option value="float">发备用金</option>` : ""}</select>
+    <label>${esc(tr(`类型`))}</label>
+    <select id="ff_kind"${edit ? " disabled" : ""}><option value="out">${esc(tr(`支出`))}</option><option value="in">${esc(tr(`收入`))}</option>${FIN.owner ? `<option value="float">${esc(tr(`发备用金`))}</option>` : ""}</select>
     <div class="r" style="margin-top:8px">
-      <div><label>金额 ZMW <i class="req">*</i></label><input id="ff_amt" type="number" step="0.01" inputmode="decimal" value="${edit ? d.amount : ""}"></div>
-      <div><label>日期</label><input id="ff_date" type="date" value="${esc(edit ? d.date : new Date().toISOString().slice(0, 10))}"></div>
+      <div><label>${esc(tr(`金额 ZMW`))} <i class="req">*</i></label><input id="ff_amt" type="number" step="0.01" inputmode="decimal" value="${edit ? d.amount : ""}"></div>
+      <div><label>${esc(tr(`日期`))}</label><input id="ff_date" type="date" value="${esc(edit ? d.date : new Date().toISOString().slice(0, 10))}"></div>
     </div>
-    <label>备注 <i class="req">*</i></label><input id="ff_note" placeholder="比如：去矿区打车" value="${esc(d.note || "")}">
+    <label>${esc(tr(`备注`))} <i class="req">*</i></label><input id="ff_note" placeholder="${esc(tr(`比如：去矿区打车`))}" value="${esc(d.note || "")}">
     <div id="ff_out">
       <div class="row3" style="margin-top:8px">
-        <div><label>归属</label><select id="ff_ft">${ftHtml}</select></div>
-        <div><label>分类</label><select id="ff_cat">${catsHtml(initFt, edit ? d.cat : null)}</select></div>
-        <div><label>渠道</label><select id="ff_ch"><option value="cash">现金</option><option value="card">银行</option></select></div>
+        <div><label>${esc(tr(`归属`))}</label><select id="ff_ft">${ftHtml}</select></div>
+        <div><label>${esc(tr(`分类`))}</label><select id="ff_cat">${catsHtml(initFt, edit ? d.cat : null)}</select></div>
+        <div><label>${esc(tr(`渠道`))}</label><select id="ff_ch"><option value="cash">${esc(tr(`现金`))}</option><option value="card">${esc(tr(`银行`))}</option></select></div>
       </div>
       <div class="mut" id="ff_cat_hint" style="display:none;margin:6px 0 0"></div>
       <div id="ff_invwrap" style="margin-top:8px">
         <div class="fin-seg" style="margin:0">
-          <button type="button" data-inv="0">无发票</button>
-          <button type="button" data-inv="1">有发票 <i class="req" id="ff_inv_req" style="display:none">*</i></button>
+          <button type="button" data-inv="0">${esc(tr(`无发票`))}</button>
+          <button type="button" data-inv="1">${esc(tr(`有发票`))} <i class="req" id="ff_inv_req" style="display:none">*</i></button>
         </div>
-        <div class="mut" id="ff_inv_hint" style="display:none;margin:6px 0 0">有发票要上传发票照片（最多 6 张）</div>
+        <div class="mut" id="ff_inv_hint" style="display:none;margin:6px 0 0">${esc(tr(`有发票要上传发票照片（最多 6 张）`))}</div>
       </div>
-      ${canAll ? `<label>记在谁名下</label><select id="ff_uid">${people.map((p) => `<option value="${esc(p)}" ${p === (edit ? d.uid : viewUid) ? "selected" : ""}>${esc(finNameOf(p))}</option>`).join("")}</select>` : ""}
+      ${canAll ? `<label>${esc(tr(`记在谁名下`))}</label><select id="ff_uid">${people.map((p) => `<option value="${esc(p)}" ${p === (edit ? d.uid : viewUid) ? "selected" : ""}>${esc(finNameOf(p))}</option>`).join("")}</select>` : ""}
     </div>
     <div id="ff_fl" class="hide">
-      <div class="r"><div><label>从谁出</label><select id="ff_giver">${people.map((p) => `<option value="${esc(p)}" ${p === (edit ? d.uid : FIN.me.uid) ? "selected" : ""}>${esc(finNameOf(p))}</option>`).join("")}</select></div>
-      <div><label>从哪个口</label><select id="ff_from"><option value="cash">现金</option><option value="card">银行</option></select></div></div>
-      <label>发给谁</label><select id="ff_to">${people.filter((p) => p !== (edit ? d.uid : FIN.me.uid)).map((p) => `<option value="${esc(p)}">${esc(finNameOf(p))}</option>`).join("")}</select>
+      <div class="r"><div><label>${esc(tr(`从谁出`))}</label><select id="ff_giver">${people.map((p) => `<option value="${esc(p)}" ${p === (edit ? d.uid : FIN.me.uid) ? "selected" : ""}>${esc(finNameOf(p))}</option>`).join("")}</select></div>
+      <div><label>${esc(tr(`从哪个口`))}</label><select id="ff_from"><option value="cash">${esc(tr(`现金`))}</option><option value="card">${esc(tr(`银行`))}</option></select></div></div>
+      <label>${esc(tr(`发给谁`))}</label><select id="ff_to">${people.filter((p) => p !== (edit ? d.uid : FIN.me.uid)).map((p) => `<option value="${esc(p)}">${esc(finNameOf(p))}</option>`).join("")}</select>
     </div>
     ${finPhotoHtml("ff")}
     <p class="mut" id="ff_msg" style="min-height:1em;margin:8px 0 0"></p>
-    <div class="r" style="margin-top:8px"><button class="ghost" id="ff_x">取消</button><button id="ff_save">${edit ? "保存修改" : "保存"}</button></div>
+    <div class="r" style="margin-top:8px"><button class="ghost" id="ff_x">${esc(tr(`取消`))}</button><button id="ff_save">${edit ? "保存修改" : "保存"}</button></div>
   </div>`;
   document.body.appendChild(box);
   const close = () => box.remove();
@@ -3198,17 +4411,17 @@ function finMoveSheet() {
   const box = document.createElement("div");
   box.className = "fin-dim";
   box.innerHTML = `<div class="fin-sheet">
-    <h3>取现 / 存现（内部转账 · 不算花费）</h3>
-    <label>方向</label>
-    <select id="fm_dir"><option value="card2cash">取现 · 银行 → 现金</option><option value="cash2card">存现 · 现金 → 银行</option></select>
+    <h3>${esc(tr(`取现 / 存现（内部转账 · 不算花费）`))}</h3>
+    <label>${esc(tr(`方向`))}</label>
+    <select id="fm_dir"><option value="card2cash">${esc(tr(`取现 · 银行 → 现金`))}</option><option value="cash2card">${esc(tr(`存现 · 现金 → 银行`))}</option></select>
     <div class="r" style="margin-top:8px">
-      <div><label>金额 ZMW</label><input id="fm_amt" type="number" step="0.01" inputmode="decimal"></div>
-      <div><label>日期</label><input id="fm_date" type="date" value="${new Date().toISOString().slice(0, 10)}"></div>
+      <div><label>${esc(tr(`金额 ZMW`))}</label><input id="fm_amt" type="number" step="0.01" inputmode="decimal"></div>
+      <div><label>${esc(tr(`日期`))}</label><input id="fm_date" type="date" value="${new Date().toISOString().slice(0, 10)}"></div>
     </div>
-    <label>备注</label><input id="fm_note" placeholder="比如：ATM 取现">
+    <label>${esc(tr(`备注`))}</label><input id="fm_note" placeholder="${esc(tr(`比如：ATM 取现`))}">
     ${finPhotoHtml("fm")}
     <p class="mut" id="fm_msg" style="min-height:1em;margin:8px 0 0"></p>
-    <div class="r" style="margin-top:8px"><button class="ghost" id="fm_x">取消</button><button id="fm_save">保存</button></div>
+    <div class="r" style="margin-top:8px"><button class="ghost" id="fm_x">${esc(tr(`取消`))}</button><button id="fm_save">${esc(tr(`保存`))}</button></div>
   </div>`;
   document.body.appendChild(box);
   const close = () => box.remove();
@@ -3239,24 +4452,24 @@ function finTransferSheet(editEntry, presetFrom) {
   const box = document.createElement("div");
   box.className = "fin-dim";
   box.innerHTML = `<div class="fin-sheet">
-    <h3>${edit ? "修改调拨" : "资金调拨"} <span class="mut" style="font-weight:400;font-size:12px">· 户与户之间搬钱，不算花费</span></h3>
+    <h3>${edit ? "修改调拨" : "资金调拨"} <span class="mut" style="font-weight:400;font-size:12px">${esc(tr(`· 户与户之间搬钱，不算花费`))}</span></h3>
     <div class="r">
-      <div><label>从哪里出</label><select id="ft_from">${fromList.map((p) => `<option value="${esc(p.login)}" ${p.login === from0 ? "selected" : ""}>${esc(p.name || p.login)}</option>`).join("")}</select></div>
-      <div><label>出账口</label><select id="ft_ch"><option value="cash">现金</option><option value="card">银行</option></select></div>
+      <div><label>${esc(tr(`从哪里出`))}</label><select id="ft_from">${fromList.map((p) => `<option value="${esc(p.login)}" ${p.login === from0 ? "selected" : ""}>${esc(p.name || p.login)}</option>`).join("")}</select></div>
+      <div><label>${esc(tr(`出账口`))}</label><select id="ft_ch"><option value="cash">${esc(tr(`现金`))}</option><option value="card">${esc(tr(`银行`))}</option></select></div>
     </div>
     <div class="r" style="margin-top:8px">
-      <div><label>调到谁</label><select id="ft_to"></select></div>
-      <div><label>进到</label><select id="ft_toch"><option value="cash">现金</option><option value="card">银行</option></select></div>
+      <div><label>${esc(tr(`调到谁`))}</label><select id="ft_to"></select></div>
+      <div><label>${esc(tr(`进到`))}</label><select id="ft_toch"><option value="cash">${esc(tr(`现金`))}</option><option value="card">${esc(tr(`银行`))}</option></select></div>
     </div>
     <div class="r" style="margin-top:8px">
-      <div><label>金额 ZMW</label><input id="ft_amt" type="number" step="0.01" inputmode="decimal" value="${edit ? edit.amount : ""}"></div>
-      <div><label>日期</label><input id="ft_date" type="date" value="${esc(edit ? edit.date : new Date().toISOString().slice(0, 10))}"></div>
+      <div><label>${esc(tr(`金额 ZMW`))}</label><input id="ft_amt" type="number" step="0.01" inputmode="decimal" value="${edit ? edit.amount : ""}"></div>
+      <div><label>${esc(tr(`日期`))}</label><input id="ft_date" type="date" value="${esc(edit ? edit.date : new Date().toISOString().slice(0, 10))}"></div>
     </div>
     <p class="mut" id="ft_preview" style="margin:8px 0 0;min-height:2.6em"></p>
-    <label>备注</label><input id="ft_note" placeholder="比如：给 Peter 现金进货" value="${esc(edit ? edit.note || "" : "")}">
+    <label>${esc(tr(`备注`))}</label><input id="ft_note" placeholder="${esc(tr(`比如：给 Peter 现金进货`))}" value="${esc(edit ? edit.note || "" : "")}">
     ${finPhotoHtml("ft")}
     <p class="mut" id="ft_msg" style="min-height:1em;margin:8px 0 0"></p>
-    <div class="r" style="margin-top:8px"><button class="ghost" id="ft_x">取消</button><button id="ft_save">${edit ? "保存修改" : "确认转账"}</button></div>
+    <div class="r" style="margin-top:8px"><button class="ghost" id="ft_x">${esc(tr(`取消`))}</button><button id="ft_save">${edit ? "保存修改" : "确认转账"}</button></div>
   </div>`;
   document.body.appendChild(box);
   const close = () => box.remove();
@@ -3295,8 +4508,8 @@ function finTransferSheet(editEntry, presetFrom) {
     const fa = { cash: A.cash, card: A.card }, ba = { cash: B.cash, card: B.card };
     fa[fch] -= amt; ba[tch] += amt;
     const money = (v) => (v < 0 ? `<b style="color:#c33">${finMoney(v)}</b>` : finMoney(v));
-    const side = (uid, x) => `${esc(finNameOf(uid))}：现金 ${money(x.cash)} · 银行 ${money(x.card)}`;
-    el.innerHTML = `转出后 ${side(from, fa)}<br>转入后 ${side(to, ba)}`;
+    const side = (uid, x) => `${esc(finNameOf(uid))} · ${tr("现金")} ${money(x.cash)} · ${tr("银行")} ${money(x.card)}`;
+    el.innerHTML = `${tr("转出后")} ${side(from, fa)}<br>${tr("转入后")} ${side(to, ba)}`;
   };
 
   const PH = finPhotoWire(box, "ft", edit ? edit.photos : []);
@@ -3351,7 +4564,7 @@ function finExport(mode) {
   const money = (n) => (Number(n) || 0).toFixed(2);
   if (mode === "items") {
     const rows = v.list.filter((e) => (e.kind === "out" || e.kind === "in") && !finOffbook(e));
-    finCsv(`支出明细_${day}.csv`,
+    finCsv(`${tr("支出明细")}_${day}.csv`,
       ["日期", "类型", "付款户", "渠道", "用途", "归属", "金额ZMW", "票据", "备注", "照片数"],
       rows.map((e) => [e.date, finKindName(e.kind), finNameOf(e.uid), chZh(e.ch), finCatName(e.cat),
         e.ft === "project" ? "项目" : "生活", money(e.amount), Number(e.inv) ? "有票" : "无票",
@@ -3360,7 +4573,7 @@ function finExport(mode) {
     return;
   }
   const all = (FIN.entries || []).filter((e) => String(e.date) >= finFrom());
-  finCsv(`资金流水_${day}.csv`,
+  finCsv(`${tr("资金流水")}_${day}.csv`,
     ["日期", "类型", "出账户", "出账口", "入账户", "入账口", "金额ZMW", "用途", "票据", "备注"],
     all.map((e) => [e.date, finKindName(e.kind), finNameOf(e.uid), chZh(e.ch),
       e.to_uid ? finNameOf(e.to_uid) : "", e.to_ch ? chZh(e.to_ch) : "", money(e.amount),
@@ -3395,7 +4608,7 @@ async function finUpload(file, msgEl, dir) {
 
 async function finMergeOrphan(from) {
   const o = (FIN.orphans || []).find((x) => x.uid === from) || { n: 0, name: from };
-  if (!confirm(`把「${o.name}」名下的 ${o.n} 条记录并到 ${FIN.me.name}（${FIN.me.uid}）名下？\n合并后不能拆开。`)) return;
+  if (!confirm(tr(`把「${o.name}」名下的 ${o.n} 条记录并到 ${FIN.me.name}（${FIN.me.uid}）名下？\n合并后不能拆开。`))) return;
   try {
     const r = await api("/fin/remap", { method: "POST", body: { from, to: FIN.me.uid }, quiet: true });
     toast(`已合并 ${((r.moved || {}).entries) || 0} 条记录`);
@@ -3439,12 +4652,12 @@ function openFinMenu(id, btn) {
   m.id = "fin_menu";
   m.style.top = Math.round(r.bottom + 6) + "px";
   m.style.right = Math.max(8, Math.round(window.innerWidth - r.right)) + "px";
-  m.innerHTML = `<button data-act="edit">编辑</button><button data-act="del" class="dz">删除</button>`;
+  m.innerHTML = `<button data-act="edit">${esc(tr(`编辑`))}</button><button data-act="del" class="dz">${esc(tr(`删除`))}</button>`;
   document.body.appendChild(m);
   m.querySelector('[data-act="edit"]').onclick = () => { closeFinMenu(); if (e.kind === "transfer") finTransferSheet(e); else finSheet(null, null, e); };
   m.querySelector('[data-act="del"]').onclick = async () => {
     closeFinMenu();
-    if (!confirm("删除这条记录？")) return;
+    if (!confirm(tr("删除这条记录？"))) return;
     try { await api("/fin/entries/" + encodeURIComponent(e.id), { method: "DELETE", toast: "记录已删除" }); await loadFin(); render(); }
     catch (err) { toast(err.message, "bad"); }
   };
@@ -3507,6 +4720,7 @@ function bindFin() {
   pane.querySelectorAll("[data-recon]").forEach((b) => b.onclick = () => finRecon(b.dataset.recon).catch((e) => toast(e.message, "bad")));
   pane.querySelectorAll("[data-give]").forEach((b) => b.onclick = () => finSheet(b.dataset.give));
   pane.querySelectorAll("[data-finmore]").forEach((b) => (b.onclick = (ev) => { ev.stopPropagation(); openFinMenu(b.dataset.finmore, b); }));
+  pane.querySelectorAll("[data-go]").forEach((b) => (b.onclick = () => enterApp(b.dataset.go)));
   const fo = $("#fo_save");
   if (fo) fo.onclick = async () => {
     await api("/fin/opening", { method: "PUT", toast: "期初已保存", body: { date: $("#fo_date").value, cash: +$("#fo_cash").value, card: +$("#fo_card").value } });
@@ -3535,7 +4749,7 @@ function bindFin() {
     const detail = Object.entries(pre.map || {}).filter(([, v]) => v.n)
       .map(([k, v]) => `${finCatName(k)} ${v.n} 条 → ${finCatName(v.to)}`);
     if (pre.ftFixed) detail.push(`${pre.ftFixed} 条 借款/家庭开支 的归属改为「往来」`);
-    if (!confirm(`整理老分类？\n\n${detail.join("\n")}`)) return;
+    if (!confirm(tr("整理老分类？") + "\n\n" + detail.join("\n"))) return;
     const r = await api("/fin/cats/merge", { method: "POST", toast: "分类已合并" });
     toast(`合并 ${r.total} 条，归属修正 ${r.ftFixed} 条`);
     await loadFin(); render();
@@ -3604,12 +4818,12 @@ const ago = (t) => { if (!t) return ""; const d = Date.now() - new Date(t).getTi
 const fb = (u) => (u.startsWith("feed/old/") ? ` onerror="this.onerror=null;this.src='/api/feed/img/${u.slice(9)}'"` : "");
 const FD_EXP = new Set();
 const FD_OPEN = new Set();
-const meId = () => S.user.login || S.user.uid;
+const meId = () => (S.user && (S.user.login || S.user.uid)) || "";
 
 function feedHtml() {
-  return `<div class="fd-top"><div class="fd-title">公司动态</div><span class="mut">全体可见</span></div>
-    <div id="fd_list"><div class="empty">加载中…</div></div>
-    <button id="fd_fab" class="fd-fab" title="添加动态">＋</button>`;
+  return `<div class="fd-top"><div class="fd-title">${esc(tr(`公司动态`))}</div><span class="mut">${esc(tr(`全体可见`))}</span></div>
+    <div id="fd_list"><div class="empty">${esc(tr(`加载中…`))}</div></div>
+    <button id="fd_fab" class="fd-fab" title="${esc(tr(`添加动态`))}">＋</button>`;
 }
 
 function bindFeed() {
@@ -3646,18 +4860,18 @@ function cmtHtml(p) {
   const pairs = list.map((c, i) => [c, i]);
   const vis = all ? pairs : pairs.slice(0, 3);
   const rows = vis.map(([c, i]) => `<div class="fd-c"><b>${esc(c.by || "")}</b><span>${esc(tx(c, "text"))}</span><em>${esc(ago(c.at))}</em>${
-    (c.uid === me || S.user.role === "admin") ? `<button class="x" data-cdel="${esc(p.id)}:${i}" title="删除">×</button>` : ""}</div>`).join("");
+    (c.uid === me || isAdmin()) ? `<button class="x" data-cdel="${esc(p.id)}:${i}" title="${esc(tr(`删除`))}">×</button>` : ""}</div>`).join("");
   const moreBtn = list.length > 3
-    ? (all ? `<button class="fd-cmore" data-cmore="${esc(p.id)}">收起留言</button>` : `<button class="fd-cmore" data-cmore="${esc(p.id)}">查看全部 ${list.length} 条留言</button>`)
+    ? (all ? `<button class="fd-cmore" data-cmore="${esc(p.id)}">${esc(tr(`收起留言`))}</button>` : `<button class="fd-cmore" data-cmore="${esc(p.id)}">${esc(tr(`查看全部 ${list.length} 条留言`))}</button>`)
     : "";
   return `<div class="fd-comments">${rows}${moreBtn}
-    <div class="fd-cin"><input data-cin="${esc(p.id)}" maxlength="300" placeholder="写留言…"><button data-csend="${esc(p.id)}">发送</button></div>
+    <div class="fd-cin"><input data-cin="${esc(p.id)}" maxlength="300" placeholder="${esc(tr(`写留言…`))}"><button data-csend="${esc(p.id)}">${esc(tr(`发送`))}</button></div>
   </div>`;
 }
 
 function postHtml(p) {
   const me = meId();
-  const mine = p.uid === me || S.user.role === "admin";
+  const mine = !!me && (p.uid === me || isAdmin());
   const liked = (p.likes || []).includes(me);
   const nLike = (p.likes || []).length;
   const nCmt = (p.comments || []).length;
@@ -3665,13 +4879,13 @@ function postHtml(p) {
     <div class="fd-h">
       <div class="fd-av">${esc((p.name || "?").slice(0, 1).toUpperCase())}</div>
       <div class="fd-meta"><b>${esc(p.name || p.uid)}</b><span>${esc(KIND[p.kind] || KIND.company)} · ${esc(whenOf(p))}</span></div>
-      ${mine ? `<button class="fd-more" data-more="${esc(p.id)}" title="更多">⋯</button>` : ""}
+      ${mine ? `<button class="fd-more" data-more="${esc(p.id)}" title="${esc(tr(`更多`))}">⋯</button>` : ""}
     </div>
     ${p.body ? `<div class="fd-b">${esc(tx(p, "body"))}</div>` : ""}
     ${mediaHtml(p)}
     <div class="fd-acts">
-      <button class="fd-like${liked ? " on" : ""}" data-like="${esc(p.id)}" aria-label="点赞"><i>${liked ? "❤" : "♡"}</i><span>${nLike || "赞"}</span></button>
-      <button class="fd-cmtb" data-cmt="${esc(p.id)}" aria-label="评论"><i>💬</i><span>${nCmt || "评论"}</span></button>
+      <button class="fd-like${liked ? " on" : ""}" data-like="${esc(p.id)}" aria-label="${esc(tr(`点赞`))}"><i>${liked ? "❤" : "♡"}</i><span>${nLike || esc(tr("赞"))}</span></button>
+      <button class="fd-cmtb" data-cmt="${esc(p.id)}" aria-label="${esc(tr(`评论`))}"><i>💬</i><span>${nCmt || "评论"}</span></button>
     </div>
     ${cmtHtml(p)}
   </article>`;
@@ -3703,7 +4917,7 @@ function thumbVideos() {
 
 function drawFeed() {
   const el = $("#fd_list");
-  if (!el) return;
+  if (!el || !S.user) return;
   el.innerHTML = (FEED && FEED.length) ? FEED.map(postHtml).join("") : '<div class="empty">还没有动态，点右下角 ＋ 发第一条</div>';
   el.querySelectorAll(".fd-post").forEach(bindPost);
   thumbVideos();
@@ -3773,7 +4987,7 @@ function openMenu(id, btn) {
   m.id = "fd_menu";
   m.style.top = Math.round(r.bottom + 6) + "px";
   m.style.right = Math.max(8, Math.round(window.innerWidth - r.right)) + "px";
-  m.innerHTML = `<button data-act="edit">编辑</button><button data-act="copy">复制内容</button><button data-act="del" class="dz">删除</button>`;
+  m.innerHTML = `<button data-act="edit">${esc(tr(`编辑`))}</button><button data-act="copy">${esc(tr(`复制内容`))}</button><button data-act="del" class="dz">${esc(tr(`删除`))}</button>`;
   document.body.appendChild(m);
   m.querySelector('[data-act="edit"]').onclick = () => { closeMenu(); openComposer(p); };
   m.querySelector('[data-act="copy"]').onclick = () => {
@@ -3785,7 +4999,7 @@ function openMenu(id, btn) {
   };
   m.querySelector('[data-act="del"]').onclick = async () => {
     closeMenu();
-    if (!confirm("删除这条动态？")) return;
+    if (!confirm(tr("删除这条动态？"))) return;
     try { await api("/feed/" + encodeURIComponent(id), { method: "DELETE", toast: "已删除" }); await loadFeed(); }
     catch (e) {}
   };
@@ -3802,11 +5016,11 @@ function openComposer(post) {
   dim.className = "fd-dim"; dim.id = "fd_dim"; dim.onclick = closeSheet;
   const s = document.createElement("div");
   s.className = "fd-sheet"; s.id = "fd_sheet";
-  s.innerHTML = `<div class="fd-sh"><h3>${post ? "编辑动态" : "添加动态"}</h3><button id="fd_x">取消</button></div>
-    <textarea id="fd_body" maxlength="2000" placeholder="说点什么…">${esc(post ? post.body : "")}</textarea>
+  s.innerHTML = `<div class="fd-sh"><h3>${post ? "编辑动态" : "添加动态"}</h3><button id="fd_x">${esc(tr(`取消`))}</button></div>
+    <textarea id="fd_body" maxlength="2000" placeholder="${esc(tr(`说点什么…`))}">${esc(post ? post.body : "")}</textarea>
     <div class="fd-cnt"><span id="fd_cnt">0</span>/2000</div>
     <div id="fd_ph" class="fd-thumbs"></div>
-    <div class="row"><button id="fd_pick">＋ 照片</button><button class="pri" id="fd_send">${post ? "保存" : "发布"}</button></div>
+    <div class="row"><button id="fd_pick">${esc(tr(`＋ 照片`))}</button><button class="pri" id="fd_send">${post ? "保存" : "发布"}</button></div>
     <input id="fd_file" type="file" accept="image/*" multiple hidden>`;
   document.body.appendChild(dim);
   document.body.appendChild(s);
@@ -3817,7 +5031,7 @@ function openComposer(post) {
     e.target.value = "";
     const btn = $("#fd_send");
     if (!files.length) return;
-    btn.disabled = true; btn.textContent = "上传中…";
+    btn.disabled = true; btn.textContent = tr("上传中…");
     for (const f of files) {
       const key = await finUpload(f, null, "feed");
       if (key) FD_DRAFT.push({ t: "i", u: key });
@@ -3908,7 +5122,7 @@ function attachZoom(wrap, im) {
 function groupHtml(g) {
   const mods = groupMods(g);
   const cards = mods.map(modCard).join("");
-  return `<div class="sec">${esc(tr(g))}</div><div class="mods">${cards || '<div class="empty">这个分类还没有模块</div>'}</div>`;
+  return `<div class="sec">${esc(tr(g))}</div><div class="mods">${cards || '<div class="empty">${esc(tr(`这个分类还没有模块`))}</div>'}</div>`;
 }
 
 /* ---------- 渲染 ---------- */
@@ -3919,6 +5133,13 @@ async function render() {
 }
 async function renderPane() {
   const pane = $("#pane");
+  /* 没登录就别渲染任何页：动态卡片要读 S.user，早渲染会抛 null */
+  if (!S.user) return;
+  /* 离开待办页：停轮询、收抽屉，别让后台请求跟着跑 */
+  if (S.tab !== "todo" && (TD_POLL || TD_PANEL)) {
+    tdPollStop();
+    if (TD_PANEL) tdClosePanel();
+  }
   if (S.fresh) {
     S.fresh = false;
     pane.classList.remove("page-in");
@@ -3944,16 +5165,18 @@ async function renderPane() {
     return;
   }
   if (S.tab === "log") {
-    pane.innerHTML = `<div class="empty">加载中…</div>`;
+    pane.innerHTML = `<div class="empty">${esc(tr(`加载中…`))}</div>`;
     try { await loadProd(); } catch (e) { pane.innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
     pane.innerHTML = prodHtml();
     bindProd(pane);
   } else if (S.tab === "fin") {
-    pane.innerHTML = `<div class="empty">加载中…</div>`;
+    pane.innerHTML = `<div class="empty">${esc(tr(`加载中…`))}</div>`;
     try { await loadFin(); } catch (e) { pane.innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
     if (!FIN.canAll && FINWHO) FINWHO = "";
     pane.innerHTML = finHtml();
     bindFin();
+  } else if (S.tab === "bank") {
+    await bankPane(pane);
   } else if (S.tab === "users") {
     S.users = (await api("/users")).users;
     pane.innerHTML = usersHtml();
@@ -3987,7 +5210,7 @@ async function renderPane() {
     await customerPane(pane);
   } else if (S.tab === "company") {
     if (!CO.list.length) {
-      pane.innerHTML = `<div class="empty">加载中…</div>`;
+      pane.innerHTML = `<div class="empty">${esc(tr(`加载中…`))}</div>`;
       try { await loadCompanies(); } catch (e) { pane.innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
     }
     try {
@@ -3998,17 +5221,18 @@ async function renderPane() {
     }
     bindCompany(pane);
   } else if (S.tab === "todo") {
-    pane.innerHTML = `<div class="empty">加载中…</div>`;
+    pane.innerHTML = `<div class="empty">${esc(tr(`加载中…`))}</div>`;
     try { await loadTodos(); } catch (e) { pane.innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
     pane.innerHTML = todoHtml();
     bindTodo();
+    tdPollStart();
   } else if (S.tab === "lang") {
     pane.innerHTML = langHtml();
     pane.querySelectorAll("[data-lang]").forEach((b) => b.onclick = () => setLang(b.dataset.lang));
   } else {
     pane.innerHTML = mineHtml();
     $("#p_out").onclick = async () => {
-      if (!confirm("退出登录？")) return;
+      if (!confirm(tr("退出登录？"))) return;
       try { await api("/logout", { method: "POST" }); } catch (e) {}
       showLogin();
     };
@@ -4056,7 +5280,7 @@ async function saveUserEdit() {
 async function delUser(id) {
   const u = S.users.find((x) => x.id === id);
   if (!u) return;
-  if (!confirm(`删除账号「${u.name}」？\n删除后不能再登录，他录过的日报和账目会保留。`)) return;
+  if (!confirm(tr(`删除账号「${u.name}」？\n删除后不能再登录，他录过的日报和账目会保留。`))) return;
   try {
     await api("/users/" + id, { method: "DELETE", toast: "账号已删除" });
     if (S.editUid === id) S.editUid = 0;
@@ -4082,7 +5306,7 @@ const gpsFix = () => new Promise((ok, bad) => {
 const hhmm = (iso) => (iso ? new Date(iso).toTimeString().slice(0, 5) : "");
 
 async function punchPane(pane) {
-  pane.innerHTML = `<div class="empty">加载中…</div>`;
+  pane.innerHTML = `<div class="empty">${esc(tr(`加载中…`))}</div>`;
   const d = localDay(new Date());
   const ym = ATT.ym || d.slice(0, 7);
   try {
@@ -4115,63 +5339,63 @@ function attHtml() {
       <td>${esc(hhmm(r.inAt) || "-")}</td>
       <td>${esc(hhmm(r.outAt) || "-")}</td>
       <td>${r.inDist ? esc(r.inDist) + " m" : "-"}</td>
-      <td>${late ? '<span style="color:var(--warn)">迟到</span>' : ""}${early ? '<span style="color:var(--warn)"> 早退</span>' : ""}${!late && !early && r.outAt ? "正常" : ""}</td>
+      <td>${late ? '<span style="color:var(--warn)">${esc(tr(`迟到`))}</span>' : ""}${early ? '<span style="color:var(--warn)"> ${esc(tr(`早退`))}</span>' : ""}${!late && !early && r.outAt ? "正常" : ""}</td>
       <td class="mut">${esc(r.site || "")}</td>
     </tr>`;
   }).join("");
 
   return `
   <div class="card">
-    <h3>今日打卡 · ${esc(localDay(new Date()))}</h3>
-    ${noSite ? `<div class="empty" style="padding:10px 0;">还没设置办公点位置 —— ${admin ? "在下方「打卡设置」里填，或点「用当前位置」" : "请让管理员设置"}</div>` : ""}
+    <h3>${esc(tr(`今日打卡 · ${esc(localDay(new Date()))}`))}</h3>
+    ${noSite ? `<div class="empty" style="padding:10px 0;">${esc(tr(`还没设置办公点位置 —— ${admin ? "在下方「打卡设置」里填，或点「用当前位置」" : "请让管理员设置"}`))}</div>` : ""}
     <div class="grid" style="grid-template-columns:1fr 1fr 1fr;">
-      <div class="kpi"><i>上班</i><b>${esc(rec && rec.inAt ? hhmm(rec.inAt) : "--:--")}</b></div>
-      <div class="kpi"><i>下班</i><b>${esc(rec && rec.outAt ? hhmm(rec.outAt) : "--:--")}</b></div>
-      <div class="kpi"><i>今日工时</i><b>${rec && rec.inAt && rec.outAt ? attHours(rec) : "-"}</b></div>
+      <div class="kpi"><i>${esc(tr(`上班`))}</i><b>${esc(rec && rec.inAt ? hhmm(rec.inAt) : "--:--")}</b></div>
+      <div class="kpi"><i>${esc(tr(`下班`))}</i><b>${esc(rec && rec.outAt ? hhmm(rec.outAt) : "--:--")}</b></div>
+      <div class="kpi"><i>${esc(tr(`今日工时`))}</i><b>${rec && rec.inAt && rec.outAt ? attHours(rec) : "-"}</b></div>
     </div>
     <button id="att-punch" class="btn ${btnCls}" style="width:100%;margin-top:12px;padding:14px;font-size:16px;" ${phase === "done" ? "disabled" : ""}>${esc(btnTxt)}</button>
-    <div class="mut" style="font-size:12px;margin-top:8px;">点打卡时自动定位，需在 ${esc(cfg.radius || 300)} 米范围内${cfg.site_name ? "（" + esc(cfg.site_name) + "）" : ""}；两段打卡都要在范围内。</div>
+    <div class="mut" style="font-size:12px;margin-top:8px;">${esc(tr(`点打卡时自动定位，需在 ${esc(cfg.radius || 300)} 米范围内${cfg.site_name ? "（" + esc(cfg.site_name) + "）" : ""}；两段打卡都要在范围内。`))}</div>
   </div>
 
   <div class="card">
-    <h3>本月统计 · ${esc(ym)}</h3>
+    <h3>${esc(tr(`本月统计 · ${esc(ym)}`))}</h3>
     <div class="grid" style="grid-template-columns:repeat(4,1fr);">
-      <div class="kpi"><i>出勤天数</i><b>${st.days || 0}</b></div>
-      <div class="kpi"><i>迟到</i><b>${st.late || 0}</b></div>
-      <div class="kpi"><i>早退</i><b>${st.early || 0}</b></div>
-      <div class="kpi"><i>工时</i><b>${st.hours || 0}h</b></div>
+      <div class="kpi"><i>${esc(tr(`出勤天数`))}</i><b>${st.days || 0}</b></div>
+      <div class="kpi"><i>${esc(tr(`迟到`))}</i><b>${st.late || 0}</b></div>
+      <div class="kpi"><i>${esc(tr(`早退`))}</i><b>${st.early || 0}</b></div>
+      <div class="kpi"><i>${esc(tr(`工时`))}</i><b>${st.hours || 0}h</b></div>
     </div>
     <div class="row" style="margin-top:12px;">
-      <label>月份<input id="att-month" type="month" value="${esc(ym)}"></label>
-      ${admin ? `<label>范围<select id="att-scope">
-        <option value="me"${ATT.all ? "" : " selected"}>只看我自己</option>
-        <option value="all"${ATT.all ? " selected" : ""}>全公司</option></select></label>` : "<div></div>"}
+      <label>${esc(tr(`月份`))}<input id="att-month" type="month" value="${esc(ym)}"></label>
+      ${admin ? `<label>${esc(tr(`范围`))}<select id="att-scope">
+        <option value="me"${ATT.all ? "" : " selected"}>${esc(tr(`只看我自己`))}</option>
+        <option value="all"${ATT.all ? " selected" : ""}>${esc(tr(`全公司`))}</option></select></label>` : "<div></div>"}
     </div>
   </div>
 
   <div class="card">
-    <h3>打卡记录${st.miss ? ` · 未打下班 ${st.miss} 天` : ""}</h3>
-    ${rows ? `<table><thead><tr><th>日期</th><th>上班</th><th>下班</th><th>距离</th><th>状态</th><th>地点</th></tr></thead><tbody>${rows}</tbody></table>`
-      : `<div class="empty">本月还没有记录</div>`}
+    <h3>打卡记录${st.miss ? ` · ${tr(`未打下班 ${st.miss} 天`)}` : ""}</h3>
+    ${rows ? `<table><thead><tr><th>${esc(tr(`日期`))}</th><th>${esc(tr(`上班`))}</th><th>${esc(tr(`下班`))}</th><th>${esc(tr(`距离`))}</th><th>${esc(tr(`状态`))}</th><th>${esc(tr(`地点`))}</th></tr></thead><tbody>${rows}</tbody></table>`
+      : `<div class="empty">${esc(tr(`本月还没有记录`))}</div>`}
   </div>
 
   ${admin ? `<div class="card">
-    <h3>打卡设置</h3>
+    <h3>${esc(tr(`打卡设置`))}</h3>
     <div class="row">
-      <label>办公点名称<input id="att-site" value="${esc(cfg.site_name || "")}" placeholder="如 Lusaka 办公室"></label>
-      <label>允许范围（米）<input id="att-radius" type="number" value="${esc(cfg.radius || 300)}"></label>
+      <label>${esc(tr(`办公点名称`))}<input id="att-site" value="${esc(cfg.site_name || "")}" placeholder="${esc(tr(`如 Lusaka 办公室`))}"></label>
+      <label>${esc(tr(`允许范围（米）`))}<input id="att-radius" type="number" value="${esc(cfg.radius || 300)}"></label>
     </div>
     <div class="row3">
-      <label>纬度<input id="att-lat" type="number" step="0.000001" value="${cfg.lat ? esc(cfg.lat) : ""}" placeholder="-15.4067"></label>
-      <label>经度<input id="att-lng" type="number" step="0.000001" value="${cfg.lng ? esc(cfg.lng) : ""}" placeholder="28.2871"></label>
-      <label>&nbsp;<button id="att-here" class="btn" style="width:100%;">用当前位置</button></label>
+      <label>${esc(tr(`纬度`))}<input id="att-lat" type="number" step="0.000001" value="${cfg.lat ? esc(cfg.lat) : ""}" placeholder="-15.4067"></label>
+      <label>${esc(tr(`经度`))}<input id="att-lng" type="number" step="0.000001" value="${cfg.lng ? esc(cfg.lng) : ""}" placeholder="28.2871"></label>
+      <label>&nbsp;<button id="att-here" class="btn" style="width:100%;">${esc(tr(`用当前位置`))}</button></label>
     </div>
     <div class="row3">
-      <label>上班时间<input id="att-start" value="${esc(cfg.start || "08:00")}" placeholder="08:00"></label>
-      <label>下班时间<input id="att-end" value="${esc(cfg.end || "17:00")}" placeholder="17:00"></label>
-      <label>宽限（分钟）<input id="att-grace" type="number" value="${esc(cfg.grace == null ? 15 : cfg.grace)}"></label>
+      <label>${esc(tr(`上班时间`))}<input id="att-start" value="${esc(cfg.start || "08:00")}" placeholder="08:00"></label>
+      <label>${esc(tr(`下班时间`))}<input id="att-end" value="${esc(cfg.end || "17:00")}" placeholder="17:00"></label>
+      <label>${esc(tr(`宽限（分钟）`))}<input id="att-grace" type="number" value="${esc(cfg.grace == null ? 15 : cfg.grace)}"></label>
     </div>
-    <button id="att-cfg-save" class="btn pri" style="margin-top:12px;">保存设置</button>
+    <button id="att-cfg-save" class="btn pri" style="margin-top:12px;">${esc(tr(`保存设置`))}</button>
   </div>` : ""}`;
 }
 
@@ -4248,7 +5472,7 @@ const CUST_FIELDS = [
 ];
 
 async function customerPane(pane) {
-  pane.innerHTML = `<div class="empty">加载中…</div>`;
+  pane.innerHTML = `<div class="empty">${esc(tr(`加载中…`))}</div>`;
   try {
     const r = await api("/customers" + (CUST.q ? "?q=" + encodeURIComponent(CUST.q) : ""));
     CUST.list = r.customers;
@@ -4268,13 +5492,13 @@ function custHtml() {
       <span class="mut">${esc([c.contact, c.phone, c.country].filter(Boolean).join(" · ") || "—")}</span>
     </button>`).join("");
   return `<div class="card">
-    <h3>客户 (${CUST.total})</h3>
+    <h3>${esc(tr(`客户 (${CUST.total})`))}</h3>
     <div class="row">
-      <label>搜索<input id="cu-q" placeholder="名称 / 联系人 / 电话 / 国家" value="${esc(CUST.q)}"></label>
-      <label>&nbsp;<button id="cu-new" class="btn pri" style="width:100%;">＋ 新建客户</button></label>
+      <label>${esc(tr(`搜索`))}<input id="cu-q" placeholder="${esc(tr(`名称 / 联系人 / 电话 / 国家`))}" value="${esc(CUST.q)}"></label>
+      <label>&nbsp;<button id="cu-new" class="btn pri" style="width:100%;">${esc(tr(`＋ 新建客户`))}</button></label>
     </div>
-    ${rows || `<div class="empty">还没有客户</div>`}
-    ${CUST.q ? `<div class="mut" style="font-size:12px;margin-top:8px;">搜索「${esc(CUST.q)}」</div>` : ""}
+    ${rows || `<div class="empty">${esc(tr(`还没有客户`))}</div>`}
+    ${CUST.q ? `<div class="mut" style="font-size:12px;margin-top:8px;">${esc(tr(`搜索「${esc(CUST.q)}」`))}</div>` : ""}
   </div>
   ${form}`;
 }
@@ -4288,9 +5512,9 @@ function custFormHtml() {
       ${CUST_FIELDS.map(([k, label]) => `<label>${label}${k === "name" ? " *" : ""}<input data-cf="${k}" value="${esc(c[k] || "")}"></label>`).join("")}
     </div>
     <div style="display:flex;gap:8px;margin-top:12px;">
-      <button id="cu-save" class="btn pri" style="flex:1;">保存</button>
-      <button id="cu-cancel" class="btn">取消</button>
-      ${isNew ? "" : `<button id="cu-del" class="btn danger">删除</button>`}
+      <button id="cu-save" class="btn pri" style="flex:1;">${esc(tr(`保存`))}</button>
+      <button id="cu-cancel" class="btn">${esc(tr(`取消`))}</button>
+      ${isNew ? "" : `<button id="cu-del" class="btn danger">${esc(tr(`删除`))}</button>`}
     </div>
   </div>`;
 }
@@ -4327,7 +5551,7 @@ function bindCust(pane) {
   };
   const del = $("#cu-del", pane);
   if (del) del.onclick = async () => {
-    if (!confirm(`删除客户「${CUST.edit.name}」？`)) return;
+    if (!confirm(tr(`删除客户「${CUST.edit.name}」？`))) return;
     try {
       await api("/customers/" + CUST.edit.id, { method: "DELETE", toast: "已删除" });
       CUST.edit = null;
@@ -4350,7 +5574,7 @@ const EXP_STAGE_FIELDS = {
 const EXP_MINERALS = ["Tantalum", "Niobium", "Copper", "Cobalt", "Manganese", "Tin", "Emerald", "Gold", "Other"];
 
 async function exportPane(pane) {
-  pane.innerHTML = `<div class="empty">加载中…</div>`;
+  pane.innerHTML = `<div class="empty">${esc(tr(`加载中…`))}</div>`;
   try {
     const r = await api("/exports" + (EXP.q ? "?q=" + encodeURIComponent(EXP.q) : ""));
     EXP.list = r.exports;
@@ -4383,35 +5607,35 @@ function expHtml() {
   }).join("");
 
   return `<div class="card">
-    <h3>出口单 (${EXP.list.length})</h3>
+    <h3>${esc(tr(`出口单 (${EXP.list.length})`))}</h3>
     <div class="row">
-      <label>搜索<input id="exp-q" placeholder="公司 / 矿种 / 进口商 / 目的国" value="${esc(EXP.q)}"></label>
-      <label>&nbsp;<button id="exp-new" class="btn pri" style="width:100%;">＋ 新出口单</button></label>
+      <label>${esc(tr(`搜索`))}<input id="exp-q" placeholder="${esc(tr(`公司 / 矿种 / 进口商 / 目的国`))}" value="${esc(EXP.q)}"></label>
+      <label>&nbsp;<button id="exp-new" class="btn pri" style="width:100%;">${esc(tr(`＋ 新出口单`))}</button></label>
     </div>
     ${EXP.adding ? expNewHtml() : ""}
-    ${rows || `<div class="empty">还没有出口单</div>`}
+    ${rows || `<div class="empty">${esc(tr(`还没有出口单`))}</div>`}
   </div>`;
 }
 
 function expNewHtml() {
   return `<div class="card" id="exp-new-form" style="background:var(--card2);">
-    <h3>新建出口单</h3>
+    <h3>${esc(tr(`新建出口单`))}</h3>
     <div class="grid">
-      <label>日期<input id="ex-date" type="date" value="${localDay(new Date())}"></label>
-      <label>公司<input id="ex-co" placeholder="公司名"></label>
-      <label>矿种<select id="ex-mineral">${EXP_MINERALS.map((m) => `<option>${m}</option>`).join("")}</select></label>
-      <label>类型<select id="ex-kind"><option value="product">产品</option><option value="sample">样品</option></select></label>
-      <label>数量<input id="ex-qty" type="number" step="0.001" value="0"></label>
-      <label>单位<input id="ex-unit" value="t"></label>
-      <label>进口商<input id="ex-importer"></label>
-      <label>目的国<input id="ex-dest"></label>
-      <label>HS 编码<input id="ex-hs"></label>
-      <label>化验元素<input id="ex-elems" placeholder="Ta2O5, Nb2O5"></label>
+      <label>${esc(tr(`日期`))}<input id="ex-date" type="date" value="${localDay(new Date())}"></label>
+      <label>${esc(tr(`公司`))}<input id="ex-co" placeholder="${esc(tr(`公司名`))}"></label>
+      <label>${esc(tr(`矿种`))}<select id="ex-mineral">${EXP_MINERALS.map((m) => `<option>${m}</option>`).join("")}</select></label>
+      <label>${esc(tr(`类型`))}<select id="ex-kind"><option value="product">${esc(tr(`产品`))}</option><option value="sample">${esc(tr(`样品`))}</option></select></label>
+      <label>${esc(tr(`数量`))}<input id="ex-qty" type="number" step="0.001" value="0"></label>
+      <label>${esc(tr(`单位`))}<input id="ex-unit" value="t"></label>
+      <label>${esc(tr(`进口商`))}<input id="ex-importer"></label>
+      <label>${esc(tr(`目的国`))}<input id="ex-dest"></label>
+      <label>${esc(tr(`HS 编码`))}<input id="ex-hs"></label>
+      <label>${esc(tr(`化验元素`))}<input id="ex-elems" placeholder="Ta2O5, Nb2O5"></label>
     </div>
-    <label>备注<input id="ex-note"></label>
+    <label>${esc(tr(`备注`))}<input id="ex-note"></label>
     <div style="display:flex;gap:8px;margin-top:12px;">
-      <button id="ex-save" class="btn pri" style="flex:1;">建立</button>
-      <button id="ex-cancel" class="btn">取消</button>
+      <button id="ex-save" class="btn pri" style="flex:1;">${esc(tr(`建立`))}</button>
+      <button id="ex-cancel" class="btn">${esc(tr(`取消`))}</button>
     </div>
   </div>`;
 }
@@ -4429,7 +5653,7 @@ function expDetailHtml(x) {
     const fileRows = files.map((f) => `<div class="file-row">
         <a href="/api/exports/${encodeURIComponent(x.id)}/file?k=${encodeURIComponent(f.k)}" target="_blank" rel="noopener">${esc(f.name)}</a>
         <span class="mut">${Math.max(1, Math.round(f.size / 1024))} KB</span>
-        <button class="btn danger" data-ef-del="${esc(k)}|${esc(f.k)}">删</button>
+        <button class="btn danger" data-ef-del="${esc(k)}|${esc(f.k)}">${esc(tr(`删`))}</button>
       </div>`).join("");
     return `<div class="exp-stage${done ? " done" : ""}">
       <div class="exp-stage-h"><b>${esc(EXP.labels[k] || k)}</b>
@@ -4437,7 +5661,7 @@ function expDetailHtml(x) {
       <div class="grid">${inputs}</div>
       <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
         <button class="btn${done ? "" : " pri"}" data-es-save="${esc(k)}">${done ? "更新本阶段" : "标记完成"}</button>
-        <label class="btn" style="margin:0;display:inline-flex;align-items:center;cursor:pointer;">＋ 上传文件
+        <label class="btn" style="margin:0;display:inline-flex;align-items:center;cursor:pointer;">${esc(tr(`＋ 上传文件`))}
           <input type="file" accept="application/pdf,image/*" data-ef-up="${esc(k)}" style="display:none;">
         </label>
       </div>
@@ -4447,10 +5671,10 @@ function expDetailHtml(x) {
 
   return `<div class="exp-detail">
     <div class="mut" style="font-size:13px;">${esc([x.qty ? x.qty + " " + (x.unit || "t") : "", x.hs ? "HS " + x.hs : "", x.elems].filter(Boolean).join(" · "))}</div>
-    ${x.note ? `<div class="mut" style="font-size:13px;">备注：${esc(x.note)}</div>` : ""}
+    ${x.note ? `<div class="mut" style="font-size:13px;">${esc(tr(`备注：${esc(x.note)}`))}</div>` : ""}
     ${stages}
     <div style="display:flex;gap:8px;margin-top:10px;">
-      <button class="btn danger" data-exp-del="${esc(x.id)}">删除这张单</button>
+      <button class="btn danger" data-exp-del="${esc(x.id)}">${esc(tr(`删除这张单`))}</button>
     </div>
   </div>`;
 }
@@ -4512,14 +5736,14 @@ function bindExp(pane) {
   });
   pane.querySelectorAll("[data-ef-del]").forEach((b) => b.onclick = async () => {
     const [stage, k] = b.dataset.efDel.split("|");
-    if (!confirm("删除这份文件？")) return;
+    if (!confirm(tr("删除这份文件？"))) return;
     try {
       await api(`/exports/${EXP.open}/file?k=${encodeURIComponent(k)}`, { method: "DELETE", toast: "已删除" });
       await render();
     } catch (e) { toast(e.message, "bad"); }
   });
   pane.querySelectorAll("[data-exp-del]").forEach((b) => b.onclick = async () => {
-    if (!confirm("删除这张出口单（含全部文件）？")) return;
+    if (!confirm(tr("删除这张出口单（含全部文件）？"))) return;
     try {
       await api("/exports/" + b.dataset.expDel, { method: "DELETE", toast: "已删除" });
       EXP.open = null;
@@ -4554,10 +5778,13 @@ $("#sf").onsubmit = async (e) => {
     const st = await api("/status");
     if (st.setup_needed) return showSetup();
   } catch {}
+  /* /me 是页面刚打开时发的；慢网下它可能在用户登录成功之后才回来，
+     这时别拿旧结果把登录态打回登录页 */
   try {
     const r = await api("/me");
+    if (S.user) return;
     if (r.user) { S.user = r.user; await showApp(); } else showLogin();
-  } catch { showLogin(); }
+  } catch { if (!S.user) showLogin(); }
 })();
 </script>
 </body>

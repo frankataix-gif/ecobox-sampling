@@ -1,0 +1,284 @@
+{
+ "version": 1,
+ "updated": "2026-11-02",
+ "note": "公开文件：只含可发布矿证。仅本地矿证见 licences.local.json。",
+ "licences": [
+  {
+   "no": "42881-HQ-LEL",
+   "order": 1,
+   "name": "Serenje 1330NW 钽铌项目",
+   "area_id": "serenje_1330nw",
+   "holder": "MAMANGA MINING LIMITED",
+   "type": "Large Scale Exploration Licence",
+   "status": "Active",
+   "info": [
+    {
+     "k": "持有人",
+     "v": "MAMANGA MINING LIMITED (100%)"
+    },
+    {
+     "k": "许可证类型",
+     "v": "Large Scale Exploration Licence"
+    },
+    {
+     "k": "许可证状态",
+     "v": "Active"
+    },
+    {
+     "k": "申请时间",
+     "v": "2025-12-10 21:04:52"
+    },
+    {
+     "k": "批准时间",
+     "v": "2026-10-12"
+    },
+    {
+     "k": "到期时间",
+     "v": "2030-10-11"
+    },
+    {
+     "k": "地区",
+     "v": "Central, Serenje"
+    },
+    {
+     "k": "产区面积",
+     "v": "87.12 km²"
+    },
+    {
+     "k": "矿产",
+     "v": "Ta, Nb, Be, Li, Sn, Cs"
+    },
+    {
+     "k": "是否释放",
+     "v": ""
+    },
+    {
+     "k": "刷新时间",
+     "v": "11-02 14:20"
+    },
+    {
+     "k": "相关项目",
+     "v": "最终决定的矿权"
+    },
+    {
+     "k": "查看报告",
+     "v": "AI报告"
+    }
+   ],
+   "valid_from": "",
+   "valid_to": "",
+   "commodities": [
+    "Ta",
+    "Nb",
+    "Li"
+   ],
+   "center": [
+    30.25,
+    -13.2
+   ],
+   "geology": {
+    "terrane": "伊鲁米德带（Irumide Belt），叠加泛非期（Pan-African）改造",
+    "host": "花岗岩 + NE 向分带伟晶岩脉（石榴石-电气石-白云母-长石-石英型）",
+    "structure": "NE 向主构造控脉；NW–SE 向线理与 NE 构造成格子交叉；D 型环状构造；推断断层 97 条（Ta-Nb 优先级评分）",
+    "minerals": [
+     "钽铌铁矿",
+     "锡石",
+     "锂云母",
+     "绿柱石",
+     "电气石"
+    ],
+    "alteration": "钠长石化、云母化、电气石化",
+    "notes": "两期伟晶岩：伊鲁米德期（简单不分带）+ 泛非期（分带，稀有金属最有利载体）。详细构造与靶区分析见「项目地质报告」。"
+   },
+   "sampling": {
+    "target": "伟晶岩露头、民采坑、废石堆",
+    "spacing": "沿脉追索，露头点间 20–50 m（待核实）",
+    "note": "现场已采 7 个 Ta 点入库 QGIS field_samples（Ta₂O₅/Nb₂O₅）。"
+   },
+   "reference": [],
+   "intro": "塞伦杰钽铌项目位于赞比亚中部省（Central Province）塞伦杰区（Serenje District），1:5 万图幅 1330 NW（UTM 36S），中心约 30.16°E / 13.13°S，海拔约 1,270–1,305 m。距首都卢萨卡直线约 320 km（东北向），沿大北公路（Great North Road / T2）约 360–400 km、车程约 4–5 小时（待核实），紧邻坦赞铁路（TAZARA）走廊。项目含 2 本矿证：42881-HQ-LEL（大矿勘探证，Mamanga Mining Ltd，约 85.87 km²）与 36413-HQ-SEL（小矿勘探证，The Big Shofolo Enterprises Limited，约 1–2 km²，嵌套于 42881 内）。两证同处一个泛非期分带伟晶岩成矿系统，主攻 Ta–Nb，伴生 Li–Sn–Be。",
+   "reports": [
+    {
+     "title": "区域地质与岩性框架",
+     "date": "2026-11-02",
+     "summary": "项目位于伊鲁米德带（Irumide Belt）内，叠加泛非期（Pan-African）改造。岩性组合：基底杂岩（Sasa 花岗岩，细粒叶理状石英长石质，局部混合岩化）；泛非期粗粒斑状黑云母/斑状花岗岩（K-Ar 494±20 Ma）；辉绿岩-辉长岩-变辉长岩岩床；Muva 超群（Serenje 群）石英岩、白云母-石英-夕线石-黑云母片岩（±石榴石/十字石/电气石）、红柱石片岩与变粉砂岩；片麻岩群（混合岩、麻粒岩相片麻岩）；Katanga 超群（Luombwa 组）漂砾/冰碛砾岩。伟晶岩为石榴石-(绿柱石)-电气石-黑云母-白云母-长石-石英型，NE 向展布。"
+    },
+    {
+     "title": "构造格架与控矿",
+     "date": "2026-11-02",
+     "summary": "控矿构造以 NE 向主构造（伊鲁米德格架）为核心，伟晶岩脉整体 NE 向展布。NW–SE 向线理（37 条）与 NE 向构造成格子状交叉，为成矿流体运移与就位交汇部位。填图构造线 133 条、推断断层 97 条（已做 Ta-Nb 优先级评分）。D 型花岗岩环状构造 1 处为稀有金属伟晶岩经典找矿标志。岩性接触带 3 处、岩体接触界线 3 条为伟晶岩侵位与矿化的有利空间。"
+    },
+    {
+     "title": "伟晶岩与成矿系统",
+     "date": "2026-11-02",
+     "summary": "伟晶岩分两期：伊鲁米德期（中元古代）伟晶岩简单、不分带；泛非期伟晶岩分带（zoned），演化程度高，是 Ta-Nb-Li-Sn-Be 的最有利载体。近接触带铍钽、外带钽铌的分带模型（Ta-Nb 按 3–5 km、Be-Ta 按 0.5–3 km 缓冲）指示一个以泛非期分带伟晶岩为主体的稀有金属成矿系统。"
+    },
+    {
+     "title": "靶区与成矿潜力分析",
+     "date": "2026-11-02",
+     "summary": "多要素综合评分/缓冲区分析产出：高优先级靶区 27 个；Ta-Nb 潜力区（3–5 km 缓冲）23 个；Be-Ta 潜力区（0.5–3 km 缓冲）41 个；矿脉（已知+野外核实）5 条；矿化点 11 个（Mineral_Occurrence.gpkg）；取样点 7 个（field_samples.gpkg，Ta₂O₅/Nb₂O₅）。27 个高优先级靶区 + 5 条矿脉 + D 型环状构造共同指向一个以泛非期分带伟晶岩为主体的稀有金属成矿系统，找矿潜力良好。"
+    },
+    {
+     "title": "勘查现状与工作建议",
+     "date": "2026-11-02",
+     "summary": "现场已采 7 个 Ta 点并入库 QGIS field_samples（GPS 定位 + 每点 ≤6 张照片 + XRF 屏幕照）。进行中：AI 照片解读（岩性/矿物/结构/伟晶岩判别）与化验报告后补。建议优先对 27 个高优先级靶区做地面检查，对 5 条矿脉沿走向追索取样，并补做 36413 小矿证范围内的精查。"
+    },
+    {
+     "title": "01 野外实测数据",
+     "date": "2026-11-02",
+     "summary": "现场采集的取样点与已核实矿脉分布：7 个 Ta 取样点（field_samples，Ta₂O₅/Nb₂O₅）叠加 5 条矿脉，底图为磁异常背景，反映已探明的地表矿化分布。",
+     "img": "https://ecobox-media.frankataix.workers.dev/m/report/serenje/map_01.png",
+     "legend": "取样点 7 个 · 矿脉 5 条 · 磁异常底图"
+    },
+    {
+     "title": "02 已知矿化参考",
+     "date": "2026-11-02",
+     "summary": "已知钽铌矿化点（Mineral_Occurrence 11 点）与矿脉的空间参考，作为成矿模型的空间锚点，用于约束盲预测与靶区圈定。",
+     "img": "https://ecobox-media.frankataix.workers.dev/m/report/serenje/map_02.png",
+     "legend": "矿化点 11 个 · 钽铌矿脉"
+    },
+    {
+     "title": "03 三矿种盲预测",
+     "date": "2026-11-02",
+     "summary": "基于岩性—构造—磁异常多要素叠加的 Ta / Nb / Be 盲预测潜力区（核心成果），圈定成矿有利空间。",
+     "img": "https://ecobox-media.frankataix.workers.dev/m/report/serenje/map_03.png",
+     "legend": "Ta-Nb 潜力区（3–5 km 缓冲）23 个 · Be-Ta 潜力区（0.5–3 km 缓冲）41 个"
+    },
+    {
+     "title": "04 钻探靶区与钻孔布置",
+     "date": "2026-11-02",
+     "summary": "多要素综合评分产出的 27 个高优先级靶区与建议钻探布置，指示下一步验证方向。",
+     "img": "https://ecobox-media.frankataix.workers.dev/m/report/serenje/map_04.png",
+     "legend": "高优先级靶区 27 个 · 建议钻孔位置"
+    },
+    {
+     "title": "05 园区基础设施",
+     "date": "2026-11-02",
+     "summary": "园区/工厂规划的基础设施布局（道路、水电、场地），用于建厂选址参考。",
+     "img": "https://ecobox-media.frankataix.workers.dev/m/report/serenje/map_05.png",
+     "legend": "园区边界 · 道路 · 水电基础设施"
+    },
+    {
+     "title": "06 土地证地块",
+     "date": "2026-11-02",
+     "summary": "矿证范围与土地证地块边界叠加，核对矿权与地表权属的空间关系。",
+     "img": "https://ecobox-media.frankataix.workers.dev/m/report/serenje/map_06.png",
+     "legend": "42881 / 36413 矿证边界 · 土地证地块"
+    },
+    {
+     "title": "07 区域基础设施与地形",
+     "date": "2026-11-02",
+     "summary": "区域交通（大北公路 T2、坦赞铁路 TAZARA）与地形底图，说明项目区位与可达性。",
+     "img": "https://ecobox-media.frankataix.workers.dev/m/report/serenje/map_07.png",
+     "legend": "公路 · 铁路 · 地形底图"
+    },
+    {
+     "title": "08 区域地质底图",
+     "date": "2026-11-02",
+     "summary": "区域地质底图：岩性、地质界线、构造线与环状构造，作为全部专题图的地质背景。",
+     "img": "https://ecobox-media.frankataix.workers.dev/m/report/serenje/map_08.png",
+     "legend": "岩性 · 地质界线 · 构造线 · 环状构造"
+    }
+   ]
+  },
+  {
+   "no": "36413-HQ-SEL",
+   "order": 2,
+   "name": "Serenje 1330NW 小矿证",
+   "area_id": "serenje_1330nw",
+   "holder": "The Big Shofolo Enterprises Limited",
+   "type": "Small Scale Exploration Licence",
+   "status": "Active",
+   "info": [
+    {
+     "k": "持有人",
+     "v": "The Big Shofolo Enterprises Limited"
+    },
+    {
+     "k": "许可证类型",
+     "v": "Small Scale Exploration Licence"
+    },
+    {
+     "k": "许可证状态",
+     "v": "Active（待核实）"
+    },
+    {
+     "k": "申请时间",
+     "v": ""
+    },
+    {
+     "k": "批准时间",
+     "v": ""
+    },
+    {
+     "k": "到期时间",
+     "v": ""
+    },
+    {
+     "k": "地区",
+     "v": "Central, Serenje"
+    },
+    {
+     "k": "产区面积",
+     "v": "约 1–2 km²（待核实）"
+    },
+    {
+     "k": "矿产",
+     "v": "Ta, Nb, Be, Li, Sn, Cs"
+    },
+    {
+     "k": "是否释放",
+     "v": ""
+    },
+    {
+     "k": "刷新时间",
+     "v": ""
+    },
+    {
+     "k": "相关项目",
+     "v": "Serenje 1330NW"
+    },
+    {
+     "k": "查看报告",
+     "v": ""
+    }
+   ],
+   "valid_from": "",
+   "valid_to": "",
+   "commodities": [
+    "Ta",
+    "Nb"
+   ],
+   "center": [
+    30.161,
+    -13.125
+   ],
+   "bbox": [
+    30.155109,
+    -13.131433,
+    30.16674,
+    -13.1181
+   ],
+   "geology": {
+    "terrane": "Irumide 带（待核实）",
+    "host": "花岗岩 + 伟晶岩脉，Ta-Nb 矿化",
+    "structure": "NE 向剪切/断裂控制脉体就位（待核实）",
+    "minerals": [
+     "钽铌铁矿",
+     "锡石",
+     "锂云母（待核实）"
+    ],
+    "alteration": "钠长石化、云母化",
+    "notes": "嵌套于 42881 大矿证范围内的小矿证，同一地质与靶区背景。"
+   },
+   "sampling": {
+    "target": "伟晶岩露头、民采坑、废石堆",
+    "spacing": "沿脉追索，露头点间 20–50 m（待核实）",
+    "note": ""
+   },
+   "reference": [],
+   "intro": "Serenje 1330NW 区块内的小型勘探证（SEL），位于 42881 大矿证范围内，同属 Ta-Nb 伟晶岩成矿系统。持有人 The Big Shofolo Enterprises Limited。",
+   "reports": []
+  }
+ ]
+}

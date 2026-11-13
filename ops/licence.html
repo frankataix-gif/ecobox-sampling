@@ -1,0 +1,2572 @@
+<!DOCTYPE html>
+<html lang="zh-CN" translate="no">
+<head>
+<meta charset="UTF-8">
+<meta name="google" content="notranslate">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>矿证 · 矿权申请助手 | ECOBOX</title>
+<meta name="theme-color" content="#2563eb">
+<style>
+  :root {
+    --primary:#2563eb; --primary-dark:#1d4ed8; --primary-light:#eff6ff;
+    --success:#16a34a; --warning:#f59e0b; --danger:#dc2626;
+    --gray:#6b7280; --light:#f3f4f6; --border:#e5e7eb;
+    --card:#ffffff; --text:#1f2937; --muted:#64748b;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;
+    background:var(--light);color:var(--text);line-height:1.55;font-size:15px}
+  .header{display:flex;align-items:center;gap:8px;background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;
+    padding:12px 16px;position:sticky;top:0;z-index:101;display:flex;align-items:center;gap:10px;
+    box-shadow:0 2px 8px rgba(0,0,0,.1)}
+  .header h1{font-size:1.05rem;font-weight:700;flex:1}
+  .syncdot{width:10px;height:10px;border-radius:50%;background:#4ade80;flex:0 0 10px}
+  .syncdot.off{background:#f87171}.syncdot.busy{background:#fbbf24;animation:bl 1s infinite}
+  @keyframes bl{50%{opacity:.3}}
+  .appsel{background:#fff;padding:10px 14px;border-bottom:1px solid var(--border);
+    display:flex;align-items:center;gap:8px;overflow-x:auto}
+  .appsel select{flex:1;min-width:0;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:14px;background:#fff}
+  .licbadge{font-size:12px;font-weight:700;color:#fff;background:var(--primary);border-radius:6px;padding:2px 8px;white-space:nowrap}
+  main{padding:12px;padding-bottom:84px;max-width:760px;margin:0 auto}
+  .card{background:var(--card);border-radius:12px;padding:14px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+  .card h2{font-size:1rem;margin-bottom:8px}
+  .card h3{font-size:.9rem;color:var(--muted);margin:12px 0 6px}
+  .muted{color:var(--muted);font-size:13px}
+  .row{display:flex;gap:8px;align-items:center}
+  .row>*{min-width:0}
+  input,select,textarea{width:100%;padding:9px 10px;border:1px solid var(--border);border-radius:8px;font-size:14px;background:#fff;color:var(--text);font-family:inherit}
+  textarea{min-height:90px;resize:vertical}
+  label{display:block;font-size:12px;color:var(--muted);margin:8px 0 3px}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;
+    padding:9px 14px;border:none;border-radius:8px;font-size:14px;cursor:pointer;
+    background:var(--primary);color:#fff;min-height:40px;white-space:nowrap}
+  .btn:active{opacity:.85}
+  .btn.ghost{background:#fff;color:var(--primary);border:1px solid var(--primary)}
+  .btn.sm{padding:6px 10px;font-size:13px;min-height:34px}
+  .btn.gray{background:var(--gray)}
+  .btn.green{background:var(--success)}
+  .btn.warn{background:var(--warning)}
+  .btn.danger{background:var(--danger)}
+  .btnrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  /* 文档行 */
+  .doc{display:flex;align-items:flex-start;gap:10px;padding:11px 0;border-bottom:1px solid var(--border)}
+  .doc:last-child{border-bottom:none}
+  .doc-body{flex:1;min-width:0}
+  .doc-name{font-size:14px;font-weight:600}
+  .doc-cn{font-size:12px;color:var(--muted)}
+  .doc-meta{font-size:12px;color:var(--muted);margin-top:3px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .doc-meta a{color:var(--primary)}
+  .doc-meta label{color:var(--primary);cursor:pointer}
+  label.chip{cursor:pointer;display:inline-block}
+  .chip{flex:0 0 auto;min-width:58px;text-align:center;font-size:12px;font-weight:700;
+    border-radius:14px;padding:5px 10px;border:none;cursor:pointer}
+  .chip.s0{background:#f3f4f6;color:var(--gray)}
+  .chip.s1{background:#fef3c7;color:#92400e}
+  .chip.s2{background:#dcfce7;color:#166534}
+  .chip.s3{background:#fee2e2;color:#991b1b}
+  .doc input[type=date]{width:auto;padding:4px 6px;font-size:12px}
+  .doc input.note{width:130px;padding:4px 6px;font-size:12px}
+  /* 进度条 */
+  .pbar{height:8px;background:var(--border);border-radius:4px;overflow:hidden;margin-top:8px}
+  .pfill{height:100%;background:var(--success);width:0;transition:width .3s}
+  /* tabs */
+  .tabs{background:#fff;border-top:1px solid var(--border);position:fixed;bottom:0;left:0;right:0;z-index:100;
+    padding-bottom:env(safe-area-inset-bottom,0)}
+  .tabs-inner{display:flex;padding:6px 4px}
+  .tab{flex:1;padding:9px 2px;border:none;background:transparent;font-size:.85rem;color:var(--gray);
+    cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;border-radius:10px}
+  .tab .ti{font-size:1.1rem}
+  .tab.active{color:var(--primary);font-weight:700;background:var(--primary-light)}
+  .pane{display:none}.pane.active{display:block}
+  /* 人员列表 */
+  .person{display:flex;gap:6px;align-items:center;padding:7px 0;border-bottom:1px dashed var(--border);flex-wrap:wrap}
+  .person input{flex:1;min-width:80px;padding:6px 8px;font-size:13px}
+  .person .pct{max-width:64px}
+  .person .del{flex:0 0 auto;background:none;border:none;color:var(--danger);font-size:18px;cursor:pointer;padding:4px}
+  /* 审查 */
+  .chk{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);align-items:flex-start}
+  .chk:last-child{border-bottom:none}
+  .chk-ic{flex:0 0 22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    color:#fff;font-size:13px;font-weight:700;margin-top:1px}
+  .chk-ic.ok{background:var(--success)}.chk-ic.warn{background:var(--warning)}.chk-ic.fail{background:var(--danger)}.chk-ic.na{background:var(--gray)}
+  .chk-t{font-size:14px;font-weight:600}
+  .chk-d{font-size:12.5px;color:var(--muted)}
+  .verdict{padding:12px;border-radius:10px;font-weight:700;text-align:center;margin-top:10px}
+  .verdict.ok{background:#dcfce7;color:#166534}
+  .verdict.warn{background:#fef3c7;color:#92400e}
+  .verdict.fail{background:#fee2e2;color:#991b1b}
+  /* 坐标 */
+  .coord{display:flex;gap:6px;align-items:center;margin-bottom:6px}
+  .coord input{flex:1;padding:7px 8px;font-size:13px;font-family:ui-monospace,Consolas,monospace}
+  .coord .del{flex:0 0 auto;background:none;border:none;color:var(--danger);font-size:17px;cursor:pointer;padding:4px}
+  .coord .bad{flex:0 0 auto;color:var(--danger);font-size:11px}
+  .stat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:8px}
+  .stat{background:var(--light);border-radius:8px;padding:8px 10px}
+  .stat .v{font-size:17px;font-weight:700}
+  .stat .k{font-size:11.5px;color:var(--muted)}
+  .empty{text-align:center;color:var(--muted);padding:40px 0;font-size:14px}
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;display:none;
+    align-items:flex-end;justify-content:center}
+  .modal.show{display:flex}
+  .sheet{background:#fff;border-radius:14px 14px 0 0;width:100%;max-width:560px;padding:18px;max-height:86vh;overflow-y:auto}
+  .sheet h3{font-size:1rem;margin-bottom:10px}
+  .toast{position:fixed;left:50%;bottom:92px;transform:translateX(-50%);background:#111827;color:#fff;
+    padding:9px 18px;border-radius:20px;font-size:13px;z-index:300;display:none;white-space:nowrap}
+  .banner{background:#fef3c7;color:#92400e;font-size:12.5px;padding:7px 14px;border-bottom:1px solid #fde68a;display:none}
+  .banner.show{display:block}
+  .tipbox{background:var(--primary-light);border-radius:8px;padding:9px 12px;font-size:12.5px;color:#1e40af;margin-bottom:10px}
+  .viewer{position:fixed;inset:0;background:#fff;z-index:400;display:none;flex-direction:column}
+  .viewer.show{display:flex}
+  .viewer-hd{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border);flex:0 0 auto}
+  .viewer-hd .vtitle{flex:1;font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .viewer-bd{flex:1;overflow-y:auto;padding:10px;background:#525659}
+  .viewer-bd canvas{display:block;width:100%;max-width:900px;margin:0 auto 12px;box-shadow:0 1px 4px rgba(0,0,0,.4)}
+  .viewer-bd img{display:block;max-width:100%;margin:0 auto}
+  /* 统一交互态 */
+  .btn:hover{filter:brightness(1.07)}
+  .btn:disabled{opacity:.55;cursor:default}
+  .doc{transition:background .15s}
+  .doc:hover{background:#fafbfc}
+  .stat{transition:box-shadow .15s}
+  .stat:hover{box-shadow:0 2px 8px rgba(0,0,0,.08)}
+  /* 文档行动作链接 → 小药丸按钮（点得准、看得清） */
+  .doc-meta a,.doc-meta label{color:var(--primary);text-decoration:none;display:inline-block;
+    padding:2px 9px;border-radius:7px;background:var(--primary-light);font-weight:600;line-height:1.7}
+  .doc-meta a:hover,.doc-meta label:hover{background:#dbeafe}
+  .doc-meta a.red{color:var(--danger);background:#fee2e2}
+  .doc-meta a.red:hover{background:#fecaca}
+  .doc-meta a.green{color:var(--success);background:#dcfce7}
+  .doc-meta a.green:hover{background:#bbf7d0}
+  /* 文档分组标题 */
+  .grp{font-size:11.5px;font-weight:700;color:var(--muted);letter-spacing:.05em;
+    margin:14px 0 0;padding:8px 0 2px;border-top:1px solid var(--border)}
+  .grp:first-child{margin-top:0;border-top:none;padding-top:0}
+  /* 通用删除/更多按钮（原生按钮样式收不住） */
+  .del{flex:0 0 auto;background:none;border:none;color:var(--danger);font-size:17px;cursor:pointer;padding:4px 6px}
+  /* 证型标签 */
+  .ltag{display:inline-block;font-size:12px;font-weight:700;padding:2px 9px;border-radius:7px;color:#fff}
+  .ltag.lel{background:var(--primary)}
+  .ltag.sel{background:var(--success)}
+  .ltag.amr{background:var(--warning)}
+
+.hback{color:#fff;opacity:.9;text-decoration:none;font-size:14px;padding:4px 8px;border:1px solid rgba(255,255,255,.45);border-radius:8px;margin-right:2px}
+.hback:hover{opacity:1;background:rgba(255,255,255,.12)}
+</style>
+</head>
+<body>
+<div class="header">
+  <a href="/" class="hback" title="回到 ECOBOX 工作台">‹ 工作台</a>
+  <h1>矿权申请助手</h1>
+  <span class="syncdot" id="syncdot" title="同步状态"></span>
+</div>
+<div class="banner" id="offlineBanner">离线模式：数据只存在本机，联网后点右上角同步</div>
+<div class="appsel">
+  <select id="appSel" onchange="onAppSel()"></select>
+  <span class="licbadge" id="licBadge">—</span>
+  <button class="btn sm" onclick="newApp()">＋申请</button>
+</div>
+
+<main>
+<!-- ============ 清单 ============ -->
+<div class="pane active" id="p-docs">
+  <div class="card" id="appListCard"><div class="row"><h2 style="flex:1">申请列表</h2>
+    <button class="btn sm" onclick="newApp()">＋申请</button></div>
+    <div id="appList"></div></div>
+  <div id="appDetailWrap">
+  <div class="card" id="appSum"></div>
+  <div class="card">
+    <div class="row"><h2 style="flex:1">材料清单</h2><span class="muted" id="progTxt">0/0</span></div>
+    <div class="pbar"><div class="pfill" id="pfill"></div></div>
+    <div class="btnrow" style="margin-top:10px">
+      <button class="btn sm" id="genAllBtn" onclick="genAllDocs()">AI 生成全部支持性文件</button>
+      <button class="btn sm green" onclick="exportPackage()">导出递交包 ZIP</button></div>
+    <div id="docList"></div>
+  </div>
+  <div class="card">
+    <h2>跟进记录（递交 / 部里反馈 / 补充材料 / 状态变更）</h2>
+    <div id="tlList"></div>
+    <div class="row" style="margin-top:8px">
+      <select id="tlType" style="max-width:140px">
+        <option>递交</option><option>缴费</option><option>部里反馈</option><option>补充材料要求</option>
+        <option>已提交补充材料</option><option>获批</option><option>被拒</option><option>放弃</option><option>备注</option>
+      </select>
+      <input id="tlNote" placeholder="记录内容，例：MRC 要求补充 PACRA 最新打印件" style="flex:1">
+      <button class="btn sm" onclick="addTl()">记一笔</button>
+    </div>
+  </div>
+  </div>
+</div>
+
+<!-- ============ 公司 ============ -->
+<div class="pane" id="p-co">
+  <div class="card">
+    <div id="coForm"></div>
+  </div>
+</div>
+
+<!-- ============ 区域 ============ -->
+<div class="pane" id="p-area">
+  <div class="card" id="areaCard"></div>
+  <div class="card">
+    <h2>坐标点（GCS_Arc1950）</h2>
+    <div class="muted" style="margin-bottom:8px">格式：<code>13°24'36"S</code> 或 <code>-13.410000</code>；经纬度按秒须能被 6 整除；形状不得跨越地籍网格线。</div>
+    <div id="coordList"></div>
+    <div class="btnrow">
+      <button class="btn sm ghost" onclick="addCoord()">＋角点</button>
+      <button class="btn sm ghost" onclick="pasteCoords()">批量粘贴</button>
+    </div>
+  </div>
+  <div class="card">
+    <h2>面积核算</h2>
+    <div class="stat-grid" id="areaStats"></div>
+    <label>实际申请地籍单位数（如为非矩形按网格数手填）</label>
+    <input id="unitsInput" type="number" min="0" oninput="onUnits()">
+  </div>
+</div>
+
+<!-- ============ 审查 ============ -->
+<div class="pane" id="p-review">
+  <div class="card">
+    <div class="row"><h2 style="flex:1">递交前审查</h2><button class="btn sm" onclick="runReview()">运行检查</button></div>
+    <div id="reviewList"><div class="empty">点「运行检查」生成审查结果</div></div>
+    <div id="verdict"></div>
+  </div>
+</div>
+
+<!-- ============ 编写 ============ -->
+<div class="pane" id="p-write">
+  <div class="card">
+    <h2>支持性文件编写</h2>
+    <label>选择文件</label>
+    <select id="genSel" onchange="renderGen()"></select>
+    <div id="genParams"></div>
+    <div class="btnrow">
+      <button class="btn sm ghost" onclick="genFromTemplate()">模板生成</button>
+      <button class="btn sm" id="aiBtn" onclick="genFromAI()">AI 编写</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="row"><h2 style="flex:1">文稿</h2><span class="muted" id="genVia"></span></div>
+    <textarea id="genOut" style="min-height:280px;font-family:ui-monospace,Consolas,monospace;font-size:13px"></textarea>
+    <div class="btnrow">
+      <button class="btn sm green" onclick="saveDraft()">存入申请</button>
+      <button class="btn sm ghost" onclick="copyDraft()">复制</button>
+      <button class="btn sm" onclick="printDraft()">导出 PDF</button>
+      <button class="btn sm green" id="progPdfBtn" onclick="genDocPdf($('genSel').value)" style="display:none">📄 正式版 PDF</button>
+      <button class="btn sm gray" onclick="exportDoc()">.doc</button>
+    </div>
+  </div>
+</div>
+</main>
+
+<div class="tabs"><div class="tabs-inner">
+  <button class="tab active" data-p="p-docs" onclick="go(this)"><span class="ti">📋</span>清单</button>
+  <button class="tab" data-p="p-co" onclick="go(this)"><span class="ti">🏢</span>公司</button>
+  <button class="tab" data-p="p-area" onclick="go(this)"><span class="ti">📐</span>区域</button>
+  <button class="tab" data-p="p-review" onclick="go(this)"><span class="ti">✅</span>审查</button>
+  <button class="tab" data-p="p-write" onclick="go(this)"><span class="ti">✍️</span>编写</button>
+</div></div>
+
+<div class="modal" id="modal"><div class="sheet" id="sheet"></div></div>
+<div class="viewer" id="viewer">
+  <div class="viewer-hd"><div class="vtitle" id="vtitle"></div>
+    <a class="btn sm ghost" id="vdl" target="_blank">下载</a>
+    <button class="btn sm gray" onclick="closeViewer()">✕ 关闭</button></div>
+  <div class="viewer-bd" id="viewerBd"></div>
+</div>
+<div class="toast" id="toast"></div>
+<input type="file" id="filePick" style="display:none" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.zip,.xlsx,.csv">
+
+<script>
+/* ================= 常量 ================= */
+// 部署后经门户访问 = 同源调用（中国团队走 mine.ecoboxmine.com，非洲团队走 workers.dev）；
+// 本地 file:// 打开时回退到绝对地址
+const API = location.origin + '/lic';
+const DATA_PATH = 'data/license_apps.json';
+const UNIT_HA = 3.34;
+
+const LIC = {
+  LEL: { name:'大型勘探证', en:'Large Scale Exploration Licence', minU:301, maxU:59880, fee:3000, valid:'4 年' },
+  SEL: { name:'小型勘探证', en:'Small Scale Exploration Licence', minU:3,   maxU:300,   fee:900,  valid:'4 年' },
+  AMR: { name:'手工采矿权', en:'Artisanal Mining Right',          minU:1,   maxU:2,     fee:900,  valid:'2 年' },
+};
+
+// [key, portal英文名, 中文说明, 类别A/B/C, 需有效期, 可编写key]
+const DOC_DEFS = {
+  LEL: [
+    ['inc',  'Certificate of Incorporation', 'PACRA 公司注册证', 'A'],
+    ['cap',  'Certificate of Share Capital', '股本证书', 'A'],
+    ['art',  'Articles of Association', '公司章程', 'A'],
+    ['idsh', 'Identity of Directors and Shareholders', '董事及股东身份证明（NRC/护照）', 'A'],
+    ['pacra','PACRA Print Out OR Form 2 or 3', 'PACRA 登记打印件 / Form 2/3', 'A'],
+    ['tax',  'Valid Tax Clearance Certificate', 'ZRA 税务清关证', 'A', 1],
+    ['form', 'Duly Filled in Application Form', '签署版申请表 Form I', 'A'],
+    ['prog', 'Proposed Programme of Exploration Operations', '勘探工作计划（含投资承诺额）', 'B', 0, 'prog'],
+    ['env',  'Environmental Management / Commitment Plan', '环境管理/承诺计划', 'B', 0, 'env'],
+    ['emp',  'Proposals for Employment and Training of Citizens of Zambia', '公民雇用与培训方案', 'B', 0, 'emp'],
+    ['local','Proposals for Promotion of Local Business Development', '本地商业促进方案', 'B', 0, 'local'],
+    ['add',  'Additional Portal Document', '补充文件（可选）', 'C'],
+  ],
+  SEL: [
+    ['inc',  'Certificate of Incorporation', 'PACRA 公司注册证', 'A'],
+    ['cap',  'Certificate of Share Capital', '股本证书', 'A'],
+    ['art',  'Articles of Association', '公司章程', 'A'],
+    ['idsh', 'Identity of Directors and Shareholders', '董事及股东身份证明（含赞方股东 NRC）', 'A'],
+    ['pacra','PACRA Print Out OR Form 2 or 3', 'PACRA 登记打印件 / Form 2/3', 'A'],
+    ['tax',  'Valid Tax Clearance Certificate', 'ZRA 税务清关证', 'A', 1],
+    ['form', 'Duly Filled in Application Form', '签署版申请表 Form I', 'A'],
+    ['prog', 'Proposed Programme of Exploration Operations', '勘探工作计划（含投资承诺额）', 'B', 0, 'prog'],
+    ['env',  'Environmental Management / Commitment Plan', '环境管理/承诺计划', 'B', 0, 'env'],
+    ['emp',  'Proposals for Employment and Training of Citizens of Zambia', '公民雇用与培训方案', 'B', 0, 'emp'],
+    ['local','Proposals for Promotion of Local Business Development', '本地商业促进方案', 'B', 0, 'local'],
+    ['add',  'Additional Portal Document', '补充文件（可选）', 'C'],
+  ],
+  AMR: [
+    ['idapp','Identity of Applicant', '申请人身份证明（公民 NRC / 合作社文件）', 'A'],
+    ['form', 'Duly Filled in Application Form', '签署版申请表', 'A'],
+    ['tax',  'Valid Tax Clearance Certificate', '税务清关证', 'A', 1],
+    ['progm','Proposed Programme of Mining Operations', '采矿作业计划', 'B', 0, 'progm'],
+    ['env',  'Environmental Commitment Plan', '环境承诺计划', 'B', 0, 'env'],
+    ['emp',  'Proposals for Employment and Training of Citizens of Zambia', '公民雇用与培训方案', 'B', 0, 'emp'],
+    ['local','Proposals for Promotion of Local Business Development', '本地商业促进方案', 'B', 0, 'local'],
+    ['any',  'Any Further Information Which the Director of Mining Cadastre May Require', '兜底补充材料', 'B'],
+    ['byl',  'Cooperative Bylaws', '合作社章程（仅合作社需要）', 'C'],
+    ['coop', 'Cooperative Registration Certificate', '合作社注册证（仅合作社需要）', 'C'],
+    ['pacra','PACRA Print Out OR Form 2 or 3', 'PACRA 登记件（可选）', 'C'],
+    ['add',  'Additional Portal Document', '补充文件（可选）', 'C'],
+  ],
+};
+const ST_TXT = ['缺','已收','已核','问题'];
+
+// 个人档案（AMR 手工证申请人）：证件文件清单
+const PERSON_DOCS = [
+  ['idapp','National Registration Card / Passport','身份证件（NRC 或护照）',0],
+  ['tax',  'Valid Tax Clearance Certificate','税务清关证',1],
+];
+// 公司级基础文件：传一次，名下所有申请自动引用（等同门户"灰色=账户级文件"）
+const CO_DOCS = [
+  ['inc',  'Certificate of Incorporation', '公司注册证', 0],
+  ['cap',  'Certificate of Share Capital', '股本证书', 0],
+  ['art',  'Articles of Association', '公司章程', 0],
+  ['idsh', 'Identity of Directors and Shareholders', '董事及股东身份证明', 0],
+  ['tax',  'Valid Tax Clearance Certificate', '税务清关证', 1],
+  ['pacra','PACRA Print Out / Form 2 or 3', 'PACRA 登记打印件（股东解析源）', 0],
+];
+// 放射性矿种：小规模/手工不可申请
+const RADIO_RE = /uranium|thorium|radioactive|铀|钍|放射/i;
+
+/* ================= 状态 ================= */
+let S = { v:1, companies:[], apps:[], updatedAt:'' };
+let curAppId = null, curCoId = null, uploadDocKey = null;
+
+function loadLocal(){
+  try { const s = JSON.parse(localStorage.getItem('license_helper') || 'null'); if (s && s.apps) S = s; } catch(e){}
+}
+function persist(){ S.updatedAt = new Date().toISOString(); localStorage.setItem('license_helper', JSON.stringify(S)); scheduleSync(); }
+loadLocal();
+
+function curApp(){ return S.apps.find(a => a.id === curAppId) || null; }
+function curCo(){ return S.companies.find(c => c.id === curCoId) || null; }
+function appCo(a){ return S.companies.find(c => c.id === (a||curApp())?.companyId) || null; }
+
+/* ================= 同步（Worker → GitHub data/） ================= */
+let syncTimer = null, online = navigator.onLine;
+function scheduleSync(){
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(syncPush, 1500);
+}
+function setDot(st){ const d = document.getElementById('syncdot'); d.className = 'syncdot' + (st==='off'?' off':st==='busy'?' busy':''); }
+async function api(body){
+  const r = await fetch(API + '/', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+  return await r.json();
+}
+async function syncPush(){
+  if (!navigator.onLine) { setDot('off'); document.getElementById('offlineBanner').classList.add('show'); return; }
+  setDot('busy');
+  try {
+    const res = await api({ action:'save', path:DATA_PATH, content: JSON.stringify(S), message:'license apps update' });
+    setDot(res && res.ok ? '' : 'off');
+    document.getElementById('offlineBanner').classList.toggle('show', !(res && res.ok));
+  } catch(e){ setDot('off'); document.getElementById('offlineBanner').classList.add('show'); }
+}
+async function syncPull(){
+  if (!navigator.onLine) { setDot('off'); return; }
+  setDot('busy');
+  try {
+    const res = await api({ action:'read', path:DATA_PATH });
+    if (res && res.content) {
+      const remote = JSON.parse(res.content);
+      if (remote && remote.apps && (remote.updatedAt || '') > (S.updatedAt || '')) {
+        S = remote; persist0(); renderAll(); toast('已从云端拉取最新数据');
+      }
+    }
+    setDot('');
+  } catch(e){ setDot('off'); }
+}
+function persist0(){ localStorage.setItem('license_helper', JSON.stringify(S)); }
+window.addEventListener('online', ()=>{ document.getElementById('offlineBanner').classList.remove('show'); syncPull(); });
+window.addEventListener('offline', ()=>{ setDot('off'); document.getElementById('offlineBanner').classList.add('show'); });
+
+/* ================= 工具 ================= */
+const $ = id => document.getElementById(id);
+const esc = s => String(s||'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+function toast(t){ const el=$('toast'); el.textContent=t; el.style.display='block'; clearTimeout(el._t); el._t=setTimeout(()=>el.style.display='none',2200); }
+function openSheet(html){ $('sheet').innerHTML=html; $('modal').classList.add('show'); }
+function closeSheet(){ $('modal').classList.remove('show'); }
+$('modal').addEventListener('click', e=>{ if(e.target===$('modal')) closeSheet(); });
+
+function saveUI(){ try{ localStorage.setItem('lh_ui', JSON.stringify({pane:document.querySelector('.tab.active').dataset.p, app:curAppId, co:curCoId})); }catch(e){} }
+function go(btn){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active'); $(btn.dataset.p).classList.add('active');
+  // 公司页是纯资料库，不显示申请选择器
+  document.querySelector('.appsel').style.display = (btn.dataset.p==='p-co'||btn.dataset.p==='p-docs') ? 'none' : '';
+  saveUI(); renderAll();
+}
+
+/* ================= 申请（矿证）管理 ================= */
+function newApp(){
+  window._naLoc='';
+  openSheet(`<h3>新建申请</h3>
+    <label>粘贴地块信息（地区/面积/矿种等，粘贴后自动填入下方字段）</label>
+    <textarea id="naPaste" style="min-height:80px" placeholder="例：\n地区：Central, Serenje; Northern, Mpika\n产区面积：62.20 km²\n矿种：Copper" oninput="autoFillApp(this.value)"></textarea>
+    <label>证型</label>
+    <select id="naType">${Object.keys(LIC).map(k=>`<option value="${k}">${LIC[k].name} ${LIC[k].en}</option>`).join('')}</select>
+
+    <label>申请主体</label>
+    <select id="naCo">${S.companies.map(c=>`<option value="${c.id}">${esc(c.name)}${c.kind==='person'?'（个人）':''}</option>`).join('')}<option value="_new">（新建公司档案…）</option><option value="person">公民个人（未建档）</option><option value="coop">合作社</option></select>
+    <label>矿种 Commodity</label><input id="naCom" value="Copper" placeholder="例：Copper; Tantalum">
+    <div class="row">
+      <div style="flex:1"><label>省份 Province</label><input id="naProv" placeholder="例：Central"></div>
+      <div style="flex:1"><label>县/区 District</label><input id="naDist" placeholder="例：Serenje"></div>
+    </div>
+    <label>矿证面积 km²（≤10 自动选小型勘探证，>10 自动选大型）</label><input id="naKm2" type="number" step="0.01" placeholder="例：62.20" oninput="naKm2Type()">
+
+    <div class="btnrow"><button class="btn" onclick="doNewApp()">创建</button><button class="btn gray" onclick="closeSheet()">取消</button></div>`);
+}
+// 纯解析：从粘贴文本拆出结构化字段（不碰 DOM）
+function parseBriefFields(t){
+  const f={};
+  // 各字段值可能挤在一行里，截到下一个"键名："为止
+  const CUT=/\s*(?=(?:产区)?面积\s*[:：]|矿种\s*[:：]|commodity\s*[:：]|mineral\s*[:：]|原矿证|旧证|矿证号|licen[cs]e|酋长|chief\s*[:：]|地块名|名称\s*[:：]|name\s*[:：]|证型|公司)/i;
+  const grab=(re)=>{ const m=t.match(re); return m?m[1].split(CUT)[0].trim():null; };
+  const loc=grab(/(?:地区|位置|location|area)\s*[:：]\s*([^\n]+)/i);
+  if(loc){
+    f.locRaw=loc;
+    const provs=[],dists=[];
+    for(const p of loc.split(/[;；]/).map(s=>s.trim()).filter(Boolean)){
+      const m=p.match(/^([A-Za-z][A-Za-z .'-]+?)\s*[,，]\s*(.+)$/);
+      if(m){ provs.push(m[1].trim()); dists.push(m[2].trim()); } else provs.push(p);
+    }
+    f.province=[...new Set(provs)].join(', ');
+    if(dists.length) f.district=dists.join(', ');
+  }
+  const am=t.match(/(?:产区)?面积\s*[:：]\s*([\d.,]+)\s*(km²|km2|平方公里|平方千米|ha|公顷|hectare)/i);
+  if(am){ const v=parseFloat(am[1].replace(/,/g,'')); f.km2=/ha|公顷|hectare/i.test(am[2])?+(v/100).toFixed(2):v; }
+  const com=grab(/(?:矿种|commodity|mineral)\s*[:：]\s*([^\n]+)/i); if(com) f.commodity=com;
+  const lic=t.match(/(?:原矿证|旧证|矿证号|licen[cs]e\s*(?:no\.?|number))\s*[:：]?\s*([\w\-\/]+)/i); if(lic) f.prevLic=lic[1].trim();
+  const ch=grab(/(?:酋长|地主|chief)\s*[:：]\s*([^\n]+)/i); if(ch) f.chief=ch;
+  const nm=grab(/(?:地块名|名称|name)\s*[:：]\s*([^\n]+)/i); if(nm) f.label=nm;
+  return f;
+}
+// 面积规则：≤10 km² → 小型勘探证 SEL；>10 km² → 大型勘探证 LEL
+function typeForKm2(k){ return (k&&k<=10)?'SEL':'LEL'; }
+function naKm2Type(){ const k=parseFloat($('naKm2').value); if(k) $('naType').value=typeForKm2(k); }
+// 粘贴文本 → 自动拆解填进新建表单
+function autoFillApp(t){
+  const f=parseBriefFields(t);
+  const set=(id,v)=>{ if(v!=null&&v!==''){ const el=$(id); if(el) el.value=v; } };
+  if(f.locRaw) window._naLoc=f.locRaw;
+  set('naProv',f.province); set('naDist',f.district);
+  set('naKm2',f.km2); set('naCom',f.commodity); set('naPrev',f.prevLic); set('naChief',f.chief); set('naLabel',f.label);
+  if(f.km2) $('naType').value=typeForKm2(f.km2);
+}
+function doNewApp(){
+  const type=$('naType').value, coSel=$('naCo').value, com=$('naCom').value.trim();
+  const label=($('naLabel')?$('naLabel').value.trim():'')||$('naDist').value.trim()||$('naProv').value.trim()||LIC[type].name;
+  if (coSel==='_new'){ closeSheet(); newCo(()=>newApp()); return; }
+  const km2=parseFloat($('naKm2').value)||null;
+  const brief=($('naPaste')?$('naPaste').value:'').trim();
+  const selCo=S.companies.find(c=>c.id===coSel);
+  const isPerson=selCo&&selCo.kind==='person';
+  const app={ id:uid(), type, label, commodity:com, companyId:(coSel==='person'||coSel==='coop')?null:coSel,
+    brief,
+    applicantKind:(coSel==='person'?'person':coSel==='coop'?'coop':isPerson?'person':'company'), applicantName:isPerson?selCo.name:($('naApplicant')?$('naApplicant').value.trim():''),
+    area:{name:'',province:$('naProv').value.trim(),district:$('naDist').value.trim(),locRaw:window._naLoc||'',chief:'',
+      km2,units:km2?Math.round(km2/UNIT_HA):null,coords:[],datum:'GCS_Arc1950',prevLic:'',prevNote:'',desc:''},
+    params:{investUsd:'',years:'',staff:'',citizenPct:'',localNote:'',phases:''},
+    docs:{}, drafts:{}, status:'prep', timeline:[{t:new Date().toISOString().slice(0,10),type:'创建',note:'建立申请'}], createdAt:new Date().toISOString() };
+  (DOC_DEFS[type]||[]).forEach(d=>app.docs[d[0]]={status:0,fileName:'',mediaKey:'',expiry:'',note:''});
+  S.apps.push(app); curAppId=null; persist(); renderAll(); closeSheet(); toast('已创建，点列表进入该申请');
+}
+function onAppSel(){ curAppId=$('appSel').value; persist0(); renderAll(); }
+// 申请行 ⋯ → 操作单：修改信息 / 删除申请
+function appMenu(id){
+  const a=S.apps.find(x=>x.id===id); if(!a) return;
+  openSheet(`<h3>${esc(a.label)}</h3>
+    <div class="btnrow" style="flex-direction:column;align-items:stretch">
+      <button class="btn" onclick="closeSheet();editApp('${a.id}')">✏️ 修改信息</button>
+      <button class="btn gray" onclick="closeSheet()">取消</button>
+      <button class="btn danger" onclick="closeSheet();delApp('${a.id}')">🗑 删除申请</button>
+    </div>`);
+}
+function editApp(id){
+  const a=S.apps.find(x=>x.id===id); if(!a) return;
+  openSheet(`<h3>修改申请</h3>
+    <label>名称</label><input id="eaLabel" value="${esc(a.label)}">
+    <label>申请主体</label><select id="eaCo">${S.companies.map(c=>`<option value="${c.id}" ${a.companyId===c.id?'selected':''}>${esc(c.name)}${c.kind==='person'?'（个人）':''}</option>`).join('')}
+      <option value="person" ${a.applicantKind==='person'&&!a.companyId?'selected':''}>公民个人（未建档）</option>
+      <option value="coop" ${a.applicantKind==='coop'&&!a.companyId?'selected':''}>合作社</option></select>
+    <label>证型</label><select id="eaType">${Object.keys(LIC).map(k=>`<option value="${k}" ${a.type===k?'selected':''}>${LIC[k].name} ${LIC[k].en}</option>`).join('')}</select>
+    <label>矿种</label><input id="eaCom" value="${esc(a.commodity||'')}">
+    <label>地理位置（显示原文）</label><input id="eaLoc" value="${esc(a.area.locRaw||'')}" placeholder="Central, Serenje; Northern, Mpika">
+    <div class="row"><div style="flex:1"><label>省份</label><input id="eaProv" value="${esc(a.area.province||'')}"></div>
+    <div style="flex:1"><label>县/区</label><input id="eaDist" value="${esc(a.area.district||'')}"></div></div>
+    <label>面积 km²（≤10 → 小型勘探证，>10 → 大型）</label><input id="eaKm2" type="number" step="0.01" value="${a.area.km2||''}" oninput="const k=parseFloat(this.value);if(k)$('eaType').value=typeForKm2(k)">
+    <div class="btnrow"><button class="btn" onclick="saveAppEdit('${a.id}')">保存</button><button class="btn gray" onclick="closeSheet()">取消</button></div>`);
+}
+function saveAppEdit(id){
+  const a=S.apps.find(x=>x.id===id); if(!a) return;
+  a.label=$('eaLabel').value.trim()||a.label;
+  const coSel=$('eaCo').value, selCo=S.companies.find(c=>c.id===coSel);
+  a.companyId=(coSel==='person'||coSel==='coop')?null:coSel;
+  a.applicantKind=coSel==='coop'?'coop':(selCo&&selCo.kind==='person')?'person':coSel==='person'?'person':'company';
+  if(selCo&&selCo.kind==='person') a.applicantName=selCo.name;
+  a.type=$('eaType').value; a.commodity=$('eaCom').value.trim();
+  a.area.province=$('eaProv').value.trim(); a.area.district=$('eaDist').value.trim();
+  a.area.locRaw=$('eaLoc').value.trim();
+  a.area.km2=parseFloat($('eaKm2').value)||null;
+  if(a.area.km2&&!a.area.units) a.area.units=Math.round(a.area.km2/UNIT_HA);
+  (DOC_DEFS[a.type]||[]).forEach(d=>{ if(!a.docs[d[0]]) a.docs[d[0]]={status:0,fileName:'',mediaKey:'',expiry:'',note:''}; });
+  persist(); renderAll(); closeSheet(); toast('已保存');
+}
+function delApp(id){
+  const a=S.apps.find(x=>x.id===id); if(!a) return;
+  if(!confirm(`删除申请「${a.label}」？其材料记录和时间线一并清除`)) return;
+  S.apps=S.apps.filter(x=>x.id!==id);
+  if(curAppId===id) curAppId=null;
+  persist(); renderAll(); toast('已删除申请');
+}
+function renderAppSel(){
+  const sel=$('appSel');
+  sel.innerHTML = S.apps.length ? `<option value="" ${!curApp()?'selected':''}>— 选择申请 —</option>`+S.apps.map(a=>`<option value="${a.id}" ${a.id===curAppId?'selected':''}>${esc(a.label)}（${LIC[a.type].name}）</option>`).join('') : '<option value="">— 还没有申请 —</option>';
+  const lb=$('licBadge'); lb.textContent=curApp()?curApp().type:''; lb.style.display=curApp()?'':'none';
+}
+
+/* ================= 清单 ================= */
+// 文件生效来源：申请自己上传的优先；没有则引用公司档（A 类文件一次上传多处复用）
+function effDoc(a, key, cat){
+  const ad = a.docs[key] || {status:0,fileName:'',mediaKey:'',expiry:'',note:''};
+  if (ad.fileName || ad.mediaKey || ad.status > 0) return { d: ad, src: 'app' };
+  if (cat === 'A' && a.companyId) {
+    const co = S.companies.find(c => c.id === a.companyId);
+    const cd = co && co.docs && co.docs[key];
+    if (cd && (cd.fileName || cd.mediaKey)) return { d: { ...cd, status: ad.status || 1, note: ad.note || cd.note || '' }, src: 'co' };
+  }
+  return { d: ad, src: null };
+}
+// 申请列表（每个申请独立任务，点行进入该申请的材料页）
+function renderAppList(){
+  const box=$('appList');
+  if(!box) return;
+  box.innerHTML=[...S.apps].sort((x,y)=>(y.createdAt||'').localeCompare(x.createdAt||'')).map(a=>{
+    const defs=DOC_DEFS[a.type]||[];
+    const req=defs.filter(d=>d[3]!=='C').length;
+    const done=defs.filter(d=>d[3]!=='C'&&effDoc(a,d[0],d[3]).d.status>=1).length;
+    const co=appCo(a);
+    const stTxt={prep:'准备中',submitted:'已递交',paid:'已缴费',granted:'已获批',rejected:'被拒',abandoned:'放弃'}[a.status||'prep'];
+    const loc=a.area.locRaw||[a.area.district,a.area.province].filter(Boolean).join(', ')||'—';
+    const size=a.area.km2?a.area.km2+' km²':(a.area.units?a.area.units+' 单位':'—');
+    const stCls={submitted:'s1',paid:'s1',granted:'s2',rejected:'s3',abandoned:'s3'}[a.status]||'s0';
+    const created=(a.createdAt||'').slice(0,10);
+    return `<div class="doc" style="cursor:pointer;align-items:center" onclick="curAppId='${a.id}';saveUI();renderAll()">
+      <div class="doc-body">
+        <div class="doc-name" style="display:flex;align-items:center;gap:8px"><span class="ltag ${(a.type||'').toLowerCase()}">${LIC[a.type]?LIC[a.type].name:a.type}</span>
+          <span class="chip ${stCls}" style="min-width:0;padding:1px 8px;font-size:11px">${stTxt}</span>
+          <span class="muted" style="font-weight:400;font-size:12px">材料 ${done}/${req}</span>
+          ${created?`<span class="muted" style="font-weight:400;font-size:11px;margin-left:auto">建 ${created}</span>`:''}</div>
+        <div class="doc-cn" style="margin-top:2px">${co?esc(co.name):'—'}<br>${esc(loc)} · ${size} · ${esc(a.commodity||'—')}</div></div>
+      <button class="del" style="color:var(--muted)" title="设置" onclick="event.stopPropagation();appMenu('${a.id}')">⋯</button></div>`;
+  }).join('')||'<div class="empty">还没有申请，点右上角「＋申请」创建</div>';
+}
+// 申请概要卡：公司/证型/位置/面积/矿种/状态一览
+function renderAppSum(a){
+  // 旧申请只存了说明没填结构字段 → 自动解析回填
+  if(a.brief&&(!a.area.locRaw||!a.area.km2||!a.commodity)){
+    const f=parseBriefFields(a.brief), ar=a.area;
+    if(f.locRaw&&!ar.locRaw) ar.locRaw=f.locRaw;
+    if(f.province&&!ar.province) ar.province=f.province;
+    if(f.district&&!ar.district) ar.district=f.district;
+    if(f.km2&&!ar.km2){ ar.km2=f.km2; if(!ar.units) ar.units=Math.round(f.km2/UNIT_HA); }
+    if(f.commodity&&!a.commodity) a.commodity=f.commodity;
+    if(f.prevLic&&!ar.prevLic) ar.prevLic=f.prevLic;
+    if(f.chief&&!ar.chief) ar.chief=f.chief;
+    persist();
+  }
+  const co=appCo(a), lic=LIC[a.type]||{};
+  const stTxt={prep:'准备中',submitted:'已递交',paid:'已缴费',granted:'已获批',rejected:'被拒',abandoned:'放弃'}[a.status||'prep'];
+  const size=a.area.km2?a.area.km2+' km²':(a.area.units?a.area.units+' 单位':'—');
+  const loc=a.area.locRaw||[a.area.district,a.area.province].filter(Boolean).join(', ')||'—';
+  $('appSum').innerHTML=`
+    <div class="row"><h2 style="flex:1">${esc(a.label)}</h2>
+      <a href="javascript:void(0)" onclick="curAppId=null;saveUI();renderAll()" style="font-size:12px">‹ 申请列表</a>
+      <button class="btn sm ghost" onclick="editApp('${a.id}')">修改</button></div>
+    <div class="stat-grid">
+      <div class="stat"><div class="v">${lic.name||a.type}</div><div class="k">矿证类型</div></div>
+      <div class="stat"><div class="v" style="font-size:14px">${co?esc(co.name):(a.applicantName?esc(a.applicantName):'—')}</div><div class="k">申请主体</div></div>
+      <div class="stat"><div class="v" style="font-size:14px">${esc(loc)}</div><div class="k">地理位置</div></div>
+      <div class="stat"><div class="v">${size}</div><div class="k">矿证面积</div></div>
+      <div class="stat"><div class="v">${esc(a.commodity||'—')}</div><div class="k">矿产品种</div></div>
+      <div class="stat"><div class="v"><select style="border:none;background:transparent;font-size:15px;font-weight:700;padding:0" onchange="statusSet(this.value);renderAll()">
+        ${[['prep','准备中'],['submitted','已递交'],['paid','已缴费'],['granted','已获批'],['rejected','被拒'],['abandoned','放弃']].map(([v0,t0])=>`<option value="${v0}" ${(a.status||'prep')===v0?'selected':''}>${t0}</option>`).join('')}
+      </select></div><div class="k">状态</div></div>
+    </div>
+    ${a.brief?`<div class="muted" style="font-size:12px;margin-top:6px">原始说明：${esc(a.brief.slice(0,200))}${a.brief.length>200?'…':''}</div>`:''}`;
+}
+function renderDocs(){
+  const a=curApp(), box=$('docList');
+  $('appListCard').style.display=a?'none':'';
+  $('appDetailWrap').style.display=a?'':'none';
+  renderAppList();
+  if(!a){ $('progTxt').textContent='0/0'; $('pfill').style.width='0'; return; }
+  renderAppSum(a);
+  const defs=DOC_DEFS[a.type]||[];
+  let req=defs.filter(d=>d[3]!=='C'), done=req.filter(d=>effDoc(a,d[0],d[3]).d.status>=1).length;
+  $('progTxt').textContent=`${done}/${req.length}`;
+  $('pfill').style.width=(req.length?done/req.length*100:0)+'%';
+  // 顺序：申请表（Form I）→ B 类支持性文件 → 公司基础资料 → 可选/兜底
+  const ord=d=>d[0]==='form'?0:d[3]==='B'?1:d[3]==='A'?2:3;
+  const catTitle={0:'申请表（Form I 打印签署后上传）',1:'B 类 · 支持性文件（AI 可生成文稿）',2:a.companyId?'公司基础资料（公司档自动引用，不用重复传）':'基础资料',3:'C · 可选/兜底'};
+  const sorted=[...defs].sort((x,y)=>ord(x)-ord(y));
+  let html='', lastOrd=-1;
+  for(const d of sorted){
+    const [key,en,cn,cat,exp]=d;
+    if(ord(d)!==lastOrd){ lastOrd=ord(d); html+=`<h3 class="grp">${catTitle[lastOrd]}</h3>`; }
+    const eff=effDoc(a,key,cat), st=eff.d;
+    const selCoRec=a.companyId?S.companies.find(c=>c.id===a.companyId):null;
+    const isPers=selCoRec&&selCoRec.kind==='person';
+    const canUp=cat!=='A'||key==='form'||!a.companyId||isPers; // 公司档A类只读；个人档A类可在申请页上传（写回个人档）
+    html+=`<div class="doc" ${canUp?`ondragover="event.preventDefault()" ondrop="docDrop(event,'${key}','${cat==='A'&&isPers?'coApp':'app'}',${isPers?`'${a.companyId}'`:''})"`:''}>
+      <button class="chip s${st.status}" onclick="cycleStatus('${key}')">${ST_TXT[st.status]}</button>
+      <div class="doc-body">
+        <div class="doc-name">${en} ${eff.src==='co'?'<span style="font-size:11px;color:var(--primary);font-weight:700">公司档</span>':''}</div>
+        <div class="doc-cn">${cn}</div>
+        <div class="doc-meta">
+          ${!DOC_PDF[d[5]]&&canUp?`<label for="filePick" style="cursor:pointer" onclick="uploadDocKey='${key}';uploadScope='${cat==='A'&&isPers?'coApp':'app'}';window.uploadCoId='${isPers?a.companyId:''}'">📎 ${st.mediaKey?'替换':'上传文件'}</label>`:''}
+          ${st.mediaKey?`<a href="javascript:void(0)" onclick="viewFile('${st.mediaKey}','${jsq(st.fileName||'文件')}')" title="${esc(st.fileName||'')}">${esc(st.fileName||'查看')}</a>`:''}
+          ${st.srcPath?`<a href="javascript:void(0)" onclick="openSrcDir('${jsq(st.srcPath)}')" title="打开来源文件夹">${'📁'}</a>`:''}
+          ${docDate(st)?`<span class="muted" style="font-size:11px">传于 ${docDate(st)}</span>`:''}
+          ${key==='form'?`<a class="green" href="javascript:void(0)" onclick="genForm1()">🧾 生成 Form I</a><a class="green" href="javascript:void(0)" onclick="genForm1Pdf()">📄 PDF</a>`:''}
+          ${d[5]&&!DOC_PDF[d[5]]?`<a href="javascript:void(0)" onclick="jumpWrite('${d[5]}')" ${(a.drafts[d[5]]||'').trim()?'class="green"':'style="color:var(--muted);background:var(--light)"'}>${(a.drafts[d[5]]||'').trim()?'✍️ 文稿✓':'✍️ 编写'}</a>`:''}
+          ${DOC_PDF[d[5]]?`<a class="green" href="javascript:void(0)" onclick="genDocPdf('${d[5]}')">📄 正式版 PDF</a>`:''}
+          ${exp?`到期 <input type="date" value="${st.expiry||''}" onchange="setDoc('${key}','expiry',this.value)">`:''}
+        </div>
+      </div></div>`;
+  }
+  box.innerHTML=html;
+  renderTl();
+}
+// JS 字符串字面量转义（路径含反斜杠，\t \n 会被吃掉）
+function jsq(s){ return String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
+// 公司源文件夹：从任一已记录 srcPath 反推「N 公司名」这一级目录
+function coSrcDir(c){
+  for(const d of [...Object.values(c.docs||{}),...(c.extraDocs||[])]){
+    const p=d.srcPath||''; if(!p) continue;
+    const m=p.match(/^(.+[\\/]\d+[^\\/]*?)[\\/]/);          // …\1 Ecobox Mining…\…
+    return m?m[1]:p.replace(/[\\/][^\\/]+$/,'');
+  }
+  return '';
+}
+// 打开源文件夹：gofolder: 协议（装过一次 openfolder_setup.reg 的机器）+ 复制路径兜底
+function openSrcDir(srcPath){
+  const dir=String(srcPath).replace(/[\\/][^\\/]+$/,'');
+  const f=document.createElement('iframe'); f.style.display='none';
+  f.src='gofolder:'+dir; document.body.appendChild(f); setTimeout(()=>f.remove(),3000);
+  if(navigator.clipboard) navigator.clipboard.writeText(dir);
+  toast('路径已复制'+String.fromCharCode(10)+'文件夹未自动打开？先运行一次 openfolder_setup.reg 注册 gofolder 协议，或把路径粘到资源管理器地址栏');
+}
+// 文件上传日期：优先 d.at，其次从 mediaKey 自带毫秒时间戳解析
+function docDate(d){
+  if(d.at) return d.at;
+  const m=(d.mediaKey||'').match(/(\d{10,13})/);
+  if(m) return new Date(+m[1]).toISOString().slice(0,10);
+  return '';
+}
+/* ---- 跟进时间线 ---- */
+const STATUS_TXT={prep:'准备中',submitted:'已递交',paid:'已缴费',granted:'已获批',rejected:'被拒',abandoned:'放弃'};
+function renderTl(){
+  const a=curApp(), box=$('tlList'); if(!a){box.innerHTML='';return;}
+  if(!a.timeline) a.timeline=[];
+  box.innerHTML = a.timeline.length ? a.timeline.slice().reverse().map(e=>
+    `<div class="doc" style="padding:8px 0"><span class="chip ${e.type==='获批'?'s2':e.type==='被拒'||e.type==='放弃'?'s3':e.type==='部里反馈'||e.type==='补充材料要求'?'s1':'s0'}" style="min-width:92px">${esc(e.type)}</span>
+    <div class="doc-body"><div class="doc-name" style="font-weight:400">${esc(e.note)}</div><div class="doc-cn">${e.t||''}</div></div></div>`
+  ).join('') : '<div class="muted">暂无记录</div>';
+}
+function addTl(){
+  const a=curApp(); if(!a) return;
+  const note=$('tlNote').value.trim(); if(!note) return toast('写点内容');
+  const type=$('tlType').value;
+  a.timeline.push({t:new Date().toISOString().slice(0,10),type,note});
+  $('tlNote').value='';
+  // 时间线事件联动申请状态
+  const map={'递交':'submitted','缴费':'paid','获批':'granted','被拒':'rejected','放弃':'abandoned'};
+  if(map[type]) a.status=map[type];
+  persist(); renderTl(); toast('已记录');
+}
+function statusSet(v){
+  const a=curApp(); if(!a)return;
+  if(a.status!==v){ a.status=v; a.timeline=a.timeline||[]; a.timeline.push({t:new Date().toISOString().slice(0,10),type:'备注',note:'状态变更为「'+STATUS_TXT[v]+'」'}); }
+  persist();
+}
+function cycleStatus(key){
+  const a=curApp(); if(!a) return;
+  const st=a.docs[key]=a.docs[key]||{status:0};
+  st.status=(st.status+1)%4; persist(); renderDocs();
+}
+function setDoc(key,f,v){ const a=curApp(); if(!a) return; (a.docs[key]=a.docs[key]||{status:0})[f]=v; persist(); }
+let uploadScope='app';
+function pickFile(key, scope){
+  uploadDocKey=key; uploadScope=scope||'app';
+  const fi=$('filePick');
+  if(!fi) return toast('文件选择器未就绪，请刷新页面');
+  try{ fi.click(); toast('文件选择框已弹出，若没看到请到任务栏找它（可能弹在窗口后面）'); }
+  catch(e){ toast('无法打开文件选择：'+e.message); }
+  if(/MicroMessenger/i.test(navigator.userAgent)) toast('微信内可能无法选文件，请用浏览器打开本页');
+}
+// 全局错误浮出来：任何静默 JS 错误都弹 toast，不再"点了没反应"
+window.addEventListener('error', e=>{ try{ toast('脚本错误：'+(e.message||e.type)); }catch(x){} });
+window.addEventListener('unhandledrejection', e=>{ try{ toast('异步错误：'+((e.reason&&e.reason.message)||e.reason||'promise')); }catch(x){} });
+$('filePick').addEventListener('change', e=>{
+  const f=e.target.files[0]; e.target.value=''; if(!f||!uploadDocKey) return;
+  handlePickedFile(f, uploadDocKey, uploadScope);
+});
+// 拖拽上传：把文件拖到某行 = 上传到该槽位（不依赖文件选择框，彻底解决弹不出来的环境）
+function docDrop(e, key, scope, coId){
+  e.preventDefault(); e.stopPropagation();
+  const f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0];
+  if(!f) return;
+  window.uploadCoId=coId||'';
+  handlePickedFile(f, key, scope||'co');
+}
+async function handlePickedFile(f, uploadDocKey, uploadScope){
+  const a=curApp(), key=uploadDocKey;
+  const co=uploadScope==='coApp'?S.companies.find(c=>c.id===window.uploadCoId):curCo();
+  toast('上传中…');
+  try{
+    // 走 Worker /upload 代传 R2，避开 file:// 源被 R2 CORS 拦截
+    const fd=new FormData(); fd.append('file', f, f.name);
+    const r=await fetch(API+'/upload',{method:'POST',body:fd});
+    const j=await r.json();
+    if(!j.ok||!j.key) throw new Error(j.error||('HTTP '+r.status));
+    if((uploadScope==='co'||uploadScope==='coApp')&&co){
+      if(key.startsWith('x_')){
+        const xd=(co.extraDocs||[]).find(d=>('x_'+d.id)===key);
+        if(xd){ xd.fileName=f.name; xd.mediaKey=j.key; xd.at=new Date().toISOString().slice(0,10); }
+        persist(); renderCo(); toast('已上传'); return;
+      }
+      if(!co.docs) co.docs={};
+      co.docs[key]={...(co.docs[key]||{}),fileName:f.name,mediaKey:j.key,status:1,at:new Date().toISOString().slice(0,10)};
+      if(/\.pdf$/i.test(f.name)){
+        try{ const t=await extractPdfText(f); mergeProfile(co,analyzeText(t,{people:key==='pacra'})); toast('已上传并解析字段'); }
+        catch(e2){ toast('已上传（PDF 文本解析失败，可能是扫描件）'); }
+      }else toast('已上传到公司档');
+      persist(); uploadScope==='coApp'?renderDocs():renderCo();
+    }else{
+      if(!a) return toast('先建立申请');
+      a.docs[key]=a.docs[key]||{status:0};
+      a.docs[key].fileName=f.name; a.docs[key].mediaKey=j.key; a.docs[key].at=new Date().toISOString().slice(0,10);
+      if(a.docs[key].status===0) a.docs[key].status=1;
+      persist(); renderDocs(); toast('已上传');
+    }
+  }catch(err){ toast('上传失败：'+err.message); }
+}
+
+/* ================= 文件解析（pdf.js 按需加载） ================= */
+let _pdfjsReady=null;
+function ensurePdfjs(){
+  if(window.pdfjsLib) return Promise.resolve();
+  if(_pdfjsReady) return _pdfjsReady;
+  _pdfjsReady=new Promise((res,rej)=>{
+    const s=document.createElement('script');
+    s.src=API+'/media?key=lic/pdfjs.js';
+    s.onload=()=>{ pdfjsLib.GlobalWorkerOptions.workerSrc=API+'/media?key=lic/pdfjs.worker.js'; res(); };
+    s.onerror=()=>rej(new Error('pdf.js 加载失败'));
+    document.head.appendChild(s);
+  });
+  return _pdfjsReady;
+}
+// 页内文件查看器：PDF 用 pdf.js 渲染，图片直显，其他格式给下载（不走新标签页，微信里也能看）
+async function viewFile(key,name){
+  name=name||'文件'; $('vtitle').textContent=name;
+  $('vdl').href=`${API}/media?key=${key}`; $('vdl').download=name;
+  const bd=$('viewerBd'); bd.innerHTML='<div style="color:#fff;text-align:center;padding:30px">加载中…</div>';
+  $('viewer').classList.add('show');
+  try{
+    const ext=(name.split('.').pop()||'').toLowerCase();
+    const blob=await (await fetch(`${API}/media?key=${key}`)).blob();
+    const url=URL.createObjectURL(blob); $('vdl').href=url;
+    if(ext==='pdf'){
+      await ensurePdfjs();
+      const pdf=await pdfjsLib.getDocument({data:await blob.arrayBuffer()}).promise;
+      bd.innerHTML='';
+      for(let p=1;p<=pdf.numPages;p++){
+        const pg=await pdf.getPage(p);
+        const vp=pg.getViewport({scale:2});
+        const cv=document.createElement('canvas'); cv.width=vp.width; cv.height=vp.height;
+        await pg.render({canvasContext:cv.getContext('2d'),viewport:vp}).promise;
+        bd.appendChild(cv);
+      }
+      if(!pdf.numPages) bd.innerHTML='<div style="color:#fff;text-align:center;padding:30px">空 PDF</div>';
+    }else if(['jpg','jpeg','png','gif','webp'].includes(ext)){
+      bd.innerHTML=''; const im=document.createElement('img'); im.src=url; bd.appendChild(im);
+    }else{
+      bd.innerHTML=`<div style="color:#fff;text-align:center;padding:40px">此格式（.${ext}）不支持预览<br><br><a href="${url}" download="${esc(name)}" class="btn" style="background:var(--primary);color:#fff;text-decoration:none;padding:10px 20px;border-radius:8px">下载文件</a></div>`;
+    }
+  }catch(e){ bd.innerHTML=`<div style="color:#fff;text-align:center;padding:40px">打开失败：${esc(e.message)}<br><br><a href="${API}/media?key=${key}" target="_blank" class="btn" style="color:#fff">尝试新窗口打开</a></div>`; }
+}
+function closeViewer(){ $('viewer').classList.remove('show'); $('viewerBd').innerHTML=''; }
+async function extractPdfText(blob){
+  await ensurePdfjs();
+  const pdf=await pdfjsLib.getDocument({data:await blob.arrayBuffer()}).promise;
+  let t='';
+  for(let p=1;p<=pdf.numPages;p++){
+    const tc=await (await pdf.getPage(p)).getTextContent();
+    t+=tc.items.map(i=>i.str).join(' ')+'\n';
+  }
+  return t;
+}
+// 从上传件全文提取字段；opt.people=true 才提股东/董事（章程里的法律套话会误匹配，只对 PACRA/身份件开）
+function analyzeText(t, opt){
+  opt=opt||{};
+  const v={shareholders:[],directors:[]};
+  let m;
+  if(m=t.match(/(?:company|entity|enterprise|registration)\s*(?:no\.?|number|#)[:.\s]*([A-Z0-9\-\/]{4,})/i)) v.regNo=m[1];
+  if(!v.regNo&&(m=t.match(/\b(\d{9,})\b/))) v.regNo=m[1]; // PACRA 号通常为 9+ 位
+  if(m=t.match(/date of incorporation[:.\s]*(\d{1,2}\s*day of\s*\w+\s*\d{4}|\d{1,2}[\-\/\s](?:\w{3,9}|\d{1,2})[\-\/\s]\d{2,4})/i)) v.regDate=m[1].replace(/\s*day of\s*/,' ');
+  else if(m=t.match(/incorporated[^\d]*(\d{1,2}[\-\/\s](?:\w{3,9}|\d{1,2})[\-\/\s]\d{2,4})/i)) v.regDate=m[1];
+  if(m=t.match(/registered office[^a-z]{0,10}([A-Z0-9][^\n]{10,120}(?:plot|road|street|avenue|lusaka|ndola|kitwe|p\.?\s*o\.?\s*box)[^\n]{0,40})/i)) v.address=m[1].replace(/\s+/g,' ').trim();
+  if(m=t.match(/share capital[^\dKk]{0,30}K?\s*([\d,]+(?:\.\d+)?)/i)) v.capital=m[1];
+  else if(m=t.match(/nominal capital[^\d]{0,20}([\d,]+)/i)) v.capital=m[1];
+  if(m=t.match(/Phone\s+(\+?\d[\d\s\-]{5,}\d)/i)) v.phone=m[1].replace(/\s+/g,'');
+  if(m=t.match(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/)) v.email=m[0];
+  // 税务清关证：ZRA 格式 "Valid From DD/MM/YYYY To DD/MM/YYYY" 或 Expiry
+  if(m=t.match(/(?:valid\s*(?:to|until|thru)|expir\w*)[^\d]{0,20}(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4})/i)) v.taxTo=m[1];
+  if(m=t.match(/clearance.*?to[^\d]{0,10}(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4})/i)) v.taxTo=m[1];
+  // NRC 号出现 → 视为赞比亚人证据
+  v.hasNrc=/\b\d{6}\s*\/\s*\d{2}\s*\/\s*\d\b/.test(t)||/national registration card|zambian/i.test(t);
+  if(opt.people){
+    // 预处理：拼接跨行断开的金额（如 "140,000.0\n0 Ordinary" → "140,000.00 Ordinary"）
+    t=t.replace(/(\d+\.\d)\s*\n\s*(\d{1,2}(?!\d))/g,'$1$2');
+    // PACRA 打印件 Individuals 表：行格式 "NAME NATIONALITY [IDTYPE] IDNO Yes Yes [Yes] [AMOUNT CLASS]"
+    // 有金额=股东（% = 金额/核定股本），无金额=董事/秘书
+    let totAuth=0;
+    const auth=t.match(/(?:ordinary|common|preference)[^\d]{0,10}([\d,]+(?:\.\d+)?)\s+[\d.]+/i);
+    if(auth) totAuth=parseFloat(auth[1].replace(/,/g,''));
+    const NATIONS='ZAMBIA|ZAMBIAN|CHINA|CHINESE|GRENADA|INDIA|INDIAN|CONGO|CONGOLESE|DRC|TANZANIA|KENYA|ZIMBABWE|BOTSWANA|NAMIBIA|ANGOLA|MOZAMBIQUE|MALAWI|SOUTH AFRICA|BRITISH|BRITAIN|USA|AMERICAN|LEBANON|LEBANESE|UAE|RUSSIA|RUSSIAN|KOREA|JAPAN|CANADA|AUSTRALIA|SWITZERLAND|SWISS|CYPRUS|MAURITIUS|SEYCHELLES|HONG KONG|NIGERIA|GHANA|EGYPT|PAKISTAN|TURKEY|BELGIUM|FRANCE|FRENCH|GERMANY|ITALY|SPAIN|PORTUGAL|NETHERLANDS|IRELAND|BRITISH VIRGIN';
+    // 行格式：NAME NAT IDNO Yes Yes [Yes] [AMOUNT CLASS]；旗标列=董事/秘书/股东，证件号如 EM9928571 / 168233/46/1
+    const rowRe=new RegExp(`([A-Z][A-Z'&.,\\- ]{2,}?)\\s+(${NATIONS}|[A-Z]{3,}(?=\\s+\\S*\\d))\\s+(.+?)\\s+((?:Yes|No)(?:\\s+(?:Yes|No)){1,2})(?:\\s+([\\d,]+(?:\\.\\d+)?)\\s+([A-Za-z]+))?`,'g');
+    let r;
+    while((r=rowRe.exec(t))){
+      const nm=r[1].replace(/\s+/g,' ').trim(), nat=r[2];
+      if(/LIMITED|COMPANY|REGISTERED|ADDRESS|CERTIFICATE|PRINTED|FORENAMES|SURNAMES|BENEFICIARY|NATIONALITY|IDENTITY|MEMBER/i.test(nm)) continue;
+      const flags=r[4].trim().split(/\s+/);
+      const idNo=(r[3]||'').replace(/\s{2,}/g,' ').replace(/^(?:Passport|National ID|ID Card|NRC|Driving Licen[cs]e)\s+/i,'').trim();
+      const amt=r[5]&&/ordinary|preference|common/i.test(r[6]||'')?parseFloat(r[5].replace(/,/g,'')):0;
+      const ent={name:nm,nationality:nat,idNo};
+      if(amt){ ent.amount=amt; v.shareholders.push(ent); }
+      // 旗标：3个Yes=兼秘书；≥1个Yes=董事
+      if(flags.filter(f=>f==='Yes').length>=3) v.secretary=ent;
+      if(!v.directors.some(d=>d.name===nm)) v.directors.push(ent);
+      if(/ZAMBIA/i.test(nat)) v.hasNrc=true;
+    }
+    // Beneficial Owners 表交叉校正：Individuals 股数与核定股本对不上时，用 BO 表金额修正
+    // BO 行格式: NAME - IDNO NATIONALITY IDNO Yes [SHNAME] [NATURE] AMOUNT CLASS
+    const boIdx=t.indexOf('Beneficial Owners');
+    if(boIdx>=0&&v.shareholders.length){
+      const boSec=t.slice(boIdx,boIdx+4000), bo={};
+      const boRe=new RegExp(`([A-Z][A-Z'&.,\\- ]{2,}?)\\s*-\\s*\\S+\\s+(${NATIONS}|[A-Z]{3,})\\s+\\S+\\s+Yes\\s+.*?([\\d,]+\\.\\d+)\\s+(?:Ordinary|Preference|Common)`,'g');
+      let b;
+      while((b=boRe.exec(boSec))){
+        bo[b[1].replace(/\s+/g,' ').trim()]=parseFloat(b[3].replace(/,/g,''));
+      }
+      const norm=s=>s.replace(/\s+/g,' ').trim().toUpperCase();
+      const sumI=v.shareholders.reduce((s,x)=>s+x.amount,0);
+      if(totAuth&&Math.abs(sumI-totAuth)>1&&Object.keys(bo).length){
+        const fixed=v.shareholders.map(x=>bo[norm(x.name)]!=null?{...x,amount:bo[norm(x.name)]}:x);
+        const sumF=fixed.reduce((s,x)=>s+x.amount,0);
+        if(Math.abs(sumF-totAuth)<Math.abs(sumI-totAuth)) v.shareholders=fixed;
+      }
+    }
+    const tot=totAuth||v.shareholders.reduce((s,x)=>s+x.amount,0);
+    if(tot) v.shareholders.forEach(x=>x.pct=+(x.amount*100/tot).toFixed(1));
+    v.zmPct=+v.shareholders.filter(x=>/ZAMBIA/i.test(x.nationality)).reduce((s,x)=>s+(x.pct||0),0).toFixed(1);
+    // 完整性校验：解析出的占比合计明显低于 100% 说明有漏（断行/公司股东等）
+    v.pctSum=+v.shareholders.reduce((s,x)=>s+(x.pct||0),0).toFixed(1);
+    if(v.shareholders.length&&Math.abs(v.pctSum-100)>1) v.pctWarn=true;
+  }
+  return v;
+}
+// 解析出的字段并入公司档案（已有字段不覆盖）
+function mergeProfile(c,v){
+  c.profile=c.profile||{};
+  for(const k of ['regNo','regDate','address','capital','taxTo','phone','email']) if(v[k]&&!c.profile[k]) c.profile[k]=v[k];
+  // 同步到顶层字段（Form I 直接引用）；已有值不覆盖人工填写
+  for(const k of ['regNo','regDate','address','capital','phone','email']) if(v[k]&&!c[k]) c[k]=v[k];
+  if((v.shareholders||[]).length) c.shareholders=v.shareholders;  // 股东以最新解析到的 PACRA 打印件为准，直接覆盖
+  if((v.directors||[]).length&&!(c.directors||[]).length) c.directors=v.directors;
+  if(v.secretary&&!c.secretary){ c.secretary=v.secretary.name; c.secNat=v.secretary.nationality; }
+  if(v.hasNrc) c.profile.hasNrc=true;
+  if(v.taxTo){ c.docs=c.docs||{}; (c.docs.tax=c.docs.tax||{}).expiry=normDate(v.taxTo)||c.docs.tax.expiry; }
+}
+// 解析某家公司全部已传文件 → 写入 co.profile（可重复跑）
+async function analyzeCo(){
+  const c=curCo(); if(!c) return;
+  toast('解析中（逐份读 PDF 文本层）…');
+  c.profile={};
+  const notes=[];
+  for(const [key,en,cn] of CO_DOCS){
+    const d=(c.docs||{})[key]; if(!d||!d.mediaKey||!/pdf$/i.test(d.fileName||'')) continue;
+    try{
+      const r=await fetch(`${API}/media?key=${d.mediaKey}`);
+      if(!r.ok) throw 0;
+      const t=await extractPdfText(await r.blob());
+      mergeProfile(c,analyzeText(t,{people:key==='pacra'}));
+      notes.push(en+':ok');
+    }catch(e){ notes.push(en+':失败'); }
+  }
+  persist(); renderCo(); toast('解析完成：'+notes.join('，')||'无可解析文件');
+}
+function normDate(s){ // DD/MM/YYYY 或 DD-MM-YYYY → ISO
+  const m=String(s||'').match(/(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})/);
+  if(!m) return '';
+  let[,d,mo,y]=m; y=y.length===2?'20'+y:y;
+  return `${y}-${mo.padStart(2,'0')}-${d.padStart(2,'0')}`;
+}
+
+/* ================= 公司档案 ================= */
+function newCo(cb){
+  openSheet(`<h3>新建公司</h3><label>公司名称（英文全称）</label><input id="ncName" placeholder="例：XXXX MINING ZAMBIA LIMITED">
+    <div class="btnrow"><button class="btn" onclick="doNewCo()">创建</button><button class="btn gray" onclick="closeSheet()">取消</button></div>`);
+  window._afterCo=cb||null;
+}
+function doNewCo(){
+  const n=$('ncName').value.trim(); if(!n) return toast('填公司名');
+  const c={id:uid(),name:n,regNo:'',regDate:'',address:'',shareCapital:'',directors:[],shareholders:[]};
+  S.companies.push(c); curCoId=c.id; persist(); closeSheet(); renderCo();
+  if(window._afterCo){ window._afterCo(); window._afterCo=null; }
+}
+function newPerson(){
+  openSheet(`<h3>新建个人（AMR 手工证申请人）</h3>
+    <label>姓名（与证件一致）</label><input id="npName" placeholder="例：JOHN BANDA">
+    <label>国籍</label><input id="npNat" value="ZAMBIA" placeholder="例：ZAMBIA">
+    <label>证件号（NRC / 护照）</label><input id="npId" placeholder="例：123456/78/1">
+    <div class="btnrow"><button class="btn" onclick="doNewPerson()">创建</button><button class="btn gray" onclick="closeSheet()">取消</button></div>`);
+}
+function doNewPerson(){
+  const n=$('npName').value.trim(); if(!n) return toast('填姓名');
+  const c={id:uid(),kind:'person',name:n,nat:$('npNat').value.trim()||'ZAMBIA',idNo:$('npId').value.trim(),dob:'',phone:'',email:'',address:'',docs:{}};
+  S.companies.push(c); curCoId=c.id; persist(); closeSheet(); renderCo();
+}
+function onCoSel(){ /* 公司选择改为列表点击进入（curCoId） */ }
+function renderCo(){
+  saveUI();
+  const f=$('coForm'), today=new Date().toISOString().slice(0,10);
+  // 列表模式
+  if(!curCoId){
+    const hasZm=c=>(c.shareholders||[]).some(s=>/zambia|赞/i.test(s.nationality||''));
+    const row=c=>{
+      const sh=c.shareholders||[];
+      const shTxt=sh.map(s=>`<span style="${/zambia|赞/i.test(s.nationality||'')?'color:var(--success);font-weight:700':''}">${esc(s.name)} ${s.pct!=null?Math.round(s.pct)+'%':''}</span>`).join('；');
+      return `<div class="doc" style="cursor:pointer" onclick="curCoId='${c.id}';renderCo()">
+        <div class="doc-body"><div class="doc-name">${esc(c.name)}</div>
+        <div class="doc-cn">${shTxt||'<span class="muted">未解析</span>'}</div></div><span class="muted">›</span></div>`;
+    };
+    const cos=S.companies.filter(c=>c.kind!=='person'), pers=S.companies.filter(c=>c.kind==='person');
+    const zl=cos.filter(hasZm), full=cos.filter(c=>!hasZm(c));
+    const prow=c=>`<div class="doc" style="cursor:pointer" onclick="curCoId='${c.id}';renderCo()">
+      <div class="doc-body"><div class="doc-name">${esc(c.name)} <span style="font-size:11px;color:var(--warning);font-weight:700">个人</span></div>
+      <div class="doc-cn">${[c.nat,c.idNo].filter(Boolean).map(esc).join(' · ')||'<span class="muted">未填证件</span>'}</div></div><span class="muted">›</span></div>`;
+    f.innerHTML=`<div class="row"><h2 style="flex:1">公司档案（${S.companies.length} 个）</h2><button class="btn sm ghost" onclick="newPerson()">＋个人</button><button class="btn sm" onclick="newCo()">＋公司</button></div>`
+      +(S.companies.length?'':'<div class="empty">还没有公司，点右上角「＋公司」新建</div>')
+      +(pers.length?`<h3 style="margin:12px 0 2px">个人（AMR 手工证申请人）</h3>`+pers.map(prow).join(''):'')
+      +(zl.length?`<h3 style="margin:12px 0 2px">有赞比亚当地人持股（${zl.length}）</h3>`+zl.map(row).join(''):'')
+      +(full.length?`<h3 style="margin:12px 0 2px">全资公司（${full.length}）</h3>`+full.map(row).join(''):'');
+    return;
+  }
+  // 详情模式：全页一个「编辑/保存」总开关，编辑态下所有区块可改可删
+  const c=curCo();
+  if(!c){ curCoId=null; return renderCo(); }
+  const ed=window._coEdit===c.id;
+  const editBtn=`<button class="btn sm ${ed?'':'ghost'}" onclick="coEditToggle('${c.id}')">${ed?'✓ 保存':'✏️ 编辑'}</button>`;
+  const delRow=ed?`<div class="btnrow" style="gap:8px;margin-bottom:8px"><button class="btn sm danger" onclick="delCo()">🗑 删除档案</button></div>`:'';
+  if(c.kind==='person'){ // 个人档案详情：身份信息 + 证件文件
+    f.innerHTML=`<div class="muted" style="font-size:13px;margin-bottom:6px"><a href="javascript:void(0)" onclick="curCoId=null;renderCo()">‹ 返回列表</a></div>
+      <div class="row"><h2 style="flex:1;font-size:1.05rem">${esc(c.name)} <span style="font-size:12px;color:var(--warning)">个人</span></h2>${editBtn}</div>
+      ${delRow}
+      ${ed?'<div class="tipbox">编辑模式：改字段、删文件都行，改完点右上角「✓ 保存」</div>':''}
+      <h3 style="display:flex;align-items:center;gap:8px">身份信息（Form I 自动引用）</h3>
+      <div class="card" id="coInfo" style="margin-bottom:6px"></div>
+      <h3 style="display:flex;align-items:center;gap:8px">证件文件（AMR 申请自动引用 Identity of Applicant）</h3>
+      <div class="muted" style="font-size:11px;margin:-4px 0 4px">点「缺/上传」选文件，或直接把文件拖到对应行上</div><div id="coDocs"></div>
+      <h3 style="display:flex;align-items:center;gap:8px">其他文件</h3>
+      <div id="coExtra"></div>
+      ${ed?'<button class="btn sm ghost" onclick="addExtraDoc()">＋文件</button>':''}`;
+    renderCoInfo(); renderCoDocs(); renderCoExtra();
+    return;
+  }
+  const zm=(c.shareholders||[]).filter(s=>/zambia|赞/i.test(s.nationality||'')).reduce((t,s)=>t+(+s.pct||0),0);
+  f.innerHTML=`<div class="muted" style="font-size:13px;margin-bottom:6px"><a href="javascript:void(0)" onclick="curCoId=null;renderCo()">‹ 返回公司列表</a></div>
+    <div class="row"><h2 style="flex:1;font-size:1.05rem">${esc(c.name)}</h2>
+      ${coSrcDir(c)?`<button class="btn sm ghost" onclick="openSrcDir('${jsq(coSrcDir(c)+'/x')}')">📁 打开文件夹</button>`:''}
+      <button class="btn sm" onclick="analyzeCo()">解析文件提取股东</button>
+      ${editBtn}</div>
+    ${delRow}
+    ${ed?'<div class="tipbox">编辑模式：改字段、增删股东/董事、删文件都行，改完点右上角「✓ 保存」</div>':''}
+    <h3 style="display:flex;align-items:center;gap:8px">基础信息库（Form I 自动引用）
+      <span class="muted" style="font-size:11px;font-weight:400">${coInfoDone(c)}</span></h3>
+    <div class="card" id="coInfo" style="margin-bottom:6px"></div>
+    <div style="display:flex;align-items:center;gap:8px"><span style="font-size:13px;font-weight:700">股东 Shareholders</span>
+      <span class="muted" style="font-size:11px">赞方合计 <b style="color:${Math.round(zm)>=5?'var(--success)':'var(--danger)'}">${Math.round(zm)}%</b></span></div>
+    <div id="shList"></div>
+    ${ed?'<button class="btn sm ghost" onclick="shAdd()">＋股东</button>':''}
+    <div style="display:flex;align-items:center;gap:8px;margin-top:4px"><span style="font-size:13px;font-weight:700">董事 Directors</span></div>
+    <div id="dirList"></div>
+    ${ed?'<button class="btn sm ghost" onclick="dirAdd()">＋董事</button>':''}
+    <h3 style="display:flex;align-items:center;gap:8px">基础文件（所有公司必备标准件）</h3>
+    <div class="muted" style="font-size:11px;margin:-4px 0 4px">点「缺/上传」选文件，或直接把文件拖到对应行上</div><div id="coDocs"></div>
+    <h3 style="display:flex;align-items:center;gap:8px">其他文件（本公司特有：矿证、出口许可证等）</h3>
+    <div id="coExtra"></div>
+    ${ed?'<button class="btn sm ghost" onclick="addExtraDoc()">＋文件</button>':''}`;
+  renderCoInfo(); renderSh(); renderDirs(); renderCoDocs(); renderCoExtra();
+}
+// 编辑总开关：进入编辑态全页可改；退出=保存（字段 onchange 已实时入库）
+function coEditToggle(id){
+  if(window._coEdit===id){ window._coEdit=null; renderCo(); toast('已保存'); }
+  else { window._coEdit=id; renderCo(); }
+}
+// 基础信息库字段：Form I Q6/Q7 引用的公司证件与联系信息
+const CO_INFO_FIELDS=[
+  ['name','公司名称',1],['regNo','PACRA 注册号',0],['regDate','注册日期',0],
+  ['capital','核定股本',0],['address','注册地址（physical & postal）',1],
+  ['tel','Tel',0],['phone','Mobile',0],['fax','Fax',0],['email','Email',0],
+  ['ceo','CEO 姓名',0],['ceoNat','CEO 国籍',0],['secretary','Company Secretary 姓名',0],['secNat','秘书国籍',0],
+];
+const PERSON_INFO_FIELDS=[
+  ['name','姓名（与证件一致）',1],['nat','国籍',0],['idNo','证件号（NRC / 护照）',0],
+  ['dob','出生日期（dd/mm/yyyy）',0],['phone','Mobile',0],['email','Email',0],
+  ['address','住址（physical & postal）',1],
+];
+const coVal=(c,k)=>k==='capital'?(c.capital||c.shareCapital||''):(c[k]||'');
+function coInfoDone(c){
+  const need=['regNo','regDate','address','phone','email','capital','ceo','secretary'];
+  const n=need.filter(k=>coVal(c,k)).length+((c.shareholders||[]).length?1:0);
+  return `${n}/${need.length+1} 项已填`;
+}
+function renderCoInfo(){
+  const c=curCo(); if(!c) return;
+  const ed=window._coEdit===c.id;
+  const FIELDS=c.kind==='person'?PERSON_INFO_FIELDS:CO_INFO_FIELDS;
+  $('coInfo').innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr;gap:2px 14px">'
+    +FIELDS.map(([k,label,full])=>{
+      const v=coVal(c,k);
+      if(ed) return `<div style="grid-column:${full?'1/-1':'auto'}"><label style="margin:4px 0 2px">${label}</label>
+        <input value="${esc(v)}" onchange="cSet('${k}',this.value)" ${k==='name'?'style="font-weight:700"':''}></div>`;
+      return `<div style="grid-column:${full?'1/-1':'auto'};padding:3px 0;border-bottom:1px solid var(--light)">
+        <span class="muted" style="font-size:11.5px">${label}</span><br>
+        <span style="font-size:13px;${v?'':'color:var(--danger)'}">${v?esc(v):'缺'}</span></div>`;
+    }).join('')+'</div>'
+    +(ed?'':'<div class="muted" style="font-size:11px;margin-top:6px">留空的项在生成的 Form I 里也是空；董事缺省按股东表填</div>');
+}
+// 董事表（Form I 用）：只读列表 + 编辑态增删改
+function renderDirs(){
+  const c=curCo(); if(!c) return;
+  const dirs=(c.directors&&c.directors.length?c.directors:c.shareholders)||[];
+  const ed=window._coEdit===c.id;
+  $('dirList').innerHTML=dirs.length?dirs.map((p,i)=>{
+    if(!ed) return `<div class="doc" style="padding:4px 0"><span style="width:30px;font-size:14px;color:${/ZAMBIA/i.test(p.nationality||'')?'var(--success)':'var(--text)'}">${/ZAMBIA/i.test(p.nationality||'')?'赞':'外'}</span>
+      <div class="doc-body"><div class="doc-name" style="font-weight:400">${esc(p.name)}${p.nationality?`（${esc(p.nationality)}）`:''}${p.idNo?` <span class="muted" style="font-size:11px">${esc(p.idNo)}</span>`:''}</div></div></div>`;
+    return `<div class="doc" style="padding:4px 0"><span style="width:30px"></span>
+      <div class="doc-body" style="display:flex;gap:6px">
+        <input style="flex:2" value="${esc(p.name)}" onchange="dirSet(${i},'name',this.value)">
+        <input style="flex:1" value="${esc(p.nationality||'')}" onchange="dirSet(${i},'nationality',this.value)" placeholder="国籍">
+        <input style="flex:1.2" value="${esc(p.idNo||'')}" onchange="dirSet(${i},'idNo',this.value)" placeholder="证件号">
+        <input style="flex:1" type="number" value="${p.amount!=null?p.amount:''}" onchange="dirSet(${i},'amount',this.value)" placeholder="股数">
+      </div><button class="del" onclick="dirDel(${i})">×</button></div>`;
+  }).join(''):'<div class="muted" style="padding:2px 0">缺省按股东表填；＋董事 可单独维护</div>';
+}
+function dirsEnsure(){ const c=curCo(); if(!(c.directors||[]).length) c.directors=(c.shareholders||[]).map(x=>({...x})); return c.directors; }
+function dirAdd(){ dirsEnsure().push({name:'',nationality:'',idNo:'',amount:0}); persist(); renderCo(); }
+function dirSet(i,f,v){ const d=dirsEnsure()[i]; if(!d) return; d[f]=f==='amount'?(+v||0):v; persist(); }
+function dirDel(i){ dirsEnsure().splice(i,1); persist(); renderCo(); }
+// 自定义文件：本公司特有的矿证、许可证等
+function addExtraDoc(){
+  const c=curCo(); if(!c) return;
+  const label=prompt('文件名称（如：矿证 42181-LEL、出口许可证）：');
+  if(!label||!label.trim()) return;
+  const d={id:uid(),label:label.trim()};
+  (c.extraDocs=c.extraDocs||[]).push(d); persist();
+  pickFile('x_'+d.id,'co');
+}
+function renderCoExtra(){
+  const c=curCo(); if(!c) return;
+  const list=c.extraDocs||[];
+  $('coExtra').innerHTML=list.map(d=>`<div class="doc" ondragover="event.preventDefault()" ondrop="docDrop(event,'x_${d.id}','co')">
+    ${d.mediaKey
+      ?`<span class="chip s1" style="cursor:pointer" onclick="viewFile('${d.mediaKey}','${jsq(d.fileName||'文件')}')">已收</span>`
+      :`<label class="chip s0" for="filePick" onclick="uploadDocKey='x_${d.id}';uploadScope='co'">缺</label>`}
+    <div class="doc-body"><div class="doc-name">${esc(d.label)}</div>
+    <div class="doc-meta">
+      ${!d.mediaKey?`<label for="filePick" onclick="uploadDocKey='x_${d.id}';uploadScope='co'">上传</label>`:''}
+      ${d.mediaKey&&window._coEdit===c.id?`<a class="red" href="javascript:void(0)" onclick="delCoDoc('x_${d.id}')">删除文件</a>`:''}
+      ${d.mediaKey?`<a href="javascript:void(0)" onclick="viewFile('${d.mediaKey}','${jsq(d.fileName||'文件')}')" title="${esc(d.fileName||'')}">${esc(d.fileName||'查看')}</a>`:''}
+      ${(d.srcPath||coSrcDir(c))?`<a href="javascript:void(0)" onclick="openSrcDir('${jsq(d.srcPath||(coSrcDir(c)+'/x'))}')" title="打开来源文件夹">📁</a>`:''}
+      ${docDate(d)?`<span class="muted" style="font-size:11px">传于 ${docDate(d)}</span>`:''}
+    </div></div>
+    ${window._coEdit===c.id?`<button class="del" onclick="delExtraDoc('${d.id}')">×</button>`:''}</div>`).join('')
+    ||'<div class="muted" style="padding:2px 0 6px">暂无，点下方＋文件添加</div>';
+}
+function delExtraDoc(id){
+  const c=curCo(); if(!c) return;
+  c.extraDocs=(c.extraDocs||[]).filter(d=>d.id!==id); persist(); renderCo();
+}
+function renderSh(){
+  const c=curCo(); if(!c) return;
+  c.shareholders=c.shareholders||[];
+  if(!c.shareholders.length && c.profile && c.profile.shareholders && c.profile.shareholders.length){
+    c.shareholders=c.profile.shareholders; persist();
+  }
+  const sum=(c.shareholders||[]).reduce((s,x)=>s+(+x.pct||0),0);
+  const warn=c.shareholders.length&&Math.abs(sum-100)>1?`<div style="color:var(--danger);font-size:12px;padding:2px 0">⚠ 占比合计 ${Math.round(sum)}% ≠100%，请核对股数</div>`:'';
+  const shEd=window._coEdit===c.id;
+  const hd=shEd?'<div class="doc" style="padding:2px 0;color:var(--muted);font-size:11px"><span style="width:30px"></span><div class="doc-body" style="display:flex;gap:6px"><span style="flex:2.4">姓名</span><span style="flex:1.2">国籍</span><span style="flex:1.2">证件号(NRC/护照)</span><span style="flex:1.2;text-align:right">股份数</span><span style="width:56px;text-align:right">占比</span></div><span style="width:26px"></span></div>':'';
+  $('shList').innerHTML=hd+warn+(c.shareholders.map((p,i)=>{
+    const zm=/zambia|赞/i.test(p.nationality||'');
+    if(!shEd) return `<div class="doc" style="padding:6px 0">
+      <span style="font-size:14px;color:${zm?'var(--success)':'var(--text)'}">${zm?'赞':'外'}</span>
+      <div class="doc-body"><div class="doc-name" style="font-weight:400">${esc(p.name)}${p.nationality?`（${esc(p.nationality)}）`:''}</div></div>
+      <b style="color:${zm?'var(--success)':'var(--text)'}">${p.pct!=null?Math.round(p.pct)+'%':''}</b></div>`;
+    return `<div class="doc" style="padding:4px 0">
+      <span style="font-size:14px;width:30px;color:${zm?'var(--success)':'var(--text)'}">${zm?'赞':'外'}</span>
+      <div class="doc-body" style="display:flex;gap:6px">
+        <input style="flex:2.4" value="${esc(p.name)}" onchange="shSet(${i},'name',this.value)">
+        <input style="flex:1.2" value="${esc(p.nationality)}" onchange="shSet(${i},'nationality',this.value)">
+        <input style="flex:1.2" value="${esc(p.idNo||'')}" onchange="shSet(${i},'idNo',this.value)" placeholder="NRC/护照">
+        <input style="flex:1.2;text-align:right" type="number" value="${p.amount!=null?p.amount:''}" onchange="shSet(${i},'amount',this.value)">
+        <b style="width:56px;text-align:right;align-self:center;color:${zm?'var(--success)':'var(--text)'}">${p.pct!=null?Math.round(p.pct)+'%':''}</b>
+      </div>
+      <button class="del" onclick="shDel(${i})">×</button></div>`;
+  }).join('')||'<div class="muted" style="padding:4px 0">还没有股东记录，＋股东手填 或 点「解析文件提取股东」从 PACRA Print Out 读取</div>')
+  +(shEd?'':'')
+  ;
+}
+function cSet(k,v){ const c=curCo(); if(!c) return; c[k]=v; persist(); }
+function shAdd(){ const c=curCo(); (c.shareholders=c.shareholders||[]).push({name:'',nationality:'',amount:0,pct:null}); persist(); renderCo(); }
+function shSet(i,f,v){
+  const c=curCo(); const p=c.shareholders[i];
+  p[f]= f==='amount' ? (+v||0) : v;
+  const tot=c.shareholders.reduce((s,x)=>s+(+x.amount||0),0);
+  if(tot) c.shareholders.forEach(x=>x.pct=+(x.amount*100/tot).toFixed(1));
+  persist(); renderCo();
+}
+function shDel(i){ curCo().shareholders.splice(i,1); persist(); renderCo(); }
+function delCo(){
+  const c=curCo(); if(!c) return;
+  if(!confirm(`删除「${c.name}」？云端已传文件保留，仅移除记录。`)) return;
+  S.companies=S.companies.filter(x=>x.id!==c.id);
+  S.apps.forEach(a=>{ if(a.companyId===c.id) a.companyId=null; });
+  curCoId=null; persist(); renderCo();
+}
+function renderCoDocs(){
+  const c=curCo(); if(!c) return;
+  if(!c.docs) c.docs={};
+  const DOC_LIST=c.kind==='person'?PERSON_DOCS:CO_DOCS;
+  $('coDocs').innerHTML=DOC_LIST.map(([key,en,cn,exp])=>{
+    const d=c.docs[key]||{};
+    const chipBtn=d.mediaKey
+      ?`<button class="chip s1" onclick="viewFile('${d.mediaKey}','${jsq(d.fileName||'文件')}')">已收</button>`
+      :`<label class="chip s0" for="filePick" onclick="uploadDocKey='${key}';uploadScope='co'">缺</label>`;
+    return `<div class="doc" ondragover="event.preventDefault()" ondrop="docDrop(event,'${key}','co')">${chipBtn}
+      <div class="doc-body"><div class="doc-name">${en}</div><div class="doc-cn">${cn}</div>
+      <div class="doc-meta">
+        ${!d.mediaKey?`<label for="filePick" onclick="uploadDocKey='${key}';uploadScope='co'">上传</label>`:''}
+        ${d.mediaKey&&window._coEdit===c.id?`<a class="red" href="javascript:void(0)" onclick="delCoDoc('${key}')">删除</a>`:''}
+        ${d.mediaKey?`<a href="javascript:void(0)" onclick="viewFile('${d.mediaKey}','${jsq(d.fileName||'文件')}')" title="${esc(d.fileName||'')}">${esc(d.fileName||'查看')}</a>`:''}
+        ${d.srcPath?`<a href="javascript:void(0)" onclick="openSrcDir('${jsq(d.srcPath)}')" title="打开来源文件夹">${'📁'}</a>`:''}
+        ${docDate(d)?`<span class="muted" style="font-size:11px">传于 ${docDate(d)}</span>`:''}
+        ${exp?`到期 <input type="date" value="${d.expiry||''}" onchange="coDocSet('${key}','expiry',this.value)">`:''}
+      </div></div></div>`;
+  }).join('');
+}
+function coDocSet(k,f,v){ const c=curCo(); if(!c.docs)c.docs={}; c.docs[k]={...(c.docs[k]||{}),[f]:v}; persist(); }
+function delCoDoc(k){
+  const c=curCo(), d=(c.docs||{})[k];
+  if(!d||!d.mediaKey) return;
+  if(!confirm('删除已上传的文件「'+(d.fileName||'')+'」？删后需重新上传')) return;
+  delete c.docs[k]; persist(); renderCo(); toast('已删除，点「缺」重新上传');
+}
+function coSet(k,v){ const c=curCo(); c[k]=v; persist(); if(k==='name')renderAppSel(); }
+/* ================= 区域与坐标 ================= */
+function renderArea(){
+  const a=curApp(), c=$('areaCard');
+  if(!a){ c.innerHTML='<div class="empty">先建立申请</div>'; $('coordList').innerHTML=''; $('areaStats').innerHTML=''; return; }
+  const ar=a.area;
+  c.innerHTML=`<div class="row"><h2 style="flex:1">区域信息</h2>
+    <select style="max-width:130px" onchange="statusSet(this.value)" title="申请状态">
+      ${[['prep','准备中'],['submitted','已递交'],['paid','已缴费'],['granted','已获批'],['rejected','被拒'],['abandoned','放弃']].map(([v,t])=>`<option value="${v}" ${(a.status||'prep')===v?'selected':''}>${t}</option>`).join('')}
+    </select></div>
+    <label>区域/地块名称</label><input value="${esc(ar.name)}" onchange="aSet('name',this.value)">
+    <div class="row"><div style="flex:1"><label>省 Province</label><input value="${esc(ar.province)}" onchange="aSet('province',this.value)"></div>
+    <div style="flex:1"><label>县 District</label><input value="${esc(ar.district)}" onchange="aSet('district',this.value)"></div></div>
+    <label>酋长地/地主 Chief / Landowner</label><input value="${esc(ar.chief)}" onchange="aSet('chief',this.value)">
+    <div class="row"><div style="flex:1"><label>矿证面积 km²（会折算成地籍单位）</label><input type="number" step="0.01" value="${ar.km2||''}" onchange="aSet('km2',this.value?+this.value:null);if(this.value&&!ar.units){ar.units=Math.round(+this.value/3.34);}renderArea()"></div>
+    <div style="flex:1"><label>原矿证号（被取消的旧证）</label><input value="${esc(ar.prevLic||'')}" onchange="aSet('prevLic',this.value)" placeholder="例：12345-HQ-LEL"></div>
+    <div style="flex:1"><label>原证情况备注</label><input value="${esc(ar.prevNote||'')}" onchange="aSet('prevNote',this.value)" placeholder="例：2024 年因未缴费被注销"></div></div>
+    <label>矿种 Commodity（门户必选）</label><input value="${esc(a.commodity)}" onchange="appSet('commodity',this.value)">
+    <label>申请主体类型</label>
+    <select onchange="appSet('applicantKind',this.value)">
+      <option value="company" ${a.applicantKind==='company'?'selected':''}>公司</option>
+      <option value="person" ${a.applicantKind==='person'?'selected':''}>公民个人</option>
+      <option value="coop" ${a.applicantKind==='coop'?'selected':''}>合作社</option>
+    </select>
+    ${a.applicantKind!=='company'?`<label>申请人姓名 / 合作社名称</label><input value="${esc(a.applicantName||'')}" onchange="appSet('applicantName',this.value)">`:''}
+    <label>区域背景描述（AI 写报告的依据：矿化线索、地形交通、历史勘查、周边社区等）</label>
+    <textarea onchange="aSet('desc',this.value)" placeholder="例：区域位于绿片岩带边缘，地表见石英脉，沿走向断续出露约 2km；雨季部分低洼区积水；距最近公路 15km…">${esc(ar.desc||'')}</textarea>`;
+  renderCoords(); renderAreaStats();
+}
+function aSet(k,v){ curApp().area[k]=v; persist(); }
+function appSet(k,v){ curApp()[k]=v; persist(); renderAppSel(); }
+function parseCoord(s){
+  s=String(s||'').trim(); if(!s) return null;
+  let m=s.match(/^(-?\d+(?:\.\d+)?)\s*([NSEW])?$/i);
+  if(m){ const dec=parseFloat(m[1]); const h=(m[2]||'').toUpperCase();
+    const sec=Math.round(Math.abs(dec)*3600); return {dec: h==='S'||h==='W'?-Math.abs(dec):dec, totSec:sec, ok: sec%6===0, raw:s}; }
+  m=s.match(/(\d+)[°\s]+(\d+)?['\s]*(\d+(?:\.\d+)?)?["\s]*([NSEW])?/i);
+  if(m){ const d=+m[1]||0,mi=+m[2]||0,se=+m[3]||0,h=(m[4]||'').toUpperCase();
+    const totSec=d*3600+mi*60+se;
+    if(se%1!==0) return null;
+    const dec=totSec/3600*(h==='S'||h==='W'?-1:1);
+    return {dec, totSec, ok: se%6===0, raw:s, dms:`${d}°${mi}'${se}"${h}`}; }
+  return null;
+}
+function renderCoords(){
+  const a=curApp(), box=$('coordList'); if(!a){box.innerHTML='';return;}
+  box.innerHTML=a.area.coords.map((c,i)=>{
+    const p=parseCoord(c);
+    return `<div class="coord"><span class="muted" style="flex:0 0 20px">${i+1}</span>
+      <input value="${esc(c)}" onchange="coordSet(${i},this.value)">
+      ${c?(p?`<span class="muted" style="flex:0 0 auto;font-size:11px">${p.ok?'✓6″':'✗不能被6整除'}</span>`:'<span class="bad">无法解析</span>'):''}
+      <button class="del" onclick="coordDel(${i})">×</button></div>`;
+  }).join('')||'<div class="muted">还没有角点</div>';
+}
+function addCoord(){ curApp().area.coords.push(''); persist(); renderCoords(); }
+function coordSet(i,v){ curApp().area.coords[i]=v; persist(); renderCoords(); renderAreaStats(); }
+function coordDel(i){ curApp().area.coords.splice(i,1); persist(); renderCoords(); renderAreaStats(); }
+function pasteCoords(){
+  openSheet(`<h3>批量粘贴坐标</h3>
+    <div class="muted" style="margin-bottom:6px">每行一个点：纬度 经度（同一行用空格或逗号分隔），或一行一个坐标值。</div>
+    <textarea id="pcText" style="min-height:160px" placeholder="13°24'36&quot;S  27°45'00&quot;E&#10;13°24'36&quot;S  27°50'00&quot;E"></textarea>
+    <div class="btnrow"><button class="btn" onclick="doPasteCoords()">导入</button><button class="btn gray" onclick="closeSheet()">取消</button></div>`);
+}
+function doPasteCoords(){
+  const t=$('pcText').value, a=curApp(), pts=[];
+  for(const line of t.split('\n')){
+    const l=line.trim(); if(!l) continue;
+    // 尝试一行两个坐标：找 DMS 对或两个十进制数
+    const pair=l.match(/(\d+\s*°\s*\d+\s*['′]?\s*\d+(?:\.\d+)?\s*["″]?\s*[NS])\s*[,;\s]+\s*(\d+\s*°\s*\d+\s*['′]?\s*\d+(?:\.\d+)?\s*["″]?\s*[EW])/i)
+      || l.match(/(-?\d+\.\d+)\s*[,;\s]\s*(-?\d+\.\d+)/);
+    if(pair){ pts.push(pair[1].replace(/\s+/g,''), pair[2].replace(/\s+/g,'')); }
+    else if(l.split(/[,;\s]+/).length===1) pts.push(l);
+    else { const half=l.split(/[,;]\s*|\s{2,}/); half.forEach(h=>h.trim()&&pts.push(h.trim())); }
+  }
+  if(pts.length){ a.area.coords=a.area.coords.filter(c=>c.trim()).concat(pts); persist(); renderCoords(); renderAreaStats(); closeSheet(); toast(`导入 ${pts.length} 个坐标值`); }
+  else toast('没解析到坐标');
+}
+function onUnits(){ curApp().area.units=$('unitsInput').value?+$('unitsInput').value:null; persist(); }
+function gridUnits(){
+  const a=curApp(); if(!a) return null;
+  const lats=[],lons=[];
+  a.area.coords.forEach(c=>{ const p=parseCoord(c); if(p){ if(p.dec<0||/[sS]/.test(c)) lats.push(p.totSec); else lons.push(p.totSec); }});
+  // 纬度为负（南半球）；经度为正（东经）。若解析不出半球，按绝对值分：13°<lat<18°范围→纬，22°<lon<34°→经
+  if(!lats.length||!lons.length){
+    const vals=a.area.coords.map(parseCoord).filter(Boolean).map(p=>p.totSec);
+    vals.forEach(s=>{ const d=s/3600; if(d>=7&&d<=19) lats.push(s); else if(d>=21&&d<=35) lons.push(s); });
+  }
+  if(!lats.length||!lons.length) return null;
+  const uLat=Math.round((Math.max(...lats)-Math.min(...lats))/6);
+  const uLon=Math.round((Math.max(...lons)-Math.min(...lons))/6);
+  return {uLat,uLon,units:uLat*uLon||Math.max(uLat,uLon)};
+}
+function renderAreaStats(){
+  const a=curApp(), box=$('areaStats'); if(!a){box.innerHTML='';return;}
+  const g=gridUnits(), lic=LIC[a.type];
+  const units=a.area.units ?? g?.units ?? null;
+  $('unitsInput').value=a.area.units??'';
+  box.innerHTML=`
+    <div class="stat"><div class="v">${a.area.coords.filter(c=>c.trim()).length}</div><div class="k">坐标点</div></div>
+    <div class="stat"><div class="v">${units??'—'}</div><div class="k">地籍单位（${g?`网格估算 ${g.units}`:'手填'}）</div></div>
+    <div class="stat"><div class="v">${units?(units*UNIT_HA).toFixed(1)+' ha':'—'}</div><div class="k">面积（1 单位≈3.34 ha）</div></div>
+    <div class="stat"><div class="v" style="color:${units&&units>=lic.minU&&units<=lic.maxU?'var(--success)':'var(--danger)'}">${lic.minU}–${lic.maxU}</div><div class="k">${a.type} 允许范围（单位）</div></div>`;
+}
+
+/* ================= 审查 ================= */
+function runReview(){
+  const a=curApp(), box=$('reviewList'), vbox=$('verdict');
+  if(!a){ box.innerHTML='<div class="empty">先建立申请</div>'; vbox.innerHTML=''; return; }
+  const lic=LIC[a.type], co=appCo(a), defs=DOC_DEFS[a.type], out=[];
+  const push=(ok,lv,t,d)=>out.push({lv,t,d});
+  // 1. 必传文件（含公司档继承）
+  const req=defs.filter(d=>d[3]!=='C');
+  const missing=req.filter(d=>effDoc(a,d[0],d[3]).d.status<1);
+  const problematic=req.filter(d=>effDoc(a,d[0],d[3]).d.status===3);
+  push(0, missing.length?'fail':'ok','必传文件齐备',
+    missing.length?`缺 ${missing.length} 项：${missing.map(d=>d[1]).join('、')}`:`${req.length} 项必传文件均已收到`);
+  if(problematic.length) push(0,'warn','存在标记"问题"的文件', problematic.map(d=>d[1]).join('、'));
+  // 2. 税务清关证有效期
+  const tax=effDoc(a,'tax','A').d;
+  if(tax){ if(!tax.expiry) push(0,'warn','税务清关证未填到期日','门户要求 Valid TCC，递交前确认在有效期内');
+    else if(tax.expiry<new Date().toISOString().slice(0,10)) push(0,'fail','税务清关证已过期',`到期 ${tax.expiry}`);
+    else push(0,'ok','税务清关证有效',`到期 ${tax.expiry}`); }
+  // 3. 资格
+  if(a.type==='SEL'){
+    const zm=co?(co.shareholders||[]).filter(s=>/赞|zambia/i.test(s.nationality||'')).reduce((t,s)=>t+(+s.pct||0),0):0;
+    if(!co) push(0,'fail','赞比亚人持股 ≥5%（SEL 门槛）','未关联公司档案');
+    else if((co.shareholders||[]).length) push(0, Math.round(zm)>=5?'ok':'fail','赞比亚人持股 ≥5%（SEL 门槛）',`当前赞方持股 ${Math.round(zm)}%：${co.shareholders.map(s=>s.name+' '+Math.round(s.pct)+'%').join('，')}`);
+    else if(co.profile&&co.profile.hasNrc) push(0,'warn','赞比亚人持股 ≥5%（SEL 门槛）','文件识别到 NRC/赞方材料，请人工确认持股比例 ≥5%');
+    else push(0,'fail','赞比亚人持股 ≥5%（SEL 门槛）','未识别到股东结构，上传 PACRA/股东文件后点「解析全部文件」');
+  }
+  if(a.type==='AMR'){
+    push(0, a.applicantKind!=='company'?'ok':'fail','AMR 仅限公民个人/纯公民合作社',
+      a.applicantKind==='company'?'当前主体为公司，按 2024 年新法不能持有手工采矿权':(a.applicantKind==='coop'?'合作社主体':'公民个人主体'));
+  }
+  // 3.5 面积-证型规则：≤10 km² 只能小型勘探证，>10 只能大型
+  if(a.area.km2&&['SEL','LEL'].includes(a.type)){
+    const want=typeForKm2(a.area.km2);
+    push(0, a.type===want?'ok':'fail','证型-面积匹配（≤10 km² 小证，>10 大证）',
+      a.type===want?`${a.area.km2} km² → ${LIC[want].name}`:`${a.area.km2} km² 应为 ${LIC[want].name}，当前选了 ${LIC[a.type].name}`);
+  }
+  // 4. 矿种
+  push(0, a.commodity?'ok':'fail','矿种 Commodity', a.commodity||'门户必选，未填');
+  if(a.commodity && RADIO_RE.test(a.commodity) && a.type!=='LEL')
+    push(0,'fail','放射性矿种限制','放射性矿产不得申请小规模/手工矿权，只能走大型勘探证');
+  // 4.5 获批矿权 ≤5（申请不限，获批数由人工维护：已批 − 被拒 − 放弃不缴费）
+  if(a.applicantKind==='company' && co){
+    const ext=+co.heldLicences||0, granted=S.apps.filter(x=>x.companyId===co.id&&x.status==='granted').length, held=ext+granted,
+      inProg=S.apps.filter(x=>x.companyId===co.id&&!['rejected','abandoned','granted'].includes(x.status)).length;
+    push(0, held>=5?'fail':held===4?'warn':'ok','同一主体获批矿权 ≤5 个',
+      `${co.name}：已获批 ${held} 个（存量 ${ext} + 本工具获批 ${granted}）${held>=5?'，已达上限，本申请获批将超额':held===4?'，仅剩 1 个获批额度':''}；在办 ${inProg} 个（不限）`);
+  }else if(a.applicantKind!=='company'){
+    const same=x=>x.applicantKind===a.applicantKind&&x.applicantName&&x.applicantName===a.applicantName;
+    const granted=S.apps.filter(x=>same(x)&&x.status==='granted').length,
+      inProg=S.apps.filter(x=>same(x)&&!['rejected','abandoned','granted'].includes(x.status)).length;
+    push(0, !a.applicantName?'warn':granted>=5?'fail':granted===4?'warn':'na','同一主体获批矿权 ≤5 个',
+      a.applicantName?`${a.applicantName}：本工具内已获批 ${granted} 个、在办 ${inProg} 个；工具外已获批数请手动核对，合计超 5 则本申请不可获批`:'未填申请人姓名，无法核对同主体数量');
+  }
+  // 5. 坐标
+  const pts=a.area.coords.filter(c=>c.trim());
+  if(pts.length<3) push(0,'fail','坐标角点数量',`只有 ${pts.length} 个，至少 3 个角点（门户要求闭合地块）`);
+  else{
+    const bad=pts.map((c,i)=>({c,i,p:parseCoord(c)})).filter(x=>!x.p||!x.p.ok);
+    push(0, bad.length?'fail':'ok','坐标格式（纬度/经度，秒÷6，Arc1950）',
+      bad.length?`第 ${bad.map(x=>x.i+1).join('、')} 点不合规（无法解析或秒不能被 6 整除）`:`${pts.length} 个点均可解析且秒数合规；请确认数据为 GCS_Arc1950 基准`);
+  }
+  const g=gridUnits(), units=a.area.units??g?.units??null;
+  if(units==null) push(0,'warn','地籍单位数','未能从坐标算出，请手填实际单位数');
+  else push(0, units>=lic.minU&&units<=lic.maxU?'ok':'fail','面积范围',
+    `${units} 单位 ≈ ${(units*UNIT_HA).toFixed(1)} ha；${a.type} 要求 ${lic.minU}–${lic.maxU} 单位`);
+  push(0,'warn','地块不重叠/不跨网格线','本工具无法查重叠——递交前在 Mining Cadastre Map 上核实，系统验证时也会自动检查');
+  // 6. 支持性文件文稿
+  const genKeys=req.map(d=>d[5]).filter(Boolean);
+  const genMissing=genKeys.filter(k=>!(a.drafts[k]||'').trim());
+  push(0, genMissing.length?'warn':'ok','支持性文件文稿已起草',
+    genMissing.length?`未起草：${genMissing.join('、')}（到「编写」页生成）`:'均已起草并存入申请');
+  // 7. 费用
+  push(0,'na','申请费参考',`${a.type} 申请费 K${lic.fee}（另加按 ha 计的年面积费，缴费后才锁定地块）`);
+  push(0,'na','有效期',`${lic.valid}`);
+  // 渲染
+  box.innerHTML=out.map(x=>`<div class="chk"><div class="chk-ic ${x.lv}">${x.lv==='ok'?'✓':x.lv==='fail'?'✕':x.lv==='warn'?'!':'i'}</div>
+    <div><div class="chk-t">${x.t}</div><div class="chk-d">${esc(x.d)}</div></div></div>`).join('');
+  const fails=out.filter(x=>x.lv==='fail').length, warns=out.filter(x=>x.lv==='warn').length;
+  vbox.innerHTML=`<div class="verdict ${fails?'fail':warns?'warn':'ok'}">${fails?`不可递交：${fails} 项未通过`:warns?`可递交但请处理 ${warns} 项提醒`:'全部通过，可递交'}</div>`;
+}
+
+/* ================= 支持性文件编写 ================= */
+const GEN_DOCS={
+  form:{name:'Application Form I — Information Sheet',cn:'Form I 申请信息页（辅助填官方表）'},
+  prog:{name:'Proposed Programme of Exploration Operations',cn:'勘探工作计划'},
+  progm:{name:'Proposed Programme of Mining Operations',cn:'采矿作业计划'},
+  env:{name:'Environmental Commitment Plan',cn:'环境承诺计划'},
+  emp:{name:'Proposals for Employment and Training of Citizens of Zambia',cn:'公民雇用与培训方案'},
+  local:{name:'Proposals for Promotion of Local Business Development',cn:'本地商业促进方案'},
+};
+function renderGen(){
+  const a=curApp(), sel=$('genSel'), box=$('genParams');
+  const keys=Object.keys(GEN_DOCS).filter(k=>!a||k!=='progm'||a.type==='AMR').filter(k=>!a||k!=='prog'||a.type!=='AMR');
+  sel.innerHTML=keys.map(k=>`<option value="${k}">${GEN_DOCS[k].cn}（${GEN_DOCS[k].name}）</option>`).join('');
+  const p=a?a.params:{};
+  box.innerHTML=`
+    <div class="row"><div style="flex:1"><label>承诺投资额（ZMW）</label><input id="gpInvest" value="${esc(p.investZmw||p.investUsd||'')}" onchange="pSave('investZmw',this.value)"></div>
+    <div style="flex:1"><label>计划年限</label><input id="gpYears" value="${esc(p.years||'4')}" onchange="pSave('years',this.value)"></div></div>
+    <div class="row"><div style="flex:1"><label>拟雇人数</label><input id="gpStaff" value="${esc(p.staff||'')}" onchange="pSave('staff',this.value)"></div>
+    <div style="flex:1"><label>其中赞比亚公民 %</label><input id="gpCit" value="${esc(p.citizenPct||'90')}" onchange="pSave('citizenPct',this.value)"></div>
+    <div style="flex:1"><label>计划钻探进尺（m）</label><input id="gpDrill" value="${esc(p.drillM||'1500')}" onchange="pSave('drillM',this.value)"></div></div>
+    <label>工作阶段/方法说明（逗号分隔，可留空用默认）</label><input id="gpPhases" value="${esc(p.phases||'')}" onchange="pSave('phases',this.value)" placeholder="desk study, geological mapping, soil sampling, trenching, drilling">
+    <label>本地商业承诺要点（可留空）</label><input id="gpLocal" value="${esc(p.localNote||'')}" onchange="pSave('localNote',this.value)">`;
+  $('genOut').value=a?(a.drafts[sel.value]||''):'';
+  $('genVia').textContent='';
+  $('progPdfBtn').style.display=DOC_PDF[sel.value]?'':'none';
+}
+function pSave(k,v){ const a=curApp(); if(!a)return; a.params[k]=v; persist(); }
+function genCtx(){
+  const a=curApp(), co=appCo(a), lic=a?LIC[a.type]:null;
+  const units=a?(a.area.units??gridUnits()?.units??null):null;
+  return {a,co,lic,units,
+    coName:co?co.name:(a?.applicantName||'[Applicant Name]'),
+    regNo:co?co.regNo||'[PACRA No.]':'', coAddr:co?co.address||'[Registered Office]':'',
+    licEn:lic?lic.en:'',
+    areaName:a?.area.name||'[Area Name]', prov:a?.area.province||'[Province]', dist:a?.area.district||'[District]', locRaw:a?.area.locRaw||'',
+    commodity:a?.commodity||'[Commodity]', desc:a?.area.desc||'',
+    prevLic:a?.area.prevLic||'', prevNote:a?.area.prevNote||'', brief:a?.brief||'',
+    coordsTxt:a&&a.area.coords.filter(c=>c.trim()).length?a.area.coords.filter(c=>c.trim()).join(' ; '):'[coordinates]',
+    areaTxt:a?.area.km2?`approx. ${a.area.km2} km² (≈ ${(a.area.km2*100).toFixed(0)} hectares, ${units||Math.round(a.area.km2/UNIT_HA)} cadastre units)`:(units?`${units} cadastre units (approx. ${(units*UNIT_HA).toFixed(0)} hectares)`:'[area]'),
+    invest:a?.params.investZmw||a?.params.investUsd||'[amount]',years:a?.params.years||'4',staff:a?.params.staff||'[number]',cit:a?.params.citizenPct||'90',
+    drill:a?.params.drillM||'1,500', ha:a?.area.km2?(a.area.km2*100).toFixed(0):null};
+}
+function tpl(key){
+  const x=genCtx(), D=new Date().toISOString().slice(0,10);
+  if(key==='form') return `FORM I — APPLICATION INFORMATION SHEET
+(for transfer to the official prescribed form)
+
+Applicant: ${x.coName}
+${x.regNo?`PACRA Registration No.: ${x.regNo}\n`:''}${x.coAddr?`Registered Office: ${x.coAddr}\n`:''}Licence type applied for: ${x.licEn}
+Commodity/ies applied for: ${x.commodity}
+
+AREA APPLIED FOR
+Area name: ${x.areaName}
+District / Province: ${x.dist} / ${x.prov}
+Chief / Landowner: ${x.a?.area.chief||'—'}
+Size: ${x.areaTxt}
+Coordinate datum: GCS Arc 1950
+Corner coordinates:
+${x.coordsTxt}
+
+DECLARATION
+The applicant confirms that the information given herein is correct, that the area applied for does not overlap an existing mining right or mineral processing licence, and that the applicant has the financial resources and technical ability to carry out the proposed programme.
+
+Name: ____________________  Title: ____________________
+Signature: ____________________  Date: ${D}`;
+  if(key==='prog'){
+    const inv=parseFloat(String(x.invest).replace(/[^\d.]/g,''))||0;
+    const fmt=n=>'ZMW '+Math.round(n).toLocaleString('en-US');
+    const parts=inv?[.20,.25,.35,.12,.08].map(p=>fmt(inv*p)):Array(5).fill('ZMW ____________');
+    const tot=inv?fmt(inv):'ZMW ____________';
+    return `PROPOSED PROGRAMME OF EXPLORATION OPERATIONS
+${x.coName}
+Date: ${D}
+
+1. PROJECT BASIC INFORMATION
+- Applicant Name: ${x.coName}
+- Licence Area Location: ${x.locRaw||(`${x.dist} District, ${x.prov} Province`)}, Zambia
+- Target Commodity: ${x.commodity}
+- Applied Area: ${x.ha?x.ha+' hectares ('+x.a.area.km2+' km²)':x.areaTxt}
+- Exploration Period: ${x.years} years
+- Estimated Total Investment: ${tot}
+
+2. PHASED EXPLORATION PROGRAMME
+Year 1 — Desktop Study & Surface Mapping
+- Desktop work: collection and review of historical geological data; interpretation of satellite imagery (e.g. Sentinel-2) and regional aeromagnetic data.
+- Survey: high-precision UAV topographic mapping of the licence area; establishment of QGIS base layers.
+- Surface sampling: traverse geological surveys; grid soil and rock-outcrop sampling; preliminary assays by handheld XRF; delineation of anomalous target zones.
+
+Year 2 — Trenching, Pitting & Detailed Sampling
+- Trenching and pitting: excavation of trenches and shallow pits within the core target zones defined in Year 1, using excavators (e.g. JCB 3DX), to expose near-surface mineralised bodies.
+- Systematic sampling: channel sampling in trenches and pits; samples assayed by an accredited third-party laboratory.
+- Detailed mapping: production of detailed 1:2,000 or 1:5,000 scale geological maps of the licence area.
+
+Year 3 — Drilling Programme
+- Drilling: reverse circulation (RC) and/or diamond core drilling on high-grade targets; planned first-phase drilling of approximately ${x.drill} metres.
+- Data modelling: collation of drill-core data; updating of the geological database; preliminary 3D modelling of the mineralised bodies to establish strike and depth.
+
+Year 4 — Resource Estimation & Pre-Feasibility Study
+- Bulk sampling and metallurgical testing: extraction of large-volume bulk samples; preliminary beneficiation tests (physical gravity separation, e.g. jigs and shaking tables, or hydrometallurgical leaching) to determine ore recoverability.
+- Resource estimation: integration of all exploration data to produce a preliminary mineral resource estimate report.
+- Preparation for mining licence: completion of a Pre-Feasibility Study (PFS) and baseline data collection for the Environmental Impact Study (EIS), in preparation for a Mining Licence application.
+
+3. ESTIMATED EXPENDITURE
+Stage          Main activities                                             Estimated expenditure
+Year 1         Satellite data, GIS survey, geological traversing, XRF assays   ${parts[0]}
+Year 2         Trenching, pitting, third-party laboratory assaying             ${parts[1]}
+Year 3         Drilling contract and operations, camp construction/maintenance ${parts[2]}
+Year 4         Metallurgical tests, 3D modelling, resource estimate report     ${parts[3]}
+Other          Environmental measures, community relations, Zambian staff training, administration   ${parts[4]}
+TOTAL          Total committed investment over ${x.years} years                 ${tot}
+
+4. ENVIRONMENTAL & COMPLIANCE STATEMENT
+- The Company undertakes that, upon completion of all trenching and drilling works, all sites will be backfilled and revegetated in strict compliance with the requirements of the Zambia Environmental Management Agency (ZEMA).
+- During exploration operations, priority will be given to employing members of the local community for line-cutting, sampling and camp support, ensuring a positive economic impact on surrounding communities.`;
+  }
+  if(key==='progm') return `PROPOSED PROGRAMME OF MINING OPERATIONS
+${x.coName}
+Application for an Artisanal Mining Right — ${x.areaName}, ${x.dist} District, ${x.prov} Province, Zambia
+Date: ${D}
+
+1. INTRODUCTION
+This programme sets out the intended artisanal mining operations for ${x.commodity} over an area of ${x.areaTxt}.
+
+2. CONSERVATION AND USE OF MINERAL RESOURCES
+Mining will be carried out in an orderly manner so as to ensure the proper conservation and use of mineral resources in the national interest. Overburden and ore will be handled separately; no mineralised material will be selectively high-graded or wasted.
+
+3. MINING METHOD
+Open-cast/pit mining by hand and light equipment. Excavation will proceed in benches; pit depth will be limited for safety. Ore will be sorted, bagged and sold to licensed mineral traders/processors.
+
+4. WORK SCHEDULE AND EXPENDITURE
+Estimated investment of US$${x.invest} over the 2-year licence period covering tools, safety equipment, site works and rehabilitation.
+
+5. SAFETY
+Pit edges will be demarcated; workers will be provided with basic PPE (helmets, gloves, boots); no work will be conducted during heavy rain in unstable ground.
+
+6. ENVIRONMENTAL PROTECTION
+Operations will comply with the attached Environmental Commitment Plan including progressive backfilling and rehabilitation of worked-out pits.
+
+Signed: ____________________  Date: ${D}`;
+  if(key==='env') return `ENVIRONMENTAL COMMITMENT PLAN
+${x.coName} — ${x.areaName}, ${x.dist} District, ${x.prov} Province, Zambia
+Date: ${D}
+
+The Company commits to the following environmental protection measures for its operations at ${x.areaName}:
+
+1. PREVENTION OF POLLUTION
+- No discharge of chemicals, fuels or process water to soils or watercourses.
+- Fuel and lubricants stored in bunded containers on impermeable surfaces.
+- Machinery maintained to prevent oil leaks; spill kits kept on site.
+
+2. WASTE MANAGEMENT
+- Domestic and general waste collected and removed to an approved disposal site; no open burning.
+- Scrap and used oil returned to suppliers or licensed recyclers.
+
+3. PROTECTION OF LAND AND WATER RESOURCES
+- Clearing limited to the footprint of approved workings; topsoil stripped and stockpiled separately for reuse in rehabilitation.
+- Buffer maintained from rivers and streams; no washing of equipment or materials in watercourses.
+- Dust suppression on access tracks during dry season.
+
+4. RECLAMATION AND REHABILITATION
+- Progressive rehabilitation: worked-out pits/trenches backfilled, re-profiled and topsoiled.
+- Disturbed areas re-vegetated with local grass/tree species.
+- On closure, all structures and waste removed and the site left safe.
+
+5. MONITORING AND REPORTING
+- A responsible person designated for environmental compliance; site inspections each field campaign.
+- Any incident (spill, land damage) reported to ZEMA and the Mines Safety Department as required.
+
+Signed for and on behalf of ${x.coName}
+Name: ____________________  Title: ____________________  Signature: ____________________`;
+  if(key==='emp') return `PROPOSALS FOR EMPLOYMENT AND TRAINING OF CITIZENS OF ZAMBIA
+${x.coName} — ${x.areaName}
+Date: ${D}
+
+1. EMPLOYMENT
+The Company intends to employ approximately ${x.staff} persons during the licence period, of whom not less than ${x.cit}% will be citizens of Zambia. Preference will be given to residents of ${x.dist} District and surrounding chiefdoms.
+
+2. POSITIONS
+- Field supervisor / senior geologist (expatriate or citizen, as available)
+- Geological technicians and samplers (citizens)
+- Field assistants, drivers and camp staff (citizens, recruited locally)
+- Security and casual labour (citizens, recruited locally)
+
+3. TRAINING
+- On-the-job training in sampling, surveying, GPS use, XRF operation and safety procedures for citizen employees.
+- Skills transfer: Zambian technicians will work alongside senior staff with a view to assuming supervisory roles.
+- Basic literacy, health & safety and first-aid instruction provided at the start of each campaign.
+- The Company will support at least one citizen employee per year in further studies relevant to mining/geology where operations continue.
+
+4. COMPLIANCE
+Employment will comply with the Employment Code Act, 2019, including written contracts, minimum wages, and statutory contributions (NAPSA, workers' compensation).
+
+Signed: ____________________  Date: ${D}`;
+  if(key==='local') return `PROPOSALS FOR PROMOTION OF LOCAL BUSINESS DEVELOPMENT
+${x.coName} — ${x.areaName}
+Date: ${D}
+
+The Company commits to promoting local business development in the area of its operations as follows:
+
+1. LOCAL PROCUREMENT
+- Preference to suppliers and contractors based in ${x.dist} District / ${x.prov} Province for: camp catering and food supplies, vehicle hire and fuel, building materials, borehole/water services, security and general labour.
+- Where goods are unavailable locally, preference to Zambian-registered suppliers in provincial or national markets.
+
+2. LOCAL CONTRACTING
+- Trenching, pitting, road maintenance and camp construction will be tendered first to local contractors and registered cooperatives.
+- Drilling and specialist services contracted to Zambian-registered service companies where capacity exists.
+
+3. ENTERPRISE SUPPORT
+- Advance notice of procurement needs shared with local suppliers via the ward councillors and the district administration.
+- Where feasible, the Company will mentor local contractors on safety, quoting and record-keeping so they can take on larger scopes of work.
+
+4. COMMUNITY
+- Engagement with the local Chief and community leadership before field campaigns.
+- The Company will give first consideration to community-recommended casual workers and local service providers.
+
+Signed: ____________________  Date: ${D}`;
+  return '';
+}
+function genFromTemplate(){ $('genOut').value=tpl($('genSel').value); $('genVia').textContent='模板生成'; }
+const AI_SYS='You are a professional mining licence documentation writer familiar with Zambia\'s Minerals Regulation Commission requirements. Write formal English documents suitable for submission to the Zambia Ministry of Mines mining cadastre portal. Use clear numbered sections, be specific to the facts given, and keep it 400-800 words.';
+async function genAI(key){
+  const x=genCtx();
+  const prompt=`Draft the document "${GEN_DOCS[key].name}" for a mining rights application in Zambia.
+
+Facts:
+- Applicant/company: ${x.coName}${x.regNo?(' (PACRA '+x.regNo+')'):''}${x.coAddr?(', registered office: '+x.coAddr):''}
+- Licence type: ${x.licEn}
+- Area: ${x.areaName}, ${x.dist} District, ${x.prov} Province, Zambia${x.locRaw?(' (as provided: '+x.locRaw+')'):''}
+- Area size: ${x.areaTxt}
+- Commodity: ${x.commodity}
+- Committed investment: ZMW ${x.invest} over ${x.years} years
+- Planned employment: ${x.staff} persons, ≥${x.cit}% Zambian citizens
+${x.a.params.localNote?('- Local business notes: '+x.a.params.localNote):''}
+${x.a.params.phases?('- Work phases: '+x.a.params.phases):''}
+${x.a.area.chief?('- Chief/landowner: '+x.a.area.chief):''}
+${x.prevLic?('- This area was previously held under licence No. '+x.prevLic+(x.prevNote?' ('+x.prevNote+')':'')+'; the licence has been surrendered/cancelled and the area is now open. Where appropriate, mention prior work on the area.'):''}
+${x.desc?('- Area background (use this to make the document specific, do NOT copy it verbatim): '+x.desc):''}
+${x.brief?('- Applicant brief (use to tailor specifics, do NOT copy verbatim): '+x.brief):''}
+
+Requirements: official tone, numbered sections, include a signature block, tailor content to the area facts above (do not produce a generic boilerplate), comply with the document's purpose under the Mines and Minerals framework (environmental documents must cover pollution prevention, waste, land & water protection and reclamation).
+${key==='prog'?`Use EXACTLY this structure for the Proposed Programme of Exploration Operations:
+1. PROJECT BASIC INFORMATION — applicant name, licence area location, target commodity, applied area in hectares, ${x.years}-year exploration period, estimated total investment in ZMW.
+2. PHASED EXPLORATION PROGRAMME — Year 1 Desktop Study & Surface Mapping (historical data, Sentinel-2/aeromagnetic interpretation, UAV topographic survey, QGIS base layers, traverse mapping, grid soil/rock sampling, handheld XRF, target delineation); Year 2 Trenching, Pitting & Detailed Sampling (excavators e.g. JCB 3DX, channel sampling to accredited labs, 1:2,000–1:5,000 mapping); Year 3 Drilling Programme (RC/diamond core drilling approx. ${x.drill} m, geological database and 3D model); Year 4 Resource Estimation & PFS (bulk sampling, gravity/leaching metallurgical tests, resource estimate report, PFS + EIS baseline for a future mining licence).
+3. ESTIMATED EXPENDITURE — a table in ZMW: Year 1-4 lines matching the phases above, an "Other" line (environmental measures, community relations, Zambian staff training, administration), and a TOTAL line equal to the committed investment.
+4. ENVIRONMENTAL & COMPLIANCE STATEMENT — commitment to backfill and revegetate all trench/drill sites per ZEMA requirements, and priority employment of local community members.`:''}`;
+  const r=await api({action:'draft',prompt,system:AI_SYS});
+  if(r&&r.ok&&r.text) return r.text;
+  return tpl(key); // AI 不可用回退模板
+}
+async function genFromAI(){
+  const key=$('genSel').value;
+  if(!curApp()) return toast('先建立申请');
+  $('aiBtn').disabled=true; $('aiBtn').textContent='编写中…'; $('genVia').textContent='';
+  try{ $('genOut').value=await genAI(key); $('genVia').textContent='AI'; }
+  catch(e){ $('genOut').value=tpl(key); $('genVia').textContent='AI 失败，已用模板'; }
+  $('aiBtn').disabled=false; $('aiBtn').textContent='AI 编写';
+}
+function saveDraft(){ const a=curApp(); if(!a)return toast('先建立申请'); a.drafts[$('genSel').value]=$('genOut').value; persist(); toast('已存入申请'); }
+// 清单行「✍️编写」→ 跳到编写页并选中对应文件
+function jumpWrite(genKey){
+  const tb=document.querySelector('.tab[data-p="p-write"]'); if(tb) go(tb);
+  const a=curApp(); renderGen(); $('genSel').value=genKey;
+  $('genOut').value=a?(a.drafts[genKey]||''):''; $('genVia').textContent='';
+}
+
+/* ================= 申请说明粘贴 → AI 解析/批量生成 ================= */
+function saveBrief(v){ const a=curApp(); if(!a) return; a.brief=v; persist(); }
+async function parseBrief(){
+  const a=curApp(); if(!a) return toast('先建立申请');
+  const t=(a.brief||'').trim(); if(!t) return toast('先粘贴说明文字');
+  const bb=$('briefBtn'); if(bb){bb.disabled=true; bb.textContent='解析中…';}
+  try{
+    const prompt=`Extract mining licence application facts from the brief below. Reply with STRICT JSON ONLY (no prose), keys:
+{"label":"application/area short name","commodity":"","areaName":"","province":"","district":"","chief":"","investUsd":"","years":"","staff":"","citizenPct":"","prevLic":"previous licence number if mentioned","prevNote":"","desc":"1-2 sentence English background of the area/application","phases":"comma-separated work phases","localNote":""}
+Leave keys empty if not stated. Brief:\n${t}`;
+    const r=await api({action:'draft',prompt,system:'You output only valid JSON.'});
+    const txt=(r&&r.text)||'';
+    const jm=txt.match(/\{[\s\S]*\}/);
+    if(!jm) throw new Error('AI 未返回 JSON');
+    const f=JSON.parse(jm[0]); const ar=a.area, pr=a.params;
+    if(f.label) a.label=f.label;
+    if(f.commodity) a.commodity=f.commodity;
+    if(f.areaName) ar.name=f.areaName;
+    if(f.province) ar.province=f.province;
+    if(f.district) ar.district=f.district;
+    if(f.chief) ar.chief=f.chief;
+    if(f.prevLic) ar.prevLic=f.prevLic;
+    if(f.prevNote) ar.prevNote=f.prevNote;
+    if(f.desc) ar.desc=f.desc;
+    if(f.investUsd) pr.investUsd=String(f.investUsd).replace(/[^\d.]/g,'');
+    if(f.years) pr.years=String(f.years).replace(/[^\d.]/g,'');
+    if(f.staff) pr.staff=String(f.staff).replace(/[^\d]/g,'');
+    if(f.citizenPct) pr.citizenPct=String(f.citizenPct).replace(/[^\d.]/g,'');
+    if(f.phases) pr.phases=f.phases;
+    if(f.localNote) pr.localNote=f.localNote;
+    persist(); renderAll();
+    toast('已解析并填入申请：'+[f.label&&'名称',f.commodity&&'矿种',f.areaName&&'地块',f.province&&'省份',f.investUsd&&'投资额',f.staff&&'人数',f.prevLic&&'原证号'].filter(Boolean).join('、'));
+  }catch(e){ toast('解析失败：'+e.message); }
+  if(bb){bb.disabled=false; bb.textContent='AI 解析要点';}
+}
+// 一键生成该证型全部 B 类支持性文件 → 存入 drafts（生成后可去「编写」页逐份润色）
+async function genAllDocs(){
+  const a=curApp(); if(!a) return toast('先建立申请');
+  const keys=(DOC_DEFS[a.type]||[]).map(d=>d[5]).filter(Boolean);
+  if(!keys.length) return toast('本证型没有可生成文件');
+  $('genAllBtn').disabled=true;
+  for(const k of keys){
+    $('genAllBtn').textContent=`生成中 ${GEN_DOCS[k].cn}…`;
+    try{ a.drafts[k]=await genAI(k); }catch(e){ a.drafts[k]=a.drafts[k]||tpl(k); }
+    persist(); renderDocs();
+  }
+  $('genAllBtn').disabled=false; $('genAllBtn').textContent='AI 生成全部支持性文件';
+  toast('B 类文件已全部生成，到「编写」页逐份核对润色');
+}
+function copyDraft(){ navigator.clipboard.writeText($('genOut').value).then(()=>toast('已复制')); }
+function printDraft(){
+  const key=$('genSel').value, text=$('genOut').value;
+  if(!text.trim()) return toast('文稿为空');
+  const w=window.open('','_blank');
+  if(!w) return toast('浏览器拦截了弹窗，请允许弹窗后重试');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(GEN_DOCS[key].name)}</title>
+<style>@page{size:A4;margin:2.2cm 2.4cm}
+body{font-family:'Times New Roman',Georgia,serif;font-size:12pt;line-height:1.65;color:#000}
+pre{white-space:pre-wrap;word-wrap:break-word;font-family:inherit;font-size:12pt;margin:0}</style></head>
+<body><pre>${esc(text)}</pre><scr`+`ipt>window.onload=()=>setTimeout(()=>window.print(),300)</scr`+`ipt></body></html>`);
+  w.document.close();
+}
+/* ================= 递交包导出 ================= */
+// 极简文本→PDF（内置 Helvetica，不依赖外部库；官方文稿为英文，导出时剥离非 ASCII）
+function textToPdfBlob(text){
+  const clean=s=>String(s).replace(/[^\x20-\x7E]/g,' ').replace(/([\\()])/g,'\\$1');
+  const lines=String(text||'').split('\n');
+  const perPage=50, segs=[];
+  for(let i=0;i<lines.length;i+=perPage) segs.push(lines.slice(i,i+perPage));
+  if(!segs.length) segs.push(['']);
+  const contents=segs.map(seg=>{
+    let ops='BT /F1 11 Tf 56 792 Td 16 TL\n';
+    seg.forEach(l=>{ops+=`(${clean(l)}) Tj T*\n`;});
+    return ops+'ET';
+  });
+  const objs=[],kids=[];
+  objs[0]='<< /Type /Catalog /Pages 2 0 R >>';
+  objs[2]='<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>';
+  contents.forEach((ops,i)=>{
+    const pid=4+i*2, cid=5+i*2;
+    kids.push(`${pid} 0 R`);
+    objs[pid-1]=`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> /Contents ${cid} 0 R >>`;
+    objs[cid-1]=`<< /Length ${ops.length} >>\nstream\n${ops}\nendstream`;
+  });
+  objs[1]=`<< /Type /Pages /Kids [${kids.join(' ')}] /Count ${contents.length} >>`;
+  let pdf='%PDF-1.4\n'; const offs=[];
+  objs.forEach((o,i)=>{ offs.push(pdf.length); pdf+=`${i+1} 0 obj\n${o}\nendobj\n`; });
+  const xp=pdf.length;
+  pdf+=`xref\n0 ${objs.length+1}\n0000000000 65535 f \n`;
+  offs.forEach(o=>{pdf+=String(o).padStart(10,'0')+' 00000 n \n';});
+  pdf+=`trailer\n<< /Size ${objs.length+1} /Root 1 0 R >>\nstartxref\n${xp}\n%%EOF`;
+  return new Blob([pdf],{type:'application/pdf'});
+}
+function downloadBlob(blob,name){const el=document.createElement('a');el.href=URL.createObjectURL(blob);el.download=name;el.click();}
+
+/* ================= 迷你 PDF 排版引擎（PDF 核心14字体，零依赖）================= */
+// F1-4=Times系 F5-8=Helvetica系；文字宽度用 canvas measureText 估算（px→pt ×0.75）
+const PDF_XLAT={'\u2022':'225','\u2013':'226','\u2014':'227','\u2018':'221','\u2019':'222','\u201c':'223','\u201d':'224','\u00b0':'260','\u00b2':'262','\u00b3':'263','\u00d7':'327'};
+function pdfEsc(s){let out='';for(const ch of String(s)){const c=ch.codePointAt(0);
+  if(ch==='\\'||ch==='('||ch===')')out+='\\'+ch;
+  else if(c<128)out+=ch;
+  else if(PDF_XLAT[ch])out+='\\'+PDF_XLAT[ch];
+  else if(c<256)out+='\\'+c.toString(8).padStart(3,'0');
+  else out+='?';}return out;}
+const _mc=document.createElement('canvas').getContext('2d');
+const PDF_CSSF={times:'"Times New Roman"',helv:'Arial'};
+function pdfFontId(fam,st){return 'F'+((fam==='times'?0:4)+{'':1,B:2,I:3,BI:4}[st||'']);}
+function pdfTw(s,fam,st,sz){_mc.font=`${st.includes('I')?'italic ':''}${st.includes('B')?'bold ':''}${sz*4/3}px ${PDF_CSSF[fam]}`;return _mc.measureText(s).width*0.75;}
+function pdfDoc(){
+  const PW=595.28,PH=841.89,ML=62.4,MT=56.7,MB=62.4,W=PW-ML-62.4,pages=[];
+  const o={pages,W,PW,PH,ML,MT,MB,cur:null,y:MT,font:{fam:'times',st:'',sz:11},tc:[0,0,0],fc:[240,240,240],dc:[0,0,0]};
+  const rgb=c=>c.map(v=>(v/255).toFixed(3)).join(' ');
+  o.addPage=()=>{o.cur=[];pages.push(o.cur);o.y=MT;};
+  o.emit=s=>o.cur.push(s);
+  o.setFont=(fam,st,sz)=>{o.font={fam,st:st||'',sz};};
+  o.setTC=c=>o.tc=c;o.setFC=c=>o.fc=c;o.setDC=c=>o.dc=c;
+  o.tw=s=>pdfTw(s,o.font.fam,o.font.st,o.font.sz);
+  o.text=(x,yTop,s,al='l',w=0,tsp=0)=>{ // tsp=字距(pt)
+    let xx=x;
+    if(al!=='l'){const t=o.tw(s)+(String(s).length-1)*tsp;xx=al==='c'?x+(w-t)/2:x+w-t;}
+    o.emit(`BT /${pdfFontId(o.font.fam,o.font.st)} ${o.font.sz} Tf ${tsp?tsp.toFixed(2)+' Tc ':''}${rgb(o.tc)} rg ${xx.toFixed(2)} ${(PH-yTop-o.font.sz*0.82).toFixed(2)} Td (${pdfEsc(s)}) Tj ET`);};
+  o.line=(x1,y1,x2,y2)=>o.emit(`${rgb(o.dc)} RG ${x1.toFixed(2)} ${(PH-y1).toFixed(2)} m ${x2.toFixed(2)} ${(PH-y2).toFixed(2)} l S`);
+  o.rect=(x,yTop,w,h,mode='S')=>{const f=mode.includes('F')?rgb(o.fc)+' rg ':'';o.emit(`${f}${rgb(o.dc)} RG ${x.toFixed(2)} ${(PH-yTop-h).toFixed(2)} ${w.toFixed(2)} ${h.toFixed(2)} re ${mode==='F'?'f':mode==='FD'?'B':'S'}`);};
+  o.wrap=(txt,w)=>{const words=String(txt).split(/\s+/).filter(Boolean),lines=[];let cur='';
+    for(const wd of words){const t=cur?cur+' '+wd:wd;if(o.tw(t)<=w-2)cur=t;else{if(cur)lines.push(cur);cur=wd;}}
+    if(cur)lines.push(cur);return lines.length?lines:[''];};
+  o.mc=(x,w,txt,lh,align='J')=>{const lines=o.wrap(txt,w);let yy=o.y;
+    for(const ln of lines){o.text(x,yy,ln,align==='J'?'l':align.toLowerCase(),w);yy+=lh;}
+    o.y=yy;return lines.length*lh;};
+  o.need=h=>{if(o.y+h>PH-MB)o.addPage();};
+  o.output=(footerTxt)=>{
+    pages.forEach((pg,i)=>{o.cur=pg;o.setFont('times','I',9);o.tc=[120,120,120];
+      o.text(ML,PH-40,`${footerTxt}    |    Page ${i+1}`,'c',W);});
+    const FDEFS=['Times-Roman','Times-Bold','Times-Italic','Times-BoldItalic','Helvetica','Helvetica-Bold','Helvetica-Oblique','Helvetica-BoldOblique'];
+    const objs=[],kids=[];
+    objs[0]='<< /Type /Catalog /Pages 2 0 R >>';
+    FDEFS.forEach((f,i)=>objs[2+i]=`<< /Type /Font /Subtype /Type1 /BaseFont /${f} /Encoding /WinAnsiEncoding >>`);
+    const FR=FDEFS.map((f,i)=>`/F${i+1} ${3+i} 0 R`).join(' ');
+    pages.forEach((pg,i)=>{
+      const pid=11+i*2,cid=12+i*2;kids.push(`${pid} 0 R`);
+      const ops=pg.join('\n');
+      objs[pid-1]=`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${PW} ${PH}] /Resources << /Font << ${FR} >> >> /Contents ${cid} 0 R >>`;
+      objs[cid-1]=`<< /Length ${ops.length} >>\nstream\n${ops}\nendstream`;
+    });
+    objs[1]=`<< /Type /Pages /Kids [${kids.join(' ')}] /Count ${pages.length} >>`;
+    let pdf='%PDF-1.4\n';const offs=[];
+    objs.forEach((ob,i)=>{offs.push(pdf.length);pdf+=`${i+1} 0 obj\n${ob}\nendobj\n`;});
+    const xp=pdf.length;
+    pdf+=`xref\n0 ${objs.length+1}\n0000000000 65535 f \n`;
+    offs.forEach(x=>{pdf+=String(x).padStart(10,'0')+' 00000 n \n';});
+    pdf+=`trailer\n<< /Size ${objs.length+1} /Root 1 0 R >>\nstartxref\n${xp}\n%%EOF`;
+    return new Blob([pdf],{type:'application/pdf'});
+  };
+  return o;
+}
+/* ================= 勘探工作计划正式 PDF（与 make_prog_pdf.py 同版式）================= */
+const PROG_STYLES=[
+  {name:'classic',font:'times',accent:[0,0,0],sec:'line',hdr:[240,240,240],dot:true},
+  {name:'navy',font:'helv',accent:[31,78,121],sec:'band',hdr:[31,78,121],dot:false},
+  {name:'green',font:'times',accent:[0,90,50],sec:'left',hdr:[226,239,218],dot:true},
+  {name:'modern',font:'helv',accent:[84,44,90],sec:'line',hdr:[235,228,240],dot:false},
+];
+function progInvest(a){ // 证型+面积定区间，确定性抖动；手工填 investZmw 优先
+  const p=a.params.investZmw||a.params.investUsd;
+  if(p&&parseFloat(String(p).replace(/[^\d.]/g,''))) return parseFloat(String(p).replace(/[^\d.]/g,''));
+  const km2=a.area.km2||0;
+  const [lo,hi,span]=a.type==='LEL'?[5e6,1e7,2000]:a.type==='SEL'?[2e6,5e6,10]:[1e6,2e6,5];
+  const seed=parseInt(simpleHash((appCo(a)?.name||'')+ (a.area.locRaw||'')).slice(0,6),16);
+  const jit=(seed%21-10)/100;
+  return Math.round((lo+(hi-lo)*Math.min(Math.max(km2/span+jit,0),1))/5e4)*5e4;
+}
+function simpleHash(s){let h=0;for(const c of String(s))h=((h<<5)-h+c.charCodeAt(0))|0;return Math.abs(h).toString(16);}
+/* ===== 报告骨架：封面+目录+章节，所有正式版报告共用 ===== */
+function repShell(o,STY,secPages){
+  const F=STY.font,AC=STY.accent,W=o.W,ML=o.ML;
+  const R={o,W,ML,F,AC,STY};
+  R.sec=(num,txt)=>{secPages[num]=o.pages.length;o.need(50);o.y+=8;
+    o.setFont(F,'B',12);
+    if(STY.sec==='band'){o.setFC(AC);o.rect(ML,o.y,W,22,'F');o.setTC([255,255,255]);o.text(ML+6,o.y+4,`${num}.  ${txt}`);o.setTC([0,0,0]);o.y+=26;}
+    else if(STY.sec==='left'){o.setFC(AC);o.rect(ML,o.y,7,19,'F');o.setTC(AC);o.text(ML+12,o.y+4,`${num}.  ${txt}`);o.setTC([0,0,0]);o.y+=26;}
+    else{o.setTC(AC);o.text(ML,o.y,`${num}.  ${txt}`);o.setTC([0,0,0]);o.y+=20;o.setDC(AC);o.line(ML,o.y,ML+W,o.y);o.y+=6;}
+    o.y+=4;};
+  R.sub=(num,txt)=>{o.need(30);o.y+=4;o.setFont(F,'B',11);o.setTC(AC);o.text(ML,o.y,`${num}  ${txt}`);o.setTC([0,0,0]);o.y+=18;};
+  R.body=(t,ind=0)=>{o.setFont(F,'',11);o.mc(ML+ind,W-ind,t,15.7);o.y+=2;};
+  R.bullet=t=>{o.setFont(F,'',11);o.need(18);o.text(ML+16,o.y,'\u2022');o.mc(ML+28,W-28,t,15.7);o.y+=1.5;};
+  R.trow=(k,v,kw=158.7,vw=311.8)=>{ // 键值行：超宽自动折行扩格（行高取左右栏较大者）
+    o.setFont(F,'',10);
+    const h=Math.max(17,o.wrap(v,vw-10).length*13.4+5,o.wrap(k,kw-8).length*13.4+5);
+    o.need(h);
+    const y0=o.y;
+    o.rect(ML,y0,kw,h);o.setFont(F,'B',10);const yy0=o.y;o.y=y0+3.5;o.mc(ML+4,kw-8,k,13.4,'L');o.y=yy0;
+    o.rect(ML+kw,y0,vw,h);o.setFont(F,'',10);o.y=y0+3.5;o.mc(ML+kw+4,vw-8,v,13.4,'L');o.y=y0+h;};
+  R.grid=(heads,cw,rows,fs=9.5)=>{ // 通用多列表格：行高自适应
+    o.need(24);o.setFont(F,'B',10);
+    o.setFC(STY.hdr);o.setTC(STY.sec==='band'?[255,255,255]:[0,0,0]);
+    let x=ML;
+    heads.forEach((c,i)=>{o.rect(x,o.y,cw[i],20,'FD');o.text(x,o.y+6.5,c,'c',cw[i]);x+=cw[i];});
+    o.setTC([0,0,0]);o.y+=20;
+    rows.forEach(row=>{
+      o.setFont(F,'',fs);
+      const h=Math.max(17,...row.map((c,i)=>o.wrap(c,cw[i]-10).length*13.6+4));
+      o.need(h);
+      const y0=o.y;x=ML;
+      row.forEach((c,i)=>{
+        o.rect(x,y0,cw[i],h);
+        const yy=o.y;o.y=y0+3.5;o.mc(x+4,cw[i]-8,String(c),13.6,'L');o.y=yy;
+        x+=cw[i];});
+      o.y=y0+h;});};
+  R.cover=(title,coName,co,licEn,DATE)=>{
+    o.addPage();o.y+=132;
+    o.setFont(F,'B',17);o.setTC(AC);
+    title.split('|').forEach(l=>{o.text(ML,o.y,l,'c',W,0.6);o.y+=26;});
+    o.setTC([0,0,0]);o.y+=10;
+    o.setDC(AC);o.emit('0.9 w');o.line(168,o.y,427,o.y);o.emit('0.4 w');o.y+=30;
+    o.setFont(F,'B',13.5);o.text(ML,o.y,coName,'c',W,0.3);o.y+=26;
+    o.setFont(F,'',10.5);o.setTC([60,60,60]);
+    o.text(ML,o.y,`PACRA Registration No. ${co.regNo||''}`,'c',W);o.y+=19;
+    o.text(ML,o.y,co.address||'','c',W);o.setTC([0,0,0]);
+    o.y+=34;
+    o.setFont(F,'B',12);o.text(ML,o.y,`Application for a ${licEn}`,'c',W);o.y+=24;
+    o.setFont(F,'',11);o.setTC([60,60,60]);o.text(ML,o.y,DATE,'c',W);o.setTC([0,0,0]);
+    o.setFont(F,'I',9.5);o.setTC([130,130,130]);
+    o.text(ML,755,'Submitted to the Minerals Regulation Commission · Mining Cadastre, Republic of Zambia','c',W);
+    o.setTC([0,0,0]);};
+  R.toc=(SECTIONS,toc)=>{
+    o.addPage();o.setFont(F,'B',14);o.setTC(AC);o.text(ML,o.y,'CONTENTS');o.setTC([0,0,0]);o.y+=26;o.setDC(AC);o.line(ML,o.y,ML+W,o.y);o.y+=16;
+    SECTIONS.forEach((s,i)=>{
+      const pg=String(toc[i+1]||'');
+      o.setFont(F,'B',11);o.text(ML,o.y,`${i+1}.  ${s}`);
+      o.setFont(F,'',10.5);
+      const xw=o.tw(`${i+1}.  ${s}`)+8, dotw=o.tw('.');
+      const rest=ML+W-xw-2-o.tw(pg);
+      if(STY.dot)for(let dx=xw;dx<xw+rest;dx+=dotw)o.text(dx,o.y,'.');
+      o.text(ML+W-2,o.y,pg,'r',0);
+      o.y+=20;});
+    o.y+=10;o.setFont(F,'I',9.5);o.setTC([110,110,110]);
+    o.mc(ML,W,'This document forms part of the application for a mining right submitted to the Minerals Regulation Commission / Mining Cadastre, Republic of Zambia.',14);
+    o.setTC([0,0,0]);};
+  return R;
+}
+function reportBase(a){ // 公共上下文
+  const co=appCo(a)||{}, lic=LIC[a.type]||{};
+  return {co, lic,
+    coName:co.name||a.applicantName||'[Applicant]',
+    km2:a.area.km2||0, ha:Math.round((a.area.km2||0)*100),
+    loc:(a.area.locRaw||`${a.area.district||''} District, ${a.area.province||''} Province`),
+    commodity:a.commodity||'Copper', licEn:lic.en||'',
+    DATE:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'}),
+    zmw:n=>'ZMW '+Math.round(n).toLocaleString('en-US'),
+    STY:PROG_STYLES[parseInt(simpleHash(co.name||a.applicantName||'x').slice(0,4),16)%4]};
+}
+function progPdfBlob(a){
+  const B=reportBase(a),{co,coName,km2,ha,loc,commodity,licEn,DATE,zmw,STY}=B;
+  const invest=progInvest(a), years=+(a.params.years||4);
+  const rc=(a.params.drillRc||'2,000'), dd=(a.params.drillDd||'800');
+  const staff=a.params.staff||'26', cit=a.params.citizenPct||'92';
+  const SHARE=a.type==='LEL'?[.18,.27,.37,.12,.06]:a.type==='SEL'?[.20,.30,.34,.16]:[.45,.35,.20];
+  const BACT=[
+    'Remote sensing & structural interpretation, airborne geophysics reprocessing, regional mapping (1:20,000), first-pass soil geochemistry (400m x 100m grid), reconnaissance trenching',
+    'Infill soil sampling (100m x 50m), walk-mag and IP/resistivity ground geophysics, trenching & pitting, 1:2,000 mapping, accredited laboratory assaying',
+    `RC drilling (~${rc} m) and diamond core drilling (~${dd} m), downhole logging, camp construction and maintenance`,
+    'Bulk sampling & metallurgical tests, Leapfrog 3D resource modelling, mineral resource estimate report, PFS & EIS baseline studies',
+    'Environmental measures, community relations, Zambian staff training, administration and logistics'];
+  const BUDGET=BACT.slice(0,SHARE.length).map((t,i)=>[i<SHARE.length-1?`Year ${i+1}`:'Other',t,invest*SHARE[i]]);
+  const SECTIONS=['INTRODUCTION AND PROJECT OBJECTIVES','GEOLOGICAL SETTING AND EXPLORATION RATIONALE','PHASED EXPLORATION PROGRAMME','OPERATIONAL SCHEDULE AND SEASONAL WORK PLAN','ESTIMATED FINANCIAL INVESTMENT AND BUDGET BREAKDOWN','TECHNICAL MANAGEMENT AND OPERATIONAL TEAM','HEALTH, SAFETY, ENVIRONMENT AND COMMUNITY (HSEC) COMMITMENTS','STAGE-GATE GOVERNANCE AND GO/NO-GO DECISION THRESHOLDS'];
+  const secPages={};
+  function build(toc){
+    const o=pdfDoc(),{sec,sub,body,bullet,trow,grid,cover,toc:tocP,F,AC,W,ML}=repShell(o,STY,secPages);
+    cover('PROPOSED PROGRAMME OF|EXPLORATION OPERATIONS',coName,co,licEn,DATE);
+    if(toc) tocP(SECTIONS,toc);
+    o.addPage();
+    // ---- 1 ----
+    sec(1,SECTIONS[0]);
+    sub('1.1','Executive Summary');
+    body(`${coName} has formulated this ${years}-year Programme of Exploration Operations in support of an application for a ${licEn} covering approximately ${ha.toLocaleString('en-US')} hectares (${km2} km\xb2) in ${loc}, Zambia. The programme is designed around the exploration of ${commodity.toLowerCase()} mineralisation, and follows a systematic, phased de-risking methodology that progresses from low-impact regional screening techniques to focused geophysical and drill testing, maximising capital efficiency while minimising environmental disturbance.`);
+    sub('1.2','Scope and Objectives');
+    body('The technical and commercial objectives of this programme are to:');
+    bullet('Systematically de-risk the licence area through integrated remote sensing, reprocessed airborne geophysical data, and regional soil geochemical surveys.');
+    bullet('Define, rank and delineate structural and lithological copper targets using ground-based induced polarization (IP), magnetics, infill geochemistry and detailed mapping.');
+    bullet(`Execute a focused drilling campaign (approximately ${rc} m of Reverse Circulation and ${dd} m of Diamond Core drilling) to test depth continuity, thickness and grade of prioritised targets.`);
+    bullet('Establish an initial exploration target inventory compliant with recognised reporting standards, while maintaining the highest standards of Health, Safety, Environmental and Community (HSEC) stewardship and maximising local Zambian participation.');
+    sub('1.3','Tenure Information and Location');
+    body(`The licence area comprises approximately ${ha.toLocaleString('en-US')} hectares within ${loc}, Zambia. Access is via the national trunk road network with local access by secondary and tertiary unpaved roads. Topography across the area is characterised by undulating plateau terrain interspersed with dissected river valleys and seasonal miombo woodland cover.`);
+    sub('1.4','Project Summary');
+    trow('Applicant',coName);trow('PACRA Registration No.',co.regNo||'');
+    trow('Registered Office',co.address||'');trow('Licence Type Applied For',licEn);
+    trow('Licence Area Location',loc+', Zambia');trow('Target Commodity',commodity);
+    trow('Applied Area',`${ha.toLocaleString('en-US')} hectares (${km2} km\xb2)`);
+    trow('Exploration Period',`${years} years`);trow('Estimated Total Investment',zmw(invest));
+    trow('Planned Drilling',`approx. ${rc} m RC + ${dd} m diamond core`);
+    trow('Planned Employment',`approx. ${staff} persons, not less than ${cit}% Zambian citizens`);
+    // ---- 2 ----
+    sec(2,SECTIONS[1]);
+    sub('2.1','Regional Geological Framework');
+    body('The licence area occupies a critical geotectonic position within the Proterozoic architecture of Central and Northern Zambia. The regional geology is dominated by the northeast-trending Mesoproterozoic Irumide Belt (approximately 1.02-1.0 Ga), comprising deformed crystalline basement complexes, high-grade metasediments of the Muva Supergroup, and syn- to post-tectonic granitic to dioritic plutons, with margins adjacent to the Bangweulu Block and the northern Irumide foreland. Superimposed Pan-African structural corridors (Lufilian Arc foreland transfer zones) introduced crustal-scale shear systems, fluid circulation pathways and thermal overprints during the 550-500 Ma Pan-African orogenic cycle.');
+    sub('2.2','Local Geology and Mineralisation Model');
+    body('Locally, the licence footprint is expected to feature quartzites, pelitic to psammitic schists and amphibolites juxtaposed against gneissoid basement cores and altered intrusives. Ductile to brittle-ductile shear zones and cross-cutting northwest-to-northeast fault systems control the structural architecture and provided conduits for late hydrothermal fluids. The exploration model evaluates two complementary mineralisation styles: (1) structurally-controlled, shear-hosted hydrothermal copper in quartz-carbonate-sulphide veins and breccia matrices within high-strain zones; and (2) copper-iron associations of IOCG/metasomatic affinity along altered intrusive boundaries and regional fault intersections. Primary hypogene copper is anticipated as chalcopyrite and bornite, with supergene malachite, chrysocolla and azurite potential in the oxidised near-surface profile.');
+    sub('2.3','Exploration Rationale');
+    body(`Historical exploration across the district corridor focused largely on manganese and gemstones, leaving structurally controlled ${commodity.toLowerCase()} potential underexplored by modern geophysical and multi-element geochemical methods. The presence of regional-scale fault splays, amphibolitic rocks (efficient chemical traps for ${commodity.toLowerCase()}-bearing fluids) and proximity to deep crustal lineaments underscores the technical prospectivity of the ground. Systematic screening with modern geochemistry and targeted geophysics presents an outstanding discovery opportunity.`);
+    // ---- 3 ----
+    sec(3,SECTIONS[2]);
+    body('The exploration strategy follows a phased de-risking approach in which capital commitment scales proportionately with geoscientific confidence. Each stage has defined technical objectives that must be validated prior to initiating consecutive capital-intensive operations.');
+    const phases=[
+      ['3.1','Year 1 - Regional Screening, Geophysics and Baseline Geochemistry',[
+        'Satellite remote sensing: acquisition and multi-spectral processing of Sentinel-2 and Aster imagery to identify hydrothermally altered zones and structural lineaments.',
+        'Reprocessing of regional airborne magnetic and radiometric datasets to map basement fabrics, shear systems and potential intrusive contacts.',
+        'Regional geological mapping: field verification, regolith-landform mapping, structural measurements and lithological sampling at 1:20,000 scale.',
+        'First-pass regional soil geochemistry: systematic soil sampling on a 400 m line spacing with 100 m station intervals, assayed by handheld XRF and accredited laboratories.',
+        'UAV topographic survey and establishment of QGIS base layers.']],
+      ['3.2','Year 2 - Target Delineation, Trenching and Ground Geophysics',[
+        'High-density infill soil sampling: tightened grids of 100 m line spacing with 50 m station intervals over geochemical clusters identified in Year 1.',
+        'Trenching and pitting: excavation of trenches and shallow pits with excavators (e.g. JCB 3DX) over prioritised anomalies; systematic channel sampling.',
+        'Ground geophysical surveys: walk-mag profiling (50 m spacing) and induced polarization/resistivity surveys across anomalous zones to map chargeable sulphide bodies to ~200 m depth.',
+        'Detailed structural and alteration mapping at 1:2,000-1:5,000 scale to refine structural controls and kinematic indicators.']],
+      ['3.3','Year 3 - Subsurface Drill Testing',[
+        `Exploration drilling campaign of approximately ${(parseInt(rc.replace(/,/g,''))+parseInt(dd.replace(/,/g,''))).toLocaleString('en-US')} m across prioritised structural and IP-chargeability targets.`,
+        `Reverse Circulation (RC) drilling (~${rc} m): rapid initial testing of anomalous horizons and oxidised profiles to vertical depths of 80-120 m.`,
+        `Diamond Core (DD) drilling (~${dd} m): HQ/NQ core drilling to verify structural controls, mineralogy, downhole geometry and physical rock parameters of primary sulphide zones.`,
+        'Collation of drill-core data, updating of the geological database and preliminary 3D modelling of mineralised bodies.']],
+      ['3.4','Year 4 - Resource Estimation and Pre-Feasibility',[
+        'Integration of geochemical, geophysical and drilling datasets into a Leapfrog 3D environment to define a JORC-/NI 43-101-aligned exploration target inventory.',
+        'Bulk sampling and metallurgical testing (gravity separation and/or leaching) to determine ore recoverability.',
+        'Production of a preliminary mineral resource estimate report.',
+        'Completion of a Pre-Feasibility Study (PFS) and baseline data collection for the Environmental Impact Study (EIS), in preparation for a Mining Licence application.']]];
+    phases.forEach(([num,name,items])=>{o.need(70);sub(num,name);items.forEach(bullet);});
+    // ---- 4 ----
+    o.need(90);sec(4,SECTIONS[3]);
+    body('Exploration in Central and Northern Zambia is heavily affected by seasonal rainfall. Field schedules are structured to execute ground-intensive and earthmoving works during the dry and transitional seasons (April to November), while the peak wet season (December to March) is reserved for analytical processing, data synthesis, interpretation and subsequent programme planning.');
+    // ---- 5 预算表 ----
+    sec(5,SECTIONS[4]);
+    body(`The total ${years}-year financial commitment is ${zmw(invest)}. Expenditure scales progressively to match field activity intensity, and will be funded from the shareholders' committed capital contributions.`);
+    o.y+=3;
+    const cw=[62.4,300.7,107.4];
+    const hdr=(STY.sec==='band')?[255,255,255]:[0,0,0];
+    o.need(20);o.setFont(F,'B',10);o.setTC(hdr);o.setFC(STY.hdr);
+    let x=ML;['Stage','Main activities','Expenditure'].forEach((c,i)=>{o.rect(x,o.y,cw[i],20,'FD');o.text(x,o.y+6.5,c,'c',cw[i]);x+=cw[i];});
+    o.setTC([0,0,0]);o.y+=20;
+    BUDGET.forEach(([stage,act,amt])=>{
+      o.setFont(F,'',9.5);
+      const lines=o.wrap(act,cw[1]-10),h=Math.max(17,lines.length*13.6+4);
+      o.need(h);
+      const y0=o.y;
+      o.rect(ML,y0,cw[0],h);o.text(ML,y0+5.5,stage,'c',cw[0]);
+      o.rect(ML+cw[0],y0,cw[1],h);const yy=o.y;o.y=y0+4;o.mc(ML+cw[0]+5,cw[1]-10,act,13.6,'L');o.y=yy;
+      o.rect(ML+cw[0]+cw[1],y0,cw[2],h);o.text(ML+cw[0]+cw[1],y0+5.5,zmw(amt),'r',cw[2]-6);
+      o.y=y0+h;});
+    o.need(22);o.setFont(F,'B',10);
+    o.rect(ML,o.y,cw[0]+cw[1],19);o.text(ML+5,o.y+6,`TOTAL - committed investment over ${years} years`);
+    o.rect(ML+cw[0]+cw[1],o.y,cw[2],19);o.text(ML+cw[0]+cw[1],o.y+6,zmw(invest),'r',cw[2]-6);
+    o.y+=19+8;
+    // ---- 6 ----
+    sec(6,SECTIONS[5]);
+    body(`${coName} implements a lean, technically driven management structure. A qualified Project Geologist supervises all field operations, technical strategy and budget execution, reporting directly to the Board of Directors. The field organisation of approximately ${staff} persons will comprise:`);
+    bullet('Core technical team: project geologist, geological technicians, GIS/survey assistant.');
+    bullet('Field workforce: samplers, line-cutters, drill-site assistants, drivers and camp staff recruited locally.');
+    body(`Not less than ${cit}% of the workforce will be citizens of Zambia, with priority given to residents of the districts hosting the licence area. Skills transfer and safety induction will be provided to all citizen employees at the start of each field campaign.`);
+    // ---- 7 ----
+    sec(7,SECTIONS[6]);
+    body(`${coName} enforces a strict "Zero Harm" safety philosophy across all exploration operations, conducted in accordance with the Environmental Management Act No. 12 of 2011, the Mines and Minerals Development Act, and an approved Environmental Project Brief (EPB).`);
+    bullet('Upon completion of all trenching and drilling works, all sites will be backfilled and revegetated in strict compliance with Zambia Environmental Management Agency (ZEMA) requirements.');
+    bullet('Priority will be given to employing members of the local community for line-cutting, sampling and camp support, ensuring a positive economic impact on surrounding communities.');
+    bullet('All field work will be preceded by engagement with the local Chief and community leadership; any environmental incident will be reported to ZEMA and the Mines Safety Department as required.');
+    // ---- 8 ----
+    sec(8,SECTIONS[7]);
+    body('To ensure sound financial stewardship and avoid deploying high-cost drilling assets to low-potential targets, the Company employs a structured Stage-Gate decision framework at the conclusion of each operational year. Progression from one phase to the next is conditional upon the preceding phase meeting its defined technical criteria (e.g. drill testing proceeds only where coincident geochemical and geophysical anomalies are confirmed). This framework ensures capital is committed responsibly and exploration expenditure is governed by empirical geological data, operational transparency and strict statutory compliance.');
+    return o;
+  }
+  build(); // 第一遍取页码
+  const toc={};Object.keys(secPages).forEach(k=>toc[k]=secPages[k]+1);
+  const o=build(toc);
+  return o.output(`${coName} - Proposed Programme of Exploration Operations`);
+}
+/* ================= Environmental Commitment Plan 正式 PDF ================= */
+function envPdfBlob(a){
+  const B=reportBase(a),{co,coName,km2,ha,loc,commodity,licEn,DATE,STY}=B;
+  const SECTIONS=['EXECUTIVE SUMMARY AND POLICY STATEMENT','ANTICIPATED ENVIRONMENTAL IMPACTS','ENVIRONMENTAL MITIGATION AND MANAGEMENT MEASURES','WASTE MANAGEMENT PLAN','SITE REHABILITATION AND CLOSURE PLAN','HEALTH, SAFETY AND COMMUNITY RELATIONS'];
+  const MATRIX=[
+    ['Grid line cutting & camp clearing','Vegetation loss; habitat disturbance; soil exposure','Grid lines shall be cut to the minimum practical width; clearing restricted to the area immediately required for works; no felling within riparian zones; no burning of cleared vegetation on site.'],
+    ['Trenching & pitting','Topsoil loss; erosion; open excavation hazard to people and livestock','Topsoil shall be stripped and stockpiled separately from subsoil; open trenches demarcated with visible tape/fencing; trenches backfilled and re-contoured promptly after sampling is completed.'],
+    ['RC & diamond drilling','Drill mud spillage; noise; risk to groundwater','Drilling fluids contained in lined sumps or recirculated; only biodegradable additives used; all drill holes permanently capped within 7 days of completion; refuelling at least 50 m from watercourses.'],
+    ['Fuel & lubricant storage','Hydrocarbon spills; soil and groundwater contamination','All fuel and oil stored on spill trays or within bund walls of not less than 110% of container capacity; spill kits maintained at every storage and refuelling point; machinery inspected daily for leaks.'],
+    ['Camp operations','Sewage, greywater and litter','Pit latrines sited at least 100 m from any watercourse; greywater discharged to soakaway pits; no burning or unauthorised dumping of waste on site.'],
+    ['Vehicle movements','Dust generation; soil compaction; traffic hazards','Speed limits enforced on all access tracks; dust suppression applied near settlements during the dry season; vehicles confined to demarcated routes only.'],
+    ['Community interface','Land access; crop or property damage','Prior engagement with the local Chief and landholders before any entry; agreed access routes; lawful compensation paid for any damage to crops or property.'],
+  ];
+  const secPages={};
+  function build(toc){
+    const o=pdfDoc(),{sec,sub,body,bullet,trow,grid,cover,toc:tocP,F,AC}=repShell(o,STY,secPages);
+    cover('ENVIRONMENTAL COMMITMENT|PLAN',coName,co,licEn,DATE);
+    if(toc) tocP(SECTIONS,toc);
+    o.addPage();
+    // ---- 1 ----
+    sec(1,SECTIONS[0]);
+    body(`${coName} ("the Company") hereby presents this Environmental Commitment Plan in support of its application for a ${licEn} covering approximately ${ha.toLocaleString('en-US')} hectares (${km2} km\xb2) in ${loc}, Zambia. The planned ${commodity.toLowerCase()} exploration programme comprises remote sensing and geological mapping, soil geochemical sampling, mechanical trenching and pitting, Reverse Circulation (RC) and diamond core drilling, and the establishment of a temporary exploration camp. In accordance with ZEMA screening criteria, the anticipated environmental impact of these activities is assessed as low to moderate and is fully manageable through the measures set out in this Plan.`);
+    sub('1.1','Policy Statement');
+    body('The Company shall conduct all exploration activities in strict compliance with the Environmental Management Act No. 12 of 2011, the Mines and Minerals Development Act, the Water Resources Management Act, and all applicable regulations of the Zambia Environmental Management Agency (ZEMA), operating under an approved Environmental Project Brief (EPB).');
+    body('The Company is committed to sustainable exploration practice, the prevention of pollution at source, the progressive rehabilitation of all disturbed areas, and full respect for the customary rights and interests of local communities and traditional leadership.');
+    // ---- 2 ----
+    sec(2,SECTIONS[1]);
+    sub('2.1','Land and Vegetation');
+    body('Line cutting for geophysical and geochemical grids, trench and pit excavation, drill-pad construction and camp clearing will result in localised removal of vegetation cover and disturbance of topsoil within the licence area. The affected footprint will be kept to the minimum required for safe and effective operations.');
+    sub('2.2','Water and Soil');
+    body('Drilling muds and cuttings, accidental hydrocarbon leakage from machinery (excavators, drill rigs, generators and vehicles), and camp wastewater present a potential risk of soil and shallow groundwater contamination if not properly contained and managed.');
+    sub('2.3','Air and Noise');
+    body('Vehicle movement on unpaved tracks and earthmoving works will generate dust, while drilling rigs, generators and compressors will produce noise that may disturb nearby residents and wildlife during field seasons.');
+    sub('2.4','Waste Generation');
+    body('The programme will generate domestic refuse at the camp, used oils and filters from machinery servicing, scrap materials, drill cuttings and used sample packaging. In the absence of controls, such waste could accumulate and contaminate the site and surrounding areas.');
+    // ---- 3 矩阵 ----
+    sec(3,SECTIONS[2]);
+    body('The Company shall implement the mitigation and management measures set out in the matrix below. For every identified environmental aspect, a corresponding preventive or remedial control is defined and will be enforced by the site supervisor.');
+    o.y+=3;
+    grid(['Activity / Aspect','Potential Impact','Mitigation and Management Measure'],[118,140,212],MATRIX,9);
+    // ---- 4 ----
+    sec(4,SECTIONS[3]);
+    body('All waste generated during the exploration programme shall be segregated at source, securely stored, and disposed of only through lawful channels:');
+    bullet('Segregation at source. Waste shall be separated into general/domestic waste, recyclable materials, and hazardous waste (used engine oil, oil filters, batteries, contaminated rags and soil, and chemical containers).');
+    bullet('Storage. General waste shall be held in lidded bins; hazardous waste shall be stored in labelled, sealed drums on bunded pallets under cover, pending removal.');
+    bullet('Disposal. General waste shall be removed to an authorised disposal site or a designated on-site pit which is covered, compacted and clearly marked; hazardous waste shall be transported to a licensed waste contractor in Lusaka or Kabwe, and disposal records shall be retained for inspection.');
+    bullet('Drill cuttings and spent muds. Non-toxic drill cuttings and water-based muds shall be dried in lined sumps and buried with a topsoil cover, or spread and re-contoured on site; any additive suspected of toxicity shall be removed off-site for licensed disposal.');
+    // ---- 5 恢复 ----
+    sec(5,SECTIONS[4]);
+    body('The Company is committed to progressive rehabilitation of every disturbed site, with the objective of returning the land to a condition capable of supporting its original vegetation and land use:');
+    sub('5.1','Topsoil Management');
+    body('Prior to any trenching, pitting or pad construction, topsoil shall be stripped and stockpiled separately from subsoil, in low heaps not exceeding 2 m in height and positioned clear of drainage lines. During backfilling, subsoil shall be replaced first and the conserved topsoil spread as the final surface layer, so that the seed bank and soil fertility are preserved for natural revegetation.');
+    sub('5.2','Trench, Pit and Pad Restoration');
+    body('All trenches and pits shall be backfilled and compacted in layers, re-contoured to match natural drainage, and covered with the conserved topsoil, within 30 days of completion of sampling at each site. No open excavation shall be left unattended without fencing and warning signs.');
+    sub('5.3','Drill Hole Capping');
+    body('Every drill hole shall be permanently sealed within 7 days of completion using a cement plug or secure locking cap, so that no open hole can injure livestock or wildlife or provide a pathway for surface contamination to reach groundwater. Collar positions and capping records shall be maintained and made available to ZEMA or the Mines Safety Department on request.');
+    sub('5.4','Hydrocarbon and Chemical Control');
+    body('All fuel storage areas shall be equipped with spill trays or bund walls providing containment of not less than 110% of the largest container volume, and spill kits (absorbent pads, booms, gloves and disposal bags) shall be maintained at each storage and refuelling point. Any contaminated soil shall be excavated, drummed and removed to licensed disposal.');
+    sub('5.5','Camp Demobilisation and Revegetation');
+    body('Upon demobilisation, all equipment, fuels, reagents and waste shall be removed from site; the camp area shall be ripped or loosened where compacted and covered with topsoil. Revegetation shall rely on natural regrowth assisted, where necessary, by planting of native grass and tree species, and shall be monitored through the following rainy season. Before-and-after photographic records shall be kept for each site.');
+    // ---- 6 ----
+    sec(6,SECTIONS[5]);
+    body('The Company shall protect the health and safety of its employees and host communities throughout the programme:');
+    bullet('PPE. Personal protective equipment (helmets, safety boots, high-visibility clothing, and hearing and eye protection for drilling crews) shall be provided free of charge to all employees, with mandatory safety induction before commencement of field work.');
+    bullet('First aid and emergency response. A first-aid station shall be maintained at the camp, first-aid kits carried in all field vehicles, a trained first-aider present on each shift, and an evacuation plan established to the nearest clinic.');
+    bullet('Community relations. All field work shall be preceded by engagement with the local Chief and community leadership; a grievance register shall be maintained at site; priority for non-technical employment shall be given to residents of the surrounding communities; and customary land, crops, graves and cultural sites shall be respected with appropriate buffer zones.');
+    bullet('Incident reporting. Any environmental incident (spill, fire, injury, community complaint) shall be recorded and reported to ZEMA and the Mines Safety Department as required by law.');
+    return o;
+  }
+  build();
+  const toc={};Object.keys(secPages).forEach(k=>toc[k]=secPages[k]+1);
+  return build(toc).output(`${coName} - Environmental Commitment Plan`);
+}
+/* ================= Employment & Training of Zambian Citizens 正式 PDF ================= */
+function empPdfBlob(a){
+  const B=reportBase(a),{co,coName,km2,ha,loc,commodity,licEn,DATE,zmw,STY}=B;
+  const years=+(a.params.years||4), staff=+(String(a.params.staff||'26').replace(/\D/g,''))||26;
+  const cit=+(String(a.params.citizenPct||'92').replace(/\D/g,''))||92;
+  const invest=progInvest(a);
+  // 人力结构（峰值=staff）：管理3/技术6/技能8/普工9 的比例
+  const mix=[.12,.23,.30,.35];
+  const ramp=[.60,.85,1.0,.90]; // Y1..Y4 用工爬坡
+  const CATS=[
+    ['Management & Senior Technical','Exploration Manager, Senior Geologist, GIS Specialist',mix[0]],
+    ['Technical & Supervisory','Field Geologists, Drill Supervisors, Surveyors, Sampling Leads',mix[1]],
+    ['Skilled & Semi-Skilled Trades','Excavator/Backhoe Operators, Mechanics, Core Cutters, Camp Drivers, Electricians',mix[2]],
+    ['Unskilled / General Labour','Trenching workers, line cutters, sample porters, camp support and security',mix[3]],
+  ];
+  const WROWS=CATS.map(([n,eg,m])=>[n,...ramp.slice(0,years).map(r=>Math.max(1,Math.round(staff*m*r)))]);
+  const totalY=ramp.slice(0,years).map(r=>Math.round(staff*r));
+  // 公民化率目标（按年）
+  const citY=years>=4?[75,82,88,92]:[70,80,90];
+  // 培训预算 = 总投资的1%分年（凑整千）
+  const tAll=Math.round(invest*0.012/1000)*1000;
+  const TROWS=[
+    ['Induction & OHS training (all employees, annual refresher)',Math.round(tAll*.28/1000)*1000],
+    ['Technical skills transfer (GPS, geological logging, pXRF, core cutting)',Math.round(tAll*.34/1000)*1000],
+    ['Machinery operation & maintenance (JCB operators, mechanics)',Math.round(tAll*.20/1000)*1000],
+    ['Graduate mentorship & professional development sponsorship',Math.round(tAll*.18/1000)*1000],
+  ];
+  const SECTIONS=['EXECUTIVE SUMMARY AND POLICY COMMITMENT','EMPLOYMENT FORECAST AND WORKFORCE LOCALIZATION PLAN','STRUCTURED TRAINING AND SKILLS DEVELOPMENT PROGRAMME','SKILLS TRANSFER AND SUCCESSION PLANNING','HEALTH, SAFETY, EQUAL OPPORTUNITY AND WELFARE COMMITMENTS','IMPLEMENTATION SCHEDULE AND MONITORING FRAMEWORK'];
+  const secPages={};
+  function build(toc){
+    const o=pdfDoc(),{sec,sub,body,bullet,trow,grid,cover,toc:tocP,F,AC,W,ML}=repShell(o,STY,secPages);
+    cover('PROPOSALS FOR THE EMPLOYMENT AND|TRAINING OF CITIZENS OF ZAMBIA',coName,co,licEn,DATE);
+    if(toc) tocP(SECTIONS,toc);
+    o.addPage();
+    // ---- 1 ----
+    sec(1,SECTIONS[0]);
+    body(`${coName} ("the Company") submits these Proposals for the Employment and Training of Citizens of Zambia in support of its application for a ${licEn} covering approximately ${ha.toLocaleString('en-US')} hectares (${km2} km\xb2) in ${loc}, Zambia. The exploration programme covers desktop studies, UAV topographic surveys, geochemical soil sampling, pitting and trenching (using backhoe loaders such as the JCB 3DX), RC and diamond drilling campaigns, bulk sampling and temporary camp logistics.`);
+    sub('1.1','Policy Commitment');
+    body('In compliance with the Mines and Minerals Development Act No. 11 of 2015 and national local-content policy, the Company shall guarantee priority of employment to citizens of Zambia across all organisational tiers — unskilled, semi-skilled, technical and managerial — and shall implement a structured programme for skills development, mentorship and succession planning throughout the tenure of the licence.');
+    bullet('100% Zambian representation in unskilled and semi-skilled roles from commencement of operations.');
+    bullet('A targeted path toward at least 85-90% Zambian representation in technical and supervisory roles by the later years of the programme.');
+    bullet('Priority sourcing of unskilled and support labour directly from the surrounding chiefdoms and villages hosting the licence area.');
+    // ---- 2 ----
+    sec(2,SECTIONS[1]);
+    body('The manpower projection below reflects the phased ramp-up of field activity over the exploration tenure. Headcounts represent peak field-season strength in each year.');
+    o.y+=3;
+    grid(['Workforce Category / Roles',...Array.from({length:years},(_,i)=>`Year ${i+1}`)], [250,...Array(years).fill(55.1)],
+         [...WROWS,['Total headcount (peak field season)',...totalY]],9.3);
+    o.y+=4;
+    body(`Localization trajectory: unskilled and semi-skilled categories shall be staffed 100% by Zambian citizens from the outset; overall citizen representation across the total workforce shall not fall below ${cit}%, rising from approximately ${citY[0]}% in Year 1 to ${citY[citY.length-1]}% by Year ${years} as trained Zambian staff take over technical and supervisory functions.`);
+    // ---- 3 ----
+    sec(3,SECTIONS[2]);
+    sub('3.1','Basic Operational & Safety Training (Induction and OHS)');
+    bullet('Mandatory field safety induction, hazard identification, First Aid training and PPE compliance for every employee before site deployment.');
+    bullet('Environmental protection awareness covering topsoil preservation, hydrocarbon spill prevention and drill-hole capping standards.');
+    sub('3.2','Technical and Specialized Skills Transfer');
+    bullet('Modern exploration methodologies: GPS navigation, geological logging, portable XRF analyzer operation, and core orientation and cutting procedures.');
+    bullet('Heavy machinery operation and daily maintenance protocols, including JCB 3DX backhoe loader pre-start inspections and hydraulic safety.');
+    sub('3.3','Mentorship and Professional Development');
+    bullet('Junior Zambian graduate geologists and mining engineers shall be sponsored through continuous field mentorship under senior professionals, with structured progress reviews each field season.');
+    // ---- 4 ----
+    sec(4,SECTIONS[3]);
+    body('The Company\'s policy is that expatriate specialists are engaged strictly for specialized technical oversight and knowledge transfer, and not as permanent staffing. Each expatriate technical expert shall be formally paired with a Zambian understudy or deputy, with documented annual performance benchmarks, such that operational control is transferred to Zambian personnel within 24 to 36 months of commencement of each function.');
+    bullet('Succession plans shall be documented for every expatriate-held position, reviewed annually against measurable competency milestones.');
+    bullet('Where a suitably qualified Zambian candidate exists for any position, that candidate shall be given preference in recruitment.');
+    // ---- 5 ----
+    sec(5,SECTIONS[4]);
+    bullet('Fair remuneration aligned with Zambian labour law and applicable National Joint Negotiating Council standards, paid promptly and documented.');
+    bullet('Gender diversity: the Company shall actively encourage the recruitment and technical training of female professionals and local women in field operations.');
+    bullet('Worker welfare: supply of complete PPE at no cost, potable water at all work sites, medical emergency protocols including first-aid stations and evacuation plans, and hygienic on-site sanitation facilities.');
+    bullet('Equal opportunity: recruitment, promotion and training selection shall be conducted without discrimination on grounds of tribe, religion, gender or disability.');
+    // ---- 6 ----
+    sec(6,SECTIONS[5]);
+    body('The Company shall allocate a dedicated annual training budget of approximately ' + zmw(tAll) + ' across the exploration tenure, distributed as follows:');
+    o.y+=3;
+    grid(['Training Module','Annual Allocation (ZMW)'],[330,140],[...TROWS.map(([m,v])=>[m,zmw(v)]),['Total annual training budget',zmw(TROWS.reduce((s,[,v])=>s+v,0))]],9.3);
+    o.y+=4;
+    bullet('The Company shall submit annual employment and training audit returns to the Director of Mines and the Mining Cadastre, documenting workforce composition, localization ratios, training delivered and expenditure incurred.');
+    bullet('Training records, certification and succession progress shall be maintained at site level and made available for inspection by officers of the Ministry.');
+    return o;
+  }
+  build();
+  const toc={};Object.keys(secPages).forEach(k=>toc[k]=secPages[k]+1);
+  return build(toc).output(`${coName} - Proposals for Employment and Training of Citizens of Zambia`);
+}
+/* ================= 通用导出入口 ================= */
+/* ================= Promotion of Local Business Development 正式 PDF ================= */
+function localPdfBlob(a){
+  const B=reportBase(a),{co,coName,km2,ha,loc,commodity,licEn,DATE,zmw,STY}=B;
+  const invest=progInvest(a);
+  const SECTIONS=['EXECUTIVE SUMMARY AND CORPORATE POLICY STATEMENT','CATEGORIZED PROCUREMENT STRATEGY FOR GOODS','SERVICES AND CONTRACTING STRATEGY','SUPPLIER CAPACITY BUILDING AND ENTERPRISE DEVELOPMENT','MONITORING, AUDITING AND REPORTING FRAMEWORK'];
+  const GROWS=[
+    ['Camp & Sustenance Supplies','Fresh food, agricultural produce and daily consumables','100% local — sourced directly from local farmers and markets in the districts hosting the licence area'],
+    ['Construction & Field Materials','Cement, timber, fencing materials and basic hardware for camp construction','Zambian suppliers preferred — district hardware merchants first, provincial suppliers where unavailable'],
+    ['Operational Consumables','Standard PPE (uniforms, boots, hard hats), fuel, basic mechanical spares','Zambian-owned distributors and fuel stations prioritized for all routine consumables'],
+  ];
+  const SROWS=[
+    ['Logistics & Transport','Material haulage and personnel movement','Contracted to local and national Zambian transport companies'],
+    ['Earthmoving & Plant Hire','Excavator/backhoe loader (e.g. JCB 3DX) rental for trenching','Zambian plant-hire vendors contracted wherever technically feasible'],
+    ['Ancillary Services','Security services, camp catering and site cleaning','Awarded to community-based SMEs in the surrounding chiefdoms'],
+    ['Technical Services','Environmental compliance consulting (ZEMA), drilling contractors','Zambian environmental consultants and local drilling contractors prioritized where technically feasible'],
+  ];
+  const secPages={};
+  function build(toc){
+    const o=pdfDoc(),{sec,sub,body,bullet,trow,grid,cover,toc:tocP,F,AC,W,ML}=repShell(o,STY,secPages);
+    cover('PROPOSALS FOR THE PROMOTION OF|LOCAL BUSINESS DEVELOPMENT',coName,co,licEn,DATE);
+    if(toc) tocP(SECTIONS,toc);
+    o.addPage();
+    // ---- 1 ----
+    sec(1,SECTIONS[0]);
+    body(`${coName} ("the Company") submits these Proposals for the Promotion of Local Business Development in support of its application for a ${licEn} covering approximately ${ha.toLocaleString('en-US')} hectares (${km2} km\xb2) in ${loc}, Zambia. The document is prepared in accordance with the Mines and Minerals Development Act No. 11 of 2015 and the guidelines of the Citizens Economic Empowerment Commission (CEEC).`);
+    sub('1.1','Corporate Policy Statement');
+    body('The Company commits to prioritizing Zambian-owned enterprises for the supply of goods and services throughout the exploration phase. The objective is to integrate the local business community into the project supply chain, thereby stimulating the local economy and complying with national wealth-creation directives. Preference shall be granted, in descending order, to enterprises based in the districts hosting the licence area, then to Zambian-citizen-owned companies, and thereafter to companies registered in Zambia.');
+    // ---- 2 ----
+    sec(2,SECTIONS[1]);
+    body('The goods categories below will be sourced exclusively or preferentially from Zambian businesses:');
+    o.y+=3;
+    grid(['Category','Description','Sourcing Policy'],[150,160,160],GROWS,9.3);
+    // ---- 3 ----
+    sec(3,SECTIONS[2]);
+    body('The following services will be contracted to Zambian-owned companies:');
+    o.y+=3;
+    grid(['Service Area','Scope','Contracting Policy'],[140,160,170],SROWS,9.3);
+    // ---- 4 ----
+    sec(4,SECTIONS[3]);
+    body('The Company shall actively assist local small and medium enterprises in meeting mining industry standards:');
+    bullet('Payment terms shall be relaxed for micro-enterprises (shortened payment cycles or partial advance payment) to support their cash flow.');
+    bullet('Clear written specifications on quality, safety and delivery requirements shall be issued with every request for quotation directed at local suppliers.');
+    bullet('Constructive feedback shall be offered to unsuccessful local bidders to help them qualify for future procurement opportunities.');
+    bullet('Where feasible, larger contract packages shall be broken into smaller lots within the capacity of local SMEs.');
+    // ---- 5 ----
+    sec(5,SECTIONS[4]);
+    bullet('The Company shall maintain a Local Procurement Register recording every contract and purchase order placed, the supplier\'s ownership status, and the value of Zambian content delivered.');
+    bullet('An annual report shall be submitted to the Director of Mines setting out the percentage of the exploration budget spent on Zambian goods and services, with a target of not less than 60% of addressable spend.');
+    bullet('The register and annual reports shall be made available for inspection by officers of the Ministry and the Citizens Economic Empowerment Commission.');
+    return o;
+  }
+  build();
+  const toc={};Object.keys(secPages).forEach(k=>toc[k]=secPages[k]+1);
+  return build(toc).output(`${coName} - Proposals for Promotion of Local Business Development`);
+}
+/* ================= 通用导出入口 ================= */
+const DOC_PDF={prog:{fn:a=>progPdfBlob(a),en:'Proposed Programme of Exploration Operations'},
+               env:{fn:a=>envPdfBlob(a),en:'Environmental Commitment Plan'},
+               emp:{fn:a=>empPdfBlob(a),en:'Proposals for Employment and Training of Citizens of Zambia'},
+               local:{fn:a=>localPdfBlob(a),en:'Proposals for Promotion of Local Business Development'}};
+async function genDocPdf(key){
+  const a=curApp(); if(!a) return toast('先选择申请');
+  const d=DOC_PDF[key]; if(!d) return toast('该文件暂无正式版式');
+  try{
+    const safe=s=>String(s||'').replace(/[^\w\s.-]/g,'').trim();
+    downloadBlob(d.fn(a),`${d.en} - ${safe(a.label||'app')}.pdf`);
+    toast('已导出正式 PDF');
+  }catch(e){ toast('生成失败：'+e.message); }
+}
+async function genProgPdf(){ return genDocPdf('prog'); }
+// 导出递交包：公司目录/申请目录两层，文件名=门户槽位英文名
+async function exportPackage(){
+  const a=curApp(); if(!a) return toast('先建立申请');
+  const co=appCo(a), defs=DOC_DEFS[a.type]||[];
+  const safe=s=>String(s||'').replace(/[\\/:*?"<>|]/g,'-').trim();
+  const coDirName=safe(co?co.name:(a.applicantName||'_Applicant'));
+  const appDirName=safe(`${a.label||'未命名'}_${a.type}`);
+  const manifest=[`递交包：${coDirName} / ${appDirName}`,'生成时间：'+new Date().toISOString().slice(0,16).replace('T',' '),''];
+  const files=[],missing=[];
+  toast('正在打包…');
+  for(const d of defs){
+    const [key,en,cn,cat,,genKey]=d;
+    const name=safe(en);
+    const draftTxt=genKey&&(a.drafts[genKey]||'').trim();
+    const eff=effDoc(a,key,cat);
+    if(DOC_PDF[genKey]){
+      // 有正式版式的支持性文件 → 数据驱动生成 PDF（不依赖文稿）
+      try{ files.push({name:name+'.pdf',blob:DOC_PDF[genKey].fn(a)}); manifest.push(`[系统生成·正式版式] ${name}.pdf`); }
+      catch(e){ missing.push(en+'（生成失败）'); manifest.push(`[生成失败] ${en}`); }
+    }else if(draftTxt){
+      files.push({name:name+'.pdf',blob:textToPdfBlob(a.drafts[genKey])});
+      manifest.push(`[生成文稿] ${en}.pdf`);
+    }else if(key==='form'&&!eff.d.mediaKey){
+      // 申请表槽位没传签署版 → 自动装一份系统生成的 Form I docx（版式=官方原件）
+      try{ files.push({name:name+'.docx',blob:await buildForm1Blob(a)}); manifest.push(`[系统生成] ${en}.docx（签字后转 PDF 上传）`); }
+      catch(e){ missing.push(en+'（Form I 生成失败）'); manifest.push(`[生成失败] ${en}`); }
+    }else if(eff.d.mediaKey){
+      try{
+        const r=await fetch(`${API}/media?key=${eff.d.mediaKey}`);
+        if(!r.ok) throw new Error('http '+r.status);
+        const ext=(eff.d.fileName||'').split('.').pop()||'bin';
+        files.push({name:name+'.'+safe(ext),blob:await r.blob()});
+        manifest.push(`[已收${eff.src==='co'?'·公司档':''}] ${name}.${safe(ext)}`);
+      }catch(e){ missing.push(en+'（文件取回失败）'); manifest.push(`[取回失败] ${en}`); }
+    }else if(cat!=='C'){
+      missing.push(en); manifest.push(`[缺] ${en}`);
+    }
+  }
+  manifest.push('','—— 缺失清单 ——', missing.length?missing.join('\n'):'无');
+  files.push({name:'00_清单与缺口.txt',blob:new Blob([manifest.join('\n')],{type:'text/plain;charset=utf-8'})});
+  // 打成 ZIP：内部路径 公司名/申请名/文件名，一键下载到本地
+  const entries=[];
+  for(const f of files) entries.push({name:`${coDirName}/${appDirName}/${f.name}`,data:new Uint8Array(await f.blob.arrayBuffer())});
+  const zip=makeZip(entries);
+  downloadBlob(zip,`${coDirName}__${appDirName}.zip`);
+  toast(`已导出 ${files.length} 个文件的递交包 ZIP`);
+}
+// 极简 ZIP 打包（store 不压缩，PDF/docx 本来就压不动）
+const CRC_T=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c}return t})();
+function crc32(u8){let c=~0;for(let i=0;i<u8.length;i++)c=CRC_T[(c^u8[i])&255]^(c>>>8);return ~c>>>0}
+function makeZip(entries){
+  const enc=new TextEncoder(),parts=[],cds=[];let off=0;
+  const d=new Date(),dt=(d.getHours()<<11)|(d.getMinutes()<<5)|(d.getSeconds()>>1),dd=((d.getFullYear()-1980)<<9)|((d.getMonth()+1)<<5)|d.getDate();
+  for(const e of entries){
+    const nb=enc.encode(e.name),crc=crc32(e.data);
+    const lh=new DataView(new ArrayBuffer(30));
+    lh.setUint32(0,0x04034b50,true);lh.setUint16(4,20,true);lh.setUint16(6,0x0800,true);
+    lh.setUint16(10,dt,true);lh.setUint16(12,dd,true);
+    lh.setUint32(14,crc,true);lh.setUint32(18,e.data.length,true);lh.setUint32(22,e.data.length,true);
+    lh.setUint16(26,nb.length,true);
+    parts.push(lh.buffer,nb,e.data);
+    const cd=new DataView(new ArrayBuffer(46));
+    cd.setUint32(0,0x02014b50,true);cd.setUint16(4,20,true);cd.setUint16(6,20,true);cd.setUint16(8,0x0800,true);
+    cd.setUint16(12,dt,true);cd.setUint16(14,dd,true);
+    cd.setUint32(16,crc,true);cd.setUint32(20,e.data.length,true);cd.setUint32(24,e.data.length,true);
+    cd.setUint16(28,nb.length,true);cd.setUint32(42,off,true);
+    cds.push(cd.buffer,nb);off+=30+nb.length+e.data.length;
+  }
+  const cdSize=cds.reduce((s,b)=>s+b.byteLength,0);
+  const eo=new DataView(new ArrayBuffer(22));
+  eo.setUint32(0,0x06054b50,true);eo.setUint16(8,cds.length/2,true);eo.setUint16(10,cds.length/2,true);
+  eo.setUint32(12,cdSize,true);eo.setUint32(16,off,true);
+  return new Blob([...parts,...cds,eo.buffer],{type:'application/zip'});
+}
+
+/* ================= Form I 申请表生成（docx 模板填充，版式=官方原件） ================= */
+const FORM1_TPL='lic/form1.docx';
+// 解压 docx（zip 阅读器：store+deflate）
+async function unzipDocx(buf){
+  const dv=new DataView(buf), u8=new Uint8Array(buf), dec=new TextDecoder();
+  let eocd=-1;
+  for(let i=u8.length-22;i>=0;i--){ if(dv.getUint32(i,true)===0x06054b50){eocd=i;break;} }
+  if(eocd<0) throw new Error('不是 zip/docx');
+  const n=dv.getUint16(eocd+10,true), cdOff=dv.getUint32(eocd+16,true);
+  const out={};
+  let p=cdOff;
+  for(let i=0;i<n;i++){
+    if(dv.getUint32(p,true)!==0x02014b50) break;
+    const method=dv.getUint16(p+10,true), csz=dv.getUint32(p+20,true), nl=dv.getUint16(p+28,true), el=dv.getUint16(p+30,true), cl=dv.getUint16(p+32,true), off=dv.getUint32(p+42,true);
+    const name=dec.decode(u8.slice(p+46,p+46+nl));
+    const lh=off, lnl=dv.getUint16(lh+26,true), lel=dv.getUint16(lh+28,true);
+    const comp=u8.slice(lh+30+lnl+lel, lh+30+lnl+lel+csz);
+    if(method===0) out[name]=comp;
+    else if(method===8){
+      const ds=new DecompressionStream('deflate-raw');
+      const st=new Blob([comp]).stream().pipeThrough(ds);
+      out[name]=new Uint8Array(await new Response(st).arrayBuffer());
+    }
+    p+=46+nl+el+cl;
+  }
+  return out;
+}
+const xmlEsc2=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+function dmsParts(str){ // '13°24'36"S' → {d,m,s}
+  const c=parseCoord(str); if(!c) return null;
+  const t=c.totSec; return {d:Math.floor(t/3600), m:Math.floor((t%3600)/60), s:t%60};
+}
+// Form I 省份：几个省写几个，分号分隔（优先从 locRaw "Central, Serenje; Northern, Mpika" 拆）
+function appProvinces(a){
+  const raw=(a.area&&a.area.locRaw||'').trim();
+  if(raw){
+    const ps=[...new Set(raw.split(';').map(s=>s.split(',')[0].trim()).filter(Boolean))];
+    if(ps.length) return ps.join('; ');
+  }
+  return [...new Set((a.area.province||'').split(',').map(s=>s.trim()).filter(Boolean))].join('; ');
+}
+// 占位符映射：公司档 + 申请数据
+function form1Values(a){
+  const co=appCo(a)||{};
+  const sh=(co.shareholders||[]);
+  const dir=(co.directors&&co.directors.length?co.directors:sh); // 董事缺省=股东
+  const zm=sh.find(s=>/ZAMBIA/i.test(s.nationality||''));
+  const v={
+    MINERALS:a.commodity||'Copper', APPLICANT:co.name||a.applicantName||'', ADDR:co.address||'',
+    TEL:co.tel||'/', MOBILE:co.phone||'/', FAX:co.fax||'/', EMAIL:'frankataix@gmail.com',
+    REGNO:co.regNo||'', DOB:co.dob||'', NAT:co.nat||'', IDNO:co.idNo||'',
+    PROVINCE:appProvinces(a), DISTRICT:a.area.district||'', LOCALITY:a.area.name||a.area.locRaw||'',
+    SIZEKM2:a.area.km2||'', FEE:'', SIGN_NAME:(co.ceo||sh[0]?.name||''),
+    ACT_SCALE:{LEL:'Large-scale',SEL:'Small-scale',AMR:'Artisanal'}[a.type]||'Large-scale',
+    Q12A:'No', Q12B:'No', Q13A:'No',
+  };
+  for(let i=1;i<=5;i++){ const s=sh[i-1]; v[`SH${i}_N`]=s?s.name:''; v[`SH${i}_S`]=s?s.amount:''; v[`SH${i}_NA`]=s?s.nationality:''; v[`SH${i}_ID`]=s?s.idNo||'':''; }
+  for(let i=1;i<=5;i++){ const s=dir[i-1]; v[`DIR${i}_N`]=s?s.name:''; v[`DIR${i}_S`]=s?(s.amount??''):''; v[`DIR${i}_NA`]=s?s.nationality:''; v[`DIR${i}_ID`]=s?s.idNo||'':''; }
+  v.CEO_N=co.ceo||sh[0]?.name||''; v.CEO_NA=co.ceoNat||sh[0]?.nationality||'';
+  v.SEC_N=co.secretary||zm?.name||''; v.SEC_NA=co.secNat||zm?.nationality||'';
+  for(let i=1;i<=6;i++){ ['CUR','PREV','SUB','FRN'].forEach(p=>{v[`${p}${i}_NO`]='';v[`${p}${i}_LOC`]='';v[`${p}${i}_AR`]='';}); }
+  if(a.area.prevLic){ v.PREV1_NO=a.area.prevLic; v.PREV1_LOC=a.area.locRaw||''; v.PREV1_AR=a.area.km2||''; }
+  else v.PREV1_NO='None';
+  v.CUR1_NO='None'; v.SUB1_NO='None'; v.FRN1_NO='None';
+  for(let i=1;i<=4;i++){['LIC','LOC','AR','DT'].forEach(s=>v[`HIST${i}_${s}`]='');}
+  // 角点：V1,V2=纬D; V3,V4=纬M; V5,V6=纬S; V7..V12=经DMS（每值只占首格）
+  // coords 存的是字符串数组，纬/经按 S-N / E-W 后缀（无后缀按数值域 5–20°=纬,21–35°=经）自动归位
+  for(let i=1;i<=12;i++){ for(let j=1;j<=12;j++) v[`C${i}_V${j}`]=''; }
+  let nL=0,nE=0;
+  (a.area.coords||[]).filter(c=>String(c).trim()).forEach(c=>{
+    if(typeof c==='object'&&c){ // {lat,lng} 对
+      const n=Math.min(nL++,11); const lat=dmsParts(c.lat),lng=dmsParts(c.lng);
+      if(lat){v[`C${n+1}_V1`]=lat.d;v[`C${n+1}_V3`]=lat.m;v[`C${n+1}_V5`]=lat.s;}
+      if(lng){v[`C${n+1}_V7`]=lng.d;v[`C${n+1}_V9`]=lng.m;v[`C${n+1}_V11`]=lng.s;}
+      nE=Math.max(nE,nL); return;
+    }
+    const p=dmsParts(c); if(!p) return;
+    const isLat=/[NS]/i.test(c)||(!/[EW]/i.test(c)&&p.d>=5&&p.d<=20);
+    if(isLat&&nL<12){const n=nL++;v[`C${n+1}_V1`]=p.d;v[`C${n+1}_V3`]=p.m;v[`C${n+1}_V5`]=p.s;}
+    else if(!isLat&&nE<12){const n=nE++;v[`C${n+1}_V7`]=p.d;v[`C${n+1}_V9`]=p.m;v[`C${n+1}_V11`]=p.s;}
+  });
+  return v;
+}
+function form1Checks(a){ // 勾选标记（规则：本系统一律申请勘探权 Exploration；规模按证型）
+  const T=a.type;
+  return {
+    CB_EXPLORE:true, CB_MINING:false,                    // 固定勾 Exploration
+    CB_EXPL_LARGE:T==='LEL', CB_EXPL_SMALL2:T==='SEL',   // 大型勘探证→Large scale；小型→Small-Scale（合并格）
+    CB_MINE_LARGE:false, CB_MINE_SMALL:false, CB_ARTISANAL:false,
+    CB_INDIV:a.applicantKind==='person', CB_COOP:a.applicantKind==='coop',
+    CB_GRANT:false, CB_REJECT:false,
+    CB_PENDING:!!((a.area.hist||[]).length),             // Q13 有历史申请才勾 Pending，否则不勾
+  };
+}
+// 填好占位符的 Form I document.xml（docx 和 PDF 渲染共用）
+async function form1Xml(a){
+  const r=await fetch(`${API}/media?key=${FORM1_TPL}`);
+  if(!r.ok) throw new Error('模板下载失败 '+r.status);
+  const files=await unzipDocx(await r.arrayBuffer());
+  let xml=new TextDecoder().decode(files['word/document.xml']);
+  const vals=form1Values(a), chk=form1Checks(a);
+  // 填值 run 统一字体：样本原件所有填写内容 = 宋体/黑/sz18(9pt)；占位符 run 缺 rPr 时补齐
+  const FILL_RPR='<w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体" w:cs="宋体" w:hint="eastAsia"/><w:color w:val="000000"/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr>';
+  xml=xml.replace(/<w:r>(?:(?!<\/w:r>)[\s\S])*?<\/w:r>/g,(run)=>{
+    if(!/\{\{(?!CB_)[A-Z0-9_]+\}\}/.test(run)||/<w:rPr>/.test(run)) return run;
+    return run.replace('<w:r>','<w:r>'+FILL_RPR);
+  });
+  // 勾选：整 run 替换成 Symbol F0D6（选中）或清空
+  xml=xml.replace(/<w:r>(?:(?!<\/w:r>)[\s\S])*\{\{(CB_\w+)\}\}(?:(?!<\/w:r>)[\s\S])*<\/w:r>/g,
+    (m,k)=>chk[k]?'<w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b/><w:sz w:val="18"/></w:rPr><w:sym w:font="Symbol" w:char="F0D6"/></w:r>':'<w:r><w:t></w:t></w:r>');
+  // 文本占位符
+  xml=xml.replace(/\{\{([A-Z0-9_]+)\}\}/g,(m,k)=>xmlEsc2(vals[k]??''));
+  files['word/document.xml']=new TextEncoder().encode(xml);
+  return {files,xml};
+}
+// 生成填好的 Form I blob（下载和打包共用）
+async function buildForm1Blob(a){
+  const {files}=await form1Xml(a);
+  return makeZip(Object.entries(files).map(([name,data])=>({name,data})));
+}
+/* =============== Form I → PDF：按官方原件表格结构原样重画（列宽/合并格/勾选自 docx）=============== */
+async function form1PdfBlob(a){
+  const {xml}=await form1Xml(a);
+  const dom=new DOMParser().parseFromString(xml,'application/xml');
+  const o=pdfDoc(),W=o.W,ML=o.ML;
+  const q=(el,tag)=>el?[...el.getElementsByTagName(tag)]:[];
+  const WNS='http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+  const gav=(el,n)=>el?(el.getAttribute('w:'+n)??el.getAttributeNS(WNS,n)??el.getAttribute(n)):null;
+  const readCell=tc=>{ // 单元格 → {text,ck,bold,shade}
+    let s='',ck=false,bold=false;
+    q(tc,'w:t').forEach(t=>s+=t.textContent);
+    q(tc,'w:sym').forEach(sm=>{if((gav(sm,'char')||'').toUpperCase()==='F0D6')ck=true;});
+    if(q(tc,'w:b').length)bold=true;
+    const shd=q(tc,'w:shd')[0];
+    const shade=shd&&gav(shd,'fill')&&!/auto|ffffff/i.test(gav(shd,'fill'));
+    return {text:s.trim(),ck,bold,shade};
+  };
+  const drawChk=(x,y)=>{o.rect(x,y,8.5,8.5,'S');o.setFont('times','B',9.5);o.text(x+1.3,y-0.4,'\u00d7');};
+  o.addPage();
+  const body=dom.getElementsByTagName('w:body')[0];
+  for(const el of [...body.children]){
+    // ---- 普通段落（标题等）----
+    if(el.tagName==='w:p'){
+      const {text,ck,bold}=readCell(el);
+      if(!text&&!ck){o.y+=7;continue;}
+      const jc=q(el,'w:jc')[0],center=gav(jc,'val')==='center';
+      o.need(16);o.setFont('times',bold?'B':'',10);
+      o.mc(ML,W,text,13,center?'c':'l');
+      if(ck)drawChk(ML+W-12,o.y-12);
+      o.y+=2;
+      continue;
+    }
+    // ---- 表格 ----
+    if(el.tagName!=='w:tbl')continue;
+    const grid=q(el,'w:gridCol').map(g=>+gav(g,'w')||0);
+    const tot=grid.reduce((s,x)=>s+x,0)||1;
+    const cw=grid.map(g=>g/tot*W);           // 原件列宽(dxa)→按页宽等比
+    const xs=[0];cw.forEach(w=>xs.push(xs[xs.length-1]+w));
+    for(const tr of [...el.children].filter(c=>c.tagName==='w:tr')){
+      const tcs=[...tr.children].filter(c=>c.tagName==='w:tc');
+      let gi=0;const infos=[];
+      for(const tc of tcs){
+        const tcPr=q(tc,'w:tcPr')[0];
+        const span=+(gav(q(tcPr,'w:gridSpan')[0],'val')||1);
+        const w=Math.min(W,cw.slice(gi,gi+span).reduce((s,x)=>s+x,0)||cw[cw.length-1]);
+        infos.push({tc,x:ML+xs[Math.min(gi,xs.length-1)],w});
+        gi+=span;
+      }
+      // 先算行高（文字折行），整行放不开就换页
+      const LH=12;
+      o.setFont('times','',9);
+      let h=0;
+      infos.forEach(inf=>{
+        const {text}=readCell(inf.tc);
+        const n=Math.max(1,o.wrap(text,inf.w-8).length);
+        h=Math.max(h,n*LH+7);
+      });
+      h=Math.max(16,h);
+      o.need(h);
+      const y0=o.y;
+      infos.forEach(inf=>{
+        const {text,ck,bold,shade}=readCell(inf.tc);
+        if(shade){o.setFC([235,235,235]);o.rect(inf.x,y0,inf.w,h,'F');o.setFC([255,255,255]);}
+        o.rect(inf.x,y0,inf.w,h,'S');
+        if(ck)drawChk(inf.x+4,y0+(h-8.5)/2);
+        if(text){
+          o.setFont('times',bold?'B':'',9);
+          const yy=o.y;o.y=y0+3.5;
+          o.mc(inf.x+4,inf.w-8,text,LH,'l');
+          o.y=yy;
+        }
+      });
+      o.y=y0+h;
+    }
+  }
+  const v=form1Values(a);
+  return o.output(`${v.APPLICANT} - Form I`);
+}
+async function genForm1Pdf(){
+  const a=curApp(); if(!a) return toast('先选择申请');
+  try{
+    const safe=s=>String(s||'').replace(/[^\w\s.-]/g,'').trim();
+    downloadBlob(await form1PdfBlob(a),`Duly Filled in Application Form - ${safe(a.label||'app')}.pdf`);
+    toast('已导出 PDF');
+  }catch(e){ toast('生成失败：'+e.message); }
+}
+async function genForm1(){
+  const a=curApp(); if(!a) return toast('先选择申请');
+  toast('正在生成 Form I…');
+  try{
+    const blob=await buildForm1Blob(a);
+    downloadBlob(blob,`Duly Filled in Application Form - ${(a.label||'app').replace(/[^\w\s.-]/g,'')}.docx`);
+    toast('Form I 已生成（docx，版式与官方一致）。用 Word/WPS 打开另存为 PDF 即可递交');
+  }catch(e){ toast('生成失败：'+e.message); }
+}
+function exportDoc(){
+  const key=$('genSel').value, text=$('genOut').value;
+  if(!text.trim()) return toast('文稿为空');
+  const html=`<html xmlns:o="urn:schemas-microsoft-com:office:office"><head><meta charset="UTF-8"><style>body{font-family:'Times New Roman',serif;font-size:12pt;line-height:1.5}pre{white-space:pre-wrap;font-family:'Times New Roman',serif}</style></head><body><pre>${esc(text)}</pre></body></html>`;
+  const blob=new Blob(['﻿'+html],{type:'application/msword'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download=GEN_DOCS[key].name.replace(/[^\w ]/g,'').replace(/ +/g,'_')+'.doc'; a.click();
+}
+
+/* ================= 渲染 ================= */
+function renderAll(){ renderAppSel(); renderDocs(); renderCo(); renderArea(); renderGen(); }
+// 恢复上次的页面状态（页签/申请/公司），刷新不回到默认页
+try{
+  const ui=JSON.parse(localStorage.getItem('lh_ui')||'{}');
+  if(ui.app&&S.apps.some(a=>a.id===ui.app)) curAppId=ui.app;
+  if(ui.co&&S.companies.some(c=>c.id===ui.co)) curCoId=ui.co;
+  if(ui.pane){ const tb=document.querySelector(`.tab[data-p="${ui.pane}"]`); if(tb) go(tb); }
+}catch(e){}
+renderAll();
+syncPull();
+</script>
+</body>
+</html>

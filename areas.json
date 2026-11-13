@@ -1,0 +1,44 @@
+{
+ "version": 1,
+ "note": "公开文件：只含可发布工作区。",
+ "areas": [
+  {
+   "id": "serenje_1330nw",
+   "code": "SER",
+   "name": "Serenje 1330NW",
+   "bbox": [
+    30.0,
+    -13.45,
+    30.5,
+    -12.95
+   ],
+   "center": [
+    30.25,
+    -13.2
+   ],
+   "licences": [
+    "42881-HQ-LEL",
+    "36413-HQ-SEL"
+   ],
+   "map_pack": "serenje",
+   "geo": "serenje-1330nw"
+  },
+  {
+   "id": "chitambo_1230se",
+   "code": "CHT",
+   "name": "Chitambo 1230SE",
+   "bbox": [
+    30.4,
+    -13.05,
+    31.25,
+    -12.35
+   ],
+   "center": [
+    30.82,
+    -12.7
+   ],
+   "licences": [],
+   "map_pack": "chitambo"
+  }
+ ]
+}

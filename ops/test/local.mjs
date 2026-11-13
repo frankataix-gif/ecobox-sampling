@@ -2,6 +2,7 @@
  * 用法：node ops/test/local.mjs
  */
 import http from "node:http";
+import { spawnSync } from "node:child_process";
 import { DatabaseSync } from "node:sqlite";
 import fs from "node:fs";
 import path from "node:path";
@@ -330,8 +331,70 @@ ok(finLogPatch.status === 403, "财务不能改别人的日报", "status=" + fin
 ok((await finC("/api/fin/accounts/boss@ecobox.com", { method: "PUT", body: { cash: 1 } })).status === 403, "财务不能改余额（负责人专属）");
 ok((await finC("/api/fin/cats/merge", { method: "POST" })).status === 403, "财务不能合并分类（负责人专属）");
 
+/* 18b. 银行水单：上传 / 核对 / 分权 */
+const tinyPdf = "data:application/pdf;base64," + Buffer.from("%PDF-1.4\n%test\n").toString("base64");
+const noPeriod = await post(boss, "/api/fin/bank", { uid: "__company", open_bal: 1 });
+ok(noPeriod.status === 400 && /期间/.test(noPeriod.data.error || ""), "水单没填期间被拒 " + noPeriod.status);
+const stmt1 = await post(boss, "/api/fin/bank", {
+  uid: "__company", bank: "First Capital Bank", acct_no: "0003203010780", ccy: "ZMW",
+  pf: "2026-11-01", pt: "2026-11-12", open_bal: 1000, close_bal: 820, total_in: 0, total_out: 180,
+  txs: [
+    { d: "2026-11-02", descr: "SAFEEINCOME fee", ref: "S1", debit: 10, credit: 0, bal: 990, cat: "bankfee" },
+    { d: "2026-11-05", descr: "PUMA fuel", debit: 170, credit: 0, bal: 820 },
+  ],
+});
+ok(stmt1.status === 201 && /^[0-9a-f]{20}$/.test(stmt1.data.id || ""), "水单能建档 " + JSON.stringify(stmt1.data));
+const sid = stmt1.data.id;
+ok(stmt1.data.txn_n === 2, "逐笔一起存进去");
+const stList = (await boss("/api/fin/bank")).data;
+ok(stList.stmts.length === 1 && stList.stmts[0].acct_no === "0003203010780", "列表能看到水单", JSON.stringify(stList.stmts.map((s) => s.acct_no)));
+ok(stList.stmts[0].txn_n === 2, "列表带笔数");
+const stDetail = (await boss("/api/fin/bank/" + sid)).data;
+ok(stDetail.txs.length === 2 && stDetail.txs[0].cat === "bankfee" && stDetail.txs[0].debit === 10, "明细按顺序返回，科目保留", JSON.stringify(stDetail.txs[0]));
+ok(stDetail.txs[1].cat === "", "没给科目的先留空（科目建议在浏览器端做，不硬写）", JSON.stringify(stDetail.txs[1]));
+const stFile = await post(boss, "/api/fin/bank/" + sid + "/file", { data: tinyPdf, name: "1794510339999.pdf", pages: 3 });
+ok(stFile.status === 201 && /^bank\//.test(stFile.data.key || ""), "原件存进 R2 的 bank/ 前缀 " + JSON.stringify(stFile.data));
+const stGet = await boss("/api/fin/bank/file/" + sid);
+ok(stGet.status === 200 && /pdf/.test(stGet.headers.get("content-type") || ""), "能取回原件");
+ok(/inline/.test(stGet.headers.get("content-disposition") || ""), "PDF 走内嵌预览");
+const stp = await patch(boss, "/api/fin/bank/" + sid, { status: "checked", note: "对过了" });
+ok(stp.status === 200, "能标已核对");
+ok((await boss("/api/fin/bank/" + sid)).data.stmt.checked_by === "boss@ecobox.com", "记下核对人");
+const txPatch = await patch(boss, "/api/fin/bank/tx/" + stDetail.txs[0].id, { cat: "misc", state: "ignored" });
+ok(txPatch.status === 200, "能改单笔科目/状态");
+const txAfter = (await boss("/api/fin/bank/" + sid)).data.txs;
+ok(txAfter[0].cat === "misc" && txAfter[0].state === "ignored", "单笔改动落库");
+ok((await patch(boss, "/api/fin/bank/tx/" + stDetail.txs[1].id, { state: "matched" })).status === 200, "能标单笔已核");
+const stK = (await boss("/api/fin/bank")).data.stmts.find((s) => s.id === sid);
+ok(stK && stK.ok_n === 1 && stK.txn_n === 2, "列表带已核笔数（人工核对进度）", JSON.stringify(stK && [stK.ok_n, stK.txn_n]));
+const stmt2 = await post(boss, "/api/fin/bank", {
+  uid: "__company", bank: "First Capital Bank", acct_no: "0003203010780", pf: "2026-11-01", pt: "2026-11-12",
+  open_bal: 1000, close_bal: 800, total_out: 200, txs: [{ d: "2026-11-03", descr: "fix", debit: 200, bal: 800 }],
+});
+ok(stmt2.status === 201 && stmt2.data.id !== sid, "同期间重传另开一条");
+const stAll = (await boss("/api/fin/bank")).data.stmts;
+ok(stAll.filter((s) => s.pf === "2026-11-01").every((s) => s.old === (s.id === sid ? 1 : 0)), "旧版本标记 old=1，两条都留着", JSON.stringify(stAll.map((s) => [s.id === sid, s.old])));
+ok((await post(finC, "/api/fin/bank", { uid: "__company", pf: "2026-11-01", pt: "2026-11-12" })).status === 201, "财务也能上传");
+ok((await post(peter, "/api/fin/bank", { uid: "__company", pf: "2026-11-01", pt: "2026-11-12" })).status === 403, "普通员工不能上传水单");
+ok((await post(peter, "/api/fin/bank", { pf: "2026-09-01", pt: "2026-09-30", open_bal: 100, close_bal: 100 })).status === 201, "员工能上传自己名下的水单");
+ok((await peter("/api/fin/bank/" + sid)).status === 403, "普通员工看不到公司的水单");
+ok(!(await peter("/api/fin/bootstrap")).data.bankAll, "员工的 bootstrap 里 bankAll=false");
+const myStmt = await post(boss, "/api/fin/bank", { uid: "peter@ecobox.com", pf: "2026-10-01", pt: "2026-10-31", open_bal: 5, close_bal: 5 });
+const peterList = (await peter("/api/fin/bank")).data;
+ok(myStmt.status === 201 && peterList.stmts.length === 2 && peterList.stmts.every((s) => s.uid === "peter@ecobox.com"), "员工只看得到自己名下的水单", JSON.stringify(peterList.stmts.map((s) => s.uid)));
+ok((await peter("/api/fin/bank/" + myStmt.data.id)).status === 200, "员工能看自己的水单");
+ok((await patch(peter, "/api/fin/bank/" + myStmt.data.id, { status: "checked" })).status === 403, "员工不能自己标核对");
+ok((await peter("/api/fin/bank/" + myStmt.data.id, { method: "DELETE" })).status === 403, "员工不能删自己的水单");
+const stDel = await boss("/api/fin/bank/" + sid, { method: "DELETE" });
+ok(stDel.status === 200, "能删水单");
+ok(!(await boss("/api/fin/bank")).data.stmts.some((s) => s.id === sid), "删完不在列表");
+ok((await boss("/api/fin/bank/" + sid)).status === 404, "删完详情 404");
+ok((await boss("/api/fin/bank/file/" + sid)).status === 404, "删完原件也取不到");
+
 /* 语言设置 + 双语内容 */
 ok((await boss("/api/modules")).data.modules.some((m) => m.k === "lang" && m.t === "语言"), "系统里有「语言」模块");
+const bankMod = (await boss("/api/modules")).data.modules.find((m) => m.k === "bank");
+ok(bankMod && bankMod.g === "财务" && bankMod.tab === "bank" && bankMod.d_en, "「银行账单」是财务组里的独立模块", JSON.stringify(bankMod));
 ok((await patch(boss, "/api/me", { lang: "en" })).data.user.lang === "en", "能切成英文");
 ok((await boss("/api/me")).data.user.lang === "en", "语言跟着账号走");
 ok((await patch(boss, "/api/me", { lang: "fr" })).status === 400, "只认 zh / en");
@@ -421,12 +484,33 @@ ok(movedRow.notes.some((n) => n.body.includes("改派给")), "时间线记下改
 ok((await post(tdStaff, "/api/todos/" + tdGive.data.id + "/report", { text: "还想报" })).status === 403, "改派后原执行人不能再汇报");
 ok((await patch(boss, "/api/todos/" + tdGive.data.id, { owner: "td@ecobox.com" })).status === 200, "能改派回去");
 
-/* 完成 / 重开 */
-ok((await patch(tdStaff, "/api/todos/" + tdGive.data.id, { status: "done" })).status === 200, "归属人能标完成");
-ok((await post(tdStaff, "/api/todos/" + tdGive.data.id + "/report", { text: "完成后又说一句" })).status === 400, "完成了不能再汇报");
+/* 完成闭环：执行人提交申请 → 派活人审核 → 通过才算完成；驳回回到进行中继续做 */
+ok((await patch(tdStaff, "/api/todos/" + tdGive.data.id, { status: "done" })).status === 403, "执行人不能自己按完成，只能提交申请");
+const sub1 = await post(tdStaff, "/api/todos/" + tdGive.data.id + "/submit", { note: "照片全部传完，已放 R2" });
+ok(sub1.status === 200 && sub1.data.status === "submitted", "执行人能提交完成申请");
+const subRow = (await boss("/api/todos")).data.todos.find((t) => t.id === tdGive.data.id);
+ok(subRow.status === "submitted" && subRow.submit_by === "td@ecobox.com" && subRow.rounds === 1, "提交人、轮次落库");
+ok(subRow.notes.some((n) => n.kind === "submit" && n.body.includes("R2")), "时间线记下提交申请");
+ok((await post(tdStaff, "/api/todos/" + tdGive.data.id + "/submit", {})).status === 409, "不能重复提交");
+ok((await post(tdStaff, "/api/todos/" + tdGive.data.id + "/report", { text: "再报一次" })).status === 400, "已提交期间不再收日报");
+ok((await post(tdStaff, "/api/todos/" + tdGive.data.id + "/review", { pass: true })).status === 403, "执行人不能自己审核通过");
+ok((await patch(tdStaff, "/api/todos/" + tdGive.data.id, { status: "done" })).status === 403, "已提交后执行人也不能绕过审核自己改成完成");
+const stillSub = (await boss("/api/todos")).data.todos.find((t) => t.id === tdGive.data.id);
+ok(stillSub.status === "submitted" && stillSub.review_result === "", "绕过审核被拒后仍是待审核");
+ok((await post(boss, "/api/todos/" + tdGive.data.id + "/review", { pass: false })).status === 400, "驳回必须写原因");
+const rej = await post(boss, "/api/todos/" + tdGive.data.id + "/review", { pass: false, note: "Chitambo 还剩 2 个点没传" });
+ok(rej.status === 200 && rej.data.status === "doing", "驳回后回到进行中");
+const rejRow = (await boss("/api/todos")).data.todos.find((t) => t.id === tdGive.data.id);
+ok(rejRow.review_result === "reject" && rejRow.submit_at === "" && rejRow.status === "doing", "驳回清掉待审状态");
+ok(rejRow.notes.some((n) => n.kind === "review" && n.body.includes("Chitambo")), "驳回意见留在时间线");
+ok((await post(tdStaff, "/api/todos/" + tdGive.data.id + "/submit", { note: "补完了" })).status === 200, "改完能再提交");
+const okPass = await post(boss, "/api/todos/" + tdGive.data.id + "/review", { pass: true, note: "验收通过" });
+ok(okPass.status === 200 && okPass.data.status === "done", "派活人审核通过才算完成");
 const finished = (await tdStaff("/api/todos")).data.todos.find((t) => t.id === tdGive.data.id);
 ok(finished.status === "done" && !!finished.done_at, "完成时间落库");
-ok(finished.notes.some((n) => n.kind === "sys" && n.body === "标记完成"), "完成也记一条动态");
+ok(finished.review_result === "pass" && finished.review_by === "boss@ecobox.com" && finished.rounds === 2, "审核人、轮次落库");
+ok(finished.notes.some((n) => n.kind === "review" && n.body === "验收通过"), "审核意见留在时间线");
+ok((await post(tdStaff, "/api/todos/" + tdGive.data.id + "/report", { text: "完成后又说一句" })).status === 400, "完成了不能再汇报");
 ok((await patch(tdStaff, "/api/todos/" + tdGive.data.id, { status: "todo" })).status === 200, "能重新打开（老写法 todo 也当进行中）");
 const reopened = (await tdStaff("/api/todos")).data.todos.find((t) => t.id === tdGive.data.id);
 ok(reopened.status === "doing" && reopened.done_at === "", "重开后是进行中，完成时间清掉");
@@ -437,12 +521,21 @@ ok(coRep.status === 200 && coRep.data.reported === false, "公司事项谁都能
 const coFollow = (await boss("/api/todos")).data.todos.find((t) => t.id === tdCo.data.id);
 ok(coFollow.owner === "" && coFollow.last_report_at === "", "跟一句不会变成「谁点谁得」");
 
+ok((await post(tdStaff, "/api/todos/" + tdCo.data.id + "/submit", {})).status === 403, "公司事项没指派时员工不能替所有人提交");
 const cmt = await post(tdStaff, "/api/todos/" + tdCo.data.id + "/notes", { text: "会计周五来取" });
 ok(cmt.status === 201, "公司事项能留言跟踪");
 const withCmt = (await boss("/api/todos")).data.todos.find((t) => t.id === tdCo.data.id);
 ok(withCmt.notes.some((n) => n.body === "会计周五来取" && n.name === "待办同事" && n.kind === "cmt"), "留言带姓名落库");
 ok((await post(tdStaff, "/api/todos/" + tdCo.data.id + "/notes", { text: "   " })).status === 400, "空留言被拦下");
 ok((await post(tdStaff, "/api/todos/" + tdCo.data.id + "/notes", { text: "x".repeat(1200) })).status === 201, "超长留言截断后能存");
+/* 回复某条留言：挂 reply_to，串到别的待办就当普通留言 */
+const anchor = (await boss("/api/todos")).data.todos.find((t) => t.id === tdCo.data.id).notes[0].id;
+const reply1 = await post(tdStaff, "/api/todos/" + tdCo.data.id + "/notes", { text: "周三我去取", reply_to: anchor });
+ok(reply1.status === 201, "能回复某条留言");
+const thread = (await boss("/api/todos")).data.todos.find((t) => t.id === tdCo.data.id);
+ok(thread.notes.some((n) => n.body === "周三我去取" && n.reply_to === anchor), "回复挂在原留言下");
+const badReply = await post(tdStaff, "/api/todos/" + tdCo.data.id + "/notes", { text: "引用不存在", reply_to: "nope" });
+ok(badReply.status === 201 && (await boss("/api/todos")).data.todos.find((t) => t.id === tdCo.data.id).notes.every((n) => n.body !== "引用不存在" || n.reply_to === ""), "引用不存在就当普通留言");
 
 ok((await patch(boss, "/api/todos/" + tdCo.data.id, { title: "本月报税材料交给会计（含发票）" })).status === 200, "发起人能改标题");
 ok((await patch(boss, "/api/todos/" + tdCo.data.id, { status: "done" })).status === 200, "发起人能改状态");
@@ -459,6 +552,10 @@ const staffSelfRow = (await tdStaff("/api/todos")).data.todos.find((t) => t.id =
 ok(staffSelfRow.owner === "td@ecobox.com" && staffSelfRow.self_set === 1 && staffSelfRow.scope === "self", "自己排的活归自己");
 ok(staffSelfRow.status === "doing" && !!staffSelfRow.assign_at, "建好就是进行中，不用再点开始");
 ok(staffSelfRow.notes.some((n) => n.kind === "assign" && n.body === "自己给自己排的任务"), "时间线写清是自己给自己排的");
+const selfDone = await post(tdStaff, "/api/todos/" + staffSelf.data.id + "/submit", { note: "核完了" });
+ok(selfDone.status === 200 && selfDone.data.status === "done" && selfDone.data.self === true, "自己排的活提交即完成，不用自己审自己");
+const selfDoneRow = (await tdStaff("/api/todos")).data.todos.find((t) => t.id === staffSelf.data.id);
+ok(selfDoneRow.review_result === "pass" && selfDoneRow.rounds === 1, "自派任务也记一轮审核");
 ok((await tdStaff("/api/todos/" + tdGive.data.id, { method: "DELETE" })).status === 403, "员工不能删别人的待办");
 ok((await boss("/api/todos/" + tdMine.data.id, { method: "DELETE" })).status === 200, "发起人能删自己的待办");
 ok(!(await boss("/api/todos")).data.todos.some((t) => t.id === tdMine.data.id), "删掉的待办不再返回");
@@ -612,7 +709,30 @@ ok(!R2.has(exUp.data.file.key), "删文件时对象存储也清了");
 const exDel = await boss("/api/exports/" + exId, { method: "DELETE" });
 ok(exDel.status === 200 && (await boss("/api/exports")).data.total === 0, "能删出口单");
 
-/* 11. 登出 */
+/* 11. 登录限速：同账号 + 同 IP，10 分钟内错 5 次锁 10 分钟，成功即清零 */
+await post(boss, "/api/users", { login: "rl@ecobox.com", name: "限速测试", password: "rlpass2026", role: "staff" });
+const ipA = { "cf-connecting-ip": "10.9.9.1" };
+const rl = client();
+for (let i = 1; i <= 5; i++) {
+  const r = await post(rl, "/api/login", { login: "rl@ecobox.com", password: "bad-pass-" + i }, ipA);
+  ok(r.status === 401, "限速：第 " + i + " 次错密码仍是 401，得到 " + r.status);
+}
+const locked = await post(rl, "/api/login", { login: "rl@ecobox.com", password: "rlpass2026" }, ipA);
+ok(locked.status === 429, "限速：第 6 次即使密码正确也被锁，得到 " + locked.status);
+const retry = Number(locked.headers.get("retry-after"));
+ok(retry > 0 && retry <= 600, "限速：retry-after 在 1..600 秒之间，得到 " + retry);
+ok(/尝试次数过多/.test(locked.data.error || ""), "限速：提示文案 " + (locked.data.error || ""));
+
+ok((await post(client(), "/api/login", { login: "RL@ecobox.com", password: "rlpass2026" }, { "cf-connecting-ip": "10.9.9.2" })).status === 200, "限速：按账号+IP 隔离，换 IP 能登录");
+ok((await post(client(), "/api/login", { login: "boss@ecobox.com", password: "ecobox2026" }, ipA)).status === 200, "限速：不影响同 IP 的其他账号");
+
+const ipB = { "cf-connecting-ip": "10.9.9.3" };
+for (let i = 0; i < 4; i++) await post(client(), "/api/login", { login: "rl@ecobox.com", password: "nope" + i }, ipB);
+ok((await post(client(), "/api/login", { login: "rl@ecobox.com", password: "rlpass2026" }, ipB)).status === 200, "限速：4 次失败后仍能正常登录");
+await post(client(), "/api/login", { login: "rl@ecobox.com", password: "nope-again" }, ipB);
+ok((await post(client(), "/api/login", { login: "rl@ecobox.com", password: "rlpass2026" }, ipB)).status === 200, "限速：成功登录后计数清零（否则这里会 429）");
+
+/* 12. 登出 */
 ok((await post(boss, "/api/logout", {})).status === 200, "登出");
 ok((await boss("/api/me")).data.user === null, "登出后会话失效");
 
@@ -797,6 +917,102 @@ const empMerge = client(s2.base);
 await post(empMerge, "/api/login", { login: "p@ecobox.com", password: "peter2026" });
 ok((await empMerge("/api/fin/cats/merge", { method: "POST" })).status === 403, "员工不能合并分类");
 s2.close();
+
+/* 页面脚本自检：can*、is*、td*、draw*、paint* 开头的辅助函数必须有定义
+   （曾漏改 canAssign -> canManage，点「新建待办」抛 ReferenceError，界面毫无反应） */
+{
+  const page = fs.readFileSync(path.join(ROOT, "index.html"), "utf8");
+  const script = page.slice(page.lastIndexOf("<script>") + 8, page.lastIndexOf("</script>"));
+  const called = new Set([...script.matchAll(/(?<![.\w$])((?:can|is|td|draw|paint)[A-Z]\w*)\s*\(/g)].map((m) => m[1]));
+  const defined = new Set([...script.matchAll(/(?:const|let|var|function)\s+([\w$]+)/g)].map((m) => m[1]));
+  const builtin = new Set(["isNaN", "isFinite", "isArray", "isPrototypeOf", "isInteger", "isSafeInteger"]);
+  const missing = [...called].filter((n) => !defined.has(n) && !builtin.has(n));
+  ok(missing.length === 0, "页面脚本没有未定义的辅助函数" + (missing.length ? "：" + missing.join(",") : ""));
+}
+
+/* 页面脚本语法 + 英文覆盖：改模板/加文案最容易在这里翻车 */
+{
+  const page = fs.readFileSync(path.join(ROOT, "index.html"), "utf8");
+  const script = page.slice(page.lastIndexOf("<script>") + 8, page.lastIndexOf("</script>"));
+  let err = null;
+  try { new Function(script); } catch (e) { err = e.message; }
+  ok(!err, "页面脚本语法通过" + (err ? "：" + err : ""));
+  const r = spawnSync(process.execPath, [path.join(ROOT, "test", "i18n.mjs"), "--json"], { encoding: "utf8" });
+  const miss = r.status === 0 ? [] : JSON.parse(r.stdout || "[]");
+  ok(miss.length === 0, "英文模式没有漏翻的 tr() 文案" + (miss.length ? "：" + miss.slice(0, 5).join(" ｜ ") : ""));
+}
+
+/* 水单解析：用页面里同一段代码跑两份样例（FCB 倒序 / IZB 正序），防止改模板改坏 */
+{
+  const page = fs.readFileSync(path.join(ROOT, "index.html"), "utf8");
+  const a = page.indexOf("const BANK_MON =");
+  const b = page.indexOf("/* 常用花费人");
+  const mod = new Function(page.slice(a, b) + "\nreturn { bankParseText, bankSuggestCat };")();
+  const fcb = [
+    "Statement Period:   01-11-2026 To 02-11-2026",
+    "Opening balance:   1,000.00",
+    "Closing balance:   800.00",
+    "Credits:   0.00",
+    "Debits:   200.00",
+    "03-11-2026   03-11-2026   SAFEEINCOME with Ref No.",
+    "S3   10.00   800.00",
+    "02-11-2026   02-11-2026   PUMA fuel",
+    "S2   190.00   810.00",
+  ].join("\n");
+  const r1 = mod.bankParseText(fcb);
+  ok(r1.calc.n === 2, "水单（倒序版）解析出 2 笔，得到 " + r1.calc.n);
+  ok(Math.abs(r1.calc.debit - 200) < 0.01 && Math.abs(r1.calc.credit) < 0.01, "倒序水单借贷方向正确 " + JSON.stringify(r1.calc));
+  ok(r1.meta.pf === "2026-11-01" && r1.meta.pt === "2026-11-02", "期间能认出来 " + r1.meta.pf + "~" + r1.meta.pt);
+  ok(Math.abs(Number(r1.meta.open_bal) - 1000) < 0.01 && Math.abs(Number(r1.meta.close_bal) - 800) < 0.01, "期初期末认出");
+  ok(r1.warn === "", "借贷合计与表头一致，不报警 " + r1.warn);
+  const izb = [
+    "E-banking Account Statement",
+    "Account Number :   0391020000704   From Date :   01-OCT-2026   To Date :   02-OCT-2026",
+    "Opening Balance :   0.00",
+    "Trn Date   Value Date   Transaction Details   Instrument   Debit   Credit   Balance",
+    "01-OCT-2026   01-OCT-2026   NFS DEPOSIT",
+    "1,000.00   1,000.00",
+    "02-OCT-2026   02-OCT-2026   FUEL PUMA",
+    "300.00   700.00",
+    "Total :    300.00    1,000.00",
+  ].join("\n");
+  const r2 = mod.bankParseText(izb);
+  ok(r2.calc.n === 2, "水单（正序版）解析出 2 笔，得到 " + r2.calc.n);
+  ok(Math.abs(r2.calc.credit - 1000) < 0.01 && Math.abs(r2.calc.debit - 300) < 0.01, "正序水单借贷方向正确 " + JSON.stringify(r2.calc));
+  ok(r2.meta.pf === "2026-10-01" && r2.meta.pt === "2026-10-02", "NOV/OCT 这种月份写法能转成日期");
+  ok(r2.warn === "" && r2.meta.acct_no === "0391020000704", "账号与合计都对得上 " + r2.meta.acct_no);
+  ok(mod.bankSuggestCat("PUMA fuel woodlands") === "fuel", "摘要猜科目：加油");
+  ok(mod.bankSuggestCat("SAFEEINCOME with Ref No. 123") === "bankfee", "摘要猜科目：手续费");
+  ok(mod.bankSuggestCat("xyz nothing") === "", "认不出来的摘要不乱给科目");
+
+  /* IZB 真水单里余额会换行、摘要跨 3 行；解析丢了尾巴也不能装作没事 */
+  const izbWrapHead = [
+    "E-banking Account Statement",
+    "Account Number :   0391020000704   From Date :   01-OCT-2026   To Date :   02-OCT-2026",
+    "Opening Balance :   0.00",
+    "Closing Balance :   91,400.00",
+    "01-OCT-2026   01-OCT-2026   NFS DEPOSIT/TRANSFER",
+  ];
+  const izbWrap = izbWrapHead.concat([
+    "100,000.00   100,000.00",
+    "02-OCT-2026   02-OCT-2026   POS PURCHASE (PAC)- TOTAL ZAMBIA-",
+    "3,600.00",
+    "96,400.00",
+    "02-OCT-2026   02-OCT-2026   ATM CASH WITHDRAWAL Serenje ZM",
+    "Term ID :030-ATM1 008377",
+    "5,000.00   91,400.00",
+    "Total :    8,600.00    100,000.00",
+  ]).join("\n");
+  const r3 = mod.bankParseText(izbWrap);
+  ok(r3.calc.n === 3, "余额换行、摘要跨行的水单解析出 3 笔，得到 " + r3.calc.n);
+  ok(Math.abs(r3.calc.debit - 8600) < 0.01 && Math.abs(r3.calc.credit - 100000) < 0.01, "换行水单借贷方向正确 " + JSON.stringify(r3.calc));
+  ok(r3.warn === "", "换行水单合计对得上不报警 " + r3.warn);
+
+  const truncated = izbWrapHead.concat(["100,000.00   100,000.00", "Total :    8,600.00    100,000.00"]).join("\n");
+  const r4 = mod.bankParseText(truncated);
+  ok(r4.calc.n === 1, "少了尾巴的水单只解析出 1 笔，得到 " + r4.calc.n);
+  ok(r4.warn === "借方合计对不上", "少了尾巴要报警，得到 " + (r4.warn || "（没报）"));
+}
 
 console.log((fail ? "FAILED " : "OK ") + "PASS=" + pass + " FAIL=" + fail);
 process.exit(fail ? 1 : 0);

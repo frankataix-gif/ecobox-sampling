@@ -13,3 +13,6 @@ __pycache__/
 # ops 构建产物（python ops/build.py 生成，页面内联进 worker）
 ops/dist/
 
+# 仅本地数据（文件自己写明「不要提交/发布」）
+*.local.json
+
