@@ -56,8 +56,10 @@ async function startServer(w, e) {
     const body = chunks.length ? Buffer.concat(chunks) : undefined;
     const url = "http://127.0.0.1:" + server.address().port + req.url;
     const r = await w.fetch(new Request(url, { method: req.method, headers: req.headers, body }), e, {});
+    const ct = r.headers.get("content-type") || "";
+    const bin = /^image\//.test(ct) || /octet-stream/.test(ct);
     res.writeHead(r.status, Object.fromEntries(r.headers));
-    res.end(await r.text());
+    res.end(bin ? Buffer.from(await r.arrayBuffer()) : await r.text());
   });
   await new Promise((ok) => server.listen(0, "127.0.0.1", ok));
   server.base = "http://127.0.0.1:" + server.address().port;
@@ -98,6 +100,23 @@ const patch = (c, p, body) => c(p, { method: "PATCH", body });
 ok((await anon("/")).status === 200, "GET / 返回页面");
 ok((await anon("/api/me")).data.user === null, "未登录时 /api/me 返回 null");
 ok((await anon("/api/logs")).status === 401, "未登录读日报被拒");
+
+/* 1b. PWA：手机「添加到主屏幕」后没有地址栏，manifest/图标/sw 必须未登录也能取到 */
+const man = await anon("/manifest.webmanifest");
+ok(man.status === 200, "manifest 可访问");
+ok(man.data && man.data.display === "standalone", "manifest 是 standalone（无地址栏）");
+ok(man.data && man.data.name && man.data.start_url === "/", "manifest 有名字和 start_url");
+ok(man.data && Array.isArray(man.data.icons) && man.data.icons.length >= 2, "manifest 带图标");
+for (const n of [180, 192, 512]) {
+  const r = await anon("/icon-" + n + ".png");
+  ok(r.status === 200 && /image\/png/.test(r.headers.get("content-type") || ""), "icon-" + n + " 是 png");
+}
+const iconRaw = Buffer.from(await (await fetch(BASE + "/icon-192.png")).arrayBuffer());
+ok(iconRaw.subarray(1, 4).toString() === "PNG", "icon-192 真的是 PNG 字节");
+const sw = await anon("/sw.js");
+ok(sw.status === 200 && /javascript/.test(sw.headers.get("content-type") || ""), "sw.js 可访问");
+ok(typeof sw.data === "string" && !/caches\.open/.test(sw.data), "sw 不缓存任何东西（账目要实时）");
+ok(!!(await anon("/icon-999.png")).status.toString().startsWith("4"), "不存在的图标是 404");
 ok((await anon("/api/status")).data.setup_needed === true, "空库时页面要求初始化");
 
 /* 2. 初始化 */
@@ -172,6 +191,37 @@ ok((await post(staff, "/api/password", { old: "kenny2026", new: "123" })).status
 ok((await post(staff, "/api/password", { old: "kenny2026", new: "newpass123" })).status === 200, "改密码成功");
 ok((await staff("/api/me")).data.user !== null, "改密码的这台设备仍在用");
 ok((await staff2("/api/me")).data.user === null, "同一账号在另一台设备的会话被踢下线");
+
+/* 8b. 财务账目设置（系统 › 财务账目设置）：期初/对账基准的建、改、初始化、删 */
+const staffMods = (await staff("/api/me")).data.user.modules || [];
+ok((await boss("/api/me")).data.user.modules.includes("finacct"), "管理员能进「财务账目设置」");
+ok(!staffMods.includes("finacct"), "员工拿不到「财务账目设置」");
+
+ok((await boss("/api/fin/accounts/" + encodeURIComponent("__company"), { method: "PUT", body: { name: "公司账户", cash: 1500, card: 9000, since: "2026-11-01" } })).status === 200, "给公司账户设期初");
+const coAcc = (await boss("/api/fin/bootstrap")).data.accounts.find((a) => a.uid === "__company");
+ok(coAcc && Number(coAcc.cash) === 1500 && Number(coAcc.card) === 9000 && coAcc.since === "2026-11-01", "公司账户期初存住了");
+
+ok((await staff("/api/fin/accounts/" + encodeURIComponent("k@ecobox.com"), { method: "PUT", body: { name: "k", cash: 1 } })).status === 403, "员工不能自己改期初");
+ok((await mgr("/api/fin/accounts/" + encodeURIComponent("k@ecobox.com"), { method: "PUT", body: { name: "k", cash: 1 } })).status === 403, "负责人也不能改期初");
+
+ok((await boss("/api/fin/accounts/" + encodeURIComponent("k@ecobox.com"), { method: "PUT", body: { name: "k", cash: 200, card: 0, since: "2026-11-02" } })).status === 200, "给员工建期初");
+ok(!!(await boss("/api/fin/bootstrap")).data.accounts.find((a) => a.uid === "k@ecobox.com"), "员工账户出现在列表里");
+
+ok((await boss("/api/fin/accounts/" + encodeURIComponent("k@ecobox.com"), { method: "PUT", body: { name: "k", cash: 0, card: 0, since: "2026-11-13" } })).status === 200, "初始化（清 0 + 改基准）");
+const kAcc = (await boss("/api/fin/bootstrap")).data.accounts.find((a) => a.uid === "k@ecobox.com");
+ok(kAcc && Number(kAcc.cash) === 0 && kAcc.since === "2026-11-13", "初始化后余额 0、基准是今天");
+
+ok((await boss("/api/fin/accounts/" + encodeURIComponent("k@ecobox.com"), { method: "DELETE" })).status === 200, "删除账户设置");
+ok(!(await boss("/api/fin/bootstrap")).data.accounts.find((a) => a.uid === "k@ecobox.com"), "删掉后不再出现");
+ok((await mgr("/api/fin/accounts/" + encodeURIComponent("k@ecobox.com"), { method: "DELETE" })).status === 403, "负责人不能删账户设置");
+
+/* 删账户设置只是把期初清掉，已经记的账一条都不能少 */
+const kday = new Date().toISOString().slice(0, 10);
+const kEntry = await post(staff, "/api/fin/entries", { kind: "out", date: kday, amount: 9, cat: "meal", ch: "cash", note: "测试" });
+ok(kEntry.status === 201, "删设置之前先给这个人记一笔 " + kEntry.status + " " + JSON.stringify(kEntry.data));
+await boss("/api/fin/accounts/" + encodeURIComponent("k@ecobox.com"), { method: "PUT", body: { name: "k", cash: 300, since: "2026-11-01" } });
+ok((await boss("/api/fin/accounts/" + encodeURIComponent("k@ecobox.com"), { method: "DELETE" })).status === 200, "再删一次设置");
+ok(!!db.prepare("SELECT id FROM fin_entries WHERE id=?").get(kEntry.data.id), "删账户设置不动账目记录");
 
 /* 9. 管理员保护自己 */
 const bossId = me.id;

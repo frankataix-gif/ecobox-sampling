@@ -38,6 +38,13 @@
   （`tr()` 字面量 + 未包 `tr()` 但会进 DOM 的中文），缺一条就 `FAIL`。带 `${}` 的拼接串（如「现金 X · 银行 Y」）只能靠 `EN_RULES` 正则兜。
 - 角色：`staff` / `manager` / `finance` / `admin`。
 
+### 财务账目设置（独立模块「系统 › 财务账目设置」，`k: "finacct"`）
+
+- 基础设置只在这个页：`finAcctHtml()` + `bindFinAcct()`，路由 `#finacct`；页面渲染期初/对账基准/建删改/初始化，服务端仍只认财务负责人（`isOwner`）。
+- **费用记录页（`fin`）不再放基础设置**，只留记账 + 统计；期初表单（`fo_*`）、分类（`fin_cats` / `fin_merge`）也已搬到这个页，改之前先看 `bindFinAcct()`。
+- 账户行存在 `fin_accounts(uid,…)`：`__company` 是公司账户；删账户 = 删这一行，`fin_entries` 一条不动（余额回落成流水合计）。
+- PWA：`/manifest.webmanifest`、`/sw.js`、`/icon-192.png`、`/icon-512.png` 由 worker 直接返回（嵌入 `worker.js`），不占静态资源路由。
+
 ### 银行水单（独立模块「银行账单」，财务组）
 
 - 独立页（`bankPane()` / `bankPageHtml()` / `bindBank()`），路由 `#bank`；财务页底部只留一个「打开」入口（`data-go="bank"`）。模块目录在 `worker.js` 的 `MODULES` 里注册（`k: "bank"`）。

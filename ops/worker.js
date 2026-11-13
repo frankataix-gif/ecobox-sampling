@@ -7,6 +7,43 @@ const LIC_PAGE = globalThis.__LIC_PAGE__ || "";
 const BUILD = (() => { const m = String(globalThis.__OPS_PAGE__ || "").match(/const BUILD = "([^"]+)"/); return m ? m[1] : ""; })();
 const COOKIE = "ops_sess";
 /* 未登录时只返回这个最小登录页：不含任何框架 / 数据 */
+/* 手机「添加到主屏幕」：standalone 打开就没有顶部地址栏。图标内联，不占 KV/R2。 */
+const PWA_ICON_B64 = {
+  "icon-180.png": "iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAYAAAA9zQYyAAACW0lEQVR42u3dwQnDMBBFQRXg8lKF+7/bpAfDSo9ZePfwNbcEstbgXffvUbNVPY+r47F7NCVweyAlYHsQJWB7AGVgG10J1IZWBrZxlUFtVGVQG1MZ1EZUBrXxlEJtOGVAG00Z1MZSCrWhlAFtJKVQG0gZ0MZRCrVhlAFtFKVQG0RASzuCNoZSqA0hoCWgJaAloAW0dD5oIwhoCWgJaAloAS0BLQEtAS0BLaAloCWgJaAloAW0BLQEtAS0BLSAloCWgJaAloAW0BLQEtAS0BLQAno+N3NAAw000EADDbQDGmgHNNBAAw000EADDTTQew5/+ucE2vBAAw20XYEGGmiggQba8EADbXiggQbarkADDTTQQANteKCBBhpooP04yY+TgHZAA+2ABhpooIEGGmiggQbaAQ20A9oXAL5YARpooIEG2q5AAw000EADbXiggQYaaKCBtivQQAMNNNBAGx5ooIG2K9BA2xVooIEGGmigDQ800EDbFWiggQYaaKANDzTQhgcaaKDtCjTQQAMNNNCGBxpowwMNNNB2BRpooIEGGmjDAw000EADDbRdgQYaaKCBBtrwQAMNNNBA+9MgfxoEtAMaaAc00EADDTTQQAMNNNAOaKAd0BLQEtAS0AJaAloCWgJaAlpAS0BLQEtAS0ALaAloCWjpE9D/M4SAloCWgJaAFtAS0NJ2oKFWCjPQAlraGTTUSmEGWjnQUCuFGWjlQEOtFGaglQMNtVKYoVYOM9DKgYZaKcxQK4cZauUwQ60cZqiVwwy2cpChVhIz2MpBBltJyGArCRluTSN+ATncYhyTaMecAAAAAElFTkSuQmCC",
+  "icon-192.png": "iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAYAAABS3GwHAAACpklEQVR42u3dsY2FMAAFQRdAeVRB/zmIBgiR7R1Lm5+ePREn/TEmOcd13mo1aselK4fDZSqHwaUpicEFKQnBhSgLwSUoicDwykIwtrIIjKwsAuMqi8CoyiIwprIIjKgsAuMpjcBwygIwmrIIjKU0AkMpC8BISiMwkLIAjKM0AsMIAKkIwChKIzCIAJCKAIyhNAJDCAAJAAkACQAJAGl3AEYQABIAEgASABIAEgASABIAEgASABIAEgASABIAEgASABIAEgASABIAEgASABIAEgASABIAEgASABIAEgASAJ85cx0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAfgSw2t9uawAAsDUAANgaAABsDQAAtgYAAFsDAICtAQDA1gAAYGsAALA1AADYGgAAbA0AALYGwPHfoAA4AADgAACAAwAADgAAOAAA4AAAgAMAAA4AvgT7EuxLMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgEsBAACXAgAALgUAAFwKAAC4FAAAcCkAAOBSAADApQAAgEsBAACXAgAALgUAAFwKAAC4FAAAcCkAAOBSAADApQAAAAAAAAAAAAAAAAAAAAAAAAAAAACArQEAwNYAAGBrAACwNQAA2BoAAGwNAAC2BsCvRPqVSAAAAAAABwAAHAAAcAAAwAEAAAcAABwAAHAA2BuABIAEgASABIAEgASABIAEgASABIAEgASABIAEgAAwggCQogDeYwgBIAEgASABIAEgASBtDgACpR8/AALAICoDgEDpxw+AADCMygAgUPrxA6A8AAiUfvwAKA8AAqUfPwTKP34AlAcAgdKPHwLlHz8Eyj9+CJR//BAo//ghUP7xQ6D84wdB+YcPgTx+EOThgyAPHwZ59DBotUf/AGyIWA29bxO3AAAAAElFTkSuQmCC",
+  "icon-512.png": "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",
+};
+const PWA_ICON_BYTES = {};
+function pwaIcon(name) {
+  if (!PWA_ICON_BYTES[name]) {
+    const bin = atob(PWA_ICON_B64[name]);
+    const u8 = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+    PWA_ICON_BYTES[name] = u8;
+  }
+  return PWA_ICON_BYTES[name];
+}
+const PWA_MANIFEST = JSON.stringify({
+  name: "ECOBOX 工作台",
+  short_name: "ECOBOX",
+  description: "ecobox 日常经营管理：日报、费用、待办、产量",
+  start_url: "/",
+  scope: "/",
+  display: "standalone",
+  background_color: "#f4f5f6",
+  theme_color: "#0f766e",
+  lang: "zh-CN",
+  icons: [
+    { src: "/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+    { src: "/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
+    { src: "/icon-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+  ],
+});
+/* 只为了让浏览器认这是可安装的 App：不注册任何缓存，账目永远走网络 */
+const PWA_SW = `self.addEventListener("install", () => self.skipWaiting());
+self.addEventListener("activate", (e) => e.waitUntil(self.clients.claim()));
+self.addEventListener("fetch", () => {});
+`;
 const LOGIN_PAGE = `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ecobox 登录</title>
@@ -114,7 +151,7 @@ function cookieOf(req, name) {
 const sessCookie = (token, maxAge) =>
   `${COOKIE}=${token}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${maxAge}`;
 
-const publicUser = (u) => ({ id: u.id, login: u.login, name: u.name, phone: u.phone, role: u.role, site: u.site, active: u.active, last_login: u.last_login, lang: u.lang || "zh", modules: modsOf(u), shortcuts: pinsOf(u) });
+const publicUser = (u, env) => ({ id: u.id, login: u.login, name: u.name, phone: u.phone, role: u.role, site: u.site, active: u.active, last_login: u.last_login, lang: u.lang || "zh", modules: modsOf(u, env), shortcuts: pinsOf(u) });
 
 /* 快捷（置顶）：每人一份，存 users.shortcuts 的 JSON 数组，顺序即显示顺序 */
 const MAX_PINS = 8;
@@ -606,26 +643,33 @@ const MODULES = [
   /* 系统 */
   { k: "lang", g: "系统", t: "语言", d: "中文 / English", d_en: "Chinese / English", i: "🌐", tab: "lang", always: true },
   { k: "users", g: "系统", t: "会员设置", d: "会员 · 权限 · 参数", d_en: "Members · permissions · settings", i: "⚙️", tab: "users", adminOnly: true },
+  { k: "finacct", g: "系统", t: "财务账目设置", d: "期初 · 对账基准 · 建删改", d_en: "Opening balances · reconciliation base · add / edit / remove", i: "🧮", tab: "finacct", adminOnly: true },
   { k: "mine", g: "系统", t: "设置", d: "账号 · 密码 · 退出登录", d_en: "Account · password · sign out", i: "👤", tab: "mine", always: true, },
 ];
 const MODULE_KEYS = MODULES.map((m) => m.k);
 const MOD_ALIAS = { production: "log", xrf: "log", docs: "company" }; // 旧键 → 新键
 const modOf = (k) => MODULES.find((m) => m.k === k);
 
-/* 实际可用模块：管理员全给；其他人按 users.modules，空 = 默认全部（除管理员专属） */
-function modsOf(u) {
+/* 实际可用模块：管理员全给；其他人按 users.modules，空 = 默认全部（除管理员专属）；
+   财务负责人（FIN_OWNER）额外拿到「财务账目设置」，不管他是什么角色 */
+function modsOf(u, env) {
   if (!u) return [];
-  if (u.role === "admin") return MODULE_KEYS.slice();
-  const raw = String(u.modules || "").trim();
-  const own = raw
-    ? raw.split(",").map((s) => s.trim()).map((k) => MOD_ALIAS[k] || k).filter((k) => MODULE_KEYS.includes(k))
-    : null;
-  return MODULE_KEYS.filter((k) => {
-    const m = modOf(k);
-    if (m.always) return true;
-    if (m.adminOnly) return false;
-    return own ? own.includes(k) : true;
-  });
+  const owner = !!(env && env.FIN_OWNER && u.login === env.FIN_OWNER);
+  const list = (() => {
+    if (u.role === "admin") return MODULE_KEYS.slice();
+    const raw = String(u.modules || "").trim();
+    const own = raw
+      ? raw.split(",").map((s) => s.trim()).map((k) => MOD_ALIAS[k] || k).filter((k) => MODULE_KEYS.includes(k))
+      : null;
+    return MODULE_KEYS.filter((k) => {
+      const m = modOf(k);
+      if (m.always) return true;
+      if (m.adminOnly) return false;
+      return own ? own.includes(k) : true;
+    });
+  })();
+  if (owner && !list.includes("finacct")) list.push("finacct");
+  return list;
 }
 /* 存库前清洗：去掉管理员专属与未知键 */
 function cleanModules(list) {
@@ -1918,6 +1962,15 @@ async function finApi(req, env, me, seg, url, body) {
     return json({ ok: true });
   }
 
+  /* 删掉某人的账户设置（期初归零，账目记录不动）；只有财务负责人能删 */
+  if (sub === "accounts" && seg[2] && req.method === "DELETE") {
+    const uid = decodeURIComponent(seg[2]);
+    if (!isOwner) return err("只有财务负责人能删账户设置", 403);
+    await env.DB.prepare("DELETE FROM fin_accounts WHERE uid=?").bind(uid).run();
+    await audit(env, me, "fin.acct.del", uid, "");
+    return json({ ok: true });
+  }
+
   /* 合并老分类：日常/邮费/其它 → 杂费（?dry=1 只报数量） */
   if (sub === "cats" && seg[2] === "merge" && req.method === "POST") {
     if (!isOwner) return err("只有财务负责人能合并分类", 403);
@@ -2348,6 +2401,12 @@ export default {
       return new Response(LIC_PAGE, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } });
     }
     if (path.startsWith("/lic/")) return licRoute(req, env, url);
+    /* PWA：manifest / 图标 / service worker（不需要登录，浏览器装 App 时要抓） */
+    if (path === "/manifest.webmanifest") return new Response(PWA_MANIFEST, { headers: { "content-type": "application/manifest+json; charset=utf-8", "cache-control": "public, max-age=600" } });
+    if (path === "/sw.js") return new Response(PWA_SW, { headers: { "content-type": "text/javascript; charset=utf-8", "cache-control": "no-cache", "service-worker-allowed": "/" } });
+    if (path === "/icon-180.png" || path === "/icon-192.png" || path === "/icon-512.png") {
+      return new Response(pwaIcon(path.slice(1)), { headers: { "content-type": "image/png", "cache-control": "public, max-age=86400" } });
+    }
     if (!path.startsWith("/api/")) return err("not found", 404);
 
     // 写操作只接受同源页面（防 CSRF）
@@ -2382,7 +2441,7 @@ export default {
         const user = await env.DB.prepare("SELECT * FROM users WHERE id=?").bind(id).first();
         const token = await newSession(env, user, req);
         await audit(env, user, "setup", user.login);
-        return json({ user: publicUser(user) }, 200, { "set-cookie": sessCookie(token, SESSION_DAYS * 86400) });
+        return json({ user: publicUser(user, env) }, 200, { "set-cookie": sessCookie(token, SESSION_DAYS * 86400) });
       }
 
       /* 版本号：页面用它判断要不要提示“立即更新” */
@@ -2414,12 +2473,12 @@ export default {
         await env.DB.prepare("DELETE FROM login_fail WHERE k=?").bind(key).run();
         await env.DB.prepare("UPDATE users SET last_login=? WHERE id=?").bind(nowISO(), u.id).run();
         const token = await newSession(env, u, req);
-        return json({ user: publicUser(u) }, 200, { "set-cookie": sessCookie(token, SESSION_DAYS * 86400) });
+        return json({ user: publicUser(u, env) }, 200, { "set-cookie": sessCookie(token, SESSION_DAYS * 86400) });
       }
 
       const me = await currentUser(req, env);
 
-      if (seg[0] === "me" && req.method === "GET") return json({ user: me ? publicUser(me) : null });
+      if (seg[0] === "me" && req.method === "GET") return json({ user: me ? publicUser(me, env) : null });
 
       if (seg[0] === "me" && req.method === "PATCH") {
         if (!me) return err("请先登录", 401);
@@ -2436,7 +2495,7 @@ export default {
           await env.DB.prepare("UPDATE users SET shortcuts=? WHERE id=?").bind(JSON.stringify(keys), me.id).run();
           me.shortcuts = JSON.stringify(keys);
         }
-        return json({ user: publicUser(me) });
+        return json({ user: publicUser(me, env) });
       }
 
       if (seg[0] === "logout" && req.method === "POST") {

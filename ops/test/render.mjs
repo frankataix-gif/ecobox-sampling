@@ -97,7 +97,7 @@ await new Promise((r) => dom.window.addEventListener("load", r));
 await new Promise((r) => setTimeout(r, 1200));
 const w = dom.window;
 
-const tabs = ["home", "status", "mine", "fin", "log", "company", "users", "lang", "todo", "bank", "punch", "export", "customer", "g:财务", "g:日常协同", "g:业务现场", "g:资产", "g:系统"];
+const tabs = ["home", "status", "mine", "fin", "log", "company", "users", "lang", "todo", "bank", "punch", "export", "customer", "finacct", "g:财务", "g:日常协同", "g:业务现场", "g:资产", "g:系统"];
 for (const t of tabs) {
   const out = await w.eval(`(async () => {
     try {
@@ -134,6 +134,54 @@ for (const [name, code] of sheets) {
   console.log((out === "ok" ? "  ok   " : "  FAIL ") + name.padEnd(12) + (out === "ok" ? "" : out));
   if (out !== "ok") problems.push(name + " " + out);
 }
+
+/* 财务账目设置：改期初要真的写进去，初始化/删除不能炸 */
+if (role === "boss") {
+  const acct = await w.eval(`(async () => {
+    try {
+      S.tab = "finacct";
+      await render();
+      await new Promise((r) => setTimeout(r, 400));
+      const box = document.querySelector('[data-set="boss@ecobox.com"]');
+      if (!box) return "no card";
+      box.querySelector('[data-f="cash"]').value = "777";
+      box.querySelector('[data-save]').click();
+      await new Promise((r) => setTimeout(r, 800));
+      const cash = document.querySelector('[data-set="boss@ecobox.com"] [data-f="cash"]');
+      if (!cash || Number(cash.value) !== 777) return "save failed: " + (cash ? cash.value : "gone");
+      const fresh = await api("/fin/bootstrap");
+      const row = (fresh.accounts || []).find((a) => a.uid === "boss@ecobox.com");
+      if (!row || Number(row.cash) !== 777) return "server cash " + (row && row.cash);
+
+      const init = document.querySelector('[data-set="boss@ecobox.com"] [data-init]');
+      init.click();
+      await new Promise((r) => setTimeout(r, 800));
+      const b2 = await api("/fin/bootstrap");
+      const row2 = (b2.accounts || []).find((a) => a.uid === "boss@ecobox.com");
+      if (!row2 || Number(row2.cash) !== 0) return "init failed " + (row2 && row2.cash);
+
+      const del = document.querySelector('[data-set="boss@ecobox.com"] [data-rm]');
+      del.click();
+      await new Promise((r) => setTimeout(r, 800));
+      const b3 = await api("/fin/bootstrap");
+      if ((b3.accounts || []).some((a) => a.uid === "boss@ecobox.com")) return "delete failed";
+      return "ok";
+    } catch (e) { return "THROW " + e.message; }
+  })()`);
+  console.log((acct === "ok" ? "  ok   " : "  FAIL ") + "acct-setup".padEnd(12) + (acct === "ok" ? "" : acct));
+  if (acct !== "ok") problems.push("acct-setup " + acct);
+}
+
+/* 手机全屏按钮：非 standalone 时必须能看见，点了不能炸 */
+const fsBtn = await w.eval(`(async () => {
+  const b = document.getElementById("fsbtn");
+  if (!b) return "missing";
+  if (b.classList.contains("hide")) return "hidden";
+  try { b.click(); await new Promise((r) => setTimeout(r, 100)); return "ok"; }
+  catch (e) { return "THROW " + e.message; }
+})()`);
+console.log((fsBtn === "ok" ? "  ok   " : "  FAIL ") + "fsbtn".padEnd(12) + (fsBtn === "ok" ? "" : fsBtn));
+if (fsBtn !== "ok") problems.push("fsbtn " + fsBtn);
 
 console.log(problems.length ? "FAILED " + problems.length : "OK 页面渲染全通(" + role + ")");
 server.close();
