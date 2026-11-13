@@ -3720,11 +3720,11 @@ function finHtml() {
   const coHtml = !canAll ? "" : `<div class="fin-acct">
     <div class="n">${esc(tr(`🏦 资金总览`))} <span class="mut" style="font-weight:400;font-size:12px">${esc(tr(`· 调拨不减总额，消费才减`))}</span></div>
     <div class="g" style="margin-top:8px">
-      <div><label>${esc(tr(`公司账户`))}</label><b>${finMoney(coBal.cash + coBal.card)}</b><small>${esc(tr(`对账日 ${esc(coRow.since || "未设")}`))}</small></div>
+      ${FIN.canCo ? `<div><label>${esc(tr(`公司账户`))}</label><b>${finMoney(coBal.cash + coBal.card)}</b><small>${esc(tr(`对账日 ${esc(coRow.since || "未设")}`))}</small></div>` : ""}
       <div><label>${esc(tr(`员工手上`))}</label><b>${finMoney(pplBal.cash + pplBal.card)}</b><small>${esc(tr(`现金 ${finMoney(pplBal.cash)} · 银行 ${finMoney(pplBal.card)}`))}</small></div>
     </div>
     <div class="g" style="margin-top:8px">
-      <div><label>${esc(tr(`公司资金总额`))}</label><b>${finMoney(totCash + totCard)}</b><small>${esc(tr(`现金 ${finMoney(totCash)} · 银行 ${finMoney(totCard)}`))}</small></div>
+      ${FIN.canCo ? `<div><label>${esc(tr(`公司资金总额`))}</label><b>${finMoney(totCash + totCard)}</b><small>${esc(tr(`现金 ${finMoney(totCash)} · 银行 ${finMoney(totCard)}`))}</small></div>` : ""}
       <div><label>${esc(tr(`未报备用金`))}</label><b>${finMoney(floatLeft)}</b><small>${esc(tr(`已发 − 已花，仍算在员工手上`))}</small></div>
     </div>
   </div>`;

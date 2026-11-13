@@ -242,11 +242,14 @@ const sp = await post(peter, "/api/fin/entries", { kind: "transfer", uid: "peter
 ok(sp.status === 403, "员工不能登记人员转账");
 ok(!db.prepare("SELECT id FROM fin_entries WHERE kind='transfer' AND uid='peter@ecobox.com'").get(), "员工转账没有落库");
 
-const m2 = await post(mgr, "/api/fin/entries", { kind: "transfer", uid: "boss@ecobox.com", ch: "cash",
+const m2 = await post(mgr, "/api/fin/entries", { kind: "transfer", uid: "lim@ecobox.com", ch: "cash",
   to_uid: "peter@ecobox.com", to_ch: "cash", amount: 50, date: today });
-ok(m2.status === 201, "负责人能在任意两人之间转账");
+ok(m2.status === 201, "负责人能在负责人 / 员工之间转账");
 const m2row = db.prepare("SELECT * FROM fin_entries WHERE id=?").get(m2.data.id);
-ok(m2row && m2row.uid === "boss@ecobox.com" && m2row.to_uid === "peter@ecobox.com", "负责人转账按指定两人落库");
+ok(m2row && m2row.uid === "lim@ecobox.com" && m2row.to_uid === "peter@ecobox.com", "负责人转账按指定两人落库");
+const mgrToBoss = await post(mgr, "/api/fin/entries", { kind: "transfer", uid: "boss@ecobox.com", ch: "cash",
+  to_uid: "peter@ecobox.com", to_ch: "cash", amount: 5, date: today });
+ok(mgrToBoss.status === 403, "负责人不能记管理员 / 财务的账", "status=" + mgrToBoss.status);
 const pboot = (await peter("/api/fin/bootstrap")).data.entries;
 ok(pboot.some((e) => e.kind === "transfer" && e.to_uid === "peter@ecobox.com" && e.amount === 50), "转入人在 bootstrap 看到转账");
 ok(pboot.every((e) => e.uid === "peter@ecobox.com" || e.to_uid === "peter@ecobox.com"), "员工只看到与自己有关的记录");
@@ -322,8 +325,8 @@ ok((await post(finC, "/api/login", { login: "fin@ecobox.com", password: "finance
 const fb = (await finC("/api/fin/bootstrap")).data;
 ok(fb.canAll === true && fb.owner === false, "财务：能看全部账，但不是负责人", JSON.stringify({ canAll: fb.canAll, owner: fb.owner }));
 ok((await post(finC, "/api/fin/entries", { kind: "out", uid: "boss@ecobox.com", date: today, amount: 12, cat: "meal", ch: "cash", note: "财务代记" })).status === 201, "财务能替别人记账");
-const bossEntry = await post(boss, "/api/fin/entries", { kind: "out", uid: "boss@ecobox.com", date: today, amount: 7, cat: "meal", ch: "cash", note: "老板记的" });
-ok((await finC("/api/fin/entries/" + bossEntry.data.id + "/inv", { method: "PUT", body: { inv: 1 } })).status === 200, "财务能标别人的票");
+const admCoEntry = await post(boss, "/api/fin/entries", { kind: "out", uid: "boss@ecobox.com", date: today, amount: 7, cat: "meal", ch: "cash", note: "老板记的" });
+ok((await finC("/api/fin/entries/" + admCoEntry.data.id + "/inv", { method: "PUT", body: { inv: 1 } })).status === 200, "财务能标别人的票");
 ok((await finC("/api/users")).status === 403, "财务不能管账号");
 const bossLog = await post(boss, "/api/logs", { day: "2026-10-16", site: "Serenje 1330NW", headcount: 1, ore_t: 1 });
 const finLogPatch = await patch(finC, "/api/logs/" + bossLog.data.id, { note: "财务改日报" });
@@ -352,6 +355,26 @@ ok((await post(boss, "/api/fin/entries", { kind: "out", uid: "__company", ch: "c
 ok((await patch(mgr, "/api/fin/entries/" + coOut.data.id, { amount: 99, date: today, note: "管理层改" })).status === 403, "管理层不能改公司账户的记录");
 ok((await patch(finC, "/api/fin/entries/" + coOut.data.id, { amount: 90, date: today, note: "财务改" })).status === 200, "财务能改公司账户的记录");
 ok((await boss("/api/fin/entries/" + coOut.data.id, { method: "DELETE" })).status === 200, "负责人能删公司账户的记录");
+
+/* 18c. 账目可见范围：管理员 / 财务看全局；负责人看负责人 + 员工；员工只看自己 */
+const visEntry = await post(boss, "/api/fin/entries", { kind: "out", uid: "boss@ecobox.com", ch: "cash",
+  date: today, amount: 12, cat: "misc", ft: "life", note: "管理员自己花的" });
+ok(visEntry.status === 201, "管理员记账", "status=" + visEntry.status);
+ok((await finC("/api/fin/bootstrap")).data.entries.some((e) => e.id === visEntry.data.id), "财务看得到管理员的账");
+const bossBoot = (await boss("/api/fin/bootstrap")).data;
+ok(bossBoot.entries.some((e) => e.id === visEntry.data.id) && bossBoot.entries.some((e) => e.uid === "peter@ecobox.com"), "管理员看全局");
+const mgrBoot = (await mgr("/api/fin/bootstrap")).data;
+ok(mgrBoot.entries.some((e) => e.uid === "peter@ecobox.com"), "负责人看得到员工的账");
+ok(!mgrBoot.entries.some((e) => e.id === visEntry.data.id), "负责人看不到管理员自己的消费");
+ok(!mgrBoot.entries.some((e) => e.uid === "fin@ecobox.com"), "负责人看不到财务的账");
+ok(!mgrBoot.users.some((u) => u.login === "boss@ecobox.com" || u.login === "fin@ecobox.com"), "负责人的人员列表只有负责人 / 员工");
+ok(!mgrBoot.accounts.some((a) => a.uid === "boss@ecobox.com"), "负责人看不到管理员的账户余额");
+ok(mgrBoot.canAll === true, "负责人仍有「全部」页签（范围到负责人 / 员工）");
+const staffBoot = (await peter("/api/fin/bootstrap")).data;
+ok(staffBoot.canAll === false, "员工没有「全部」页签");
+ok(!staffBoot.entries.some((e) => e.uid === "lim@ecobox.com"), "员工看不到同事的账");
+ok((await patch(mgr, "/api/fin/entries/" + visEntry.data.id, { amount: 1, date: today, note: "管理层想改" })).status === 403, "负责人不能改管理员的账");
+ok((await boss("/api/fin/entries/" + visEntry.data.id, { method: "DELETE" })).status === 200, "管理员删掉自己这条测试记录");
 
 /* 18b. 银行水单：上传 / 核对 / 分权 */
 const tinyPdf = "data:application/pdf;base64," + Buffer.from("%PDF-1.4\n%test\n").toString("base64");

@@ -1299,6 +1299,16 @@ function normMedia(list) {
 /* ---------- 财务：接口 ---------- */
 const FIN_KINDS = ["out", "in", "float", "move", "transfer"];
 const finSeeAll = (u) => u.role === "admin" || u.role === "manager" || u.role === "finance";
+/* 账目可见范围：管理员 / 财务看全局（null）；负责人看负责人 + 员工；员工只看自己 */
+async function finVisible(env, me) {
+  if (me.role === "admin" || me.role === "finance" || me.login === (env.FIN_OWNER || "frank")) return null;
+  const set = new Set([me.login]);
+  if (me.role === "manager") {
+    const r = await env.DB.prepare("SELECT login FROM users WHERE role IN ('manager','staff')").all();
+    for (const x of r.results) set.add(x.login);
+  }
+  return set;
+}
 const FIN_DEFAULT_CATS = { life: [], project: [], licence: [], names: {} };
 /* 老分类并进新分类（接口写入时也自动纠正） */
 const FIN_CAT_MERGE = { daily: "misc", postage: "misc", other: "misc", lodging: "meal" };
@@ -1705,13 +1715,14 @@ async function finApi(req, env, me, seg, url, body) {
   /* 一次性拉全部 */
   if (sub === "bootstrap" && req.method === "GET") {
     const sql = "SELECT * FROM fin_entries ORDER BY date DESC, created_at DESC";
-    const rows = all ? await env.DB.prepare(sql).all() : await env.DB.prepare(sql).bind().all();
+    const rows = await env.DB.prepare(sql).all();
+    const vis = await finVisible(env, me);
     let entries = rows.results.map(finRow);
-    if (!all) entries = entries.filter((e) => e.uid === own || e.to_uid === own);
+    if (vis) entries = entries.filter((e) => vis.has(e.uid) || vis.has(e.to_uid));
     const acc = await env.DB.prepare("SELECT * FROM fin_accounts ORDER BY name").all();
-    const users = all
-      ? (await env.DB.prepare("SELECT login,name,role,active FROM users ORDER BY name").all()).results
-      : [{ login: own, name: me.name, role: me.role, active: 1 }];
+    const allUsers = (await env.DB.prepare("SELECT login,name,role,active FROM users ORDER BY name").all()).results;
+    const users = vis ? allUsers.filter((u) => vis.has(u.login)) : allUsers;
+    if (!users.length) users.push({ login: own, name: me.name, role: me.role, active: 1 });
     /* 挂在「已不在通讯录里的账号名」下的记录：多半是改过账号名，界面上要给个合并入口 */
     const orphans = [];
     if (all) {
@@ -1736,7 +1747,7 @@ async function finApi(req, env, me, seg, url, body) {
       ).results,
       bankAll,
       canCo,
-      accounts: all ? acc.results : acc.results.filter((a) => a.uid === own),
+      accounts: vis ? acc.results.filter((a) => vis.has(a.uid)) : acc.results,
       cats: await finCfgGet(env, "cats", FIN_DEFAULT_CATS),
       opening: await finCfgGet(env, "opening", { date: "", cash: 0, card: 0 }),
       me: { uid: own, name: me.name, role: me.role },
@@ -1763,6 +1774,11 @@ async function finApi(req, env, me, seg, url, body) {
     if (kind === "transfer") {
       if (!toUid) return err("转账要选转给谁");
       if (toUid === uid) return err("转出人和转入人不能是同一个人");
+    }
+    const scope = await finVisible(env, me);
+    if (scope) {
+      if (!scope.has(uid)) return err("只能记负责人和员工的账", 403);
+      if (toUid && !scope.has(toUid)) return err("只能转给负责人和员工", 403);
     }
     const photos = Array.isArray(b.photos) ? b.photos.slice(0, 6).map(String) : [];
     const note = String(b.note || "");
@@ -1799,6 +1815,8 @@ async function finApi(req, env, me, seg, url, body) {
     if (!row) return err("记录不存在", 404);
     if (!isOwner && !all && row.uid !== own) return err("只能标自己的记录", 403);
     if (row.uid === CO && !canCo) return err("只有财务 / 管理员能改公司账户", 403);
+    const visRow = await finVisible(env, me);
+    if (visRow && !visRow.has(row.uid)) return err("看不到别人的账", 403);
     if (row.kind !== "out" && row.kind !== "in") return err("只有支出/收入分有票无票", 400);
     const b = await body();
     const inv = b.inv ? 1 : 0;
@@ -1824,6 +1842,8 @@ async function finApi(req, env, me, seg, url, body) {
     if (!row) return err("记录不存在", 404);
     if (!isOwner && !all && row.uid !== own) return err("只能改自己的记录", 403);
     if (row.uid === CO && !canCo) return err("只有财务 / 管理员能改公司账户", 403);
+    const visPatch = await finVisible(env, me);
+    if (visPatch && !visPatch.has(row.uid)) return err("看不到别人的账", 403);
     const b = await body();
     if (!DAY_RE.test(String(b.date || ""))) return err("日期要 YYYY-MM-DD");
     const amount = Math.round(num(b.amount) * 100) / 100;
@@ -1859,6 +1879,8 @@ async function finApi(req, env, me, seg, url, body) {
     if (!row) return err("记录不存在", 404);
     if (!isOwner && !all && row.uid !== own) return err("只能删自己的记录", 403);
     if (row.uid === CO && !canCo) return err("只有财务 / 管理员能删公司账户的记录", 403);
+    const visDel = await finVisible(env, me);
+    if (visDel && !visDel.has(row.uid)) return err("看不到别人的账", 403);
     await env.DB.prepare("DELETE FROM fin_entries WHERE id=?").bind(seg[2]).run();
     await audit(env, me, "fin.del", seg[2], `${row.kind} ${row.amount}`);
     return json({ ok: true });
