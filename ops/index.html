@@ -733,6 +733,7 @@ const isEN = () => LANG === "en";
 
 /* 界面文案：中文原文 → 英文。只在英文模式下走这里；查不到就保留中文。 */
 const EN = {
+  "别人的金额和渠道不能改，可以改分类 / 备注 / 发票": "Amount and channel are locked on other entries - category, note and invoice can still be edited",
   "规则：负责人点「提交完成」，发起人审核通过才算完成": "How it works: the owner taps “Submit complete”, and the creator approves before it counts as done",
   "文件超过 25MB，请线下提供（U 盘 / 网盘 / 邮件）": "File over 25MB — please hand it over offline (USB / cloud drive / email)",
   "占比合计": "Share total",
@@ -4369,6 +4370,15 @@ function finSheet(presetTo, presetKind, editEntry) {
     if (isCo) chSel.value = "card";
   };
   if (uidSel) { uidSel.onchange = lockCoCh; lockCoCh(); }
+  /* 改别人的账：金额和渠道锁死，只能改分类 / 备注 / 发票 */
+  if (edit && d.uid !== FIN.me.uid && d.uid !== FINCO && !FIN.owner) {
+    $("#ff_amt", box).disabled = true;
+    chSel.disabled = true;
+    const fromSel = $("#ff_from", box);
+    if (fromSel) fromSel.disabled = true;
+    const msg = $("#ff_msg", box);
+    if (msg) msg.textContent = tr("别人的金额和渠道不能改，可以改分类 / 备注 / 发票");
+  }
   const paintCat = () => {
     const hint = $("#ff_cat_hint", box);
     const txt = FIN_CAT_HINT[catSel.value] || "";

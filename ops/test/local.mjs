@@ -351,8 +351,18 @@ ok(mgrCo.status === 403, "管理层不能直接把费用记到公司账户", "st
 const staffCo = await post(peter, "/api/fin/entries", { kind: "out", uid: "__company", ch: "card", date: today,
   amount: 3, cat: "misc", ft: "life", note: "员工想记公司账户" });
 ok(staffCo.status === 403, "员工不能往公司账户记账", "status=" + staffCo.status);
-ok((await post(peter, "/api/fin/entries", { kind: "out", uid: "peter@ecobox.com", ch: "cash", date: today,
-  amount: 2, cat: "misc", ft: "life", note: "彼得自己买水" })).status === 201, "员工记自己的账");
+const peterOwn = await post(peter, "/api/fin/entries", { kind: "out", uid: "peter@ecobox.com", ch: "cash", date: today,
+  amount: 2, cat: "misc", ft: "life", note: "彼得自己买水" });
+ok(peterOwn.status === 201, "员工记自己的账");
+const pOwn = () => db.prepare("SELECT * FROM fin_entries WHERE id=?").get(peterOwn.data.id);
+const finTouch = (c, body) => patch(c, "/api/fin/entries/" + peterOwn.data.id, { date: today, cat: "misc", ft: "life", ...body });
+ok((await finTouch(finC, { amount: 2, ch: "cash", note: "财务改描述" })).status === 200, "财务能改员工记录的分类 / 描述");
+ok(pOwn().amount === 2 && pOwn().note === "财务改描述", "财务改完只有描述变，金额没变");
+ok((await finTouch(finC, { amount: 99, ch: "cash", note: "财务改金额" })).status === 403, "财务不能改员工的金额");
+ok((await finTouch(finC, { amount: 2, ch: "card", note: "财务改渠道" })).status === 403, "财务不能改员工的收支渠道");
+ok(pOwn().amount === 2 && pOwn().ch === "cash", "被拦下后金额和渠道都没动");
+ok((await finTouch(mgr, { amount: 99, ch: "cash", note: "负责人改金额" })).status === 403, "负责人不能改员工的金额");
+ok((await finTouch(mgr, { amount: 2, ch: "cash", note: "负责人改描述" })).status === 200, "负责人能改员工记录的分类 / 描述");
 ok((await post(boss, "/api/fin/entries", { kind: "out", uid: "peter@ecobox.com", ch: "cash", date: today,
   amount: 6, cat: "misc", ft: "life", note: "管理员替员工记" })).status === 403, "管理员也不能替别人记账");
 ok(!(await peter("/api/fin/bootstrap")).data.entries.some((e) => e.id === coOut.data.id), "员工看不到公司账户的费用");

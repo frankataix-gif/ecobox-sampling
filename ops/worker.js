@@ -1859,6 +1859,16 @@ async function finApi(req, env, me, seg, url, body) {
       if (!toUid) return err("转账要选转给谁");
       if (toUid === row.uid) return err("转出人和转入人不能是同一个人");
     }
+    /* 别人的账：金额 / 收支渠道 / 转入方不许动，只能改分类、备注、发票这些信息类字段 */
+    if (row.uid !== own && row.uid !== CO && !isOwner) {
+      const same = (a, b2) => Math.abs(Number(a) - Number(b2)) < 0.005;
+      if (!same(amount, row.amount)) return err("别人的金额不能改（只能改分类 / 备注）", 403);
+      if (ch !== row.ch) return err("别人的收支渠道不能改（只能改分类 / 备注）", 403);
+      if ((row.kind === "transfer" || row.kind === "float")
+        && (toUid !== String(row.to_uid || "") || String(toCh || "") !== String(row.to_ch || ""))) {
+        return err("别人的转入方不能改（只能改分类 / 备注）", 403);
+      }
+    }
     const note = b.note === undefined ? String(row.note || "") : String(b.note);
     if ((row.kind === "out" || row.kind === "in" || row.kind === "float") && !note.trim()) return err("备注要填");
     const inv = row.kind === "out" || row.kind === "in"
