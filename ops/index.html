@@ -3572,7 +3572,7 @@ const finPeople = () => {
   return us.length ? us : [{ login: FIN.me.uid, name: FIN.me.name, role: FIN.me.role }];
 };
 const finNameOf = (uid) => {
-  if (uid === FINCO) return "公司账户";
+  if (uid === FINCO) return tr("公司账户");
   const u = (FIN.users || []).find((x) => x.login === uid);
   if (u && u.name) return u.name;
   const a = (FIN.accounts || []).find((x) => x.uid === uid);
@@ -3610,7 +3610,7 @@ function finHtml() {
   const who = FINWHO || FIN.me.uid;
   const isAll = FINWHO === "ALL";
   const isMe = !FINWHO;                 // 空 = 我自己
-  const ro = !isMe && !isAll;           // 点某个人 = 只读（只看看，不能改）
+  const ro = !isMe && !isAll && !(who === FINCO && FIN.canCo);   // 点某个人 = 只读（只看看，不能改）；公司账户对有记账权的人可写
   const canAll = FIN.canAll;
   const mine = (e) => e.uid === who || e.to_uid === who;   // 自己的账本：自己花的 + 收到的备用金
   const scoped = isAll ? FIN.entries : FIN.entries.filter(mine);
@@ -3697,12 +3697,13 @@ function finHtml() {
   };
   const people = finPeople();
   const personCard = () => acctCard(people.find((p) => p.login === who) || { login: who, name: finNameOf(who), role: "", ghost: false });
-  const acctHtml = isAll ? "" : `<div class="sec">${isMe ? "我的账户" : esc(finNameOf(who)) + " 账户"}</div>` + personCard();
+  const acctHtml = isAll ? "" : `<div class="sec">${coView ? esc(tr(`公司账户`)) : (isMe ? "我的账户" : esc(finNameOf(who)) + " 账户")}</div>` + personCard();
 
   const withAcct = (FIN.accounts || []).filter((a) => a.uid !== FINCO && (Number(a.cash) || Number(a.card)));
   const scopeChips = [`<button data-fscope="" class="${isMe ? "on" : ""}">${esc(tr(`我`))}</button>`];
   if (canAll) {
     scopeChips.push(`<button data-fscope="ALL" class="${isAll ? "on" : ""}">${esc(tr(`全部`))}</button>`);
+    if (FIN.canCo) scopeChips.push(`<button data-fscope="${FINCO}" class="${FINWHO === FINCO ? "on" : ""}">🏦 ${esc(tr(`公司账户`))}</button>`);
     for (const a of withAcct) {
       const p = people.find((x) => x.login === a.uid) || { login: a.uid, name: a.name || a.uid, role: "", ghost: true };
       scopeChips.push(`<button data-fscope="${esc(p.login)}" class="${FINWHO === p.login ? "on" : ""}">${esc(p.name || p.login)}</button>`);
@@ -3728,11 +3729,12 @@ function finHtml() {
     </div>
   </div>`;
 
+  const coView = who === FINCO;
   const actions = !ro ? `<div class="fin-acts">
-    ${!isAll && (FIN.canAll || FIN.owner) ? `<button id="fin_transfer">${esc(tr(`🔀 调拨`))}</button>` : ""}
+    ${!isAll && !coView && (FIN.canAll || FIN.owner) ? `<button id="fin_transfer">${esc(tr(`🔀 调拨`))}</button>` : ""}
     ${canAll ? `<button id="fin_cosend">${esc(tr(`🏦 公司调款`))}</button>` : ""}
-    <button id="fin_move">${esc(tr(`🔁 取现`))}</button>
-    ${FIN.owner ? `<button id="fin_give">${esc(tr(`🤝 给员工`))}</button>` : ""}
+    ${!coView ? `<button id="fin_move">${esc(tr(`🔁 取现`))}</button>` : ""}
+    ${FIN.owner && !coView ? `<button id="fin_give">${esc(tr(`🤝 给员工`))}</button>` : ""}
     <button id="fin_mark"${FINMARK ? ` class="pri"` : ""}>${FINMARK ? "✅ 标完了" : "🧾 补票"}</button>
   </div>` : "";
 
@@ -4262,6 +4264,8 @@ function finSheet(presetTo, presetKind, editEntry) {
   const canAll = FIN.canAll;
   const viewUid = FINWHO && FINWHO !== "ALL" ? FINWHO : FIN.me.uid;
   const people = canAll ? finPeople().map((u) => u.login) : [FIN.me.uid];
+  /* 公司账户：只有财务 / 管理员 / 负责人能记，归属下拉里多一项 */
+  const ownerList = FIN.canCo ? [...people, FINCO] : people;
   /* 归属（大类）→ 分类（细类）：两级联动，项目/矿权维护的自定义项来自 fin_cfg.cats */
   const opt = (k) => `<option value="${esc(k)}">${esc(finCatName(k))}</option>`;
   const catsOf = (ft) => {
@@ -4307,7 +4311,7 @@ function finSheet(presetTo, presetKind, editEntry) {
         </div>
         <div class="mut" id="ff_inv_hint" style="display:none;margin:6px 0 0">${esc(tr(`有发票要上传发票照片（最多 6 张）`))}</div>
       </div>
-      ${canAll ? `<label>${esc(tr(`记在谁名下`))}</label><select id="ff_uid">${people.map((p) => `<option value="${esc(p)}" ${p === (edit ? d.uid : viewUid) ? "selected" : ""}>${esc(finNameOf(p))}</option>`).join("")}</select>` : ""}
+      ${canAll ? `<label>${esc(tr(`记在谁名下`))}</label><select id="ff_uid">${ownerList.map((p) => `<option value="${esc(p)}" ${p === (edit ? d.uid : viewUid) ? "selected" : ""}>${esc(finNameOf(p))}</option>`).join("")}</select>` : ""}
     </div>
     <div id="ff_fl" class="hide">
       <div class="r"><div><label>${esc(tr(`从谁出`))}</label><select id="ff_giver">${people.map((p) => `<option value="${esc(p)}" ${p === (edit ? d.uid : FIN.me.uid) ? "selected" : ""}>${esc(finNameOf(p))}</option>`).join("")}</select></div>
@@ -4356,6 +4360,16 @@ function finSheet(presetTo, presetKind, editEntry) {
     if (last.cat && !FIN_OFFBOOK[last.cat] && catsOf(initFt).includes(last.cat)) catSel.value = last.cat;
     if (last.ch) $("#ff_ch", box).value = last.ch === "card" ? "card" : "cash";
   }
+  /* 公司账户只有银行口：选中公司账户时锁死渠道并禁用「现金」 */
+  const uidSel = $("#ff_uid", box), chSel = $("#ff_ch", box);
+  const lockCoCh = () => {
+    if (!uidSel || !chSel) return;
+    const isCo = uidSel.value === FINCO;
+    const cashOpt = [...chSel.options].find((o) => o.value === "cash");
+    if (cashOpt) cashOpt.disabled = isCo;
+    if (isCo) chSel.value = "card";
+  };
+  if (uidSel) { uidSel.onchange = lockCoCh; lockCoCh(); }
   const paintCat = () => {
     const hint = $("#ff_cat_hint", box);
     const txt = FIN_CAT_HINT[catSel.value] || "";

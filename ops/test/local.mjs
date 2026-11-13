@@ -331,6 +331,28 @@ ok(finLogPatch.status === 403, "财务不能改别人的日报", "status=" + fin
 ok((await finC("/api/fin/accounts/boss@ecobox.com", { method: "PUT", body: { cash: 1 } })).status === 403, "财务不能改余额（负责人专属）");
 ok((await finC("/api/fin/cats/merge", { method: "POST" })).status === 403, "财务不能合并分类（负责人专属）");
 
+/* 18a. 公司账户：财务 / 管理员能直接记费用，管理层和员工不行 */
+ok(fb.canCo === true, "财务拿到 canCo");
+const coOut = await post(finC, "/api/fin/entries", { kind: "out", uid: "__company", ch: "card", date: today,
+  amount: 88, cat: "bankfee", ft: "life", note: "银行手续费" });
+ok(coOut.status === 201, "财务能把费用记在公司账户上", "status=" + coOut.status);
+const coOutRow = coOut.data && coOut.data.id ? db.prepare("SELECT * FROM fin_entries WHERE id=?").get(coOut.data.id) : null;
+ok(coOutRow && coOutRow.uid === "__company" && coOutRow.ch === "card", "公司账户费用落在 __company 名下", JSON.stringify(coOutRow && { uid: coOutRow.uid, ch: coOutRow.ch }));
+const mgrCo = await post(mgr, "/api/fin/entries", { kind: "out", uid: "__company", ch: "card", date: today,
+  amount: 5, cat: "misc", ft: "life", note: "管理层想记公司账户" });
+ok(mgrCo.status === 403, "管理层不能直接把费用记到公司账户", "status=" + mgrCo.status);
+const staffCo = await post(peter, "/api/fin/entries", { kind: "out", uid: "__company", ch: "card", date: today,
+  amount: 3, cat: "misc", ft: "life", note: "员工想记公司账户" });
+ok(staffCo.status === 201, "员工记账照常成功（归属被改回自己）", "status=" + staffCo.status);
+ok(db.prepare("SELECT uid FROM fin_entries WHERE id=?").get(staffCo.data.id).uid === "peter@ecobox.com", "员工的 uid 参数被忽略，仍记在自己名下");
+ok(!(await peter("/api/fin/bootstrap")).data.entries.some((e) => e.id === coOut.data.id), "员工看不到公司账户的费用");
+ok((await peter("/api/fin/bootstrap")).data.canCo !== true, "员工没有公司账户记账权");
+ok((await post(boss, "/api/fin/entries", { kind: "out", uid: "__company", ch: "card", date: today,
+  amount: 20, cat: "misc", ft: "life", note: "管理员记公司账户" })).status === 201, "管理员也能记公司账户");
+ok((await patch(mgr, "/api/fin/entries/" + coOut.data.id, { amount: 99, date: today, note: "管理层改" })).status === 403, "管理层不能改公司账户的记录");
+ok((await patch(finC, "/api/fin/entries/" + coOut.data.id, { amount: 90, date: today, note: "财务改" })).status === 200, "财务能改公司账户的记录");
+ok((await boss("/api/fin/entries/" + coOut.data.id, { method: "DELETE" })).status === 200, "负责人能删公司账户的记录");
+
 /* 18b. 银行水单：上传 / 核对 / 分权 */
 const tinyPdf = "data:application/pdf;base64," + Buffer.from("%PDF-1.4\n%test\n").toString("base64");
 const noPeriod = await post(boss, "/api/fin/bank", { uid: "__company", open_bal: 1 });

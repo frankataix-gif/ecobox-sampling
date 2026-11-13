@@ -1698,6 +1698,9 @@ async function finApi(req, env, me, seg, url, body) {
   const isOwner = me.login === (env.FIN_OWNER || "frank");   // 财务负责人：唯一能改余额/对账/删记录的人
   /* 银行水单是敏感资料：只有管理员 / 财务 / 负责人能看全部、能上传核对 */
   const bankAll = me.role === "admin" || me.role === "finance" || isOwner;
+  /* 公司账户：只有财务 / 管理员 / 负责人能直接把费用记在公司账上 */
+  const canCo = isAdmin || isOwner || me.role === "finance";
+  const CO = "__company";
 
   /* 一次性拉全部 */
   if (sub === "bootstrap" && req.method === "GET") {
@@ -1732,6 +1735,7 @@ async function finApi(req, env, me, seg, url, body) {
         : await env.DB.prepare(FIN_BANK_SEL + " AND s.uid=? ORDER BY s.pt DESC, s.created_at DESC").bind(own).all()
       ).results,
       bankAll,
+      canCo,
       accounts: all ? acc.results : acc.results.filter((a) => a.uid === own),
       cats: await finCfgGet(env, "cats", FIN_DEFAULT_CATS),
       opening: await finCfgGet(env, "opening", { date: "", cash: 0, card: 0 }),
@@ -1752,6 +1756,7 @@ async function finApi(req, env, me, seg, url, body) {
     if (kind === "transfer" && !all && !isOwner) return err("只有财务负责人能登记人员转账", 403);
     let uid = all && b.uid ? String(b.uid) : own;
     if (kind === "move") uid = own;   // 取现/存现只动自己账户
+    if (uid === CO && !canCo) return err("只有财务 / 管理员能记公司账户", 403);
     const toUid = (kind === "float" || kind === "transfer") ? String(b.to_uid || "") : "";
     if (kind === "float" && !toUid) return err("备用金要选发给谁");
     const toCh = kind === "transfer" ? (String(b.to_ch || "") === "card" ? "card" : "cash") : "";
@@ -1793,6 +1798,7 @@ async function finApi(req, env, me, seg, url, body) {
     const row = await env.DB.prepare("SELECT * FROM fin_entries WHERE id=?").bind(seg[2]).first();
     if (!row) return err("记录不存在", 404);
     if (!isOwner && !all && row.uid !== own) return err("只能标自己的记录", 403);
+    if (row.uid === CO && !canCo) return err("只有财务 / 管理员能改公司账户", 403);
     if (row.kind !== "out" && row.kind !== "in") return err("只有支出/收入分有票无票", 400);
     const b = await body();
     const inv = b.inv ? 1 : 0;
@@ -1817,6 +1823,7 @@ async function finApi(req, env, me, seg, url, body) {
     const row = await env.DB.prepare("SELECT * FROM fin_entries WHERE id=?").bind(seg[2]).first();
     if (!row) return err("记录不存在", 404);
     if (!isOwner && !all && row.uid !== own) return err("只能改自己的记录", 403);
+    if (row.uid === CO && !canCo) return err("只有财务 / 管理员能改公司账户", 403);
     const b = await body();
     if (!DAY_RE.test(String(b.date || ""))) return err("日期要 YYYY-MM-DD");
     const amount = Math.round(num(b.amount) * 100) / 100;
@@ -1851,6 +1858,7 @@ async function finApi(req, env, me, seg, url, body) {
     const row = await env.DB.prepare("SELECT * FROM fin_entries WHERE id=?").bind(seg[2]).first();
     if (!row) return err("记录不存在", 404);
     if (!isOwner && !all && row.uid !== own) return err("只能删自己的记录", 403);
+    if (row.uid === CO && !canCo) return err("只有财务 / 管理员能删公司账户的记录", 403);
     await env.DB.prepare("DELETE FROM fin_entries WHERE id=?").bind(seg[2]).run();
     await audit(env, me, "fin.del", seg[2], `${row.kind} ${row.amount}`);
     return json({ ok: true });
