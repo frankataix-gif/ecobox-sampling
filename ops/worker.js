@@ -1886,7 +1886,8 @@ async function finApi(req, env, me, seg, url, body) {
   if (sub === "entries" && seg[2] && req.method === "DELETE") {
     const row = await env.DB.prepare("SELECT * FROM fin_entries WHERE id=?").bind(seg[2]).first();
     if (!row) return err("记录不存在", 404);
-    if (!isOwner && !all && row.uid !== own) return err("只能删自己的记录", 403);
+    /* 只能删自己的；公司账户的账要 canCo；负责人例外 */
+    if (row.uid !== own && row.uid !== CO && !isOwner) return err("只能删自己的记录", 403);
     if (row.uid === CO && !canCo) return err("只有财务 / 管理员能删公司账户的记录", 403);
     const visDel = await finVisible(env, me);
     if (visDel && !visDel.has(row.uid)) return err("看不到别人的账", 403);

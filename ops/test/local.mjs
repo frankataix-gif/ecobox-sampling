@@ -261,7 +261,7 @@ ok((await patch(boss, "/api/fin/entries/" + t1.data.id, { amount: 250, date: tod
 const trow2 = db.prepare("SELECT * FROM fin_entries WHERE id=?").get(t1.data.id);
 ok(trow2.amount === 250 && trow2.ch === "card" && trow2.to_ch === "cash", "修改后方向与金额生效");
 ok((await patch(peter, "/api/fin/entries/" + t1.data.id, { amount: 1, date: today })).status === 403, "员工不能改别人的转账");
-ok((await boss("/api/fin/entries/" + m2.data.id, { method: "DELETE" })).status === 200, "删除转账");
+ok((await mgr("/api/fin/entries/" + m2.data.id, { method: "DELETE" })).status === 200, "本人能删自己的转账");
 
 /* 余额：转出人减少、转入人增加，公司总额不变 */
 function finBal(uid) {
@@ -363,6 +363,17 @@ ok((await finTouch(finC, { amount: 2, ch: "card", note: "财务改渠道" })).st
 ok(pOwn().amount === 2 && pOwn().ch === "cash", "被拦下后金额和渠道都没动");
 ok((await finTouch(mgr, { amount: 99, ch: "cash", note: "负责人改金额" })).status === 403, "负责人不能改员工的金额");
 ok((await finTouch(mgr, { amount: 2, ch: "cash", note: "负责人改描述" })).status === 200, "负责人能改员工记录的分类 / 描述");
+const peterDel = await post(peter, "/api/fin/entries", { kind: "out", uid: "peter@ecobox.com", ch: "cash", date: today,
+  amount: 1, cat: "misc", ft: "life", note: "彼得待删的账" });
+ok((await post(boss, "/api/users", { login: "adm2@ecobox.com", name: "副管理员", password: "adm2026x", role: "admin" })).status === 201, "能再开一个管理员");
+const adm = client();
+ok((await post(adm, "/api/login", { login: "adm2@ecobox.com", password: "adm2026x" })).status === 200, "副管理员能登录");
+ok((await finC("/api/fin/entries/" + peterDel.data.id, { method: "DELETE" })).status === 403, "财务不能删员工的记录");
+ok((await mgr("/api/fin/entries/" + peterDel.data.id, { method: "DELETE" })).status === 403, "负责人不能删员工的记录");
+ok((await adm("/api/fin/entries/" + peterDel.data.id, { method: "DELETE" })).status === 403, "管理员不能删员工的记录");
+ok((await finTouch(adm, { amount: 2, ch: "cash", note: "管理员改描述" })).status === 200, "管理员能改员工记录的分类 / 描述");
+ok(!!db.prepare("SELECT id FROM fin_entries WHERE id=?").get(peterDel.data.id), "被拒绝删除后记录还在");
+ok((await peter("/api/fin/entries/" + peterDel.data.id, { method: "DELETE" })).status === 200, "员工能删自己的记录");
 ok((await post(boss, "/api/fin/entries", { kind: "out", uid: "peter@ecobox.com", ch: "cash", date: today,
   amount: 6, cat: "misc", ft: "life", note: "管理员替员工记" })).status === 403, "管理员也不能替别人记账");
 ok(!(await peter("/api/fin/bootstrap")).data.entries.some((e) => e.id === coOut.data.id), "员工看不到公司账户的费用");

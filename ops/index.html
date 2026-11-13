@@ -4676,10 +4676,14 @@ function openFinMenu(id, btn) {
   m.id = "fin_menu";
   m.style.top = Math.round(r.bottom + 6) + "px";
   m.style.right = Math.max(8, Math.round(window.innerWidth - r.right)) + "px";
-  m.innerHTML = `<button data-act="edit">${esc(tr(`编辑`))}</button><button data-act="del" class="dz">${esc(tr(`删除`))}</button>`;
+  /* 只能删自己的（公司账户看 canCo，负责人例外） */
+  const canDel = e.uid === FIN.me.uid || (e.uid === FINCO && FIN.canCo) || FIN.owner;
+  m.innerHTML = `<button data-act="edit">${esc(tr(`编辑`))}</button>`
+    + (canDel ? `<button data-act="del" class="dz">${esc(tr(`删除`))}</button>` : "");
   document.body.appendChild(m);
   m.querySelector('[data-act="edit"]').onclick = () => { closeFinMenu(); if (e.kind === "transfer") finTransferSheet(e); else finSheet(null, null, e); };
-  m.querySelector('[data-act="del"]').onclick = async () => {
+  const delBtn = m.querySelector('[data-act="del"]');
+  if (delBtn) delBtn.onclick = async () => {
     closeFinMenu();
     if (!confirm(tr("删除这条记录？"))) return;
     try { await api("/fin/entries/" + encodeURIComponent(e.id), { method: "DELETE", toast: "记录已删除" }); await loadFin(); render(); }
