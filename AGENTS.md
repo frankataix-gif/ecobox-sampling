@@ -17,6 +17,7 @@
 - 生产：`https://ops.ecoboxmine.com`（备用 `https://ecobox-ops.frankataix.workers.dev`）
 - account `dff446b2b98a38ac2b82263e3ff14da9`；D1 `9c9f6539-a564-461c-8ba8-e04a2f7eb198`；R2 `ecobox-finance`（binding `PHOTOS`）
 - 源码 `ops/index.html` + `ops/worker.js` → `python ops/build.py` → `ops/dist/worker.js`（页面内联进 worker）
+- **页面渲染冒烟** `node ops/test/render.mjs [boss|mgr|fin|staff]`：用 jsdom 打开真页面，把 18 个页签和记账/调拨/取现弹层点一遍，任何渲染异常（比如 TDZ「before initialization」）都会报红。需要先 `npm i jsdom`（不进依赖，没装就 SKIP）。tabs / 弹层抛错会被 `showPaneError` 拦成「这个页面打不开 + 重试」，不再卡在「加载中…」。
 - 测试 `node ops/test/local.mjs`：本地内存 D1，不碰生产
 
 ## 2. 部署

@@ -733,6 +733,8 @@ const isEN = () => LANG === "en";
 
 /* 界面文案：中文原文 → 英文。只在英文模式下走这里；查不到就保留中文。 */
 const EN = {
+  "这个页面打不开": "This page failed to load",
+  "重试": "Retry",
   "别人的金额和渠道不能改，可以改分类 / 备注 / 发票": "Amount and channel are locked on other entries - category, note and invoice can still be edited",
   "规则：负责人点「提交完成」，发起人审核通过才算完成": "How it works: the owner taps “Submit complete”, and the creator approves before it counts as done",
   "文件超过 25MB，请线下提供（U 盘 / 网盘 / 邮件）": "File over 25MB — please hand it over offline (USB / cloud drive / email)",
@@ -3609,6 +3611,7 @@ function finFrom() {
 
 function finHtml() {
   const who = FINWHO || FIN.me.uid;
+  const coView = who === FINCO;
   const isAll = FINWHO === "ALL";
   const isMe = !FINWHO;                 // 空 = 我自己
   const ro = !isMe && !isAll && !(who === FINCO && FIN.canCo);   // 点某个人 = 只读（只看看，不能改）；公司账户对有记账权的人可写
@@ -3730,7 +3733,6 @@ function finHtml() {
     </div>
   </div>`;
 
-  const coView = who === FINCO;
   const actions = !ro ? `<div class="fin-acts">
     ${!isAll && !coView && (FIN.canAll || FIN.owner) ? `<button id="fin_transfer">${esc(tr(`🔀 调拨`))}</button>` : ""}
     ${FIN.canCo ? `<button id="fin_cosend">${esc(tr(`🏦 公司调款`))}</button>` : ""}
@@ -5155,9 +5157,25 @@ function groupHtml(g) {
 
 /* ---------- 渲染 ---------- */
 async function render() {
-  await renderPane();
+  try {
+    await renderPane();
+  } catch (e) {
+    showPaneError(e);
+    return;
+  }
   applyLang(document.body);
   watchLang();
+}
+/* 页面渲染抛错时给个能看懂的提示 + 重试，别把「加载中…」一直挂着 */
+function showPaneError(e) {
+  const msg = (e && e.message) || String(e);
+  if (typeof console !== "undefined" && console.error) console.error("[render]", e);
+  const pane = $("#pane");
+  if (!pane) return;
+  pane.innerHTML = `<div class="empty">${esc(tr(`这个页面打不开`))}：${esc(msg)}
+    <div style="margin-top:12px"><button id="pane_retry" class="ghost">${esc(tr(`重试`))}</button></div></div>`;
+  const b = $("#pane_retry");
+  if (b) b.onclick = () => render();
 }
 async function renderPane() {
   const pane = $("#pane");
