@@ -73,3 +73,16 @@
 - 矿证模块搬迁：`ops/licence.html` + `/_lic/*`（D1 状态 + R2 媒体）未接完。
 - 首页「矿证」快捷入口仍指向外部 mine-sync。
 - 公司模块：搜索收纳 + 新建时选资料。
+
+## 7. 踩过的坑（别再踩）
+
+- **`deploy.py` 任何不认识的参数都会走完整部署**（`--help` 也不例外：apply_schema + migrate + 上传 + 换 `SETUP_TOKEN`）。
+  只更新代码用 `--code-only`，只看状态用 `--status`，别拿它试参数。
+- **不要用 PowerShell `Get-Content`/`Set-Content` 改写含中文的源码**：默认按 ANSI 读，写回就是乱码。
+  改文件用编辑器或 python（`encoding="utf-8"`、`newline="\n"`）。
+- 线上源码可从 `ops/dist/worker.js` 反解：跳过开头 `globalThis.__OPS_PAGE__ = "…"` 和
+  `globalThis.__LIC_PAGE__ = "…"` 两个赋值，剩下的就是 `ops/worker.js` 原文（与线上一致）。
+- **登录限速**：`login_fail(k, at)`，`k = 账号|cf-connecting-ip`；10 分钟内满 5 次锁 10 分钟
+  （429 + `Retry-After`），登录成功按该键清零。要立刻解锁某人，删对应行即可。
+- 改完 worker 的顺序：`node ops/test/local.mjs` → `python ops/build.py`（会刷 BUILD 时间戳）→ 部署。
+  `local.mjs` 用 node:sqlite + 真 HTTP 跑真 Worker，没有 mock。
