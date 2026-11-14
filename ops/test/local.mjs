@@ -790,43 +790,66 @@ const bj = await bup.json();
 ok(bup.status === 201 && R2.has(bj.key) && R2.get(bj.key).bytes.length === bigBytes.length, "9MB 视频走流式上传，字节完整 " + bup.status + " " + JSON.stringify(bj));
 R2.delete(bj.key);
 
-/* 分片上传：60MB 那种大视频按 4MB 切片传，断了只补一片 */
-const pHead = Buffer.alloc(4 * 1024 * 1024, 3);
-const pTail = Buffer.alloc(1024 * 1024, 4);
+/* 分片上传：大视频按 4MB 切片传；传完不合并，读的时候按 Range 直接取分片 */
+const pHead = Buffer.alloc(1024 * 1024, 3);
+const pTail = Buffer.alloc(512 * 1024, 4);
 const vAll = pHead.length + pTail.length;
 const uidA = "a".repeat(32);
 const pUrl = (uid, i, n, sz, t) => `/api/feed/v/part?u=${uid}&i=${i}&n=${n}&sz=${sz}&t=${encodeURIComponent(t)}`;
 const putPart = (uid, i, n, sz, t, buf) => fetch(BASE + pUrl(uid, i, n, sz, t), {
   method: "PUT", headers: { cookie: boss.cookie(), "content-type": "application/octet-stream" }, body: buf,
 });
+
+/* GC：没有清单、又放了 3 天以上的组要清掉；有清单（已发布）的不能动。下面第一个 PUT 会顺手触发 GC */
+const oldAt = Date.now() - 4 * 86400 * 1000;
+const gDead = "z".repeat(32), gLive = "y".repeat(32);
+R2.set(`feed/v/${gDead}/0`, { bytes: Buffer.from("x"), mime: "application/octet-stream", at: oldAt });
+R2.set(`feed/v/${gLive}/0`, { bytes: Buffer.from("y"), mime: "application/octet-stream", at: oldAt });
+R2.set(`feed/v/${gLive}/m`, { bytes: Buffer.from('{"v":1}'), mime: "application/vnd.ecobox.vparts+json", at: oldAt });
+
 const q1 = await putPart(uidA, 0, 2, vAll, "video/mp4", pHead);
 const q2 = await putPart(uidA, 1, 2, vAll, "video/mp4", pTail);
 ok(q1.status === 201 && q2.status === 201, "两片都传上去了 " + q1.status + "/" + q2.status);
+ok(!R2.has(`feed/v/${gDead}/0`) && R2.has(`feed/v/${gLive}/0`), "GC 清掉放弃的上传、留住已发布的视频");
+
 const fin = await fetch(BASE + `/api/feed/v/finish?u=${uidA}&n=2&sz=${vAll}&t=video%2Fmp4`, { method: "POST", headers: { cookie: boss.cookie() } });
 const finJ = await fin.json();
-ok(fin.status === 201 && !!finJ.key && R2.get(finJ.key).bytes.length === vAll, "分片拼成完整视频 " + fin.status + " " + JSON.stringify(finJ));
-ok(R2.get(finJ.key).mime === "video/mp4", "拼好的视频带正确 mime");
-ok(!R2.has(`feed/tmp/${uidA}/0`) && !R2.has(`feed/tmp/${uidA}/1`), "拼完清掉临时分片");
-const seam = Buffer.from(await (await fetch(BASE + "/api/fin/photo/" + finJ.key, {
-  headers: { cookie: boss.cookie(), range: `bytes=${pHead.length - 2}-${pHead.length + 1}` },
-})).arrayBuffer());
-ok(seam.length === 4 && seam[0] === 3 && seam[1] === 3 && seam[2] === 4 && seam[3] === 4, "接缝处字节没串位 " + [...seam].join(","));
-const ffull = await fetch(BASE + "/api/fin/photo/" + finJ.key, { headers: { cookie: boss.cookie() } });
-ok(ffull.status === 200 && (await ffull.arrayBuffer()).byteLength === vAll, "拼好的视频能整段取回");
+const vkey = `feed/v/${uidA}`;
+ok(fin.status === 201 && finJ.key === vkey, "传完直接拿到 key（不做合并拷贝） " + fin.status + " " + JSON.stringify(finJ));
+ok(R2.has(`${vkey}/0`) && R2.has(`${vkey}/1`) && R2.has(`${vkey}/m`), "分片原地留着，另写一份清单");
+
+const full = await fetch(BASE + "/api/fin/photo/" + vkey, { headers: { cookie: boss.cookie() } });
+const fullBuf = Buffer.from(await full.arrayBuffer());
+ok(full.status === 200 && fullBuf.length === vAll && fullBuf[0] === 3 && fullBuf[vAll - 1] === 4, "整段取回字节对 " + full.status + " " + fullBuf.length);
+ok(full.headers.get("content-type") === "video/mp4" && full.headers.get("accept-ranges") === "bytes", "整段响应头正确");
+
+const seam = await fetch(BASE + "/api/fin/photo/" + vkey, { headers: { cookie: boss.cookie(), range: `bytes=${pHead.length - 2}-${pHead.length + 1}` } });
+const seamBuf = Buffer.from(await seam.arrayBuffer());
+ok(seam.status === 206 && String(seam.headers.get("content-range") || "").endsWith("/" + vAll) && [...seamBuf].join(",") === "3,3,4,4", "跨分片接缝的 Range 正确 " + seam.status + " " + [...seamBuf].join(","));
+
+const tailRange = await fetch(BASE + "/api/fin/photo/" + vkey, { headers: { cookie: boss.cookie(), range: "bytes=-100" } });
+const tailBuf = Buffer.from(await tailRange.arrayBuffer());
+ok(tailRange.status === 206 && tailBuf.length === 100 && tailBuf[99] === 4, "尾部 Range（bytes=-100）正确 " + tailRange.status + " " + tailRange.headers.get("content-range"));
+
+const midRg = await fetch(BASE + "/api/fin/photo/" + vkey, { headers: { cookie: boss.cookie(), range: "bytes=1048570-1048580" } });
+ok(midRg.status === 206 && (await midRg.arrayBuffer()).byteLength === 11, "单片内的小 Range 正确");
+
+const badRg = await fetch(BASE + "/api/fin/photo/" + vkey, { headers: { cookie: boss.cookie(), range: `bytes=${vAll + 10}-` } });
+ok(badRg.status === 416, "越界 Range 416 " + badRg.status);
 
 const uidB = "b".repeat(32);
 await putPart(uidB, 0, 1, 1024 * 1024, "video/mp4", pTail);
 const badSum = await fetch(BASE + `/api/feed/v/finish?u=${uidB}&n=1&sz=${2 * 1024 * 1024}&t=video%2Fmp4`, { method: "POST", headers: { cookie: boss.cookie() } });
-ok(badSum.status === 409, "字节数对不上时不给合并 " + badSum.status);
+ok(badSum.status === 409, "字节数对不上时不收 " + badSum.status);
+ok((await fetch(BASE + "/api/fin/photo/feed/v/" + uidB, { headers: { cookie: boss.cookie() } })).status === 404, "没传完的视频不对外");
 const uidC = "c".repeat(32);
-ok((await fetch(BASE + `/api/feed/v/finish?u=${uidC}&n=2&sz=${vAll}&t=video%2Fmp4`, { method: "POST", headers: { cookie: boss.cookie() } })).status === 409, "少片子时不给合并");
+ok((await fetch(BASE + `/api/feed/v/finish?u=${uidC}&n=2&sz=${vAll}&t=video%2Fmp4`, { method: "POST", headers: { cookie: boss.cookie() } })).status === 409, "少片子时不给完成");
 await putPart(uidC, 0, 2, vAll, "video/mp4", pHead);
-ok((await fetch(BASE + `/api/feed/v/abort?u=${uidC}&n=2`, { method: "POST", headers: { cookie: boss.cookie() } })).status === 200 && !R2.has(`feed/tmp/${uidC}/0`), "放弃上传时清掉分片");
+ok((await fetch(BASE + `/api/feed/v/abort?u=${uidC}&n=2`, { method: "POST", headers: { cookie: boss.cookie() } })).status === 200 && !R2.has(`feed/v/${uidC}/0`), "放弃上传时清掉分片");
 ok((await putPart("d".repeat(32), 0, 1, vAll, "image/png", pTail)).status === 415, "分片类型不对不收");
 ok((await putPart("e".repeat(32), 0, 1, 91 * 1024 * 1024, "video/mp4", pTail)).status === 413, "声明超 90MB 不收");
 ok((await putPart("f".repeat(32), 0, 1, vAll, "video/mp4", Buffer.alloc(5 * 1024 * 1024))).status === 413, "单片超 4.5MB 不收");
 ok((await fetch(BASE + pUrl("g".repeat(32), 0, 1, vAll, "video/mp4"), { method: "PUT", headers: { "content-type": "application/octet-stream" }, body: pTail })).status === 401, "没登录不能传分片");
-R2.delete(finJ.key);
 
 /* 续传：传了一半关页面，回来先问服务端传到哪了，再只补缺的 */
 const uidR = "r".repeat(32);
@@ -843,39 +866,18 @@ const stat2 = await (await fetch(BASE + `/api/feed/v/status?u=${uidR}&n=3`, { he
 ok(JSON.stringify(stat2.parts) === "[0,1,2]", "补齐后状态是 0,1,2 " + JSON.stringify(stat2));
 const fin2 = await fetch(BASE + `/api/feed/v/finish?u=${uidR}&n=3&sz=${rAll}&t=video%2Fmp4`, { method: "POST", headers: { cookie: boss.cookie() } });
 const fin2J = await fin2.json();
-ok(fin2.status === 201 && R2.get(fin2J.key).bytes.length === rAll, "续传后合并成功 " + fin2.status);
+ok(fin2.status === 201 && fin2J.key === `feed/v/${uidR}`, "续传补齐后直接拿到 key " + fin2.status);
 const rerun = await (await fetch(BASE + `/api/feed/v/finish?u=${uidR}&n=3&sz=${rAll}&t=video%2Fmp4`, { method: "POST", headers: { cookie: boss.cookie() } })).json();
-ok(rerun.key === fin2J.key, "重发合并请求直接拿回同一个 key，不会报缺片 " + JSON.stringify(rerun));
+ok(rerun.key === fin2J.key && rerun.again === true, "重发完成请求拿回同一个 key " + JSON.stringify(rerun));
+const rPlay = await fetch(BASE + "/api/fin/photo/" + fin2J.key, { headers: { cookie: boss.cookie(), range: "bytes=100-199" } });
+ok(rPlay.status === 206 && (await rPlay.arrayBuffer()).byteLength === 100, "续传的视频也能拖进度");
 
-/* 编辑动态把视频去掉，R2 那份要跟着清；别人还在用的不能删 */
-R2.set("feed/2026-11/shared.mp4", { bytes: Buffer.from("abcd"), mime: "video/mp4", at: Date.now() });
-const pShare = await (await fetch(BASE + "/api/feed", { method: "POST", headers: { "content-type": "application/json", cookie: boss.cookie() }, body: JSON.stringify({ body: "共享素材", photos: [{ t: "v", u: "feed/2026-11/shared.mp4" }] }) })).json();
-const pEdit = await (await fetch(BASE + "/api/feed", { method: "POST", headers: { "content-type": "application/json", cookie: boss.cookie() }, body: JSON.stringify({ body: "要改的", photos: [{ t: "v", u: "feed/2026-11/gone.mp4" }] }) })).json();
-R2.set("feed/2026-11/gone.mp4", { bytes: Buffer.from("xy"), mime: "video/mp4", at: Date.now() });
-const pe = await fetch(BASE + "/api/feed/" + pEdit.id, { method: "PATCH", headers: { "content-type": "application/json", cookie: boss.cookie() }, body: JSON.stringify({ body: "改完没视频了", photos: [] }) });
-ok(pe.status === 200 && !R2.has("feed/2026-11/gone.mp4"), "编辑去掉视频后 R2 也清掉");
-ok((await fetch(BASE + "/api/feed/" + pShare.id, { method: "DELETE", headers: { cookie: boss.cookie() } })).status === 200 && R2.has("feed/2026-11/shared.mp4") === false, "删动态清掉自己的视频");
-/* 两条动态用同一个文件：删掉其中一条不能把文件干掉 */
-R2.set("feed/2026-11/both.mp4", { bytes: Buffer.from("zz"), mime: "video/mp4", at: Date.now() });
-const pA = await (await fetch(BASE + "/api/feed", { method: "POST", headers: { "content-type": "application/json", cookie: boss.cookie() }, body: JSON.stringify({ body: "A", photos: [{ t: "v", u: "feed/2026-11/both.mp4" }] }) })).json();
-await fetch(BASE + "/api/feed", { method: "POST", headers: { "content-type": "application/json", cookie: boss.cookie() }, body: JSON.stringify({ body: "B", photos: [{ t: "v", u: "feed/2026-11/both.mp4" }] }) });
-await fetch(BASE + "/api/feed/" + pA.id, { method: "DELETE", headers: { cookie: boss.cookie() } });
-ok(R2.has("feed/2026-11/both.mp4"), "还有别的动态在用这个文件时不删");
-
-/* 账目照片：换图/删账时，R2 里没人再用的那张也要清 */
-R2.set("fin/2026-11/q1.jpg", { bytes: Buffer.from("q1"), mime: "image/jpeg", at: Date.now() });
-R2.set("fin/2026-11/q2.jpg", { bytes: Buffer.from("q2"), mime: "image/jpeg", at: Date.now() });
-const feRes = await post(boss, "/api/fin/entries", { kind: "out", date: kday, amount: 4, cat: "meal", ch: "cash", note: "带图", photos: ["fin/2026-11/q1.jpg", "fin/2026-11/q2.jpg"] });
-const feJ = feRes.data || {};
-const feId = feJ.entry ? feJ.entry.id : feJ.id;
-await fetch(BASE + "/api/fin/entries/" + feId + "/photos", { method: "PUT", headers: { "content-type": "application/json", cookie: boss.cookie() }, body: JSON.stringify({ photos: ["fin/2026-11/q1.jpg"] }) });
-ok(R2.has("fin/2026-11/q1.jpg") && !R2.has("fin/2026-11/q2.jpg"), "换掉的那张账目图被清掉、留着的没动");
-await fetch(BASE + "/api/fin/entries/" + feId, { method: "DELETE", headers: { cookie: boss.cookie() } });
-ok(!R2.has("fin/2026-11/q1.jpg"), "删账目时照片一起清");
-
-ok((await fetch(BASE + `/api/feed/v/status?u=${uidR}&n=3`, { headers: { cookie: boss.cookie() } })).status === 200 &&
-   !R2.has(`feed/tmp/${uidR}/0`) && !R2.has(`feed/tmp/${uidR}/2`), "合并后临时分片清干净");
-R2.delete(fin2J.key);
+/* 发出去之后删动态：整组分片 + 清单一起清 */
+const vPost = await (await fetch(BASE + "/api/feed", { method: "POST", headers: { "content-type": "application/json", cookie: boss.cookie() }, body: JSON.stringify({ body: "分片视频", photos: [{ t: "v", u: vkey }] }) })).json();
+const vSeen = (await boss("/api/feed")).data.posts.find((x) => x.id === vPost.id);
+ok(vSeen && vSeen.photos[0].u === vkey, "动态里存的就是分片 key");
+await fetch(BASE + "/api/feed/" + vPost.id, { method: "DELETE", headers: { cookie: boss.cookie() } });
+ok(!R2.has(`${vkey}/0`) && !R2.has(`${vkey}/1`) && !R2.has(`${vkey}/m`), "删动态把分片和清单一起清掉");
 const nl = await post(boss, "/api/logs", { day: "2026-09-30", site: "Serenje 1330NW", note: "换筛网" });
 const nlRow = (await boss("/api/logs?from=2026-09-30&to=2026-09-30")).data.logs.find((x) => x.id === nl.data.id);
 ok(!!nlRow && nlRow.note_zh === "换筛网", "日报备注也是双语");

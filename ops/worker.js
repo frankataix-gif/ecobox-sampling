@@ -1346,7 +1346,7 @@ async function feedApi(req, env, me, seg, body) {
     if (!buf.byteLength) return err("分片是空的");
     if (buf.byteLength > FEED_VID_PART + 512 * 1024) return err("分片太大", 413);
     try {
-      await env.PHOTOS.put(`feed/tmp/${job.u}/${i}`, buf, { httpMetadata: { contentType: "application/octet-stream" } });
+      await env.PHOTOS.put(feedVidPartKey(job.u, i), buf, { httpMetadata: { contentType: "application/octet-stream" } });
     } catch (e) {
       return err(`第 ${i + 1} 片存不进 R2：` + ((e && e.message) || e), 500);
     }
@@ -1358,14 +1358,11 @@ async function feedApi(req, env, me, seg, body) {
     const q = feedVidQ(req);
     const job = feedVidJob(q);
     if (job.bad) return job.bad;
-    /* 同一个上传号只拼一次：合并成功后写个标记，客户端重发直接拿回 key */
-    const markKey = `feed/done/${job.u}`;
+    /* 同一个上传号只收一次：清单已存在就原样返回，客户端重发不会报缺片 */
+    const key = feedVidKey(job.u);
     try {
-      const prev = await env.PHOTOS.get(markKey);
-      if (prev) {
-        const j = JSON.parse(await (prev.text ? prev.text() : new Response(prev.body).text()));
-        if (j && j.key) return json({ key: j.key, again: true });
-      }
+      const prev = await env.PHOTOS.get(key + "/m");
+      if (prev) return json({ key, again: true });
     } catch (e) {}
     const objs = await feedVidParts(env, job.u);
     const have = new Map();
@@ -1377,17 +1374,16 @@ async function feedApi(req, env, me, seg, body) {
     for (let i = 0; i < job.n; i++) if (!have.has(i)) miss.push(i + 1);
     if (miss.length) return err(`还差第 ${miss.slice(0, 6).join("、")} 片，重试一下就能接着传`, 409);
     let total = 0;
-    const keys = [];
-    for (let i = 0; i < job.n; i++) { total += Number(have.get(i).size) || 0; keys.push(have.get(i).key); }
+    const sizes = [];
+    for (let i = 0; i < job.n; i++) { const s = Number(have.get(i).size) || 0; sizes.push(s); total += s; }
     if (total !== job.sz) return err(`分片加起来 ${total} 字节，和文件对不上，重试一下`, 409);
-    const key = `feed/${new Date().toISOString().slice(0, 7)}/${crypto.randomUUID()}.${job.ext}`;
+    /* 不合并：分片原地留作正片，读的时候按 Range 直接取对应那片（省一次整段拷贝，传完立刻能播） */
+    const mark = { v: 1, n: job.n, sz: total, ct: job.type, sizes, at: Date.now() };
     try {
-      await feedVidAssemble(env, keys, total, key, job.type);
+      await env.PHOTOS.put(key + "/m", JSON.stringify(mark), { httpMetadata: { contentType: FEED_VID_MARK } });
     } catch (e) {
-      return err("合并分片失败：" + ((e && e.message) || e), 500);
+      return err("登记视频失败：" + ((e && e.message) || e), 500);
     }
-    try { await env.PHOTOS.delete(keys); } catch (e) {}
-    try { await env.PHOTOS.put(markKey, JSON.stringify({ key, at: Date.now() }), { httpMetadata: { contentType: "application/json" } }); } catch (e) {}
     return json({ key }, 201);
   }
   if (id === "v" && seg[2] === "abort" && req.method === "POST") {
@@ -1517,7 +1513,17 @@ async function feedMediaPurge(env, keys) {
     return 0;
   }
   const drop = cands.filter((k) => !used.has(k));
-  for (const k of drop) { try { await env.PHOTOS.delete(k); } catch (e) {} }
+  for (const k of drop) {
+    try {
+      if (/^feed\/v\/[a-z0-9]{16,40}$/.test(k)) {
+        /* 分片式视频：key 只是清单地址，真正的文件是 <key>/* */
+        const r = await env.PHOTOS.list({ prefix: k + "/", limit: 100 });
+        if (r.objects && r.objects.length) await env.PHOTOS.delete(r.objects.map((o) => o.key));
+      } else {
+        await env.PHOTOS.delete(k);
+      }
+    } catch (e) {}
+  }
   return drop.length;
 }
 
@@ -1551,8 +1557,8 @@ function feedVidJob(q) {
 /* 列一个上传号下已经到位的分片：一次 list 就够，比逐个 head 省子请求 */
 async function feedVidParts(env, u) {
   if (!env.PHOTOS || typeof env.PHOTOS.list !== "function") return [];
-  const r = await env.PHOTOS.list({ prefix: `feed/tmp/${u}/`, limit: 100 });
-  return r.objects || [];
+  const r = await env.PHOTOS.list({ prefix: `feed/v/${u}/`, limit: 100 });
+  return (r.objects || []).filter((o) => !/\/m$/.test(String(o.key)));
 }
 let FEED_GC_AT = 0;
 /* 传一半放弃的分片会躺在 R2 里，每小时最多扫一次，3 天前的清掉 */
@@ -1562,58 +1568,87 @@ async function feedVidGc(env) {
   FEED_GC_AT = now;
   try {
     const stale = [];
+    /* 老布局遗留（已合并的视频分片早就删了，这里剩下的都是放弃的上传） */
     for (const prefix of ["feed/tmp/", "feed/done/"]) {
       const r = await env.PHOTOS.list({ prefix, limit: 200 });
       for (const o of r.objects || []) {
         if (o.uploaded && now - new Date(o.uploaded).getTime() > 3 * 86400 * 1000) stale.push(o.key);
       }
     }
+    /* 新布局：feed/v/<u>/<i>，有 m 清单的是已经发出去的视频，永远不动 */
+    const groups = new Map();
+    const rv = await env.PHOTOS.list({ prefix: "feed/v/", limit: 1000 });
+    for (const o of rv.objects || []) {
+      const m = /^feed\/v\/([a-z0-9]{16,40})\/(.+)$/.exec(String(o.key));
+      if (!m) continue;
+      const g = groups.get(m[1]) || { old: true, keys: [] };
+      g.keys.push(o.key);
+      if (!(o.uploaded && now - new Date(o.uploaded).getTime() > 3 * 86400 * 1000)) g.old = false;
+      groups.set(m[1], g);
+    }
+    for (const [u, g] of groups) {
+      if (!g.old) continue;
+      /* 逐组确认清单不存在才删，避免 list 截断时误删已经发布的视频 */
+      let done = null;
+      try { done = await env.PHOTOS.head(feedVidKey(u) + "/m"); } catch (e) { done = null; }
+      if (!done) stale.push(...g.keys);
+    }
     if (stale.length) await env.PHOTOS.delete(stale);
   } catch (e) {}
 }
-/* R2 的 put 只收"已知长度"的流：用 FixedLengthStream 把总字节数告诉它，
-   否则线上直接 500（Provided readable stream must have a known length） */
-async function feedVidAssemble(env, keys, total, key, type) {
-  const opt = { httpMetadata: { contentType: type } };
-  if (typeof FixedLengthStream === "function") {
-    const fls = new FixedLengthStream(total);
-    const pump = feedVidJoin(env, keys).pipeTo(fls.writable).catch(() => {});
-    try {
-      await env.PHOTOS.put(key, fls.readable, opt);
-    } finally {
-      await pump;
-    }
-    return;
+const FEED_VID_MARK = "application/vnd.ecobox.vparts+json";
+function feedVidKey(u) { return `feed/v/${u}`; }
+function feedVidPartKey(u, i) { return `feed/v/${u}/${i}`; }
+/* 播放：不合并也能按 Range 读。分片大小是已知的，字节区间直接映射到"第几片的第几到第几字节"，
+   一次只取用到的那一两片，内存里不留整段视频 */
+function feedVidServe(env, req, key, job) {
+  const sizes = job.sizes.map(Number);
+  const total = sizes.reduce((a, b) => a + b, 0);
+  const ct = job.ct || "video/mp4";
+  if (!(total > 0) || sizes.some((x) => !(x > 0))) return err("视频分片记录坏了，重新传一次", 500);
+  const rg = /^bytes=(\d*)-(\d*)$/.exec(String(req.headers.get("range") || "").trim());
+  if (!rg || (!rg[1] && !rg[2])) {
+    return new Response(feedVidRange(env, key, sizes, 0, total - 1), {
+      headers: { "content-type": ct, "accept-ranges": "bytes", "content-length": String(total), "cache-control": "private, max-age=31536000" },
+    });
   }
-  /* 老运行时没有 FixedLengthStream：整段读进内存，只放行 48MB 以内 */
-  if (total > 48 * 1024 * 1024) throw new Error("这个运行时不支持流式合并，请把视频压小一点");
-  const all = new Uint8Array(total);
-  let off = 0;
-  for (const k of keys) {
-    const o = await env.PHOTOS.get(k);
-    const b = new Uint8Array(await o.arrayBuffer());
-    all.set(b, off);
-    off += b.byteLength;
-  }
-  await env.PHOTOS.put(key, all, opt);
+  let from = rg[1] ? Number(rg[1]) : Math.max(0, total - Number(rg[2] || 0));
+  let to = rg[1] && rg[2] ? Number(rg[2]) : total - 1;
+  if (!Number.isFinite(from) || from < 0) from = 0;
+  if (!Number.isFinite(to) || to >= total) to = total - 1;
+  if (from > to) return new Response(null, { status: 416, headers: { "content-range": `bytes */${total}` } });
+  return new Response(feedVidRange(env, key, sizes, from, to), {
+    status: 206,
+    headers: {
+      "content-type": ct, "accept-ranges": "bytes",
+      "content-length": String(to - from + 1),
+      "content-range": `bytes ${from}-${to}/${total}`,
+      "cache-control": "private, max-age=31536000",
+    },
+  });
 }
-/* 分片顺序拼成一个流交给 R2：一次只读一片，内存里不留整段视频 */
-function feedVidJoin(env, keys) {
-  let i = 0, reader = null;
+function feedVidRange(env, key, sizes, from, to) {
+  const segs = [];
+  let acc = 0;
+  for (let i = 0; i < sizes.length; i++) {
+    const s = sizes[i], a = acc, b = acc + s - 1;
+    acc += s;
+    if (b < from) continue;
+    if (a > to) break;
+    const s0 = Math.max(a, from);
+    segs.push({ k: feedVidPartKey(key.slice("feed/v/".length), i), off: s0 - a, len: Math.min(b, to) - s0 + 1 });
+  }
+  let i = 0;
   return new ReadableStream({
     async pull(ctrl) {
-      for (;;) {
-        if (!reader) {
-          if (i >= keys.length) { ctrl.close(); return; }
-          const obj = await env.PHOTOS.get(keys[i++]);
-          if (!obj) { ctrl.error(new Error("缺分片")); return; }
-          reader = obj.body.getReader ? obj.body.getReader() : null;
-          if (!reader) { ctrl.enqueue(new Uint8Array(obj.body)); continue; }
-        }
-        const step = await reader.read();
-        if (step.done) { reader = null; continue; }
-        ctrl.enqueue(step.value);
-        return;
+      if (i >= segs.length) { ctrl.close(); return; }
+      const g = segs[i++];
+      try {
+        const o = await env.PHOTOS.get(g.k, { range: { offset: g.off, length: g.len } });
+        if (!o) { ctrl.error(new Error("缺分片")); return; }
+        ctrl.enqueue(o.arrayBuffer ? new Uint8Array(await o.arrayBuffer()) : new Uint8Array(o.body));
+      } catch (e) {
+        ctrl.error(e);
       }
     },
   });
@@ -2770,6 +2805,15 @@ async function finApi(req, env, me, seg, url, body) {
   if (sub === "photo" && seg[2] && req.method === "GET") {
     if (!env.PHOTOS) return err("未配置照片存储", 500);
     const key = seg.slice(2).join("/");
+    /* 分片式视频：清单在 <key>/m，按 Range 直接读分片 */
+    if (/^feed\/v\/[a-z0-9]{16,40}$/.test(key)) {
+      const mk = await env.PHOTOS.get(key + "/m");
+      if (!mk) return err("视频还没传完", 404);
+      let job = null;
+      try { job = JSON.parse(await (mk.text ? mk.text() : new Response(mk.body).text())); } catch (e) { job = null; }
+      if (!job || !Array.isArray(job.sizes) || !job.sizes.length) return err("视频分片记录坏了", 500);
+      return feedVidServe(env, req, key, job);
+    }
     const meta = await env.PHOTOS.head(key);
     if (!meta) return err("文件不存在", 404);
     const size = Number(meta.size) || 0;

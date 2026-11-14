@@ -154,17 +154,24 @@
 - 改完 worker 的顺序：`node ops/test/local.mjs` → `python ops/build.py`（会刷 BUILD 时间戳）→ 部署。
   `local.mjs` 用 node:sqlite + 真 HTTP 跑真 Worker，没有 mock。
 
-- **R2 的 `put()` 只收「已知长度」的流**：把自拼的 `ReadableStream` 交给 `env.PHOTOS.put()`，线上直接
-  500（`Provided readable stream must have a known length`），而本地假 R2 不会报——所以分片合并必须包
-  一层 `new FixedLengthStream(total)`（见 `feedVidAssemble`）。这就是 2026-11-13 用户 78MB 视频
-  「分片都传上去了、最后一步失败」的真因。
 - **视频上传链路**（`/api/feed/v/*`）：客户端 4MB 分片（`fdUploadVideo`）→ `PUT /part` 写
-  `feed/tmp/<uid>/<i>` → `GET /status` 问服务端已到位哪几片（刷新/换设备可续传）→ `POST /finish`
-  （校验总字节 == 声明大小、FixedLengthStream 按序拼接、写 `feed/done/<uid>` 幂等标记，重发直接拿回 key）
-  → `POST /abort` 放弃。`feed/tmp` 与 `feed/done` 过期 3 天由 `feedVidGc` 清掉。
+  `feed/v/<uid>/<i>` → `GET /status` 问服务端已到位哪几片（刷新/换设备可续传）→ `POST /finish`
+  校验总字节 == 声明大小，写清单 `feed/v/<uid>/m`（每片大小 + mime），**不合并**，直接把
+  `feed/v/<uid>` 当 key 返回；重发 finish 拿回同一个 key → `POST /abort` 放弃上传。
+- **分片直读（不要改回合并）**：合并要把整段视频从 R2 读出来再写回去，20MB 线上要 60–70 秒，90MB 要
+  几分钟，用户干等还可能超时。现在 `GET /api/fin/photo/feed/v/<uid>` 认清单，按 `Range` 算出落在第几片的
+  哪几个字节，只读用到的一两片（`feedVidServe` / `feedVidRange`），完成耗时约 1.5 秒，还省一份重复存储。
+- **R2 的 `put()` 只收「已知长度」的流**：自拼 `ReadableStream` 直接 `put` 线上必 500
+  （`Provided readable stream must have a known length`），本地假 R2 不报——2026-11-13「片都传上去了、
+  最后一步失败」就是它。以后真要合并，必须包一层 `new FixedLengthStream(total)`。
+- **GC**：`feedVidGc` 只清「没有 `m` 清单、且放了 3 天以上」的组，逐组 `head` 确认清单不存在才删；已发布
+  视频的分片永远不动。老布局 `feed/tmp`、`feed/done` 的残留顺带清。
+- **备份到 GitHub**：`GITHUB_TOKEN` 没有写权限（只能读），`git push` 也推不上去；用 `GITHUB_DATA_TOKEN`
+  （classic，repo scope）跑 `python ops/tools/backup_github.py`——按本地 HEAD 的树生成快照提交（parent 接
+  远端原 head），只传有差异的文件。远端历史与本地不同源，不要指望 `git push` 能快进。
 - **删媒体统一走 `feedMediaPurge`**：删动态 / 编辑去掉附件 / 删账目照片都会先查 `posts` + `fin_entries`
   的引用，只删「谁都不再用」的；`feed/old/` 是包内资源永远不动。不要改回直接 `PHOTOS.delete`，会误删共用图。
 - **图片/视频体积上限**：单次直传 ≤ 8MB 走 buffer，更大走 4MB 分片；总上限 90MB（`FEED_VID_MAX`），
   分片数上限 24（`FEED_VID_PARTS`），两边要一起改。
 - **QA 探针账号** `_qa_upload_probe` 用完必须删（`DELETE FROM users WHERE login='_qa_upload_probe'`），
-  并清掉它在 R2 里留下的 `feed/2026-*/*`、`feed/tmp/*`、`feed/done/*`。
+  并清掉它在 R2 里留下的 `feed/2026-*/*`、`feed/v/*`、`feed/tmp/*`、`feed/done/*`。
