@@ -186,5 +186,8 @@
 - 线上验收视频/封面别只靠 curl：`pip install playwright`（chromium 已在 `%LOCALAPPDATA%\ms-playwright`），
   用 QA 账号 cookie 起个移动端 context，直接看 `.fd-tile` 的 `poster`、`video.readyState`、
   截图，比只看状态码靠谱。
+- **Service Worker 什么都不缓存**（`PWA_SW`：install 直接 `skipWaiting`、activate `clients.claim`、fetch 空函数），
+  改完部署就生效，不用 bump 版本；页面/媒体不更新只可能是浏览器 HTTP 缓存（媒体的 `cache-control` 在
+  `/api/fin/photo/*` 里给）。
 - **QA 探针账号** `_qa_upload_probe` 用完必须删（`DELETE FROM users WHERE login='_qa_upload_probe'`），
   并清掉它在 R2 里留下的 `feed/2026-*/*`、`feed/v/*`、`feed/tmp/*`、`feed/done/*`。
