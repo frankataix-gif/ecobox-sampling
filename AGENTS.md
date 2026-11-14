@@ -173,5 +173,18 @@
   的引用，只删「谁都不再用」的；`feed/old/` 是包内资源永远不动。不要改回直接 `PHOTOS.delete`，会误删共用图。
 - **图片/视频体积上限**：单次直传 ≤ 8MB 走 buffer，更大走 4MB 分片；总上限 90MB（`FEED_VID_MAX`），
   分片数上限 24（`FEED_VID_PARTS`），两边要一起改。
+- **视频封面（poster）**：客户端截帧 → `POST /api/feed/v/poster` 存 `feed/<月>/<uuid>.jpg` → 发动态时
+  媒体项带 `p`；老动态没 `p` 的，列表里 `grabPoster` 会补截一次再 `POST /api/feed/<id>/poster` 落库
+  （`FD_POSTERED` 用 `pid|key` 去重，一条动态里多个视频才会各截各的）。**`v.readyState < 2` 时不要截**：
+  `drawImage` 对空视频不报错，会把一张全黑图当封面存下来。替换媒体时 `feedMediaPurge` 负责清旧 `p`。
+- **「视频不报错但一直转圈/黑屏」先怀疑容器**：2026-11-14 那条 29MB `feed/2026-11/19194815-*.mp4`
+  是「合并时代」留下的分片 mp4，Chrome 增量解析不了（`readyState` 永远 0、`progress` 刷不停），
+  但 PyAV 能正常解码；原样重传也一样，用 PyAV 重新封装成 `+faststart` 后一切正常。判断方法：
+  `pip install av`，`av.open()` 能解 → 文件没坏，是容器/解析问题，remux 一遍再换 key。
+- **`audit_r2.py` 认引用要按前缀**：正片 key 是 `feed/v/<uid>`，实体是 `<uid>/<i>` 和 `<uid>/m`，
+  只按整串比对会把正在用的分片全当孤儿删掉（`orphan_of()` 里已经处理）。
+- 线上验收视频/封面别只靠 curl：`pip install playwright`（chromium 已在 `%LOCALAPPDATA%\ms-playwright`），
+  用 QA 账号 cookie 起个移动端 context，直接看 `.fd-tile` 的 `poster`、`video.readyState`、
+  截图，比只看状态码靠谱。
 - **QA 探针账号** `_qa_upload_probe` 用完必须删（`DELETE FROM users WHERE login='_qa_upload_probe'`），
   并清掉它在 R2 里留下的 `feed/2026-*/*`、`feed/v/*`、`feed/tmp/*`、`feed/done/*`。

@@ -878,6 +878,43 @@ const vSeen = (await boss("/api/feed")).data.posts.find((x) => x.id === vPost.id
 ok(vSeen && vSeen.photos[0].u === vkey, "动态里存的就是分片 key");
 await fetch(BASE + "/api/feed/" + vPost.id, { method: "DELETE", headers: { cookie: boss.cookie() } });
 ok(!R2.has(`${vkey}/0`) && !R2.has(`${vkey}/1`) && !R2.has(`${vkey}/m`), "删动态把分片和清单一起清掉");
+
+/* 视频封面：列表里没封面就是一格黑，发帖时带一张第一帧截图 */
+const uidP = "p".repeat(32);
+await putPart(uidP, 0, 1, pTail.length, "video/mp4", pTail);
+const pvKey = (await (await fetch(BASE + `/api/feed/v/finish?u=${uidP}&n=1&sz=${pTail.length}&t=video%2Fmp4`, { method: "POST", headers: { cookie: boss.cookie() } })).json()).key;
+const jpegPoster = "data:image/jpeg;base64," + Buffer.from("posterbytes").toString("base64");
+const pUp = await fetch(BASE + "/api/feed/v/poster", { method: "POST", headers: { "content-type": "application/json", cookie: boss.cookie() }, body: JSON.stringify({ data: jpegPoster }) });
+const pUpJ = await pUp.json();
+ok(pUp.status === 201 && /^feed\/\d{4}-\d{2}\/.+\.jpg$/.test(pUpJ.key || ""), "封面能单独上传 " + pUp.status + " " + JSON.stringify(pUpJ));
+ok(R2.has(pUpJ.key), "封面确实进了 R2");
+ok((await fetch(BASE + "/api/feed/v/poster", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ data: jpegPoster }) })).status === 401, "没登录不能传封面");
+ok((await fetch(BASE + "/api/feed/v/poster", { method: "POST", headers: { "content-type": "application/json", cookie: boss.cookie() }, body: JSON.stringify({ data: "nope" }) })).status === 400, "封面格式不对被拦下");
+const bigPoster = "data:image/jpeg;base64," + Buffer.alloc(600 * 1024, 7).toString("base64");
+ok((await fetch(BASE + "/api/feed/v/poster", { method: "POST", headers: { "content-type": "application/json", cookie: boss.cookie() }, body: JSON.stringify({ data: bigPoster }) })).status === 413, "封面超过 512KB 不收");
+
+const pPost = await (await fetch(BASE + "/api/feed", { method: "POST", headers: { "content-type": "application/json", cookie: boss.cookie() }, body: JSON.stringify({ body: "带封面", photos: [{ t: "v", u: pvKey, p: pUpJ.key }] }) })).json();
+const pSeen = (await boss("/api/feed")).data.posts.find((x) => x.id === pPost.id);
+ok(pSeen && pSeen.photos[0].p === pUpJ.key, "动态记住了视频封面 " + JSON.stringify(pSeen && pSeen.photos));
+const pImgPost = await (await fetch(BASE + "/api/feed", { method: "POST", headers: { "content-type": "application/json", cookie: boss.cookie() }, body: JSON.stringify({ body: "图片不该带封面", photos: [{ t: "i", u: "feed/2026-11/pic.jpg", p: pUpJ.key }] }) })).json();
+const pImgSeen = (await boss("/api/feed")).data.posts.find((x) => x.id === pImgPost.id);
+ok(pImgSeen && !pImgSeen.photos[0].p, "只有视频才记封面");
+await fetch(BASE + "/api/feed/" + pImgPost.id, { method: "DELETE", headers: { cookie: boss.cookie() } });
+
+/* 老视频补封面：前端截一帧传上去，再登记到这条动态 */
+const p2up = await (await fetch(BASE + "/api/feed/v/poster", { method: "POST", headers: { "content-type": "application/json", cookie: boss.cookie() }, body: JSON.stringify({ data: "data:image/jpeg;base64," + Buffer.from("poster2").toString("base64") }) })).json();
+const reg = await fetch(BASE + "/api/feed/" + pPost.id + "/poster", { method: "POST", headers: { "content-type": "application/json", cookie: boss.cookie() }, body: JSON.stringify({ u: pvKey, p: p2up.key }) });
+const regJ = await reg.json();
+ok(reg.status === 200 && regJ.photos[0].p === p2up.key, "补的封面能登记到动态上 " + reg.status + " " + JSON.stringify(regJ));
+const reg2 = await (await fetch(BASE + "/api/feed/" + pPost.id + "/poster", { method: "POST", headers: { "content-type": "application/json", cookie: boss.cookie() }, body: JSON.stringify({ u: pvKey, p: p2up.key }) })).json();
+ok(reg2.again === true, "重复补同一张封面直接返回 " + JSON.stringify(reg2));
+ok((await fetch(BASE + "/api/feed/" + pPost.id + "/poster", { method: "POST", headers: { "content-type": "application/json", cookie: boss.cookie() }, body: JSON.stringify({ u: "feed/v/" + "q".repeat(32), p: p2up.key }) })).status === 404, "不是这条动态里的视频不给补");
+ok((await fetch(BASE + "/api/feed/" + pPost.id + "/poster", { method: "POST", headers: { "content-type": "application/json", cookie: boss.cookie() }, body: JSON.stringify({ u: pvKey, p: "javascript:alert(1)" }) })).status === 400, "封面 key 只认存储前缀");
+ok((await fetch(BASE + "/api/feed/nosuchpost/poster", { method: "POST", headers: { "content-type": "application/json", cookie: boss.cookie() }, body: JSON.stringify({ u: pvKey, p: p2up.key }) })).status === 404, "动态不存在 404");
+
+/* 删动态：分片视频、封面一起清；换掉的那张旧封面也不留 */
+await fetch(BASE + "/api/feed/" + pPost.id, { method: "DELETE", headers: { cookie: boss.cookie() } });
+ok(!R2.has(pvKey + "/m") && !R2.has(p2up.key) && !R2.has(pUpJ.key), "删动态把视频和封面都清掉");
 const nl = await post(boss, "/api/logs", { day: "2026-09-30", site: "Serenje 1330NW", note: "换筛网" });
 const nlRow = (await boss("/api/logs?from=2026-09-30&to=2026-09-30")).data.logs.find((x) => x.id === nl.data.id);
 ok(!!nlRow && nlRow.note_zh === "换筛网", "日报备注也是双语");

@@ -1353,6 +1353,24 @@ async function feedApi(req, env, me, seg, body) {
     await feedVidGc(env);
     return json({ ok: true, i }, 201);
   }
+  /* 视频封面：前端解出第一帧（480 宽 JPEG）传上来，列表里就不用显示黑块 */
+  if (id === "v" && seg[2] === "poster" && req.method === "POST") {
+    if (!env.PHOTOS) return err("未配置文件存储", 500);
+    const b = await body();
+    const m = /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/.exec(String(b.data || ""));
+    if (!m) return err("封面格式不对");
+    const bytes = Uint8Array.from(atob(m[2]), (c) => c.charCodeAt(0));
+    if (bytes.length > 512 * 1024) return err("封面太大", 413);
+    const ext = m[1] === "image/png" ? "png" : m[1] === "image/webp" ? "webp" : "jpg";
+    const key = `feed/${new Date().toISOString().slice(0, 7)}/${crypto.randomUUID()}.${ext}`;
+    try {
+      await env.PHOTOS.put(key, bytes, { httpMetadata: { contentType: m[1] } });
+    } catch (e) {
+      return err("封面存不进 R2：" + ((e && e.message) || e), 500);
+    }
+    return json({ key }, 201);
+  }
+
   if (id === "v" && seg[2] === "finish" && req.method === "POST") {
     if (!env.PHOTOS) return err("未配置文件存储", 500);
     const q = feedVidQ(req);
@@ -1450,6 +1468,22 @@ async function feedApi(req, env, me, seg, body) {
     return json({ ok: true, likes });
   }
 
+  if (id && sub === "poster" && req.method === "POST") {
+    const b = await body();
+    const u = String(b.u || ""), p = String(b.p || "");
+    if (!u || !/^(feed|fin|prod)\//.test(p)) return err("参数不对");
+    const p0 = postOut(row);
+    const hit = p0.photos.find((m) => m && m.t === "v" && m.u === u);
+    if (!hit) return err("这条动态里没有这个视频", 404);
+    if (hit.p === p) return json({ ok: true, again: true });
+    const oldP = hit.p || "";
+    hit.p = p;
+    await env.DB.prepare("UPDATE posts SET photos=? WHERE id=?").bind(JSON.stringify(p0.photos), id).run();
+    /* 换封面时把旧的清掉（派生数据，没人引用就删） */
+    if (oldP && oldP !== p && env.PHOTOS) await feedMediaPurge(env, [oldP]);
+    return json({ ok: true, photos: p0.photos });
+  }
+
   if (id && sub === "comment" && !seg[3] && req.method === "POST") {
     const b = await body();
     const text = String(b.text || "").trim().slice(0, 300);
@@ -1480,8 +1514,9 @@ async function feedApi(req, env, me, seg, body) {
     await env.DB.prepare("UPDATE posts SET body=?, body_en=?, body_zh=?, photos=? WHERE id=?")
       .bind(text, tr.en, tr.zh, JSON.stringify(photos), id).run();
     /* 编辑时把视频/照片删掉了，R2 里那份也别留着 */
-    const keep = new Set(photos.map((m) => String((m && m.u) || "")));
-    const gone = postOut(row).photos.map((m) => String((m && m.u) || "")).filter((k) => k && !keep.has(k));
+    const keep = new Set(photos.flatMap((m) => [String((m && m.u) || ""), String((m && m.p) || "")]));
+    const gone = postOut(row).photos.flatMap((m) => [String((m && m.u) || ""), String((m && m.p) || "")])
+      .filter((k) => k && !keep.has(k));
     if (gone.length && env.PHOTOS) await feedMediaPurge(env, gone);
     return json({ ok: true });
   }
@@ -1490,7 +1525,7 @@ async function feedApi(req, env, me, seg, body) {
     if (!own) return err("只能删自己发的", 403);
     await env.DB.prepare("DELETE FROM posts WHERE id=?").bind(id).run();
     /* 动态带的图/视频是自己的，删动态就顺手清掉；老动态的 feed/old 是包内资源，不动 */
-    if (env.PHOTOS) await feedMediaPurge(env, postOut(row).photos.map((m) => (m && m.u) || ""));
+    if (env.PHOTOS) await feedMediaPurge(env, postOut(row).photos.flatMap((m) => [(m && m.u) || "", (m && m.p) || ""]));
     return json({ ok: true });
   }
 
@@ -1507,7 +1542,10 @@ async function feedMediaPurge(env, keys) {
   try {
     for (const t of ["posts", "fin_entries"]) {
       const r = await env.DB.prepare(`SELECT photos FROM ${t}`).all();
-      for (const row of r.results || []) for (const m of coParse(row.photos, [])) used.add(String((m && m.u) || ""));
+      for (const row of r.results || []) for (const m of coParse(row.photos, [])) {
+        used.add(String((m && m.u) || ""));
+        if (m && m.p) used.add(String(m.p));
+      }
     }
   } catch (e) {
     return 0;
@@ -1529,10 +1567,14 @@ async function feedMediaPurge(env, keys) {
 
 function normMedia(list) {
   if (!Array.isArray(list)) return [];
-  return list.slice(0, 9).map((m) => (typeof m === "string"
-    ? { t: "i", u: m }
-    : { t: m && m.t === "v" ? "v" : "i", u: String((m && m.u) || "") }))
-    .filter((m) => m.u);
+  return list.slice(0, 9).map((m) => {
+    if (typeof m === "string") return { t: "i", u: m };
+    const out = { t: m && m.t === "v" ? "v" : "i", u: String((m && m.u) || "") };
+    /* 视频封面（第一帧截图）：列表里没它就是一格黑 */
+    const p = String((m && m.p) || "");
+    if (out.t === "v" && /^(feed|fin|prod)\//.test(p)) out.p = p;
+    return out;
+  }).filter((m) => m.u);
 }
 
 /* 动态视频：原文件直传 R2（不走 base64），播放要靠 Range，否则 iOS 上点开就是黑屏 */
