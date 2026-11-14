@@ -4009,11 +4009,12 @@ function finHtml() {
   const isMe = !FINWHO;                 // 空 = 我自己
   const ro = !isMe && !isAll && !(who === FINCO && FIN.canCo);   // 点某个人 = 只读（只看看，不能改）；公司账户对有记账权的人可写
   const canAll = FIN.canAll;
+  const finch = coView ? "bank" : FINCH;   // 公司账户只有银行口，进来就是银行账，不出现现金切换
   const mine = (e) => e.uid === who || e.to_uid === who;   // 自己的账本：自己花的 + 收到的备用金
   const scoped = isAll ? FIN.entries : FIN.entries.filter(mine);
   const invOk = (e) => FININV === "all" || (e.kind !== "out" && e.kind !== "in")
     || (FININV === "yes" ? !!Number(e.inv) : !Number(e.inv));
-  const list = scoped.filter((e) => String(e.date) >= finFrom() && invOk(e) && finAcctOf(e) === FINCH);
+  const list = scoped.filter((e) => String(e.date) >= finFrom() && invOk(e) && finAcctOf(e) === finch);
   const sum = { out: 0, in: 0, float: 0, home: 0, loanOut: 0, loanIn: 0 };
   for (const e of list) {
     const amt = Number(e.amount) || 0;
@@ -4126,9 +4127,9 @@ function finHtml() {
       ${(FIN.owner || FIN.canAll || e.uid === FIN.me.uid) ? `<button class="ghost fin-more" data-finmore="${e.id}" title="${esc(tr(`更多`))}">⋯</button>` : ""}
     </div>`;
   };
-  const rows = FINCH === "bank" ? bankBook() : list.map(entryRow).join("");
+  const rows = finch === "bank" ? bankBook() : list.map(entryRow).join("");
 
-  const roleLabel = (p) => (p.ghost ? "历史账户" : ROLE_ZH[p.role] || "员工");
+  const roleLabel = (p) => (p.login === FINCO ? tr("公司") : p.ghost ? tr("历史账户") : ROLE_ZH[p.role] || tr("员工"));
   const acctCard = (p) => {
     const a = finAcct(p.login);
     const row = (FIN.accounts || []).find((x) => x.uid === p.login) || {};
@@ -4141,7 +4142,7 @@ function finHtml() {
     return `<div class="fin-acct" data-acct="${esc(p.login)}">
       <div class="n">${esc(p.name || p.login)} <span class="mut">${esc(roleLabel(p))}${row.since ? " · 对账 " + esc(row.since) : ""}</span></div>
       <div class="g">
-        <div><label>${esc(tr(`现金`))}</label><b>${finMoney(a.cash)}</b><small>${esc(tr(`来源 ${finMoney(a.src.cash)} − 花费 ${finMoney(a.out.cash)}`))}</small></div>
+        ${p.login === FINCO ? "" : `<div><label>${esc(tr(`现金`))}</label><b>${finMoney(a.cash)}</b><small>${esc(tr(`来源 ${finMoney(a.src.cash)} − 花费 ${finMoney(a.out.cash)}`))}</small></div>`}
         <div><label>${esc(tr(`银行`))}</label><b>${finMoney(a.card)}</b><small>${esc(tr(`来源 ${finMoney(a.src.card)} − 花费 ${finMoney(a.out.card)}`))}</small></div>
       </div>
       ${bankLine}
@@ -4263,7 +4264,7 @@ function finHtml() {
     ${anaBar}
     ${FINANA ? coHtml + floatHtml + trHtml + catHtml : ""}
     ${actions}
-    <div class="fin-seg" style="margin-bottom:6px">${[["cash", `💵 ${tr("现金")}`], ["bank", `🏦 ${tr("银行")}`]].map(([k, t]) => `<button data-finch="${k}" class="${FINCH === k ? "on" : ""}">${esc(t)}</button>`).join("")}</div>
+    ${coView ? "" : `<div class="fin-seg" style="margin-bottom:6px">${[["cash", `💵 ${tr("现金")}`], ["bank", `🏦 ${tr("银行")}`]].map(([k, t]) => `<button data-finch="${k}" class="${FINCH === k ? "on" : ""}">${esc(t)}</button>`).join("")}</div>`}
     <div class="fin-seg">${["day", "week", "month", "year"].map((k) => `<button data-finrange="${k}" class="${FINR === k ? "on" : ""}">${FINR_ZH[k]}</button>`).join("")}</div>
     <div class="fin-ptab">${[["all", "全部票据"], ["yes", "有发票"], ["no", "无发票"]].map(([k, t]) => `<button data-finv="${k}" class="${FININV === k ? "on" : ""}">${t}</button>`).join("")}</div>
     ${FINMARK ? `<div class="mut" style="margin:-4px 0 10px">${esc(tr(`🧾 补票中：点每行的「有票 / 无票」，点一下即存`))} · <span id="fin_markcnt"></span></div>` : ""}

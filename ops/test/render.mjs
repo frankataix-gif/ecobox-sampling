@@ -178,17 +178,29 @@ const book = await w.eval(`(async () => {
   let out = "ok";
   try {
     S.tab = "fin";
-    /* 银行账按卡排：先切到能看到卡的范围（公司账户 / 全部 / 自己） */
-    if (FIN.canCo) FINWHO = "__company"; else if (FIN.canAll) FINWHO = "ALL";
-    FINCH = "bank"; await render(); await new Promise((r) => setTimeout(r, 200));
-    const tabs = !!document.querySelector('[data-finch="cash"]') && !!document.querySelector('[data-finch="bank"]');
-    if (!tabs) out = "没有现金/银行页签";
-    else {
-      /* 自己名下没卡、又看不到别人的账，就只验页签 */
-      const wantCard = ((FINVIEW && FINVIEW.list) || []).some((e) => (e.acct === "bank" || e.ch === "card"));
-      const card = document.querySelector("[data-finbook]");
-      if (wantCard && !card) out = "银行账没有按卡分块";
-      else if (card && !/期初/.test(card.textContent || "")) out = "卡头缺期初：" + (card.textContent || "").slice(0, 60);
+    const company = !!FIN.canCo;
+    /* 银行账按卡排：有公司账户就先看公司账户（它只有银行口），否则看全部 / 自己 */
+    if (company) FINWHO = "__company"; else if (FIN.canAll) FINWHO = "ALL";
+    FINCH = "cash"; await render(); await new Promise((r) => setTimeout(r, 200));
+    if (company) {
+      /* 公司账户没有现金：进来就是银行账，且不出现现金页签 */
+      if (document.querySelector('[data-finch="cash"]')) out = "公司账户还给了现金入口";
+      else {
+        const card = document.querySelector("[data-finbook]");
+        const wantCard = ((FINVIEW && FINVIEW.list) || []).some((e) => (e.acct === "bank" || e.ch === "card"));
+        if (wantCard && !card) out = "公司账户没默认进银行账";
+        else if (card && !/期初/.test(card.textContent || "")) out = "卡头缺期初：" + (card.textContent || "").slice(0, 60);
+      }
+    } else {
+      FINCH = "bank"; await render(); await new Promise((r) => setTimeout(r, 200));
+      const tabs = !!document.querySelector('[data-finch="cash"]') && !!document.querySelector('[data-finch="bank"]');
+      if (!tabs) out = "没有现金/银行页签";
+      else {
+        const wantCard = ((FINVIEW && FINVIEW.list) || []).some((e) => (e.acct === "bank" || e.ch === "card"));
+        const card = document.querySelector("[data-finbook]");
+        if (wantCard && !card) out = "银行账没有按卡分块";
+        else if (card && !/期初/.test(card.textContent || "")) out = "卡头缺期初：" + (card.textContent || "").slice(0, 60);
+      }
     }
   } catch (e) { out = "THROW " + e.message; }
   FINCH = "cash"; FINWHO = "";

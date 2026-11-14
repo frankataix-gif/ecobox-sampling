@@ -2272,6 +2272,7 @@ async function finApi(req, env, me, seg, url, body) {
     /* 现金 / 银行两本账；银行账尽量落到具体的卡上：没给、而这户只有一张卡就自动带上 */
     const ch = String(b.ch || "cash") === "card" ? "card" : "cash";
     const acct = ch === "card" ? "bank" : "cash";
+    if (uid === CO && acct === "cash") return err("公司账户只有银行口，请选银行", 400);
     let cardId = "";
     if (acct === "bank") {
       const cards = finBanks(await env.DB.prepare("SELECT * FROM fin_accounts WHERE uid=?").bind(uid).first());
@@ -2350,8 +2351,9 @@ async function finApi(req, env, me, seg, url, body) {
     const photos = Array.isArray(b.photos) ? b.photos.slice(0, 6).map(String) : JSON.parse(row.photos || "[]");
     const cat = row.kind === "float" || row.kind === "transfer" ? "" : finCatNorm(b.cat);
     const ft = row.kind === "float" || row.kind === "transfer" ? "life" : String(b.ft || "life");
-    const ch = String(b.ch || "cash") === "card" ? "card" : "cash";
+    const ch = String(b.ch === undefined ? (row.ch || "cash") : b.ch) === "card" ? "card" : "cash";
     const acct = ch === "card" ? "bank" : "cash";
+    if (row.uid === CO && acct === "cash") return err("公司账户只有银行口，请选银行", 400);
     let cardId = "";
     if (acct === "bank") {
       const cards = finBanks(await env.DB.prepare("SELECT * FROM fin_accounts WHERE uid=?").bind(row.uid).first());

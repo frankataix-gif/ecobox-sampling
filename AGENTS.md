@@ -191,3 +191,8 @@
   `/api/fin/photo/*` 里给）。
 - **QA 探针账号** `_qa_upload_probe` 用完必须删（`DELETE FROM users WHERE login='_qa_upload_probe'`），
   并清掉它在 R2 里留下的 `feed/2026-*/*`、`feed/v/*`、`feed/tmp/*`、`feed/done/*`。
+- **公司账户只有银行一本书**：`FINCO` 是资金沉淀户，没有现金。前端 `finHtml()` 用 `finch = coView ? "bank" : FINCH`
+  取账本，公司账户下不渲染现金 / 银行页签、账户卡也不显示现金格；后端 `POST/PATCH /api/fin/entries` 对
+  `uid=__company && acct=cash` 直接 400（`公司账户只有银行口`）。改公司记录不带 `ch` 时按原 `ch` 走，
+  不会再把银行账悄悄改成现金账。测试里给公司记现金 = 400 是预期，别改回去。
+

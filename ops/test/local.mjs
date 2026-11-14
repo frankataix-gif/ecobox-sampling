@@ -585,13 +585,17 @@ ok(findE(bkCard.data.id).acct === "bank" && findE(bkCard.data.id).card_id === fc
 ok(findE(bkNoCard.data.id).acct === "bank" && findE(bkNoCard.data.id).card_id === "", "没选卡 = 未指定卡");
 ok(findE(peterBank.data.id).card_id === peterCard.id, "只有一张卡时自动落到那张卡 " + findE(peterBank.data.id).card_id);
 ok(findE(bkCard.data.id).state === "recorded" && findE(bkCard.data.id).src === "manual", "新记录 state=recorded / src=manual");
+/* 公司账户只有银行口：现金账一律拒，免得出现看不见的钱 */
 const coCash = await post(boss, "/api/fin/entries", { kind: "out", uid: "__company", date: today, amount: 3, cat: "meal", ch: "cash", note: "公司现金" });
-const mvBank = await patch(boss, "/api/fin/entries/" + coCash.data.id, { date: today, amount: 3, cat: "meal", ch: "card", card_id: izb.id, note: "改成银行" });
-ok(mvBank.status === 200, "现金记录能改成银行并指定卡");
-const afterMv = ((await boss("/api/fin/bootstrap")).data.entries || []).find((e) => e.id === coCash.data.id) || {};
-ok(afterMv.acct === "bank" && afterMv.card_id === izb.id, "改完 acct/card_id 一起更新 " + JSON.stringify([afterMv.acct, afterMv.card_id]));
+ok(coCash.status === 400 && /银行/.test(coCash.data.error || ""), "公司账户不能记现金账 " + coCash.status);
+const mvBank = await patch(boss, "/api/fin/entries/" + cashE.data.id, { date: today, amount: 4, cat: "meal", ch: "card", note: "改成银行" });
+ok(mvBank.status === 200, "现金记录能改成银行");
+const afterMv = ((await boss("/api/fin/bootstrap")).data.entries || []).find((e) => e.id === cashE.data.id) || {};
+ok(afterMv.acct === "bank", "改完 acct 跟着变 " + JSON.stringify(afterMv.acct));
+ok((await patch(boss, "/api/fin/entries/" + bkCard.data.id, { date: today, amount: 6, ch: "cash" })).status === 400, "公司账户的记录不能改成现金账");
+ok((await patch(boss, "/api/fin/entries/" + bkNoCard.data.id, { date: today, amount: 5, cat: "meal", ch: "card", card_id: izb.id, note: "补上卡" })).status === 200, "银行账能补指定卡");
 ok((await patch(boss, "/api/fin/entries/" + bkCard.data.id, { date: today, amount: 6, cat: "meal", ch: "card", card_id: "cinvalid0000000", note: "乱填卡" })).status === 400, "乱填卡被拒");
-for (const id of [cashE.data.id, bkNoCard.data.id, bkCard.data.id, coCash.data.id, peterBank.data.id]) await boss("/api/fin/entries/" + id, { method: "DELETE" });
+for (const id of [cashE.data.id, bkNoCard.data.id, bkCard.data.id, peterBank.data.id]) await boss("/api/fin/entries/" + id, { method: "DELETE" });
 const noPeriod = await post(boss, "/api/fin/bank", { uid: "__company", open_bal: 1 });
 ok(noPeriod.status === 400 && /期间/.test(noPeriod.data.error || ""), "水单没填期间被拒 " + noPeriod.status);
 const stmt1 = await post(boss, "/api/fin/bank", {
