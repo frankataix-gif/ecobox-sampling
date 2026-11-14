@@ -1,296 +1,170 @@
-# 仓库须知（给后续 agent）
+# AGENTS.md · ecobox-sampling
 
-单文件离线 PWA，无构建步骤。改完直接刷新页面即可，发布走 GitHub Pages。
+> 给后续 agent 的最小须知：只放「怎么不犯错」和「什么不许动」。实现细节读源码，不在这里复述。
 
-## 结构
+## 0. 干活方式（省时间、少出错）
 
-- `sampling_helper.html`：取样工具，全部前端（样式 + 一个内联 `<script>`）。改完必须跑 `node --check`。
-- `licences.html`：**赞比亚矿权介绍**（单页应用，只有矿证这一个主题）。侧栏是项目列表（`order` 排序；`name` 为显示名，`no` 为证号），右侧是选中项目的五个分类：项目介绍 / 项目地图 / 项目地质报告 / 现场取样结果 / 工厂信息。
-  侧栏顶部只有「⚙ 设置」（密码 `123`，`sessionStorage.lic_setok`，本次会话有效）。设置**只有一个入口**：先是项目列表，点某一行的「设置」就进**那个项目自己的**设置页（`#set/<证号>`），里面是这个项目的全部内容：
-  · 矿证信息：字段表（改值、删字段、加字段），覆盖存 `localStorage.lic_info_v1`；未覆盖时用 `licences.json` 的 `info` 数组，再退化到由 holder/type/status/commodities 拼的默认字段。项目页「项目介绍」里展示的就是这张表。
-    上方有粘贴框：把矿证网站上的文字整段粘进来，「解析并填充」按 `INFO_ALIAS` 把「许可证号 / 持有人 / 地址 / 面积 …」对到标准字段（先精确、再包含匹配，`*` 会洗掉），认出的字段高亮，认不出的行在提示里点名；改完点保存。
-  · 矿证资料：上传扫描件/批文/PDF，原件存 IndexedDB `lic_files_db`（store `files`，索引 `no`）；文字记录存 `localStorage.lic_notes_v1`（输入即自动保存，可「存为 txt 资料」）。只在本机，不进仓库也不上云。
-  项目页顶部只保留一行：`项目名 + 状态徽标 + 证号 · 矿区 · 公司持有`，二级菜单 `项目介绍 / 项目地图 / 项目地质报告 / 项目信息` 也在顶部栏（`#tabs` 在 `.top` 里，正文不再重复标题）。
-  矿证信息固定 9 个默认字段（`INFO_LABELS`）：`公司持有 / 许可证类型 / 许可证状态 / 批准时间 / 到期时间 / 地区 / 产区面积 / 矿产 / 开发目标`；`normInfo()` 把旧的「持有人」归一成「公司持有」、丢掉已废弃字段、补空默认值，用户自己加的字段排在后面。
-  英文取值只做显示翻译、不改数据：`zhStatus / zhType / zhMineral / zhRegion`（`zhVal()` 按字段名分派），列表状态列与标题徽标同样走 `zhStatus()`；公司名、证号保持原文。
-  项目列表是**纯展示**：`项目名称 / 证号 / 持有人 / 状态 / 排序 / 设置`，没有任何输入框；点「设置」进该项目的设置页，名称、证号、矿区、排序和字段表、资料、留言都在那一页改，点页面底部「保存」一次性写入（`saveSettings()`）。
-  「公司持有」「许可证状态」来自字段表，保存时 `syncProjectFromInfo()` 写回项目属性 `holder` / `status`（列表、项目页、导出 json 都用这两个字段，`SYNC_PAIRS` 同时认「持有人」旧名）。
-  项目页（`#view`）里**没有外层卡片**：`.detail` 不设背景/边框，`.pane` 只是 `padding:14px 0 26px`，内容直接铺在页面底色上；顶部标题栏 + 二级菜单保持原样。
-  矿权边界（KML）：设置页「＋ 上传 KML」或直接把文件拖到该卡片（`#kmlPanel` 的 drop 事件）读 `.kml`（`parseKml()` 按 `localName` 匹配，兼容 `<kml:Polygon>` 前缀；外环 `outerBoundaryIs` 与内环 `innerBoundaryIs` 分开，面积 = |外环| − |内环|；多块按所有顶点算 bbox），算出顶点数、外接框、中心、球面面积（`ringAreaKm2()`，km²）；结果连原始文本存 `localStorage.lic_kml_v1`（`{证号:{name,ts,rings,inner,bbox,center,area,pts,parts,kind,raw}}`）。`.kmz` 会明确提示「另存为 KML」，同名替换会先确认。项目地图优先用 KML 的 bbox 和中心自动缩放（`mapFitZoom()`；见下条），并保留 `kmlSvg()` 轮廓示意，支持「复制边界坐标」；设置页可「下载」「删除」。改证号时 `renameProject()` 一并迁移 KML 记录。
-  设置页防丢：属性输入（名称/证号/矿区/排序）在重绘前用 `stashProps()` 存进 `DRAFT`，所以传 KML、加删字段都不会清掉没保存的输入；`isDirty()` 拿当前 DOM + `SROWS` 跟**已存下来的** `licByNo().info` 比，离开设置页（返回列表、点左侧项目）会 confirm 提醒。
-  不重复原则：证号只有一个入口（设置页顶部「证号」），粘贴里的「许可证号」直接填那儿，不再生成「矿证号」字段；KML 只归「矿权边界」卡，资料列表过滤掉 `.kml/.kmz`；地图页两个复制按钮分别叫「复制中心坐标」「复制边界坐标」。面积以**矿业部出具的产区面积**为准，KML 算出来的只标「参考面积」互校，不自动写进字段。
-  项目地图（`#gmap`）是自绘瓦片地图，不引 Leaflet/Google API：`mapMount()` 把中心 + 边界塞进 `MAP`，`mapDraw()` 按 Web 墨卡托算瓦片行列（256px，`left/top` 绝对定位铺满），SVG 层再画 `<path class="gpoly">`（多环用 `fill-rule=evenodd` 挖洞）、顶点 `circle.gv`、面积 `text.glabel`。`fit` zoom 用 `mapFitZoom()` 让 bbox 占 84% 视口。交互：指针拖动（改 center）、滚轮/双击/±（围绕光标缩放）、`⤢` 回边界、右上角切卫星/街道（存 `localStorage.map_layer_v1`）。瓦片源：卫星用 Esri `World_Imagery`（Maxar 影像，和 Google Earth 同源素材）；**不用 Google 瓦片**——那没有可嵌入的官方地址，只适合自己看看。没网时瓦片空着，边界/面积照画。
-  坐标表也能直接进：设置页「＋ 粘贴坐标」把矿业部/ArcGIS 的坐标表（`13°08'48.00" S 30°04'18.00" E`、`13 08 48 S 30 04 18 E`、`-13.146667, 30.071667`）逐行读成环（`parseCoordText()`：去序号、去度分秒符号、纬度在前，缺 S 且落在 20–45°E / 0–35°N 时按南纬；明显的经,纬 顺序会自动调换），`kmlFromPts()` 去重、去闭合点、算 bbox/中心/面积后按「手工坐标（N 点）」存进同一个 `lic_kml_v1`，`raw` 就是粘贴的原文。
-  改证号 = 改主键：`renameProject()` 迁移 `INFO` / `EDITS` / `ADDED` / `NOTES` / IndexedDB 里的文件 `no`；基础项目的 patch 仍按 json 原始证号存（`keyOf()` 靠 `patch.no` 找回），所以改名不会丢改动，也不会和 json 打架。
-  删除基础项目记在 `DELETED`（和 `EDITS`/`ADDED` 一起存 `lic_edit_v1` 的 `deleted`），`applyEdits()` 过滤掉；「还原 json」会一并清空。
-  「+ 新增项目」会建一个 `未命名-NN` 的临时项目并直接打开它的设置页，填好证号点保存即完成改名。
-  动态与留言存 `localStorage.lic_feed_v1`（本机，不共享，P2 接 Worker 后才多人可见）。
-  前面有登录闸门（`ecobox` / `123456`，FNV-1a 哈希 + localStorage 30 天）。**这只是挡误入**：静态站点上 JSON 仍可被直接下载，要真保护得放到带鉴权的 Worker 后面。
-- `sampling_sw.js`：离线缓存。**改任何缓存内容都要同时 bump `CACHE` 版本**，否则老客户端拿不到新文件。
-- `areas.json`：矿区范围（bbox），只用于把记录按坐标自动归到矿区。
-- `licences.json`：矿证 + 地质背景 + 取样要点（未知字段写「待核实」，不要编）。
-- `samples.json`：现场取样结果（全量）。生成链：`devtools/export_samples.py`（python-qgis.bat）从 QGIS `field_samples.gpkg` 导 7 点 → `devtools/import_ecobox_samples.py`（普通 python）从 `samples_meta.json`（Ecobox D1 全量 36 条）导入并与 QGIS 7 点按坐标就近合并（<200m），按 bbox 自动归类 `area_id`（合并 areas.json + areas.local.json），照片按 `photos/<sid>/<NN>.jpg` 重建 R2 URL；字段 sample_id/area_id/lat/lon/symbol/mineral/sample_type/description/ta2o5_pct/nb2o5_pct/li2o_pct/cs_ppm/be_ppm/sn_ppm/assays[]/photos[]/source/datetime/status/recorder/license_no。发布时 `build_public.py` 只保留 `area_id==serenje_1330nw` 的 24 条。
-- `factory.json`：工厂信息（框架已建；location/equipment/capacity/plan，逐步补充）。
-- `geo_packs/`：离线地图包，`index.json` 列出可用包 id。
+1. 一次一条命令，别把 build+test+deploy 串成一长串；长命令（python 部署/构建）结束后壳子可能挂住，看到 "still running" 直接 `reset=true` 重开，不要干等。
+2. PowerShell 5.1 内联中文/JSON 必乱码 → **写 `.py` 文件再跑**，脚本首部 `sys.stdout.reconfigure(encoding="utf-8")`。
+3. 改文件用 file_editor；不要用 `Get-Content`/`Set-Content` 循环改 UTF-8 文件（按 GBK 读，中文不可逆损坏）。
+4. 先读真实文件再断言；不确定就问，不猜。
+5. 改完的标准动作：`python ops/build.py` → `node ops/test/local.mjs`（必须 `FAIL=0`，内含页面语法 + 英文覆盖率两道闸）→ `node --check ops/dist/worker.js` → `python ops/deploy.py --code-only`（token 无 D1 权限时用它，从 Worker 绑定读 D1 id）→ 核对 `https://ops.ecoboxmine.com/api/build` 时间戳。
 
-## 数据层
+## 1. 这个仓库是什么
 
-- IndexedDB 库名 `field_sampling`。store：`samples`（唯一记录库，含照片 Blob）、`kv`、`tiles`、`track`、`trips`。
-- **不要**再按矿区拆 store：取样是独立动作，矿区只是记录上的 `area_id` 字段，由 `areaAt(lat,lon)` 自动判定。
-- 样品读写统一走 `S.*`；kv 用 `store.get/set`。
-- 试验版遗留的 `samples_*` 由 `mergeLegacyStores()` 首启并回主库（标记 `kv.areas_merged_v2`）。
+单文件离线 PWA 采集工具 + 静态站 + `ops/` 运营工作台（Cloudflare Worker `ecobox-ops` = 页面 + API + D1 + R2）。
 
-### 写入路径的坑（2026-11-07 修）
+- 生产：`https://ops.ecoboxmine.com`（备用 `https://ecobox-ops.frankataix.workers.dev`）
+- account `dff446b2b98a38ac2b82263e3ff14da9`；D1 `9c9f6539-a564-461c-8ba8-e04a2f7eb198`；R2 `ecobox-finance`（binding `PHOTOS`）
+- 源码 `ops/index.html` + `ops/worker.js` → `python ops/build.py` → `ops/dist/worker.js`（页面内联进 worker）
+- **页面渲染冒烟** `node ops/test/render.mjs [boss|mgr|fin|staff]`：用 jsdom 打开真页面，把 18 个页签和记账/调拨/取现弹层点一遍，任何渲染异常（比如 TDZ「before initialization」）都会报红。需要先 `npm i jsdom`（不进依赖，没装就 SKIP）。tabs / 弹层抛错会被 `showPaneError` 拦成「这个页面打不开 + 重试」，不再卡在「加载中…」。
+- 测试 `node ops/test/local.mjs`：本地内存 D1，不碰生产
 
-- `S.put()` **必须回写自增主键**。不带 `id` 的 `put()` 在 IndexedDB 里是**插入新行**；
-  旧版没写回，于是「保存 → `autoSync` 又 `S.put` 一次」会给每条新记录插出两条同号记录。
-  现在 `S.put` 完成后把 `r.result` 赋回 `s.id`。改这里之前先想清楚所有调用点（保存、编辑、同步、迁移）。
-- 一次性修复：`dedupeSamples()`（标记 `kv.dedupe_v1`）按 `sample_id` 去重，保留后写的那条，
-  并把「已同步」状态和照片并过去；启动时在 `mergeLegacyStores()` 之后调用。
-- `uploadSample()` 的 `captured_licence` 只能取 `s.captured_licence`。
-  早期写成 `s.licence||s.license_no`（S1 已删的字段），结果把采集快照清成空串再写进 D1。
-- 上传载荷里 `status` 固定为 `"synced"`：客户端的同步状态不该写进云端记录。
-- 照片上传成功后把 `key/url/idx` 回写本地记录；重试/再保存时同序号照片直接复用，不再重传几 MB。
-- 地图位图缓存 `tileCache` 上限 240 张（LRU），瓦片本体仍在 IndexedDB `tiles` 里。
+## 2. 部署
 
-## 验证方式
+- 命令文本里必须出现 `CLOUDFLARE_OPS_TOKEN` / `CLOUDFLARE_API_TOKEN` 键名，系统才注入 token；**终端 reset 会清空环境变量**，重跑时键名要重新出现在命令里。
+- 部署成功与否只看 `/api/build` 时间戳，别看退出码（`deploy.py` 走 `os._exit`，壳子无输出甚至挂住是正常的）。
+- `/d1/database` 报 401 不是 token 失效（`/user/tokens/verify` 仍是 active），是缺 D1 读权限 → 用 `python ops/deploy.py --code-only` 只换代码。
+- `*.workers.dev` 会被部分网络/运营商拦 → 手机打不开先换自定义域，别先怀疑 worker。
 
-本地起 `python -m http.server`，用一个同源测试页 iframe 载入 `sampling_helper.html`，父页可直接读 `contentDocument` 和 IndexedDB 做断言（曾经的 P1 测试即此法）。注意：`indexedDB.deleteDatabase` 会被未关闭的连接阻塞，测试里要给超时兜底。
+## 3. ops 结构（够用就行）
 
-## 版本号
+- 前端单页：全局 `S`、`render()`、模块表 `MODS` / 分组 `GROUPS`，每个模块一个 `xxxPane()`；**模块 = 独立页**（`enterApp()` / `ROOT()` / `syncChrome()`），别改回页签。
+- **顶部页签只有三个**：目录（`home`，默认页）/ 动态（`status`）/ 系统（`g:系统`），在 `buildTabs()` 里写死；财务、日常协同、业务现场、资产这些分组**不进顶部**，靠目录页的卡片进（分组页仍可用 `#g:财务` 深链，`groupHtml()` 保留）。**顶部高亮要跟内容一致**：进了 `g:系统` 就亮「系统」，由 `tabCur()` 判断——本页自己就是顶部页签才亮自己，`g:财务` 这类不在顶部的组页仍算「目录」。
+- 后端：`ops/worker.js` 单个 `fetch` 按前缀分派 `/api/{login,me,users,modules,posts,logs,fin,todos,att,customers,exports,licence,...}`；建表靠首次请求自迁移（`CREATE TABLE IF NOT EXISTS` + ALTER）。
+- 写请求的即时反馈：`api()` 里凡是 `method !== "GET"` 都会 `busyOn()`——把用户刚点的按钮改成「处理中…」+ 禁用（`LIVEBTN` 由 document 捕获阶段点击记录），底部浮条 `showUpd(…, "wait")` 转圈且不自动消失；请求结束（含失败）`busyOff()` 还原。新增确认按钮不用自己写 loading，只要走 `api()`。
+- 双语：界面走 `EN` 字典 + `tr()`（新增中文串补进 `EN`）；内容走 `*_zh / *_en` 双列 + `tx()`。
+  `tr()` 命中不了的动态串写进 `EN_RULES`（数字/变量用函数式替换）。原生 `confirm()/alert()` 不在 DOM 里，**必须** `tr()`；
+  其余渲染文字由 `applyLang()` + MutationObserver 兜底翻（含 `.textContent` 写入的文本节点）。
+  兜底只认「整串中文精确命中字典/规则」，所以**不写 `tr()` 的静态中文也必须进 `EN`**：`node ops/test/i18n.mjs` 现在两道闸
+  （`tr()` 字面量 + 未包 `tr()` 但会进 DOM 的中文），缺一条就 `FAIL`。带 `${}` 的拼接串（如「现金 X · 银行 Y」）只能靠 `EN_RULES` 正则兜。
+- 角色：`staff` / `manager` / `finance` / `admin`。
 
-改完在 `ecobox-sampling/` 下跑 `py -3.12 devtools/bump_version.py`，一次同步（`--dry-run` 可先看）：
-`sampling_helper.html` 里两处（`APP_VER` + 设置页 `#set_ver`）、`sampling_sw.js` 的 `CACHE`（`sampling-vNN` 必须变，否则老客户端不换缓存）、`version.txt`。
+### 财务账目设置（独立模块「系统 › 财务账目设置」，`k: "finacct"`）
 
-`version.txt` 是**更新探针**：页面加载 1.5 秒后、回到前台/窗口获焦、联网、每 5 分钟各 fetch 一次（`no-store`），远端版本**大于** `APP_VER` 就在底部导航上方弹出「🔄 有新版本 <版本号> / 立即更新 / 稍后」，同时弹一条 toast；远端回到一致时横幅自动收起（`checkUpdate()` 返回 `new|latest|err`）。
-「稍后」只压 30 分钟（`UPD_SNOOZE`），且**换了新版本号立刻再提醒**；设置页「🔄 检查更新」按钮手动检查并告诉你「已是最新 / 发现新版本 / 检查失败」，旁边的「强制重新下载最新版」才是清缓存重载。
-「立即更新」一律走 `forceAppUpdate()`（清缓存 + 注销 SW + `?r=` 重载）——不再走 skipWaiting 那条路，避免「点了没反应」；失败（离线/被拦）会把按钮还原。
-设置页「🔄 版本更新」里也常驻一个 `#btn_now`「⬆️ 立即更新到 <版本>」，点「稍后」只收底部条，这个入口永远留着。
-SW 侧还有第二道保险：`refreshShell()` 抓到的新页面若 `APP_VER` 与缓存里的不同，直接 `postMessage({type:"NEW_VER"})` 通知前台弹条（version.txt 被 CDN 拖住时也能提醒）。
-`version.txt` 必须发布（不能进 `.gitignore`）；漏传时探针 404，横幅永远不弹。
+- 基础设置只在这个页：`finAcctHtml()` + `bindFinAcct()`，路由 `#finacct`；页面渲染期初/对账基准/建删改/初始化，服务端仍只认财务负责人（`isOwner`）。
+- **费用记录页（`fin`）不再放基础设置**，只留记账 + 统计；期初表单（`fo_*`）、分类（`fin_cats` / `fin_merge`）也已搬到这个页，改之前先看 `bindFinAcct()`。
+- 账户行存在 `fin_accounts(uid,…)`：`__company` 是公司账户；删账户 = 删这一行，`fin_entries` 一条不动（余额回落成流水合计）。
+- **银行卡只有这一个登记处（唯一口径）**：`fin_accounts.banks` 每条 `{ id, name, holder, bank, no, ccy, bal }`，`id` 由服务端发（`newBankId()` = `c` + 15 位），老数据由 `finSchema()` 里的 `finBankCardFix()` 补 id，并按「同主体 + 同账号」回填账单 / 原件的 `card_id`。**卡号全局唯一**：写账户时 `finBankClash()` 校验，撞了返回 409（一张卡只属于一个主体）。账单 / 原件 / 报表都只引用这张卡，不再各填一套银行 + 账号。
+- 银行余额只认卡：`bal` = 该卡期初；`finBanksClean()` 只收有限数字（两位小数），空/脏值不写，读出来是「未分配」，绝不会被当成 0。账户的 `card` = Σbal（页面显示「各卡合计」只读）。期初口径只有两处：每人的 `cash` + 每张卡的 `bal`；**「报表期初」（`fin_cfg.opening` / `PUT /fin/opening`）已下线**，报表直接用账户期初，别再把它加回来。
+- **现金跟卡解耦**：`cash` 是每人一个手工数字（「现金期初（人工）」），不绑卡、不参与卡号唯一性校验。
+- 单卡增改删走 `finBankCardSheet(uid, idx)`（行尾「设置」）；改卡必须回传原 `id`，否则账单 / 原件的 `card_id` 会变孤儿。
+- `name`（卡名 / 用途，≤30 字）和 `holder`（户名，≤60 字）都是**可选**：同一家银行多个户时靠 `name` 区分（经营户 / 工资户 / USD 结算），显示的优先级是「卡名 · 银行 · …尾号」；账单、原件只存 `card_id`，显示时用 `finCardFind(id)` 回查卡名，改名后老记录跟着变。
+- **金额一律财务格式**：`finMoney()` = 千分位 + 两位小数（`1,000,000.00`），列表 / KPI / toast / 账户余额都用它，别再写 `toLocaleString` 或 `toFixed(0)`。金额输入框必须带 `data-money="1"`（`type="text"` + `inputmode="decimal"`）：不聚焦时显示 `1,000,000.00`，点进去自动变纯数字，失焦再格式化；**读值一律 `moneyNum()`**（能吃掉逗号），否则 `+el.value` 会得到 `NaN`。提交给 API 的仍是数字。数字量（吨 / 品位 / 人数）继续走 `num()` / `prodNum()`。CSV 导出例外：保留纯数字 `toFixed(2)`（不带逗号），免得表格分列错位。
+- PWA：`/manifest.webmanifest`、`/sw.js`、`/icon-192.png`、`/icon-512.png` 由 worker 直接返回（嵌入 `worker.js`），不占静态资源路由。
 
-版本号现在由 `build_public.py` 生成 `YYYYMMDD-NNNN`（`licences.html` 的 `PAGE_VER` 就是这种），`bump_version.py` 两种写法（`bYYYYMMDD-NNN` / `YYYYMMDD-NNNN`）都能识别并保持原格式；`version.txt` 与页面 `APP_VER` 必须一字不差，否则每次打开都误报「有新版本」。
+### 银行水单（独立模块「银行账单」，财务组）
 
-## 添加到手机桌面（2026-11）
+- 独立页（`bankPane()` / `bankPageHtml()` / `bindBank()`），路由 `#bank`；财务页底部只留一个「打开」入口（`data-go="bank"`）。模块目录在 `worker.js` 的 `MODULES` 里注册（`k: "bank"`）。模块名是**银行数字账单**（`MODULES` 里 `k:"bank"`，`t:"银行数字账单"`），风格刻意跟「银行原始单据」的档案目录区分开：卡是横向 pill（`[data-bkcard]`，默认打开第一张，公司卡在最前），上面是深色头 `bkd-hero`（卡名 + 已核笔数 / 最近期末 / 月数 + 待核角标），月份是台账行 `bkd-mrow`（左月份、中间核对进度条、右期末 + `›`），点进去是账单卡 `bkd-sheet`（左色条 + 期初/进账/出账/期末四格 + 进度条 + 看流水 / 删除），`[data-bkpath="card"]` 回到月份台账；`BANK_CARD` / `BANK_MONTH` 记路径，失效自动回退。旧版本（`old=1`）默认**折叠**成一行 `[data-bkold]`（`BANK_OLD` 控制展开），否则同一期间会同时看到两张几乎一样的单子，跟外层「N 份」对不上。另外 `POST /fin/bank` 的覆盖判定是 `uid + card_id + pf + pt`（只顶同一张卡同一期间），前端 `finBankDigitize()` 发现同一 `doc_id` 已有当前版本时先 `confirm`（取消就打开已有的那条），避免重复数字化堆历史版本。月份行 `[data-bkmonth]`，账单卡里 `[data-bankopen]` 打开逐笔核对、`[data-bkdel]` 删除；面包屑 `bkBread()` 的 `[data-bkpath]` 回上一级 / 根。月份目录就是为了月份多了不把页面淹掉。删除只给 `FIN.bankAll`（管理员 / 财务 / 负责人）渲染，服务端 `DELETE /fin/bank/:id` 同样 403 兜底；然后才是原来的行内信息：行首显示「几月到几月」（`bkRange()`：同月只写 `2026-09`，跨月 `2026-09 → 2026-10`，小字补 `09-01→09-30`）；上传弹窗解析完在期间输入框下面写一行「识别到期间：2026-09（2026-09-01 → 2026-09-30）」（`span()`）；**这一页只读，没有上传入口**（唯一上传入口是「银行原始单据」）：账单只能由原件「数字化」（`finBankDigitize()` → `finBankSheet(doc)`）产生，`finBankSheet` 从 doc 进来自动把 `doc.card_id` pin 成 hidden `#bk_card`，`pickCard()` 在 pin 时直接返回，不再让用户选卡。行上写源文件名（`s.doc_id` 回查 `FIN.docs`，`bankPane` 会用 `/fin/bankdocs` 补这份清单，拿不到就不显示）+ 期间 + 笔数，按钮是「看流水」和「删除」（`FIN.bankAll` 才渲染删除）。卡已删 / 未挂卡的账单落「没挂到卡的账单」；同期间重传的旧版本在同一月份里以 `dim` 显示。
+- 解析全在浏览器：`bankParseText()` 认期初/期末/账号/币种/期间，按「上一行余额 − 本行余额」定借贷；首行日期 > 末行日期时自动 reverse 成从旧到新。逐笔只在弹窗里改，点保存才写 D1。
+- 定位：**按日期把账单一笔笔列出来，人眼逐笔核对**（不做自动配对，不求跟费用记录对齐）。
+- 详情弹窗 `finBankOpen()`：按 `d` 升序（同一天保持录入顺序）列出「日期 / 摘要 / 进或出 / 余额」，逐行「☐ 待核 → ✓ 已核」+「不管这行」，改动先攒在内存，点「保存核对」一次性 `POST /fin/bank/:id/tx`；全部核完自动把水单 `status=checked`。
+- 期初 + 进 − 出 = 期末 由页面现算（`bk-chk` 条），和水单期末对不上就标红提示，用来发现解析错行/漏行。
+- `fin_bank_stmt` 的列表查询统一走 `FIN_BANK_SEL`（带 `ok_n` 和 `gap`），`/fin` 树和 `/fin/bank` 列表都用它；`gap` = 期初 + 逐笔进 − 逐笔出 − 表头期末，列表行据此打「⚠ 缺行」。加字段时**两边一起改**，别只在 `/fin/bank` 里算——页面用的是 `/fin` 树里的 `FIN.bank`。
+- 列表行右侧「0/6」= 已核笔数 / 总笔数（`ok_n` 由 SQL 子查询算，别在前端遍历）；顶部**不放大汇总**（各账户各管各的，合并没意义），也没有「全部 / 我的」切换——可见性由 `bankAll` 在服务端定。
+- 后端两张表：`fin_bank_stmt`（一张水单）+ `fin_bank_tx`（逐笔，`state` = `new` / `matched` / `ignored` 正好对应 待核 / 已核 / 不管），原件进 R2 的 `bank/` 前缀；端点 `/fin/bank*`。可见性：`bank`＝自己名下，`bankAll`＝财务负责人 / admin / manager。
+- 上传**只认卡**：`POST /fin/bank` 必须带 `card_id`（`finCardAny()` 反查主体，`uid` 跟着卡走），银行 / 账号 / 币种由卡派生；`PATCH` 换卡同样用 `card_id`。前端从卡的目录进来时卡已写死，只有通用入口（`finBankSheet()` 无第三参数）才给下拉选卡（`finCardOpts()`），水单解析出的账号只用来预选卡（`pickCard()`），**不能新建卡**。员工只能选自己的卡，`bankAll` 可选全部；没登记卡时弹窗给「先去财务账目设置登记」的提示。
+- 同 uid + 同期间重传 → 旧记录标 `old=1` 留着（列表显示「旧版本」），不做覆盖。
+- 改完跑 `node ops/test/local.mjs`：里面用页面里同一段解析代码跑两份样例（FCB 倒序 / IZB 正序）做回归，另有上传/核对/分权/删除的接口用例。另有两例覆盖真水单的坑：IZB 的余额会换行（金额在上一行末尾、余额单独一行）、摘要跨 3 行；少了尾巴时 `warn` 必须报「借方合计对不上」。
+- 想离线复现真 PDF 的解析：`pdfjs-dist` 的 legacy build 在 node 里能跑（`import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs"`），把 `bankPdfText()` 那段逻辑抄过去即可；`pdftotext -layout`（Poppler）也能抽文本，但行切分跟 pdf.js 不完全一样，只能当参照。
+- `deploy.py` 结尾 `os._exit(0)` 会丢掉重定向里的缓冲输出 → 看不到日志时用 `python -u ops\deploy.py --code-only`。
 
-- 设置页 **📲 添加到手机桌面**（`#install_card`）：一个 56px 图标 + 机型标题 + 3 步操作清单；`display-mode: standalone` 时显示「✅ 已添加到桌面」。
-- 步骤按 UA 分叉（`installGuide()`）：iOS Safari / iPhone 上的 Chrome·微信（提示改用 Safari）/ 微信内置 / 华为浏览器 / 三星 / 小米·红米 / UC·夸克 / QQ 浏览器 / 其它安卓（Chrome·Edge）/ 桌面。
-- 只有浏览器真的派发 `beforeinstallprompt`（`deferredPrompt`）才显示「一键添加」；没有就只给步骤，避免点了没反应。`appinstalled` 后弹 toast 并收起横幅。
-- 图标：`icon-192.png` / `icon-512.png` / `icon-maskable-512.png` / `apple-touch-icon.png` 由 `devtools/make_icons.py`（Playwright 渲染 `icon.svg` 截图）生成；`manifest.json` 里 192/512 为 `any`、512 单独一份 `maskable`，`<link rel="apple-touch-icon">` 必须指向 PNG（iOS 不认 SVG）。四个 PNG 都进了 SW 的 `STATIC`。
+### 银行原始单据（独立模块「财务 › 银行原始单据」，`k: "bankdoc"`）
 
-## 离线可用（2026-11 重构，动 SW 前必读）
+- **两层分工不许混**：`fin_bank_doc` = 原件档案（R2 `bankdoc/{YYYY-MM}/{sha256}.{ext}`，只读证据，软删不删字节）；`fin_bank_stmt` = 从原件读出来的数字。指针在账单侧 `fin_bank_stmt.doc_id`，一份原件可以数字化成多张账单（一份 PDF 含多账号）。
+- 路由：`GET/POST /fin/bankdocs`（`POST` 必须带 `card_id`，银行 / 账号 / 币种从卡派生，不选卡 400；`PATCH` 可换卡）（列表带 `stmt_n`、`?period=YYYY-MM`、`?csv=1` 导清单）、`GET /fin/bankdocs/:id/file[?dl=1]`、`PATCH/DELETE /fin/bankdocs/:id`。`POST` 服务端算 SHA-256：同主体同 hash 直接返回 `{dup:true}` 不新建；同主体 + 同银行 + 同账号 + 同月份重传 = 新版本（旧的 `old=1`、`replaced_by` 指新的，原件永不覆盖）。
+- 权限：模块 `adminOnly`，但 `modsOf()` 额外给 `role==="finance"` 和 `FIN_OWNER`（员工完全看不到）；API 侧 `bankAll` 才能读/传/改，`DELETE` 只有 `isAdmin`。
+- 数字化：`finBankDigitize()` 取 R2 原件 → `bankPdfText()` 本机解析 → 复用 `finBankSheet(doc, file)`，期间按月份预填，保存时带 `doc_id` 且**不重传文件**。
+- 页面是**三级目录**（`BDOC_CARD` / `BDOC_MONTH` 记路径，失效自动回退；没有全局汇总数字，原件按账户各管各的、不合并）：一级账户 → 卡（`[data-bdcardopen]`，只显示卡 + 月数/份数/未数字化），二级卡 → 月份（`[data-bdmonth]`，每月一块：份数 / 未数字化 / 该月占用），三级月份 → 原件行（`[data-bdocopen]` 打开文件，右侧 下载 / 数字化 / 删除）；面包屑 `bdocBread()` 的 `[data-bdpath]` 回上一级或根。**没有全局「＋ 上传原件」**：上传只在卡（或月份）里，`finBankDocSheet(cardId)` 把卡写死在 hidden `#bd_card`，导出清单的链接放在页面底部说明行里；每张卡右上角「上传原件」直接 `finBankDocSheet(cardId)`，弹窗里只显示这张卡、`#bd_card` 是 hidden input，**用户不再选卡**；顶部「＋ 上传原件」仍可开带下拉的通用弹窗。卡已删/未挂卡的历史单据落在「没挂到卡上的原件」一栏，不会被藏掉。
+- 页面是**两级目录**：一级按账户所属人（公司账户在最前，其余按姓名），二级按卡，原件挂在卡下面（`bankDocPageHtml()` 里用 `FIN.accounts[].banks` 生成 `[data-bdcard]` 块）；每张卡右上角「上传原件」直接 `finBankDocSheet(cardId)`，弹窗里只显示这张卡、`#bd_card` 是 hidden input，**用户不再选卡**；顶部「＋ 上传原件」仍可开带下拉的通用弹窗。卡已删/未挂卡的历史单据落在「没挂到卡上的原件」一栏，不会被藏掉。
+- 老数据：`finSchema()` 启动时把 `fin_bank_stmt.file_key` 非空的旧水单回填成 doc（同 key 不复制文件，id 用 `d` + stmt id 后 12 位，幂等）。
+- 账期起点：`FIN_START = "2026-11-01"`（worker + 页面各一份），报表 `opening.date` 默认值、新建/初始化账户的 `since` 默认值都落这天。
 
-目标：**关掉软件、飞行模式、完全没信号，点图标就能进**。为达成这点，几条硬规则：
+### 费用记录：现金 / 银行两本账（`k: "fin"`）
+- 口径：**现金 = 人录，唯一来源是人**；**银行 = 账单为准**，人先预录。`fin_entries.acct`（`cash`|`bank`）+ `card_id`（只有银行账用），老记录按 `ch` 回填，`ch` 留着兼容。
+- 页面顶部「💵 现金 / 🏦 银行」分开看；银行按卡分块，卡头给「期初 / 账面 / 账单期末 / 差额」，没挂卡的历史记录落「未指定卡」一栏（能补卡）。
+- 记账表单选「银行」才出现卡下拉：这户只有一张卡就自动带上；没登记卡先存「未指定卡」，核销时再补。
+- `state`：`recorded`（待核）→ `linked`（已对上）→ `confirmed`（当事人确认）→ `reconciled`（财务核销）；`src`：`manual` | `auto` | `stmt`。目前只写 `recorded`/`manual`，核销是下一步（P2）。
+- 统计口径（待定稿，改动前先问）：银行账只算已核销，现金账全算，预录只进「预计余额」。
+- 期初：现在 `fin_accounts.cash/card` 是「人填的」，和账单 `open_bal` 对不上（公司差 6,500、frank 差 45,684），下一步要用「每张卡期初 = 最早一期账单 open_bal」重设并留痕。
 
-- `sampling_sw.js` 的 `install` 必须真的把页面抓到：`fetchShell()` 用 `?_sw=` 拉一次，校验内容里有 `id="pg-form"` 和 `id="list_stat"`（防热点登录页/运营商劫持页被当成页面缓存），抓到才写缓存；**抓不到就 `throw`**，让新 SW 装不上、旧的继续顶着——宁可旧版本，也不能变成「没缓存」。
-- 页面本体存两份：当前版本缓存 `CACHE`（`sampling-vNN`）+ `sampling-shell`。`activate` 只删 `/^sampling-v\d+$/` 且不是当前的键，**永远不删 `sampling-shell`**；导航先读 `CACHE`、再读 `sampling-shell`，两边都丢才算没缓存。
-- 导航是**缓存优先**（断网秒开），后台 30 秒一次悄悄 `fetchShell()` 刷新；不再走「网络优先 + 8 秒超时」，因为弱网/热点环境下网络优先等于打不开。新版本靠 `version.txt` 探针 + 「立即更新」提示落地。
-- `MAIN_PAGE` 和裸目录 `BASE`（`/ecobox-sampling/`）都存同一份页面，`?r=`/`?t=` 之类参数用 `ignoreSearch:true` 匹配，任何入口都能打开。
-- 实在没缓存时返回一张内置的「还没存好离线副本」页（200），不是 503 纯文本——至少能看懂、能点重试。
-- 页面侧：`offState()` 扫所有缓存确认页面本体在不在；设置页顶部 **🚦 出发前检查**（`renderPrep()`）四项：离线页面（大小/更新时间 + 重存）、离线地图（瓦片数 + 级别，点「下载」跳地图页并弹 `#dlmodal`）、定位权限（`navigator.permissions` 三态 + 试定位）、待同步记录（不影响离线用）；总结句 + 「一键准备」= 缓存页面 + 打开地图下载。未就绪时启动自动补一次，补不上在底部导航上方亮**红条**「离线副本未就绪」+「现在缓存」按钮；`cacheAllNow()` 走 `postMessage("CACHE_ALL")` → SW 回 `CACHE_ALL_DONE`，先请求 `navigator.storage.persist()` 降低被回收概率。
-- `forceAppUpdate()`（设置页「强制更新」）与 `clear.html` 都会清空缓存 + 注销 SW，**离线时一律拒绝执行**；`clear.html` 清完还要先确认能重新下载到页面才跳转。
-- 回归测试：`t_offline_guard.py`（联网装机 → 断网冷启动带参数/裸目录 → 删掉主缓存只留 shell → 回网一键修复 → 再断网）、`t_prep.py`（四项检查 + 一键准备弹下载面板 + 重存），`t_offline_cold.py` 可直接打线上地址复核。
+### 公司动态：图片 + 视频（`k: "status"`）
+- 图片走 `finUpload` → `/api/fin/photo`（先 canvas 压到 1280 再转 JPEG）；**视频不能走这条**（会被画成静态 JPEG），走 `POST /api/feed/v`：请求体就是原文件，`content-type` 必须是 `video/mp4|quicktime|x-m4v|webm|3gpp`，上限 60MB，直接 `R2.put` 流进 `feed/YYYY-MM/<uuid>.<ext>`。
+- 播放地址统一 `/api/fin/photo/<key>`；这个 GET **必须支持 Range**（206 + `content-range`），否则 iOS Safari 点开黑屏、安卓拖不动进度。改它之前先想清楚。
+- 发/改动态的 `photos` 字段是 `[{t:"i"|"v", u:key}]`，最多 9 个；老动态里 `t:"v"` 的是旧 media worker 的外链。
+- 删动态会顺手删掉它自己的 `feed/` 对象（`feed/old/` 是包内资源，不动）。
+### 期间（几月到几月）
+- 原件 `fin_bank_doc` 也有 `pf` / `pt`（不只是 `period` 归档月）：上传弹窗收「归档月份 + 期间起/止」，没填就按归档月补整月；`pf > pt` 直接 400。
+- 数字化时把账单读出来的真实区间**回写**到原件（整月默认值 `pf=period||'-01'` 会被覆盖），所以原件行显示的区间就是账单的区间；归档月份不跟着改，用户选的目录不动。
+- 两页都按「月份 + 起止」显示：原件行 `2026-11 · 11-01 → 11-13`，卡 / 月目录带区间汇总；数字账单卡头 `2026-09` + `09-01 → 09-30`，月份台账行也带区间汇总。`bkSpanCn()` / `bkSpanOf()` 是统一格式（`MM-DD → MM-DD`，别用中文，否则 i18n 检查会报未包 `tr()` 的中文）。
+- `GET /fin/bankdocs?csv=1` 的清单里带「期间起 / 期间止」两列。
 
-## 地质图层（QGIS → 网页，2026-11）
 
-- 导出脚本：`devtools/export_qgis.py`，用 `"C:\Program Files\QGIS 4.2.2\bin\python-qgis.bat"` 跑，**只读** gpkg，不碰 `.qgz`。
-- 产物：`ecobox-sampling/geo/serenje-1330nw/`（`index.json` + 每层 `<key>.geojson` + `mag.jpg`）。
-  lite ≈ 47 KB（边界/断层/靶区/矿脉/矿化点/取样点），full ≈ 1.9 MB（岩性/地质界线/构造/环状构造/接触带/磁异常）。
-- 前端：`licences.html` 里 `GEO_SLUGS`（按 `area_id` 或 `no` 前缀）→ `geoInit()/geoEnsure()/geoMarkup()`；
-  lite 进地图即加载，full 点「全部加载」才拉；开关状态存 `localStorage.geo_layers_v1`。
-- SW 对 `geo/` 走「缓存优先 + 后台更新」，所以看过一次就离线可用。
-- **坑 1**：gpkg 里多数图层本身就是 `EPSG:4326`，**不要**一律按 32736 硬转（转两次坐标成 -57/-85 乱码）。用 `layer_transform()` 读图层自身 SRS。
-- **坑 2**：`OGRGeometry.GetEnvelope()` 返回 `(minX, maxX, minY, maxY)`，不是 `(minX,minY,maxX,maxY)`。
-- **坑 3**：QML 的分级渲染里 `<categories>` 在 `<symbols>` **之前**，抽配色时 categories 要在全文找、symbols 只在 `<symbols>` 块里找。
-- **坑 4**：`gdal.Warp` 没有 `scaleParams`；先 `gdal.Translate(scaleParams=...)` 转 8bit，再 Warp 到 4326。磁异常出 JPEG（PNG 会 2.8 MB）。
-- 重新导出后：确认坐标落在 30.07~30.25 / -13.15~-13.10，再跑 `devtools/t_geo.html`（21 条断言）。
-- 项目 vs 矿权：`areas.json` 的 `areas[].licences[]` 就是「一个项目挂多个矿证」；地质资料挂在 **area** 上只有一份，矿证仍各自独立（面积/有效期/持有人不合并）。
+### 交付前的口径（审计后定稿，别改回去）
+- **原件去重按「主体 + 卡 + hash」**：一份 PDF 里可能有几个账号，同一个文件挂到另一张卡时必须各建一条档案（R2 同一个 key，不重复存字节）。
+- **原件上有账单就不能删**（`POST` 会 409）：先删账单再删原件，保证「每张账单的出处都在」。列表里返回 `stmt_n`（当前版本数，显示「已数字化 N」）和 `stmt_all_n`（含历史版本，决定删除按钮锁不锁）。
+- **数字化先认原件再落库**：`doc_id` 认不出来（不存在 / 别人的 / 另一张卡的）直接 400/404，**不能先插账单**——老实现会留一条空账单并把当前版本顶成 `old=1`。
+- **期间成对校验**：原件 `PATCH` 和账单 `PATCH` 都校验 `pf <= pt`、格式 `YYYY-MM-DD`；原件改期间用「改期间」弹层（`finBankDocEditSheet`），归档月改了会退回上层目录。
+- **原件文件读取**：管理员 / 财务看全部；账单的主人（`doc.uid === 本人`）也能看自己那份（财务替他数字化出来的），整份档案清单仍然只有管理员 / 财务拿得到。
+- **上传弹窗**：归档月份默认本地时区当月；没手动挑月份时按「期间止」那个月归档（`monthTouched`）；多文件上传失败会把第一条错误原因带出来；只重复没新增时提示「之前已经归档过了」。
+- **只剩历史版本的月份仍然有入口**：月份列表把 `old=1` 的行算进去，月行显示「历史版本 N 份」，点进去只能看到历史版本（否则那批行永远点不到、也删不掉）。删掉当月最后一张当前版本时 `bankMonthBack()` 退回月份列表。
 
-## 发布到 GitHub Pages（2026-11 起）
 
-- 线上：`https://frankataix-gif.github.io/ecobox-sampling/licences.html`；仓库根 = 站点根。
-- **只发布公开子集**：`python devtools\build_public.py` → 生成 `_deploy/public/`（只留 42881 / serenje_1330nw，`licences.json` 里其它矿证不上传）。
-- 推送：`_deploy/public/*` 覆盖到仓库克隆（如 `C:\Users\25534\workspace\_repo\ecobox-sampling`）→ commit → `git push origin HEAD:main`。
-  本机已存在 GitHub 凭据（GitHub Desktop 装的 credential manager），**`git push` 不会要 token**。
-- Pages 推送后 30–60 秒生效；验证 `licences.html` 200 且大小 ≈92 KB。
-- 线上更新后老客户端可能仍吃旧 SW：刷新两次，或 DevTools → Application → Service Workers → Unregister。
+## 4. 不变式（不许动）
 
-## 数据模型不变式（用户反复强调，不许再动摇）
+- **`login` 是关联键**（`fin_entries.uid`、`todos.owner`、`todo_notes.uid`…）。改名走 `renameLogin()`，**不要直接改 D1 的 login**。
+- 人员**软删**：`deleted=1`、清会话、login 改 `<原>#del<id>`；不能删自己、不能删最后一个管理员。
+- **待办完成权**：只有创建人能确认完成；执行人只能「提交完成」→ 创建人审核通过才 `done`；自排任务（creator=owner）提交即完成；公司事项管理层提交即完成；非创建人 `PATCH status=done` 一律 403。
+- 待办删除只给 `creator` / `admin`；汇报只认 `owner`（admin/manager 也不能代报）。
+- 打卡迟到/早退只认本人本地的 `in_hm / out_hm`（服务端 UTC 不算钟点）。
+- 附件/照片只收白名单 MIME、≤25MB；HTML/SVG 一律 `attachment` 回，不在本域执行。
+- **记账只记自己**：`POST /fin/entries` 的 `uid` 一律取本人（传别人直接 403），权限再大也一样；
+  唯一例外是公司账户 `__company`（只有 `finance` / `admin` / 负责人能往里记）。调拨 / 备用金的
+  出方也只能是自己或公司账户。**删只能删自己的**（公司账户看 `canCo`，财务负责人例外）；
+  改别人的记录时**金额、收支渠道、转入方锁死**（403），只能改分类 / 备注 / 发票 / 日期。
+- **公司账户 `__company`**：只有 `finance` / `admin` / 负责人能直接把费用记在公司账上（`canCo`），
+  管理层和员工记账会被 403。公司账户只有银行口（选中后渠道锁死为「银行」）。对账基准
+  （对账日 + 银行余额）仍只有负责人能改。
+- **账目可见范围**（`finVisible`，worker.js）：管理员 / 财务 / 财务负责人看全局；负责人看
+  「负责人 + 员工」的账（人员列表、账户余额同样只到这一层）；员工只看自己的。跨层的记录
+  （如管理员 → 员工 的转账）只要涉及这一层的人就可见，改 / 删 / 补票仍需落在可见范围内。
 
-1. **取样记录只对「坐标 + 地质事实」负责**：坐标、时间、观察、样品类型、化验、照片。
-   **矿证不在取样记录里出现**，不是字段、不是外键、不是必填项。取样点可以落在任何矿证之外。
-2. **矿证 = 分析视角（一个多边形筛选器）**，不是归属。「某点属于某证」是**读的时候算出来的**（点在多边形内），
-   不是写的时候填进去的。矿证换发/拆分/改界，取样数据一个字都不用改。
-3. 采集时按坐标猜出的证号只能作为 **采集快照**（`captured_*`，审计用），**不参与统计、不对外展示、不进导出**。
-4. 项目/矿权分析端才做「范围内 vs 范围外」对比（点位数、元素均值、距离分布），用来判断矿权价值与扩界证据。
-5. `area_id` 的语义是**工作区 / 图幅 / 项目**（离线命名空间、GPS 自动归档用），**不是矿证**。
-   一个 area 可挂多个矿证；矿证也可以横跨两个 area。
-6. QGIS 侧已符合：`field_samples` 字段为 Sample_ID/Symbol/Mineral/Description/Photo/Source/Ta2O5_pct/Nb2O5_pct/Sample_date，
-   **没有**矿证字段 —— 同步脚本也不许加。
+## 5. 环境约束
 
-## 矿权分析框架（不变式之二）
+- QGIS 4.2.2 用 `"C:\Program Files\QGIS 4.2.2\bin\python-qgis.bat" script.py`；系统 python 无 gdal/shapely，**别 pip 装**。
+- 改了缓存内容必须 bump `sampling_sw.js` 的 `CACHE`（`sampling-vNN`），否则老客户端不更新。
+- QGIS 不监视磁盘上的 `.qgz`：外部改完要「关 QGIS → 不保存 → 重开」。
 
-**看整体，答局部。** 分析矿权不能只盯证内数据，必须从宏观大地构造往下收敛；但所有结论必须落回
-「证内有没有东西 / 值不值得勘探 / 下一步怎么找」。
+## 6. 未完成 / 待办（动手前先问）
 
-尺度阶梯（每一层都要有数据支撑，缺哪层标缺）：
+- 矿证模块搬迁：`ops/licence.html` + `/_lic/*`（D1 状态 + R2 媒体）未接完。
+- 首页「矿证」快捷入口仍指向外部 mine-sync。
+- 公司模块：搜索收纳 + 新建时选资料。
 
-- **L0 大陆·克拉通（1:10M）**：Congo Craton / Bangweulu Block / Irumide Belt / Mozambique Belt /
-  Lufilian Arc / Mwembeshi 剪切带 —— 回答「这片大地构造位置对不对」。
-- **L1 区域成矿带（1:1M）**：Irumide 期变形 + Kibaran 花岗岩 + LCT 伟晶岩带（Ta-Nb-Sn-Li-Cs）。
-- **L2 图幅/矿区（1:100k）**：岩性、地质界线、构造、环形构造、接触带、磁异常（已有 geo 包）。
-- **L3 矿权范围 + 1–5 km 缓冲**：边界、靶区、矿脉、已知矿化点（证内外对比）。
-- **L4 点**：取样点 + 化验 + AI 照片解读。
+## 7. 踩过的坑（别再踩）
 
-结论载体是 **靶区台账（Target Ledger）**，不是散文：
-`target_id, 名称, 层级来源, 依据[], 面积, 优先级, 状态(candidate/sampled/confirmed/refuted/drillable), 证据[sample_id…], 下次行动, 更新时间`。
+- **`deploy.py` 任何不认识的参数都会走完整部署**（`--help` 也不例外：apply_schema + migrate + 上传 + 换 `SETUP_TOKEN`）。
+  只更新代码用 `--code-only`，只看状态用 `--status`，别拿它试参数。
+- **不要用 PowerShell `Get-Content`/`Set-Content` 改写含中文的源码**：默认按 ANSI 读，写回就是乱码。
+  改文件用编辑器或 python（`encoding="utf-8"`、`newline="\n"`）。
+- 线上源码可从 `ops/dist/worker.js` 反解：跳过开头 `globalThis.__OPS_PAGE__ = "…"` 和
+  `globalThis.__LIC_PAGE__ = "…"` 两个赋值，剩下的就是 `ops/worker.js` 原文（与线上一致）。
+- **登录限速**：`login_fail(k, at)`，`k = 账号|cf-connecting-ip`；10 分钟内满 5 次锁 10 分钟
+  （429 + `Retry-After`），登录成功按该键清零。要立刻解锁某人，删对应行即可。
+- 改完 worker 的顺序：`node ops/test/local.mjs` → `python ops/build.py`（会刷 BUILD 时间戳）→ 部署。
+  `local.mjs` 用 node:sqlite + 真 HTTP 跑真 Worker，没有 mock。
 
-数据回写规则：取样点落靶区内 → 追加证据 → 靶区状态机迁移。**AI 只汇总证据与置信度，不给"值得勘探"结论**，
-go/no-go 由人拍板并记 decision log。取样点永不写入矿证归属（见第一条不变式）。
-
-## 云基础设施（现状）
-
-| 名称 | 值 | 说明 |
-|---|---|---|
-| 采样 API Worker | `https://fancy-heart-7a80.frankataix.workers.dev` | `/ping` `/sample` `/samples` `/ocr`，D1 `78e80331-66f2-486d-8d7a-d7cf906bc7a7`（表 `samples(sample_id,data,created_at,updated_at)`，整条 JSON） |
-| 媒体 Worker | `https://ecobox-media.frankataix.workers.dev` | `POST /put?key=photos/<sid>/NN.jpg`（需 `X-Upload-Token`）、`GET /m/<key>`、`GET /health`、`POST /ai/desc`、`POST /ai/photo`；源码 `_deploy/worker/media-worker.js` |
-| R2 桶 | `ecobox-media` | 照片/报告/图层；当前前缀白名单 `photos/ reports/ geo/ test/`，单文件 ≤16 MB |
-| 上传口令 | `_deploy/worker/.media_token` | **不入库**；前端 `DEF_MEDIA_TOKEN` 内嵌（临时，见下） |
-| 部署 | `$env:CLOUDFLARE_API_TOKEN=...; python devtools\deploy_media_worker.py` | 走 CF API multipart 上传，含 r2_binding + secret |
-
-## AI（Gemini，2026-11 加）
-
-- **端点**都在 ecobox-media Worker，需 `X-Upload-Token`；Gemini key 只存 `env.GEMINI_KEY`，前端拿不到：
-  - `POST /ai/desc` `{text, sample?}` → `{description, category, subtype, assays[], notes}`
-    把长描述规范化、把 `ta 0.05` / `钽0.05%` 统一成 `Ta=0.05%`，顺带定一级/二级分类。
-  - `POST /ai/photo` `{key, force?}` → `{lithology, minerals[], texture, pegmatite_confidence, description, quality}`
-    解读 R2 里的照片，结果缓存在 `ai/photo/<key>.json`，重复点击不重复计费。
-- **模型**：文本 `gemini-3.5-flash-lite`、照片 `gemini-3.8-flash`（都有免费额度）。
-  模型 ID 会下线（`gemini-2.5-flash` 已废弃并转到 3.5 Flash-Lite），worker 按 `TEXT_MODELS` / `VISION_MODELS`
-  顺序自动降级，也可用 `MODEL_TEXT` / `MODEL_VISION` 环境变量钉死。
-  实测（2026-11-02 真 key）：两个 ID 都在 `models` 列表内；文本 3~5 s，1024 px / 200 KB 照片约 35 s。
-  热门模型会偶发 503 / 404 / 70 s 超时；`gemini()` 对 404 和任何 5xx（含超时，统一记 504）都换下一个模型，其余错误直接报回去。
-- **前端**：编辑框 `✨ AI 整理描述`（结果可「撤销」）、每张照片右上角 `AI` 按钮、`AI 解读全部`；
-  结果存 `localStorage.samp_photo_ai_v1`（键是照片 URL），卡片多一条 `AI：岩性 · 86%`，导出时并入 `photo_ai`。
-- **照片说明**：解读完每张照片下方 `figcaption` 分三段——`岩性 · 置信 86%`（`<b>`）、`结构；矿物`（`.aimeta`）、
-  模型描述（`.aidesc`，**全文显示，不做行数截断/省略号**），画质不佳再挂 `⚠ 偏暗`（`.aiq`）。由 `aiCapHTML(url)` 生成，
-  `photoFig()` 初渲染和 `paintCap()` 复绘共用；没结果时返回空串，靠 `figcaption:empty{display:none}` 隐藏。
-  版式是**一行一张**：`.sphotos` 纵向 flex，`figure.ph` 横向 flex（照片 124 px 定宽，手机上 96 px），
-  说明占剩余宽度并在右侧留 46 px 给 `AI`/`✎` 按钮。**别改回田字格**——96 px 宽时说明会被挤成一行截断。
-- **手工改说明**：解读完照片右上出现 `✎`（`data-photo-edit`），点开 `.pai-edit` 可改**岩性 / 矿物 / 描述**，
-  保存写回 `samp_photo_ai_v1[url]` 并置 `edited:true`，`paintCap()` 重绘、`✎` 变绿；取消不改动。
-  再跑一次 AI 会用新结果整体覆盖（`edited` 清掉），照片数据本体（`photos`/R2）不受影响。
-- **忘记录入时补录**：取样页 `📷 从照片新建（自动定位）` → 选相册原图 → `exifFromBuffer()` 读 JPEG 的 APP1
-  （HEIC 走 `Exif\0\0` 扫描）拿 GPS IFD + `DateTimeOriginal` → `createSampFromExif()` 建点：样号
-  `M<拍摄日期>-序号`、状态 `待补录`、`source:"photo-exif"`，存 `localStorage.samp_new_v1`，再自动开编辑框补描述。
-  有媒体令牌就顺手把这几张照片传上去。微信/QQ 转发、截图、压缩过的图没有 GPS，会明确报错而不是瞎猜坐标。
-  **列表/地图/导出统一走 `sampAll()`**（= 本机新建 + `samples.json`），别再直接读 `SAMPLES`。
-- **部署（2026-11-08 实际走通的那条）**：
-  ```powershell
-  cd _deploy\worker
-  npx wrangler login          # 浏览器点 Allow，凭据存 %USERPROFILE%\.wrangler
-  npx wrangler deploy         # 会把 script-API 传的旧代码覆盖掉，secret 保留
-  (Get-Content .media_token -Raw).Trim() | npx wrangler secret put UPLOAD_TOKEN
-  (Get-Content .gemini_key  -Raw).Trim() | npx wrangler secret put GEMINI_KEY
-  ```
-  另有 API token 路径：`python devtools\deploy_media_worker.py`。冒烟脚本 `python devtools\smoke_worker.py`
-  （打线上 `/health` `/ai/desc` `/ai/photo`，只读本地令牌，不打印）。
-- **实测延迟**：文本 3~5 s；**1.3 MB 原图**在 3.8-flash 上会顶到 70 s 超时，自动退到 3.5-flash-lite 才出结果（约 75 s）；
-  同一张图压到 200 KB 后 3.8-flash 约 35 s。**待办：上传前在浏览器里压到 ~1600 px**，否则每张照片要等一分多钟。
-- **测试**：`node devtools\test_media_worker.mjs`（真跑 worker，只替换 R2 / Gemini 两个外部边界，31 断言）
-  + `devtools\t_ai.html`（24 断言，只替换 `fetch`，页面解析/落盘/渲染全真跑）。
-
-## 云端鉴权（2026-11-07 起）
-
-- 采样 Worker 已配 `APP_TOKEN`：`/ping` `/sample` `/samples` `/sample/<id>` `/ocr` 全部要求 `X-App-Token`，没带就 401。
-  改之前是**全开**的（`env.APP_TOKEN` 为空时整段鉴权被跳过），等于任何人可读、可覆盖、可删 D1 里的取样记录。
-- 令牌只存本机：`_deploy/worker/.sampling_token`，**不入库、不进仓库**。泄露或丢失就在 CF 重新
-  `PUT /accounts/<acc>/workers/scripts/fancy-heart-7a80/secrets` 覆盖成新值，再让设备重扫一次。
-- 设备授权：打开 `sampling_helper.html?t=<令牌>` 一次即可，页面把令牌写进 IndexedDB `app_token` 并清掉地址栏的 `?t=`；
-  `_deploy/bootstrap.html` 是本地二维码页（每台设备扫一次）。
-- 没授权的设备照样能离线记录，只是同步标 `failed`、提示「需要访问令牌」；补上令牌后点顶部「同步」补传，数据不丢。
-- 媒体 Worker 的 `UPLOAD_TOKEN` 是**另一个独立口令**（仍硬编码在前端，见 S5 待办）。两者故意不共用：
-  前端是公开的，合并只会把一个泄露点放大成全部权限。
-
-## S1（照片搬 R2 + 取样与矿证解绑）— 已上线
-
-- D1 里 36 个样点、58 张 base64 照片已迁到 R2，`/samples` 载荷 **53.4 MB → 29 KB**（约 1840×）。
-- 迁移脚本：`devtools/migrate_photos.py`（`--dry-run` / `--apply [--limit N]`），迁移前自动备份到 `_deploy/backup/samples_<ts>.json`。
-- 采集页 `uploadSample()` 现在先 `POST /put` 传照片拿 `{key,url}`，`/sample` 只收 key；离线时照片仍以 Blob 存在 IndexedDB，联网同步才上传。
-- 取样记录不再写 `licence/license_no/license_holder`，只留 `captured_licence`（采集时快照，仅"位置参考"）；详情页、列表、CSV 均不再输出矿证列。
-- **已知临时风险**：媒体上传口令内嵌在前端（公开仓库可见），只能写 `photos/ reports/ geo/ test/` 且 ≤16 MB。后续（S5）改为经采样 Worker 服务端代理，前端不再携带口令。
-
-## 多矿权（多证）处理
-
-数据分两层，文件名即边界：
-
-| 文件 | 内容 | 是否发布 |
-|---|---|---|
-| `licences.json` / `areas.json` | 公开矿证与工作区（当前只有 42881 / serenje） | 是（GitHub Pages） |
-| `licences.local.json` / `areas.local.json` | 仅本地矿证与工作区（43004 / kalomo） | 否，已进 `.gitignore` |
-
-- 前端 `loadData()` 同时请求四个文件，后两个用 `jgetOpt` 容错：线上 404 自动跳过，本地有则合并。
-- 合并规则 `mergeBy(pub, loc, key)`：**本地优先，公开兜底**；同 `no`/`id` 以本地为准。
-- `devtools/build_public.py` 有守卫：`licences.json` 里出现非公开矿证直接 `SystemExit`，不再静默过滤。
-- 新增一个矿证：① 在 `licences.local.json` 加条目（`no/area_id/center/info/geology`）→ ② 在 `areas.local.json` 加工作区（`id/bbox/center`）→ ③ 有地质数据就放 `geo/<slug>/` 并在 `GEO_SLUGS` 注册 `area_id -> slug`。不改页面代码。
-- 43004 现状：只有 bbox 与中心点，**没有边界 KML、没有地质图层**，所以「项目地图」只定位到中心；可在页面「设置」里上传它的 KML 补边界。
-
-## 取样与矿证解耦（采集页）
-
-- 采样记录不再写 `licence/license_no/license_holder`，只保留 `captured_licence`（采集时所在地块快照，仅"位置参考"，非归属）。
-- 详情页/列表/CSV 均已移除矿证列；需要"证内评价"时在分析端用点在多边形内做空间关联，而不是写进取样表。
-
-## 前端结构：项目（area）为一等对象
-
-- 侧栏 `#plist` 只列**项目**（一个 `area_id` 一行），显示 `项目名 / N 本矿证 / 综合状态`；矿证不再出现在侧栏，`plistHtml(activeArea)` + `projRows()`。
-- 页面标题 `#ttl` 是项目名，`#sub` 列该项目的矿证号与持有人；状态 = `projStatus()`（任一矿证有效则「有效」）。
-- 五个页签都按项目聚合，入参统一是 `ls = projLics(PROJ)`：
-  - `tabIntro(ls)`：项目介绍 + 地质背景 + 取样要点；带「更新」按钮（`#introUpd`）→ `refreshIntro(btn,ls)`：`introFacts()` 汇总矿证/地质/取样/工厂关键事实，无 worker 走 `buildIntroTemplate()` 模板聚合，有 `localStorage.worker_url` 则 POST `/summarize`（`X-App-Token: s_token`）让 Worker 用服务端 AI key 精炼；结果存 `localStorage.lic_intro_override[area_id]`（覆盖显示，不改 licences.json）
-  - `tabMap(ls)` / `mapMount(ls)` / `mapDraw()`：`projBBox()`/`projCenter()` 合并所有矿证 KML 的 bbox，一图画多条边界，`MAP.ks=[{no,k}]`
-  - `tabReports(ls)`：报告列表，支持 `img`（PNG 图，`<a><img class="repimg">`）与 `legend`（图例）字段；42881 现有 5 条文字报告 + 8 条 QGIS 专题图报告（`report/serenje/map_01..08.png`，存 R2 桶 ecobox-media，经 `GET /m/<key>` 公开读）
-  - `tabSamples(ls)`：读 `SAMPLES`，按几何归入本项目（见下条「取样归属」；`area_id` 不再参与筛选），不属于任何项目的点单列「未归属」；顶部「取样统计」卡 + **二级分类**：一级 `category`（取样 / 标记点，`SAMP_CATEGORIES`）→ 二级 `subtype`（取样：岩石/土壤/刻槽/其他；标记点：桥/路口/道路/电线/土地/农户/其他标记），`sampCat()` 优先读数据里的 `category/subtype`，缺失时按 `sample_type` + 描述关键词回退（`markerSubCat()`），数据由 `devtools/samp_classify.py`（`classify_samples.py --force` 可重跑）补全；分段按钮 `[data-scat]`（全部/取样/标记点）同时过滤列表和地图（切项目自动重置）；每点 `sampleCard()`（照片缩略图/`nophoto` 占位、品位 `gradeFmt()`（空值返回 `-`）、`hasTaNb` 为假时整行不显示、`status==="待化验"` 时不显示状态胶囊、化验 assays、坐标、记录人、描述）。**「上传照片」按钮**（`data-upload` → `uploadPhotos(sid,btn)`）：选图 → `POST ${MEDIA_URL}/put?key=photos/<sid>/<NN>.<ext>`（`X-Upload-Token` 读 `localStorage.m_token`，首次缺则 prompt 输入）→ 成功 URL 存 `localStorage.samp_photos_v1[sid]` → 渲染时 `sampleAllPhotos()` 合并（≤6 张）。**取样点地图**：统计卡下方 `#smap`（复用 `.gmap` 瓦片地图）：`mapMountSmap(rows,ls)` 用 `smapBBox()` 取有坐标样点范围（无坐标则退回 `projBBox(ls)`），`smapDraw()` 画 Esri 瓦片 + 矿权边界（虚线背景）+ 取样点（圆点=取样、按 subtype 着色 `SUB_COLORS`；菱形=标记点），z≥14 显示样号；点标记 → 滚动/高亮对应取样卡（`data-card`），支持拖动/滚轮/±/⌖/⤢/卫星道路切换。**联动与编辑**：点卡片空白处 → `smapFocus(sid)` 地图居中放大 + 琥珀色高亮（`.liccard.focus`）；点地图标记 → 跳到卡片；照片点击 → `openLightbox()` 全屏大图（多图可翻页）；「编辑」按钮 → `editSampleDialog(sid)`（描述 / 经纬度 / 用当前定位修正 GPS / 一级分类下拉 + 二级分类**标签墙**（`.subtags`：`SUB_BY_CAT` 两组全部平铺成可点标签，取样=岩石/土壤/刻槽/其他，标记点=桥/路口/道路/电线/土地/农户/其他标记；点标签自动同步一级分类，非当前组的标签变灰）/ 记录人 / 照片上传与放大）。**Ta₂O₅、Nb₂O₅ 输入框已取消**：品位统一写在描述里，描述下方 `.insrow` 快捷插入统一代码 `Ta=` `Nb=` `Li=` `Cs=` `Be=` `Sn=` `%` `ppm`（插入到光标处），避免同一元素出现多种写法；改动写 `localStorage.samp_edit_v1[sample_id]`，渲染时 `sampData(s)` 合并覆盖（不改 `samples.json`），「导出 samples.json」→ `exportSamples()`（数据由 `exportDoc()` 生成：`{note,deleted,samples}`，`deleted` 是本机删除清单，QGIS 侧的 `sync_field.py` 靠它从 gpkg 里删点）下载合并后全量数据。**导出可直接覆盖仓库文件**：工具栏「📁 绑定保存目录」（只在 Chrome/Edge 出现，`fsSupported()`）→ `showDirectoryPicker({mode:"readwrite"})` 选一次 `workspace\_repo\ecobox-sampling`，句柄存 IndexedDB `ecobox_fs/h.dir`；此后「导出 samples.json」→ `fsWriteSamples()` 用 `getFileHandle("samples.json",{create:true})+createWritable()` 原地覆盖，不再走下载。新会话 Chrome 要一次 `requestPermission` 授权（点「允许编辑文件」）；未绑定/未授权/浏览器不支持时自动回落为下载。**删除**：卡片「删除」或编辑弹窗「删除这个点」→ `confirm` → `deleteSample(sid)` 记入 `localStorage.samp_deleted_v1`（同时清掉该点的编辑覆盖 `samp_edit_v1` 与本地照片列表 `samp_photos_v1`），`tabSamples`/地图/统计/`introFacts` 全部用 `isSampDeleted()` 过滤；**删除是一步到位的**：确认弹窗（写明"不能撤销"）→ 立刻从列表/地图/统计里消失，不再提示"导出 samples.json 后才能永久移除"（墓碑仍记在 `samp_deleted_v1`，只是用户看不到，防止 `samples.json` 重新导入时复活）；`exportSamples()` 导出的 samples.json 不含已删除点（替换文件并提交后即永久移除；R2 照片因 media worker 无 DELETE 端点，只解除页面引用）。桌面端 `.sampwrap` 左列表 + 右 440px 粘性地图（`top:98px`），窄屏（<1000px）上下堆叠。`tabFactory(ls)`（读 `FACTORY`）；旧的 `tabFeed/wireFeed` 已不用（动态入口移除，数据 `lic_feed_v1` 仍保留）
-- 路由：`#proj/<area_id>` 进项目；`#lic/<no>` 仍可用（自动定位到该证所属项目）。
-- 取样归属**按几何算，不看 `area_id`**：`zoneInProj(projId,lon,lat)` → `licence`（P1，点在 `geo/<slug>/licences.geojson` 的矿权多边形内，返回命中的证号）/ `sheet`（P2，点在 `areas.json` 该项目的 `bbox` 图幅范围内）/ `outside`；`sampInProj()` 只认前两者，`sampUnassigned()` 汇总不属于任何项目的点（页面底部「未归属」段）。`tabSamples`、`sampUnassigned`、取样地图、统计（矿权内 N / 图幅内·矿权外 M）、卡片徽标（`矿权内 42881` / `图幅内·矿权外`）都用它。`areas.json` 每条可加 `"geo": "<slug>"` 指向 `geo/<slug>/`；几何 fetch 失败或离线时用 `lic_geo_v1` 缓存，缓存也没有就退回图幅 bbox（不再区分矿权）。
-- `geo/serenje-1330nw/licences.geojson` 由 `C:\QGIS_Local_Work\Serenje_1330NW\Serenje_licences_36413_42881.kml` 转换而来（两个矿权各一个 Polygon），properties 只有 `no` / `name`。`geo/` 不入库，线上靠 R2：`python devtools/publish_geo.py serenje-1330nw` 上传到 `geo/<slug>/licences.geojson`（`--check` 只核对；Worker 前置 CF 会挡非浏览器 UA，脚本已带 UA/Origin）。
-- 版本自检：`PAGE_VER`（`build_public.py` 用 `%Y%m%d-%H%M` 替换占位 `__PAGE_VER__`，同时写 `version.txt`）对比同目录 `version.txt`（`cache:"no-store"`），不一致时页面底部弹 `.newver` 条「有新版本 X（当前 Y）· 刷新」→ `location.replace(path?v=X)` 绕开 Pages 的 10 分钟 CDN 缓存；启动时 + 每 5 分钟 + `visibilitychange` 各查一次，404/离线时静默。
-- 新增/编辑/删除矿证仍在「设置」里（项目 → 矿证两层），改完侧栏只更新「N 本矿证」计数。
-- 测试：`t_multilic.html`（侧栏只列项目、加证后计数变 2、两张边界卡、地图画两条环）。
-## 采集页（sampling_helper.html）页面结构
-
-- 底部导航 4 项：`pg-form`（野外取样）/ `pg-list`（历史数据）/ `pg-map`（地图）/ `pg-set`（设置）。
-- 顶部栏只剩 `.netdot`（网络状态点）+「同步」按钮（`#syncbtn`），**不再有标题**；`header` padding 6px、按钮 30px 高，整条 42px，把竖向空间还给内容。
-- 设置页「☁️ 云端同步」默认只显示状态句（`#cloud_state`：已连接 / 未连接）+「测试连接」；Worker 地址与令牌收进 `<details>`「高级」，`#s_token` 不再默认暴露。令牌正常走 `?t=` 链接一次性写入（`store.app_token`），401 时提示「用带 ?t= 的链接重新打开」。
-- 设置页 9 个分区，按使用频率排：**🚦出发前检查 / 📲添加到桌面 / ☁️云端同步 / 📊本机数据（记录人合并进来，进页面自动统计）/ 📤备份与恢复（导出+云恢复+JSON 恢复，「更多格式 GPX/KML/CSV」折叠）/ 🗂矿证 / 🔄版本更新（`#btn_now` 立即更新 + 强制重下折叠）/ ℹ️使用说明（折叠）/ 🗑危险操作**。
-  改版时删掉：单独「记录人」卡片、「刷新统计」按钮（进页面即算）、危险操作卡里重复的版本号、旧「说明」里的重复条目。回归：`t_settings.py`（18 条）。
-- 有新版本时三个入口同时亮：底部条「立即更新」、导航「⚙️ 设置」上的红点（`#setdot`）、设置页 `#btn_now`；三者都走同一个 `applyUpdate()`。
-- 坑：`$("id").onclick=…` 是顶层语句，删元素忘删绑定会抛错并让**该 script 后面所有顶层绑定全部不执行**（按钮集体失灵）。改设置页后必跑 `.agent_tmp/audit_ids.py` 查「JS 引用但 HTML 没有」的 id。
-- `pg-form` 内两个视图，用 `#formtabs` 切换：`tab_cur`（野外取样，录入表单）、`tab_trip`（行程，轨迹记录 + 历史行程）。
-  切换函数 `setFormTab("cur"|"trip")`；进行程视图才 `updTrk()/renderTrips()`。
-- `pg-list` 是独立一级页面（原来的 `tab_list` 已拆出来）：点导航先 `saveDraft()` 再 `renderList()`。
-  老客户端 `kv.cur_page === "pg-list"` 直接落到该页，`"pg-track"` 映射到 `pg-form` + 行程视图；`kv.form_tab` 记住上次停留的视图。
-- 记录人由登录锁定：`openLogin()` / `submitLogin()`，账号 `ACCOUNTS` 写在 HTML 里（离线无后端，已知取舍）；
-  `#f_recorder` 只读，值取登录身份，保存时 `recorder` 直接取该字段，软件内无「切换」入口。
-- 取样视图有**草稿自动保存**：`kv.draft`（文字/含量）+ `kv.draft_photos`（照片 Blob），切页/切后台/刷新后自动恢复，保存或「清空本次输入」后清除；半天以上视为过期。编辑旧记录期间不写草稿（避免被当成新记录）。
-- 历史数据页 = **全部现场记录**：样品 + 标记点（本机，可编辑）、云端独有记录（只读）、**行程**（可直接回放/编辑）、以及**未保存的草稿**（置顶一条，点它回表单）。
-  `drawList(local, cloud, extra)` 三个来源合并后按时间倒序（`rowTs()`：样品用 `created_at/sample_time`，行程用 `t0`）。
-  两个筛选维度：`#chips_rectype`（全部/野外取样/标记点/行程）与 `#chips_filter`（全部状态/待同步/已同步/☁️ 仅云端）；后者只作用于样品，选「行程」时整行隐藏。
-  `#list_stat` 分别计数：`共 N 条 · 样品 a · 标记 b · 行程 c · 云端 d · 待同步 e 条`。
-  云端独有的记录标「☁️ 云端」、只读，点「⋯ 更多」时自动落库再编辑；`#cloudbar` 给「存到本机」批量入口（`pullSamples`）。
-  云端数据缓存在 `kv.cloud_samples_v1`（60 秒节流、非阻塞：先用缓存画一遍再补刷新，弱网不卡列表），离线时只用缓存。
-- 列表卡片的三个 class 别混：样品/标记/云端用 `.samcard[data-sid]`，行程用 `.samcard[data-tid]`，草稿用 `.draftcard`（**不是** `.samcard`，否则测试里数卡片会多一条）。
-- 行程：记录中在 `#triplive` 显示实时卡片（时长/里程/点数），`#formtabs` 的🧭上有红点；回放轨迹会在切到地图页时自动清除。
-- 设置页：`#set_user` 显示当前记录人；`#set_stat` 显示本机数据（样品/待同步/照片/行程/里程/离线瓦片）。
-- **云端恢复**：`pullSamples()` 用 `GET {worker}/samples`（`X-App-Token`）把 D1 里已有记录补回本机：本机没有的新增、本机已同步的覆盖、本机未同步的保留；入口在设置页「♻️ 从云端恢复记录」和空列表页的按钮。云端记录的照片只有 R2 `url`（无 blob），缩略图/详情用 url 兜底，`uploadPhoto()` 见到 `key+url` 直接复用不再重传。
-- **备份导入**：设置页 `#btn_import` → `#file_import` 读取「完整备份 JSON」（`{app,samples,trips}` 或裸数组），照片 `data`(base64) 用 `unb64()` 还原成 Blob；合并规则同云端恢复（新增 / 覆盖已同步 / 保留未同步）。导出时照片同时写 `data` 与 `key/url`，保证「导出→导入」可完整往返。
-  导入前每条记录过一遍 `normImported()`，**另一套软件（ecobox / QGIS）导出的 `samples.json` 可以不转换直接导入**：`lat/lon`→`latitude/longitude`、`datetime`→`sample_time`（没时间就从编号 `S20261012-003` 推日期）、`photos` 字符串 URL→带 `key` 的对象（同步时复用，不重传）、中文 `status`（待同步/已同步/失败）→`pending/synced/failed`、`category=标记点`→`kind=marker`、`ta2o5_pct` 等化验列→`assays`、`area_id` 经 `areas.json` 补 `area_name`。命令行批处理用 `devtools/import_legacy_samples.py`。
-- **术语（统一）**：记录类型一律叫「**野外取样**」，与「标记点」「行程」并列；页面上不出现单独一个「取样」。数据层不动——`category`/`kind` 仍写 `取样`/`sample`，`licences.html` 只在显示时用 `catLabel()` 翻成「野外取样」。记录页三个 tab 不换行（`.tabs button{white-space:nowrap}`，≤359px 字号降到 12px）。
-- 坐标区 `.gpsrow` 三个按钮（获取定位 / 地图选点 / 定位查看）一行三等宽 36px；改动后要在 320/360/414px 复测不换行。
-
-## geo_packs 离线地质包（Chitambo 1230SE，2026-11）
-
-- 生成：`build_geo_pack_chitambo.py`（QGIS Python，只读 `C:\QGIS_Local_Work\Chitambo_1230SE\1230SE_data.gpkg`），先写本地 `geo_packs/chitambo.json`，再复制到仓库同名路径。
-- 结构：`{id,name,geo{litho[{s,r,b}],bounds[{t,p,b}],abc[],faults[],veins[],occs[{p,s}]},zones[{no,zone,name,ring,bb}],rights[{no,ring,b}],roads[{t}],geoimg[]}`；坐标一律 `[lat,lon]`，环只存外环且不闭合。
-- 规模：229 岩性环 / 581 界线 / 7 靶区 / 7 矿权 / 635 道路 / 9 矿点，约 373 KB。`rings_of()` 取 2D 外环并简化，否则原始几何 >10 MB。
-- **缺字段会崩**：早期包没有 `geo.abc`，`selectRegion()` 直接赋值会报 `GEO.abc is not iterable`。现在页面用 `{litho:[],bounds:[],abc:[],faults:[],veins:[],occs:[],...p.geo}` 归一化，包里也应显式写空数组。
-- 校验：`validate_pack_against_sheet.py` 把每个顶点投到 `1230SE_Chitambo_georef.tif` 取灰度；界线和岩性环约 91% 落在印刷线条上（中位灰度 38）即对齐正常。`render_pack_preview.py` 输出叠加预览 PNG。
-- 前端：`AREAS` 的 `chitambo_1230se`（bbox `30.4,-13.05,31.25,-12.35`，`map_pack:"chitambo"`）；`LITHO_COLOR` 必须含 `G2/G3/G4`；`geo.bounds` 与 `rights` 仅在选中该图幅时绘制。
+- **R2 的 `put()` 只收「已知长度」的流**：把自拼的 `ReadableStream` 交给 `env.PHOTOS.put()`，线上直接
+  500（`Provided readable stream must have a known length`），而本地假 R2 不会报——所以分片合并必须包
+  一层 `new FixedLengthStream(total)`（见 `feedVidAssemble`）。这就是 2026-11-13 用户 78MB 视频
+  「分片都传上去了、最后一步失败」的真因。
+- **视频上传链路**（`/api/feed/v/*`）：客户端 4MB 分片（`fdUploadVideo`）→ `PUT /part` 写
+  `feed/tmp/<uid>/<i>` → `GET /status` 问服务端已到位哪几片（刷新/换设备可续传）→ `POST /finish`
+  （校验总字节 == 声明大小、FixedLengthStream 按序拼接、写 `feed/done/<uid>` 幂等标记，重发直接拿回 key）
+  → `POST /abort` 放弃。`feed/tmp` 与 `feed/done` 过期 3 天由 `feedVidGc` 清掉。
+- **删媒体统一走 `feedMediaPurge`**：删动态 / 编辑去掉附件 / 删账目照片都会先查 `posts` + `fin_entries`
+  的引用，只删「谁都不再用」的；`feed/old/` 是包内资源永远不动。不要改回直接 `PHOTOS.delete`，会误删共用图。
+- **图片/视频体积上限**：单次直传 ≤ 8MB 走 buffer，更大走 4MB 分片；总上限 90MB（`FEED_VID_MAX`），
+  分片数上限 24（`FEED_VID_PARTS`），两边要一起改。
+- **QA 探针账号** `_qa_upload_probe` 用完必须删（`DELETE FROM users WHERE login='_qa_upload_probe'`），
+  并清掉它在 R2 里留下的 `feed/2026-*/*`、`feed/tmp/*`、`feed/done/*`。

@@ -1,13 +1,20 @@
-# 本地备份 / 导出
+﻿# 本地备份 / 导出
 ecobox_backup*.json
 *.backup.json
 backups/
+
 # 系统文件
 .DS_Store
 Thumbs.db
-# 地质 / 矿证数据不进公开仓库（改走 Worker + R2 鉴权）
-geo/
 
-# local-only licence / area data (never publish)
-licences.local.json
-areas.local.json
+__pycache__/
+*.pyc
+
+# ops 构建产物（python ops/build.py 生成，页面内联进 worker）
+ops/dist/
+
+# 仅本地数据（文件自己写明「不要提交/发布」）
+*.local.json
+
+# 渲染测试用的 jsdom 之类（npm install 生成，不入库）
+node_modules/

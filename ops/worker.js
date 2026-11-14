@@ -3,9 +3,47 @@
  */
 
 const PAGE = globalThis.__OPS_PAGE__ || "<!doctype html><meta charset=utf-8><p>页面未构建，请运行 ops/build.py";
+const LIC_PAGE = globalThis.__LIC_PAGE__ || "";
 const BUILD = (() => { const m = String(globalThis.__OPS_PAGE__ || "").match(/const BUILD = "([^"]+)"/); return m ? m[1] : ""; })();
 const COOKIE = "ops_sess";
 /* 未登录时只返回这个最小登录页：不含任何框架 / 数据 */
+/* 手机「添加到主屏幕」：standalone 打开就没有顶部地址栏。图标内联，不占 KV/R2。 */
+const PWA_ICON_B64 = {
+  "icon-180.png": "iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAYAAAA9zQYyAAACW0lEQVR42u3dwQnDMBBFQRXg8lKF+7/bpAfDSo9ZePfwNbcEstbgXffvUbNVPY+r47F7NCVweyAlYHsQJWB7AGVgG10J1IZWBrZxlUFtVGVQG1MZ1EZUBrXxlEJtOGVAG00Z1MZSCrWhlAFtJKVQG0gZ0MZRCrVhlAFtFKVQG0RASzuCNoZSqA0hoCWgJaAloAW0dD5oIwhoCWgJaAloAS0BLQEtAS0BLaAloCWgJaAloAW0BLQEtAS0BLSAloCWgJaAloAW0BLQEtAS0BLQAno+N3NAAw000EADDbQDGmgHNNBAAw000EADDTTQew5/+ucE2vBAAw20XYEGGmiggQba8EADbXiggQbarkADDTTQQANteKCBBhpooP04yY+TgHZAA+2ABhpooIEGGmiggQbaAQ20A9oXAL5YARpooIEG2q5AAw000EADbXiggQYaaKCBtivQQAMNNNBAGx5ooIG2K9BA2xVooIEGGmigDQ800EDbFWiggQYaaKANDzTQhgcaaKDtCjTQQAMNNNCGBxpowwMNNNB2BRpooIEGGmjDAw000EADDbRdgQYaaKCBBtrwQAMNNNBA+9MgfxoEtAMaaAc00EADDTTQQAMNNNAOaKAd0BLQEtAS0AJaAloCWgJaAlpAS0BLQEtAS0ALaAloCWjpE9D/M4SAloCWgJaAFtAS0NJ2oKFWCjPQAlraGTTUSmEGWjnQUCuFGWjlQEOtFGaglQMNtVKYoVYOM9DKgYZaKcxQK4cZauUwQ60cZqiVwwy2cpChVhIz2MpBBltJyGArCRluTSN+ATncYhyTaMecAAAAAElFTkSuQmCC",
+  "icon-192.png": "iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAYAAABS3GwHAAACpklEQVR42u3dsY2FMAAFQRdAeVRB/zmIBgiR7R1Lm5+ePREn/TEmOcd13mo1aselK4fDZSqHwaUpicEFKQnBhSgLwSUoicDwykIwtrIIjKwsAuMqi8CoyiIwprIIjKgsAuMpjcBwygIwmrIIjKU0AkMpC8BISiMwkLIAjKM0AsMIAKkIwChKIzCIAJCKAIyhNAJDCAAJAAkACQAJAGl3AEYQABIAEgASABIAEgASABIAEgASABIAEgASABIAEgASABIAEgASABIAEgASABIAEgASABIAEgASABIAEgASAJ85cx0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAfgSw2t9uawAAsDUAANgaAABsDQAAtgYAAFsDAICtAQDA1gAAYGsAALA1AADYGgAAbA0AALYGwPHfoAA4AADgAACAAwAADgAAOAAA4AAAgAMAAA4AvgT7EuxLMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgEsBAACXAgAALgUAAFwKAAC4FAAAcCkAAOBSAADApQAAgEsBAACXAgAALgUAAFwKAAC4FAAAcCkAAOBSAADApQAAAAAAAAAAAAAAAAAAAAAAAAAAAACArQEAwNYAAGBrAACwNQAA2BoAAGwNAAC2BsCvRPqVSAAAAAAABwAAHAAAcAAAwAEAAAcAABwAAHAA2BuABIAEgASABIAEgASABIAEgASABIAEgASABIAEgAAwggCQogDeYwgBIAEgASABIAEgASBtDgACpR8/AALAICoDgEDpxw+AADCMygAgUPrxA6A8AAiUfvwAKA8AAqUfPwTKP34AlAcAgdKPHwLlHz8Eyj9+CJR//BAo//ghUP7xQ6D84wdB+YcPgTx+EOThgyAPHwZ59DBotUf/AGyIWA29bxO3AAAAAElFTkSuQmCC",
+  "icon-512.png": "iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYAAAD0eNT6AAAMOklEQVR42u3WwQ2CUBBAQQqwPKqw/zuGu1EShYR9s8k04PqXtyzmsnk81w2Az3wtjA86AILB+NADIAyMDz4AgsD46AMgBoyPPgBiwPjoAyAGfPQBQAz48AOAEPDhBwAh4MMPAELAhx8AhIAPPwBCwPjwAyAEjI8/ACLA+PADIASMjz8AIsD48AMgBIw/DQAiwIcfAISAjz8AiAAffwAQAT7+ACACfPwBQAT4+AOACPDhBwAh4OMPACLAxx8ARICPPwCIAB9/ABABAgAABICPPwA0I8DyACAWAZYGALEIsCwAiEWAJQFALAIsBwCCEWAxABALAEsBgFgEWAYABCPAIgAgFgCWAACxCPDjA0AwAvzwABALAD86AMQiwI8NAMEI8EMDQCwA/MgAEIwAPzAAxALAjwsAwQjwwwJALAD8qAAQjAA/KADEAsCPCQDBCPBDAkAsAPyIABCMAD8gAMQCwI8HAMEI8MMBgAAAAKYHgB8NAIIR4AcDAAEAAEwPAD8WAAQjwA8FAAIAAJgeAH4kAAhGgB8IAAQAADA9APw4ABCMAD8MAAgAAEAAAADjAsCPAgDBCPCDAIAAAAAEAAAgAAAAAQAA3DAA/BgAEIwAPwQACAAAQAAAAAIAABAAAIAAAAAEAAAgAAAAAQAACAAAQAAAAKcFgB8BAAQAACAAAAABAAAIAABAAAAAAgAAEAAAgAAAAAQAACAAAAABAAAIAABAAAAAAgAAEAAAgAAAAAQAAAgAAEAAAAACAAAQAACAAAAABAAAIAAAAAEAAAgAAEAAAAACAAAQAACAAAAABAAAIAAAAAEAAAgAABAAAIAAAAAEAAAgAAAAAQAACAAAQAAAAAIAABAAAIAAAAAEAAAgAAAAAQAACAAAQAAAAAIAABAAACAAAAABAAAIAABAAAAAAgAAEAAAgAAAAAQAACAAAAABAAAIAABAAAAAAgAAEAAAgAAAAAQAACAAAEAA+CEAQAAAAAIAABAAAIAAAAAEAAAgAAAAAQAACAAAQAAAAAIAABAAAIAAAAAEAAAgAHjLGGO+jVspABAAxhgBgABAABhjBAACAAFgjBEACAAEgDFGACAAEADGGAGAAEAAGGMEAAIAAWCMEQAIAASAMUYAIAAQAMYYAYAAQAAYYwQAAgABYIwRAAgABIAxRgAgABAAxhgBgABAABhjBAACAJfNGCMAEAACwBhjBIAAQAAYY4wAEAAIAGOMAEAAIACMMQIAAYAAMMYIAAQAAsAYIwAQAAgAY4wAQAAQCQC/78yd+w29ZQQAjoajIQDwlhEAOBqOhgDAW0YA4Gj4fQUA3jICAEcDAYC3jADA0UAA4C0jAHA0EAB4ywgAHA0EAN4yAgBHAwGAt4wAwNFAAOAtIwBwNBAAeMsIABwNBIC9essIABwNBIC92jkCAEfDzu3VXu0cAYCjYef2aq92jgBwNBwNO7dXb9nOBQCOhqNh5/bqLdu5AMDRcDTs3F69ZQQAjoajIQDwlhEAOBqOhgDAW0YA4Gg4GgIAbxkBgKOBAMBbRgDgaCAA8JYRADgaCAC8ZQQAjgYCAG8ZAYCjgQDAW0YA4GggAPCWEQA4GggAvGUEAI4GAsBevWUEAI4GAsBe7RwBgKOBALBXO0cA4GjYub3aq50jABwNR8PO7dVbtnMB4IdwNBwNO7dXb9nOBQCOhjGmOm6lAEAAGGMEAAIAAWCMEQAIAASAMUYAIAAQAMYYAYAAQAAYYwQAAgABYIwRAAgABIAxRgAgABAAxhgBgABAABhjBAACAAFgjBEACAAEgDFGACAAEADGGAGAAEAAGGMEAAIAAWCMEQAIAFw2Y4wAQAAIAGOMEQACAAFgjDECQAAgAIwxAgABgAAwxggABAACwBgjABAACABjjABAACAAjDECAAFAJAD8vjN37jf0lhEAOBqOhgDAW0YA4Gg4GgIAbxkBgKPh9xUAeMsIABwNBADeMgIARwMBgLeMAMDRQADgLSMAcDQQAHjLCAAcDQQA3jICAEcDAYC3jADA0UAA4C0jAHA0EAD26i0jAHA0EAD2aucIABwNO7dXe7VzBACOhp3bq73aOQLA0XA07NxevWU7FwA4Go6Gndurt2znAgBHw9Gwc3v1lhEAOBqOhgDAW0YA4Gg4GgIAbxkBgKPhaAgAvGUEAI4GAgBvGQGAo4EAwFtGAOBoIADwlhEAOBoIALxlBACOBgIAbxkBgKOBAMBbRgDgaCAA8JYRADgaCAB79ZYRADgaCAB7tXMEAI4GAsBe7RwBgKNh5/Zqr3aOAHA0HA07t1dv2c4FgB/C0XA07NxevWU7FwA4Go6Gndurt4wAwNFwNAQA3jICAEfD0RAAeMsIABwNR0MA4C0jAHA0EAB4ywgAHA0EAN4yAgBHAwGAt4wAwNFAAOAtIwBwNBAAeMsIABwNBADeMgIARwMBgLeMAMDRQADYq7eMAMDRQADYq7eMAMDRQADYq50jAHA07Nxe7dXOEQCOhqNh5/bqLdu5APAjOBqOhp3bq7ds5wIAR8PRsHN79ZYRADgajoYAwFtGAOBoOBoCAG8ZAYCj4WgIALxlBACOBgIAbxkBgKOBAMBbRgDgaCAA8JYRADgaCAC8ZQQAjgYCAG8ZAYCjgQDAW0YA4GggAPCWEQA4GggAe/WWEQA4GggAe/WWEQA4GggAe7VzBACOhp3bq73aOQLA0XA07NxevWU7RwA4Go6Gndurt2znAgBHw9Gwc3v1lhEAOBqOhgDAW0YA4Gg4GgIAbxkBgKPhaAgAvGUEAI4GAgBvGQGAo4EAwFtGAOBoIADwlhEAOBoIALxlBACOBgIAbxkBgKOBAMBbRgDgaCAA8JYRADgaCAB79ZYRADgaCAB79ZYRADgaCAB7tXMEAI6Gndurvdo5AsDRcDTs3F7t1c4RAI6Go2Hn9uot27kAwNFwNOzcXr1lv68AwNFwNOzcb+gtIwBwNBwNAYC3jADA0XA0BADeMgIAR8PvKwDwlhEAOBoIALxlBACOBgIAbxkBgKOBAMBbRgDgaCAA8JYRADgaCAC8ZQQAjgYCAG8ZAYCjgQDAW0YA4GggAOzVW0YA4GggAOzVzhEAOBp2bq/2aucIABwNO7dXe7VzBICj4WjYub16y3YuAHA0jDFGAAgABIAxRgAgABAAxhgBgABAABhjBAACAAFgjBEACAAEgDFGACAAEADGGAGAAEAAGGMEAAIAAWCMEQAIAASAMUYAIAAQAMYYAYAAQAAYYwQAAgABYIwRAAgABIAxRgAgABAAxhgBgABAABhjBAACQAAYY4wAEAB+CAFgjDECQAAgAIwxAgABgAAwxggABAACwBgjABAACABjjABAACAAjDECAAEAAAgAAEAAAAACAAAQAACAAAAABAAAIAAAAAEAAAgAAEAAAIAA8CMAgAAAAAQAACAAAAABAAAIAABAAAAAAgAAEAAAgAAAAAQAACAAAAABAAAIAABAAAAAAgAAEAAAgAAAAAEAAAgAAEAAAAACAAAQAACAAAAABAAAIAAAAAEAAAgAAEAAAAACAAAQAACAAAAAjgTAPn4IABAAAIAAAAAEAAAgAAAAAQAACAAAQAAAAAIAABAAAIAAAAAEAADw3wAQAQAQ/PgLAAAQAACAAAAABAAAIAAAgBsHgAgAgODHXwAAgAAAAAQAADA2AEQAAAQ//gIAAAQAAFAJABEAAMGPvwAAAAEAAFQCQAQAQPDjLwAAQAAAAJUAEAEAEPz4CwAAEAAAQCUARAAABD/+AgAAogEgAgAg+PEXAAAQDQARAADBj78AAIBoAIgAAAh+/AUAAEQDQAQAQPDjLwAAIBoAIgAAgh9/AQAA0QAQAQAQ/PiLAACIfvwFAABEA0AEAEDw4y8CACD68RcAABANABEAAMGPvwgAgOjHXwAAQDQARAAABD/+IgAAoh9/EQAA0Y+/CACA6MdfBABA9OMvAgAg+vEXAAAQDQARAADBj78IAIDox18EAED04y8CACD68RcCABD98IsAAAh//EUAAD7+IsAfAgAffxEAAD7+IgAAfPyFAAD48IsAAPDxFwIA4MMvAgDAx18IAIAPvwgAAB9/IQAAPvxCAAB8+IUAAD78RggA4MNvhAAAPvxGCADgw2/EAAA++kYMAOCjb8QAAD76RgwA4KNvBAEAPvhGGADgQ//TvADg88wnjEayWAAAAABJRU5ErkJggg==",
+};
+const PWA_ICON_BYTES = {};
+function pwaIcon(name) {
+  if (!PWA_ICON_BYTES[name]) {
+    const bin = atob(PWA_ICON_B64[name]);
+    const u8 = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+    PWA_ICON_BYTES[name] = u8;
+  }
+  return PWA_ICON_BYTES[name];
+}
+const PWA_MANIFEST = JSON.stringify({
+  name: "ECOBOX 工作台",
+  short_name: "ECOBOX",
+  description: "ecobox 日常经营管理：日报、费用、待办、产量",
+  start_url: "/",
+  scope: "/",
+  display: "standalone",
+  background_color: "#f4f5f6",
+  theme_color: "#0f766e",
+  lang: "zh-CN",
+  icons: [
+    { src: "/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+    { src: "/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
+    { src: "/icon-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+  ],
+});
+/* 只为了让浏览器认这是可安装的 App：不注册任何缓存，账目永远走网络 */
+const PWA_SW = `self.addEventListener("install", () => self.skipWaiting());
+self.addEventListener("activate", (e) => e.waitUntil(self.clients.claim()));
+self.addEventListener("fetch", () => {});
+`;
 const LOGIN_PAGE = `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ecobox 登录</title>
@@ -26,34 +64,38 @@ button:disabled{opacity:.6}
 .hide{display:none}
 </style></head><body>
 <div class="card">
-  <h1>ecobox 经营台账</h1>
-  <p class="mut" id="sub">赞比亚公司日常经营管理 · 每人一个账号</p>
+  <h1 data-en="ecobox books">ecobox 经营台账</h1>
+  <p class="mut" id="sub" data-en="Daily operations for the Zambia company · one account per person">赞比亚公司日常经营管理 · 每人一个账号</p>
   <form id="lf" autocomplete="on">
-    <label>账号</label><input id="l_login" type="text" autocomplete="username" required placeholder="邮箱 / 手机号 / 姓名">
-    <label>密码</label><input id="l_pass" type="password" autocomplete="current-password" required>
+    <label data-en="Login">账号</label><input id="l_login" type="text" autocomplete="username" required placeholder="邮箱 / 手机号 / 姓名" data-en-ph="Email / phone / name">
+    <label data-en="Password">密码</label><input id="l_pass" type="password" autocomplete="current-password" required>
     <div class="err" id="err"></div>
-    <button id="l_btn" type="submit">登录</button>
+    <button id="l_btn" type="submit" data-en="Sign in">登录</button>
   </form>
   <form id="sf" class="hide" autocomplete="on">
-    <label>初始化口令</label><input id="s_token" autocomplete="off" required>
-    <label>姓名</label><input id="s_name" required>
-    <label>账号（可留空，默认用姓名）</label><input id="s_login" autocomplete="username" placeholder="邮箱 / 手机号 / 姓名">
-    <label>密码（≥8 位）</label><input id="s_pass" type="password" autocomplete="new-password" required>
+    <label data-en="Setup code">初始化口令</label><input id="s_token" autocomplete="off" required>
+    <label data-en="Name">姓名</label><input id="s_name" required>
+    <label data-en="Login (optional — defaults to the name)">账号（可留空，默认用姓名）</label><input id="s_login" autocomplete="username" placeholder="邮箱 / 手机号 / 姓名" data-en-ph="Email / phone / name">
+    <label data-en="Password (≥8 characters)">密码（≥8 位）</label><input id="s_pass" type="password" autocomplete="new-password" required>
     <div class="err" id="err2"></div>
-    <button id="s_btn" type="submit">创建管理员</button>
+    <button id="s_btn" type="submit" data-en="Create admin">创建管理员</button>
   </form>
-  <p class="mut" style="margin:14px 0 0">还没有账号？找管理员开通。</p>
+  <p class="mut" style="margin:14px 0 0" data-en="No account yet? Ask an admin to set one up.">还没有账号？找管理员开通。</p>
 </div>
 <script>
 (function(){
   var q=function(s){return document.querySelector(s)};
-  var post=function(url,body,headers){return fetch(url,{method:"POST",credentials:"same-origin",headers:Object.assign({"content-type":"application/json"},headers||{}),body:JSON.stringify(body)}).then(function(r){return r.json().then(function(d){if(!r.ok)throw new Error(d.error||"操作失败");return d})})};
+  var EN=false;try{EN=localStorage.getItem("ops_lang")==="en"}catch(e){}
+  if(EN){document.documentElement.lang="en";document.title="ecobox sign in";
+    document.querySelectorAll("[data-en]").forEach(function(el){el.textContent=el.getAttribute("data-en")});
+    document.querySelectorAll("[data-en-ph]").forEach(function(el){el.placeholder=el.getAttribute("data-en-ph")});}
+  var post=function(url,body,headers){return fetch(url,{method:"POST",credentials:"same-origin",headers:Object.assign({"content-type":"application/json"},headers||{}),body:JSON.stringify(body)}).then(function(r){return r.json().then(function(d){if(!r.ok)throw new Error(d.error||(EN?"Request failed":"操作失败"));return d})})};
   q("#lf").onsubmit=function(e){e.preventDefault();q("#err").textContent="";q("#l_btn").disabled=true;
     post("/api/login",{login:q("#l_login").value,password:q("#l_pass").value}).then(function(){location.reload()}).catch(function(x){q("#err").textContent=x.message;q("#l_btn").disabled=false})};
   q("#sf").onsubmit=function(e){e.preventDefault();q("#err2").textContent="";q("#s_btn").disabled=true;
     post("/api/setup",{login:q("#s_login").value,name:q("#s_name").value,password:q("#s_pass").value},{"x-setup-token":q("#s_token").value.trim()}).then(function(){location.reload()}).catch(function(x){q("#err2").textContent=x.message;q("#s_btn").disabled=false})};
   fetch("/api/status").then(function(r){return r.json()}).then(function(st){
-    if(st.setup_needed){q("#lf").classList.add("hide");q("#sf").classList.remove("hide");q("#sub").textContent="第一次使用：用部署时给出的初始化口令建第一个管理员";q("#s_token").focus();}
+    if(st.setup_needed){q("#lf").classList.add("hide");q("#sf").classList.remove("hide");q("#sub").textContent=EN?"First run: use the setup code from deployment to create the first admin account.":"第一次使用：用部署时给出的初始化口令建第一个管理员";q("#s_token").focus();}
     else{q("#l_login").focus();}
   }).catch(function(){});
 })();
@@ -62,7 +104,9 @@ button:disabled{opacity:.6}
 
 const SESSION_DAYS = 30;
 const ITER = 100000; // Workers WebCrypto 上限就是 10 万，超过会直接抛错
-const ROLES = ["admin", "manager", "staff"];
+const ROLES = ["admin", "manager", "finance", "staff"];
+const LOGIN_MAX_FAIL = 5;      // 同一账号 + 同一 IP，窗口内最多失败几次
+const LOGIN_WINDOW_MIN = 10;   // 超过这个次数即锁定，锁定时长同此
 
 /* ---------- 小工具 ---------- */
 const enc = new TextEncoder();
@@ -107,53 +151,527 @@ function cookieOf(req, name) {
 const sessCookie = (token, maxAge) =>
   `${COOKIE}=${token}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${maxAge}`;
 
-const publicUser = (u) => ({ id: u.id, login: u.login, name: u.name, phone: u.phone, role: u.role, site: u.site, active: u.active, last_login: u.last_login, modules: modsOf(u) });
+const publicUser = (u, env) => ({ id: u.id, login: u.login, name: u.name, phone: u.phone, role: u.role, site: u.site, active: u.active, last_login: u.last_login, lang: u.lang || "zh", modules: modsOf(u, env), shortcuts: pinsOf(u) });
+
+/* 快捷（置顶）：每人一份，存 users.shortcuts 的 JSON 数组，顺序即显示顺序 */
+const MAX_PINS = 8;
+function pinsOf(u) {
+  try {
+    const a = JSON.parse(u.shortcuts || "[]");
+    if (!Array.isArray(a)) return [];
+    return [...new Set(a.map(String))].filter((k) => MODULE_KEYS.includes(k)).slice(0, MAX_PINS);
+  } catch (e) { return []; }
+}
+
+/* ---------- 语言 / 翻译 ---------- */
+const LANGS = ["zh", "en"];
+const isCJK = (s) => /[\u4e00-\u9fff]/.test(String(s || ""));
+
+/* 用 Gemini 翻译一条文本；没配 key、超时或报错都返回空串，调用方保留原文 */
+async function trText(env, text, to) {
+  const key = env.GEMINI_API_KEY;
+  if (!key || !text) return "";
+  try {
+    const r = await fetch(
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + encodeURIComponent(key),
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text:
+            `Translate the user's text into ${to === "en" ? "English" : "Simplified Chinese"}. ` +
+            "Keep personal names, place names, units and numbers unchanged. " +
+            "Reply with the translation only — no quotes, no notes." }] },
+          contents: [{ role: "user", parts: [{ text }] }],
+          generationConfig: { temperature: 0, maxOutputTokens: 1024 },
+        }),
+        signal: AbortSignal.timeout(8000),
+      }
+    );
+    if (!r.ok) return "";
+    const j = await r.json();
+    const out = (j.candidates?.[0]?.content?.parts || []).map((p) => p.text || "").join("").trim();
+    return out.slice(0, 4000);
+  } catch (e) {
+    return "";
+  }
+}
+
+/* 原文 + 另一种语言，两边都存：{ zh, en } */
+async function trPair(env, text) {
+  text = String(text || "").trim();
+  if (!text) return { zh: "", en: "" };
+  const src = isCJK(text) ? "zh" : "en";
+  const other = src === "zh" ? "en" : "zh";
+  const out = await trText(env, text, other);
+  const pair = { zh: "", en: "" };
+  pair[src] = text;
+  pair[other] = out;
+  return pair;
+}
+
+/* ================= 打卡（考勤） =================
+ * 逻辑照搬 company-admin 的打卡：GPS 围栏 + 上班/下班两段 + 迟到早退统计。
+ * 时间一律由前端按本人所在时区给（d / hm），服务端只负责校验与存。
+ */
+let attOk = false;
+async function attSchema(env) {
+  if (attOk) return;
+  const ddl = [
+    `CREATE TABLE IF NOT EXISTS att_cfg (
+       id INTEGER PRIMARY KEY CHECK (id = 1),
+       site_name TEXT NOT NULL DEFAULT '',
+       lat REAL NOT NULL DEFAULT 0, lng REAL NOT NULL DEFAULT 0,
+       radius INTEGER NOT NULL DEFAULT 300,
+       start_t TEXT NOT NULL DEFAULT '08:00', end_t TEXT NOT NULL DEFAULT '17:00',
+       grace INTEGER NOT NULL DEFAULT 15,
+       updated_at TEXT NOT NULL DEFAULT '')`,
+    `CREATE TABLE IF NOT EXISTS attendance (
+       uid TEXT NOT NULL, d TEXT NOT NULL, name TEXT NOT NULL DEFAULT '',
+       in_at TEXT NOT NULL DEFAULT '', in_hm TEXT NOT NULL DEFAULT '',
+       out_at TEXT NOT NULL DEFAULT '', out_hm TEXT NOT NULL DEFAULT '',
+       in_lat REAL NOT NULL DEFAULT 0, in_lng REAL NOT NULL DEFAULT 0, in_dist INTEGER NOT NULL DEFAULT 0,
+       out_lat REAL NOT NULL DEFAULT 0, out_lng REAL NOT NULL DEFAULT 0, out_dist INTEGER NOT NULL DEFAULT 0,
+       acc REAL NOT NULL DEFAULT 0, site TEXT NOT NULL DEFAULT '', note TEXT NOT NULL DEFAULT '',
+       PRIMARY KEY (uid, d))`,
+    "CREATE INDEX IF NOT EXISTS attendance_d ON attendance(d)",
+  ];
+  for (const q of ddl) await env.DB.prepare(q).run();
+  attOk = true;
+}
+
+const ATT_DEF = { site_name: "", lat: 0, lng: 0, radius: 300, start: "08:00", end: "17:00", grace: 15 };
+async function attCfg(env) {
+  const r = await env.DB.prepare("SELECT * FROM att_cfg WHERE id=1").first();
+  if (!r) return { ...ATT_DEF };
+  return { site_name: r.site_name, lat: r.lat, lng: r.lng, radius: r.radius, start: r.start_t, end: r.end_t, grace: r.grace };
+}
+function attMeters(lat1, lng1, lat2, lng2) {
+  const R = 6371000, rad = Math.PI / 180;
+  const dLat = (lat2 - lat1) * rad, dLng = (lng2 - lng1) * rad;
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * rad) * Math.cos(lat2 * rad) * Math.sin(dLng / 2) ** 2;
+  return Math.round(2 * R * Math.asin(Math.min(1, Math.sqrt(a))));
+}
+function attMinutes(t) {
+  const m = /^(\d{1,2}):(\d{2})/.exec(String(t || ""));
+  return m ? +m[1] * 60 + +m[2] : 0;
+}
+const attIsDate = (s) => /^\d{4}-\d{2}-\d{2}$/.test(String(s || ""));
+const attRow = (r) => ({
+  uid: r.uid, d: r.d, name: r.name,
+  inAt: r.in_at, inHm: r.in_hm, outAt: r.out_at, outHm: r.out_hm,
+  inLat: r.in_lat, inLng: r.in_lng, inDist: r.in_dist,
+  outLat: r.out_lat, outLng: r.out_lng, outDist: r.out_dist,
+  acc: r.acc, site: r.site, note: r.note,
+});
+const attPhase = (r) => (!r || !r.in_at ? "in" : (!r.out_at ? "out" : "done"));
+function attStats(rows, cfg) {
+  let days = 0, late = 0, early = 0, miss = 0, mins = 0;
+  for (const r of rows) {
+    if (!r.in_at) continue;
+    days++;
+    if (r.in_hm && attMinutes(r.in_hm) > attMinutes(cfg.start) + (+cfg.grace || 0)) late++;
+    if (!r.out_at) { miss++; continue; }
+    const w = (new Date(r.out_at) - new Date(r.in_at)) / 60000;
+    if (w > 0) mins += w;
+    if (r.out_hm && attMinutes(r.out_hm) < attMinutes(cfg.end)) early++;
+  }
+  return { days, late, early, miss, hours: Math.round(mins / 6) / 10 };
+}
+
+async function attApi(req, env, me, seg, url, body) {
+  if (seg[1] === "cfg") {
+    if (req.method === "GET") return json({ cfg: await attCfg(env) });
+    if (me.role !== "admin") return err("只有管理员能改打卡设置", 403);
+    const b = await body();
+    const c = await attCfg(env);
+    const next = {
+      site_name: b.site_name !== undefined ? String(b.site_name).slice(0, 60) : c.site_name,
+      lat: b.lat !== undefined ? +b.lat : c.lat,
+      lng: b.lng !== undefined ? +b.lng : c.lng,
+      radius: b.radius !== undefined ? Math.round(+b.radius) : c.radius,
+      start: b.start !== undefined ? String(b.start) : c.start,
+      end: b.end !== undefined ? String(b.end) : c.end,
+      grace: b.grace !== undefined ? Math.round(+b.grace) : c.grace,
+    };
+    if (!isFinite(next.lat) || !isFinite(next.lng) || Math.abs(next.lat) > 90 || Math.abs(next.lng) > 180) return err("坐标不对");
+    if (!next.lat && !next.lng) return err("先填办公点坐标（或点「用当前位置」）");
+    if (!(next.radius >= 30 && next.radius <= 20000)) return err("打卡范围 30–20000 米");
+    if (!/^\d{2}:\d{2}$/.test(next.start) || !/^\d{2}:\d{2}$/.test(next.end)) return err("时间格式要 HH:MM");
+    if (!(next.grace >= 0 && next.grace <= 120)) return err("宽限分钟 0–120");
+    await env.DB.prepare(
+      `INSERT INTO att_cfg(id,site_name,lat,lng,radius,start_t,end_t,grace,updated_at) VALUES(1,?,?,?,?,?,?,?,?)
+       ON CONFLICT(id) DO UPDATE SET site_name=excluded.site_name, lat=excluded.lat, lng=excluded.lng,
+         radius=excluded.radius, start_t=excluded.start_t, end_t=excluded.end_t, grace=excluded.grace,
+         updated_at=excluded.updated_at`
+    ).bind(next.site_name, next.lat, next.lng, next.radius, next.start, next.end, next.grace, nowISO()).run();
+    await audit(env, me, "att.cfg", "1", JSON.stringify(next));
+    return json({ ok: true, cfg: next });
+  }
+
+  if (seg[1] === "punch" && req.method === "POST") {
+    const cfg = await attCfg(env);
+    if (!cfg.lat && !cfg.lng) return err("还没设置办公点位置，先让管理员在「打卡设置」里填写", 409);
+    const b = await body();
+    const d = attIsDate(b.d) ? b.d : nowISO().slice(0, 10);
+    const hm = /^\d{2}:\d{2}$/.test(String(b.hm || "")) ? b.hm : "";
+    const lat = +b.lat, lng = +b.lng;
+    if (!isFinite(lat) || !isFinite(lng) || (!lat && !lng)) return err("定位失败：请开 GPS / 允许定位后再打卡");
+    const rec = await env.DB.prepare("SELECT * FROM attendance WHERE uid=? AND d=?").bind(me.login, d).first();
+    const phase = attPhase(rec);
+    if (phase === "done") return err("今天已经打完卡了", 409);
+    if (rec && phase === "out" && rec.in_at && Date.now() - new Date(rec.in_at).getTime() < 60000) {
+      return err("刚打过卡，等 1 分钟再试", 409);
+    }
+    const dist = attMeters(lat, lng, cfg.lat, cfg.lng);
+    if (dist > cfg.radius) return err(`不在公司范围：距离 ${dist} 米，需要在 ${cfg.radius} 米内`, 409);
+    const at = nowISO();
+    const acc = isFinite(+b.acc) ? Math.round(+b.acc) : 0;
+    if (phase === "in") {
+      await env.DB.prepare(
+        `INSERT INTO attendance(uid,d,name,in_at,in_hm,in_lat,in_lng,in_dist,acc,site) VALUES(?,?,?,?,?,?,?,?,?,?)
+         ON CONFLICT(uid,d) DO UPDATE SET in_at=excluded.in_at, in_hm=excluded.in_hm, in_lat=excluded.in_lat,
+           in_lng=excluded.in_lng, in_dist=excluded.in_dist, acc=excluded.acc, site=excluded.site`
+      ).bind(me.login, d, me.name || me.login, at, hm, lat, lng, dist, acc, cfg.site_name).run();
+    } else {
+      await env.DB.prepare(
+        "UPDATE attendance SET out_at=?, out_hm=?, out_lat=?, out_lng=?, out_dist=?, acc=?, site=? WHERE uid=? AND d=?"
+      ).bind(at, hm, lat, lng, dist, acc, cfg.site_name, me.login, d).run();
+    }
+    const row = await env.DB.prepare("SELECT * FROM attendance WHERE uid=? AND d=?").bind(me.login, d).first();
+    await audit(env, me, "att.punch." + phase, d, "dist=" + dist);
+    return json({ ok: true, phase, dist, record: attRow(row), cfg });
+  }
+
+  if (seg[1] === "cfg" || seg[1] === "punch") return err("不支持的打卡操作", 405);
+
+  const ymRaw = String(url.searchParams.get("ym") || "");
+  const ym = /^\d{4}-\d{2}$/.test(ymRaw) ? ymRaw : nowISO().slice(0, 7);
+  const today = attIsDate(url.searchParams.get("d")) ? url.searchParams.get("d") : nowISO().slice(0, 10);
+  const all = url.searchParams.get("all") === "1" && me.role === "admin";
+  const rows = all
+    ? (await env.DB.prepare("SELECT * FROM attendance WHERE d LIKE ? ORDER BY d DESC, in_at DESC").bind(ym + "-%").all()).results
+    : (await env.DB.prepare("SELECT * FROM attendance WHERE uid=? AND d LIKE ? ORDER BY d DESC").bind(me.login, ym + "-%").all()).results;
+  const cfg = await attCfg(env);
+  const mine = await env.DB.prepare("SELECT * FROM attendance WHERE uid=? AND d=?").bind(me.login, today).first();
+  return json({
+    ok: true, cfg, ym, today, all, scope: all ? "all" : "me",
+    todayRec: mine ? attRow(mine) : null,
+    phase: attPhase(mine),
+    records: rows.map(attRow),
+    stats: attStats(rows, cfg),
+  });
+}
+
+/* ================= 客户 ================= */
+let custOk = false;
+async function custSchema(env) {
+  if (custOk) return;
+  await env.DB.prepare(
+    `CREATE TABLE IF NOT EXISTS customers (
+       id TEXT PRIMARY KEY, name TEXT NOT NULL,
+       contact TEXT NOT NULL DEFAULT '', phone TEXT NOT NULL DEFAULT '', email TEXT NOT NULL DEFAULT '',
+       wechat TEXT NOT NULL DEFAULT '', country TEXT NOT NULL DEFAULT '', addr TEXT NOT NULL DEFAULT '',
+       bank TEXT NOT NULL DEFAULT '', swift TEXT NOT NULL DEFAULT '', acc_no TEXT NOT NULL DEFAULT '',
+       currency TEXT NOT NULL DEFAULT '', note TEXT NOT NULL DEFAULT '',
+       by_name TEXT NOT NULL DEFAULT '', created_at TEXT NOT NULL DEFAULT '', updated_at TEXT NOT NULL DEFAULT '')`
+  ).run();
+  await env.DB.prepare("CREATE INDEX IF NOT EXISTS customers_name ON customers(name)").run();
+  custOk = true;
+}
+
+const CUST_FIELDS = ["name", "contact", "phone", "email", "wechat", "country", "addr", "bank", "swift", "accNo", "currency", "note"];
+const custRow = (r) => ({
+  id: r.id, name: r.name, contact: r.contact, phone: r.phone, email: r.email, wechat: r.wechat,
+  country: r.country, addr: r.addr, bank: r.bank, swift: r.swift, accNo: r.acc_no,
+  currency: r.currency, note: r.note, byName: r.by_name, updatedAt: r.updated_at,
+});
+const custClean = (b, base = {}) => {
+  const r = { ...base };
+  for (const k of CUST_FIELDS) {
+    if (b[k] !== undefined) r[k] = String(b[k] == null ? "" : b[k]).slice(0, k === "note" ? 1000 : 160).trim();
+  }
+  return r;
+};
+
+async function custApi(req, env, me, seg, url, body) {
+  const id = seg[1] || "";
+  if (!id && req.method === "GET") {
+    const q = String(url.searchParams.get("q") || "").trim().toLowerCase();
+    const rows = (await env.DB.prepare("SELECT * FROM customers ORDER BY updated_at DESC, name").all()).results;
+    const list = rows.map(custRow).filter((c) => !q ||
+      [c.name, c.contact, c.phone, c.email, c.country].some((v) => String(v || "").toLowerCase().includes(q)));
+    return json({ customers: list, total: rows.length });
+  }
+  if (!id && req.method === "POST") {
+    const b = await body();
+    const c = custClean(b, {});
+    if (!c.name) return err("客户名称必填");
+    const cid = "cu" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+    const at = nowISO();
+    await env.DB.prepare(
+      `INSERT INTO customers(id,name,contact,phone,email,wechat,country,addr,bank,swift,acc_no,currency,note,by_name,created_at,updated_at)
+       VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+    ).bind(cid, c.name, c.contact || "", c.phone || "", c.email || "", c.wechat || "", c.country || "", c.addr || "",
+      c.bank || "", c.swift || "", c.accNo || "", c.currency || "", c.note || "", me.name || me.login, at, at).run();
+    await audit(env, me, "customer.create", cid, c.name);
+    return json({ ok: true, id: cid }, 201);
+  }
+  const row = id ? await env.DB.prepare("SELECT * FROM customers WHERE id=?").bind(id).first() : null;
+  if (id && !row) return err("客户不存在", 404);
+  if (id && req.method === "PATCH") {
+    const b = await body();
+    const c = custClean(b, custRow(row));
+    if (!c.name) return err("客户名称必填");
+    await env.DB.prepare(
+      `UPDATE customers SET name=?,contact=?,phone=?,email=?,wechat=?,country=?,addr=?,bank=?,swift=?,acc_no=?,currency=?,note=?,updated_at=? WHERE id=?`
+    ).bind(c.name, c.contact || "", c.phone || "", c.email || "", c.wechat || "", c.country || "", c.addr || "",
+      c.bank || "", c.swift || "", c.accNo || "", c.currency || "", c.note || "", nowISO(), id).run();
+    await audit(env, me, "customer.update", id, c.name);
+    return json({ ok: true, customer: custRow(await env.DB.prepare("SELECT * FROM customers WHERE id=?").bind(id).first()) });
+  }
+  if (id && req.method === "DELETE") {
+    await env.DB.prepare("DELETE FROM customers WHERE id=?").bind(id).run();
+    await audit(env, me, "customer.delete", id, row.name);
+    return json({ ok: true });
+  }
+  return err("不支持的操作", 405);
+}
+
+/* ================= 出口（批次跟踪） =================
+ * 阶段照搬 company-admin：applied → moses → analysis → valuation → royalty → permit → exported
+ */
+let expOk = false;
+async function expSchema(env) {
+  if (expOk) return;
+  await env.DB.prepare(
+    `CREATE TABLE IF NOT EXISTS exports (
+       id TEXT PRIMARY KEY, date TEXT NOT NULL DEFAULT '', co TEXT NOT NULL DEFAULT '',
+       mineral TEXT NOT NULL DEFAULT '', kind TEXT NOT NULL DEFAULT 'product',
+       qty REAL NOT NULL DEFAULT 0, unit TEXT NOT NULL DEFAULT 't',
+       importer TEXT NOT NULL DEFAULT '', dest TEXT NOT NULL DEFAULT '',
+       status TEXT NOT NULL DEFAULT 'applied', permit TEXT NOT NULL DEFAULT '',
+       hs TEXT NOT NULL DEFAULT '', elems TEXT NOT NULL DEFAULT '',
+       by_name TEXT NOT NULL DEFAULT '', note TEXT NOT NULL DEFAULT '',
+       stages TEXT NOT NULL DEFAULT '{}', files TEXT NOT NULL DEFAULT '[]',
+       created_at TEXT NOT NULL DEFAULT '', updated_at TEXT NOT NULL DEFAULT '')`
+  ).run();
+  await env.DB.prepare("CREATE INDEX IF NOT EXISTS exports_date ON exports(date)").run();
+  expOk = true;
+}
+
+const EXP_STAGES = ["applied", "moses", "analysis", "valuation", "royalty", "permit", "exported"];
+const EXP_LABEL = {
+  applied: "已申请", moses: "MOSES 申报", analysis: "化验", valuation: "估价",
+  royalty: "ZRA 清关", permit: "出口许可", exported: "已出运",
+};
+const EXP_FIELDS = ["date", "co", "mineral", "kind", "qty", "unit", "importer", "dest", "permit", "hs", "elems", "note"];
+const expParse = (s, d) => { try { const v = JSON.parse(s || ""); return v && typeof v === "object" ? v : d; } catch { return d; } };
+const expRow = (r) => ({
+  id: r.id, date: r.date, co: r.co, mineral: r.mineral, kind: r.kind,
+  qty: r.qty, unit: r.unit, importer: r.importer, dest: r.dest,
+  status: r.status, permit: r.permit, hs: r.hs, elems: r.elems,
+  byName: r.by_name, note: r.note,
+  stages: expParse(r.stages, {}), files: expParse(r.files, []),
+  createdAt: r.created_at, updatedAt: r.updated_at,
+});
+function expBaseClean(b, base) {
+  const r = { ...base };
+  for (const k of EXP_FIELDS) {
+    if (b[k] === undefined) continue;
+    if (k === "qty") r.qty = Math.max(0, +b.qty || 0);
+    else if (k === "kind") r.kind = b.kind === "sample" ? "sample" : "product";
+    else r[k] = String(b[k] == null ? "" : b[k]).slice(0, k === "note" ? 1000 : 120).trim();
+  }
+  if (r.date && !attIsDate(r.date)) throw new Error("日期格式要 YYYY-MM-DD");
+  return r;
+}
+
+async function expApi(req, env, me, seg, url, body) {
+  const id = seg[1] || "";
+  const sub = seg[2] || "";
+
+  if (!id && req.method === "GET") {
+    const q = String(url.searchParams.get("q") || "").trim().toLowerCase();
+    const rows = (await env.DB.prepare("SELECT * FROM exports ORDER BY date DESC, created_at DESC").all()).results;
+    const list = rows.map(expRow).filter((x) => !q ||
+      [x.co, x.mineral, x.importer, x.dest, x.permit, x.note].some((v) => String(v || "").toLowerCase().includes(q)));
+    return json({ exports: list, total: rows.length, stages: EXP_STAGES, labels: EXP_LABEL });
+  }
+  if (!id && req.method === "POST") {
+    const b = await body();
+    let base;
+    try { base = expBaseClean(b, { date: nowISO().slice(0, 10), co: "", mineral: "", kind: "product", qty: 0, unit: "t", importer: "", dest: "", permit: "", hs: "", elems: "", note: "" }); }
+    catch (e) { return err(e.message); }
+    if (!base.co && !base.mineral) return err("至少填公司或矿种");
+    const xid = "ex" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+    const at = nowISO();
+    const stages = { applied: { at } };
+    await env.DB.prepare(
+      `INSERT INTO exports(id,date,co,mineral,kind,qty,unit,importer,dest,status,permit,hs,elems,by_name,note,stages,files,created_at,updated_at)
+       VALUES(?,?,?,?,?,?,?,?,?,'applied',?,?,?,?,?,?, '[]', ?,?)`
+    ).bind(xid, base.date, base.co, base.mineral || "", base.kind, base.qty, base.unit, base.importer, base.dest,
+      base.permit, base.hs, base.elems, me.name || me.login, base.note, JSON.stringify(stages), at, at).run();
+    await audit(env, me, "export.create", xid, base.co + " " + base.mineral);
+    return json({ ok: true, id: xid }, 201);
+  }
+
+  const row = id ? await env.DB.prepare("SELECT * FROM exports WHERE id=?").bind(id).first() : null;
+  if (id && !row) return err("出口单不存在", 404);
+
+  if (id && !sub && req.method === "GET") return json({ export: expRow(row) });
+
+  if (id && !sub && req.method === "PATCH") {
+    const b = await body();
+    let next;
+    try { next = expBaseClean(b, expRow(row)); }
+    catch (e) { return err(e.message); }
+    await env.DB.prepare(
+      "UPDATE exports SET date=?,co=?,mineral=?,kind=?,qty=?,unit=?,importer=?,dest=?,permit=?,hs=?,elems=?,note=?,updated_at=? WHERE id=?"
+    ).bind(next.date, next.co, next.mineral, next.kind, next.qty, next.unit, next.importer, next.dest,
+      next.permit, next.hs, next.elems, next.note, nowISO(), id).run();
+    await audit(env, me, "export.update", id, next.co);
+    return json({ ok: true, export: expRow(await env.DB.prepare("SELECT * FROM exports WHERE id=?").bind(id).first()) });
+  }
+
+  if (id && !sub && req.method === "DELETE") {
+    const files = expParse(row.files, []);
+    if (env.PHOTOS) for (const f of files) { try { await env.PHOTOS.delete(f.key); } catch {} }
+    await env.DB.prepare("DELETE FROM exports WHERE id=?").bind(id).run();
+    await audit(env, me, "export.delete", id, row.co);
+    return json({ ok: true });
+  }
+
+  if (id && sub === "stage" && req.method === "POST") {
+    const b = await body();
+    const stage = String(b.stage || "");
+    if (!EXP_STAGES.includes(stage)) return err("阶段不认识");
+    const stages = expParse(row.stages, {});
+    const keep = stages[stage] || {};
+    const fields = b.fields && typeof b.fields === "object" ? b.fields : {};
+    const clean = { ...keep, at: nowISO(), by: me.name || me.login };
+    for (const [k, v] of Object.entries(fields)) {
+      if (!/^[a-zA-Z][\w]{0,20}$/.test(k)) continue;
+      clean[k] = String(v == null ? "" : v).slice(0, 300);
+    }
+    stages[stage] = clean;
+    const status = EXP_STAGES[Math.max(EXP_STAGES.indexOf(row.status), EXP_STAGES.indexOf(stage))] || stage;
+    await env.DB.prepare("UPDATE exports SET stages=?, status=?, updated_at=? WHERE id=?")
+      .bind(JSON.stringify(stages), status, nowISO(), id).run();
+    await audit(env, me, "export.stage", id, stage);
+    return json({ ok: true, export: expRow(await env.DB.prepare("SELECT * FROM exports WHERE id=?").bind(id).first()) });
+  }
+
+  if (id && sub === "file" && req.method === "GET") {
+    if (!env.PHOTOS) return err("未配置文件存储", 500);
+    const k = String(url.searchParams.get("k") || "");
+    const f = expParse(row.files, []).find((x) => x.k === k);
+    if (!f) return err("文件不存在", 404);
+    const obj = await env.PHOTOS.get(f.key);
+    if (!obj) return err("文件不存在", 404);
+    return new Response(obj.body, {
+      headers: {
+        "content-type": f.mime || "application/octet-stream",
+        "content-disposition": "inline; filename*=UTF-8''" + encodeURIComponent(f.name || k),
+        "cache-control": "private, max-age=86400",
+      },
+    });
+  }
+
+  if (id && sub === "file" && req.method === "POST") {
+    if (!env.PHOTOS) return err("未配置文件存储", 500);
+    const b = await body();
+    const stage = EXP_STAGES.includes(String(b.stage)) ? String(b.stage) : "moses";
+    const m = /^data:([a-z0-9.+/-]+);base64,([A-Za-z0-9+/=]+)$/i.exec(String(b.data || ""));
+    if (!m) return err("文件格式不对");
+    const mime = m[1].toLowerCase();
+    if (!/^(application\/pdf|image\/(png|jpeg|jpg|webp))$/.test(mime)) return err("只支持 PDF / 图片");
+    const bytes = Uint8Array.from(atob(m[2]), (ch) => ch.charCodeAt(0));
+    if (bytes.length > 25 * 1024 * 1024) return err("文件超过 25MB，请线下提供（U 盘 / 网盘 / 邮件）");
+    const files = expParse(row.files, []);
+    if (files.length >= 60) return err("每单最多 60 份文件");
+    const k = "f" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    const ext = mime === "application/pdf" ? "pdf" : mime.split("/")[1].replace("jpeg", "jpg");
+    const key = "export/" + id + "/" + stage + "/" + k + "." + ext;
+    await env.PHOTOS.put(key, bytes, { httpMetadata: { contentType: mime } });
+    const entry = {
+      k, stage, key, mime, size: bytes.length,
+      name: String(b.name || "").slice(0, 160) || k + "." + ext,
+      at: nowISO().slice(0, 10), by: me.name || me.login,
+    };
+    files.push(entry);
+    await env.DB.prepare("UPDATE exports SET files=?, updated_at=? WHERE id=?").bind(JSON.stringify(files), nowISO(), id).run();
+    await audit(env, me, "export.file.add", id, entry.name);
+    return json({ ok: true, file: entry, files }, 201);
+  }
+
+  if (id && sub === "file" && req.method === "DELETE") {
+    const k = String(url.searchParams.get("k") || "");
+    const files = expParse(row.files, []);
+    const f = files.find((x) => x.k === k);
+    if (!f) return err("文件不存在", 404);
+    if (env.PHOTOS) { try { await env.PHOTOS.delete(f.key); } catch {} }
+    const left = files.filter((x) => x.k !== k);
+    await env.DB.prepare("UPDATE exports SET files=?, updated_at=? WHERE id=?").bind(JSON.stringify(left), nowISO(), id).run();
+    await audit(env, me, "export.file.del", id, f.name);
+    return json({ ok: true, files: left });
+  }
+
+  return err("不支持的操作", 405);
+}
 
 /* ---------- 模块目录：目录页、导航、权限勾选都从这里来 ---------- */
 const MODULES = [
   /* 日常协同 */
-  { k: "todo", g: "日常协同", t: "待办", d: "派活 · 期限 · 完成情况", i: "✅", soon: true },
-  { k: "punch", g: "日常协同", t: "打卡", d: "每日出勤 · 班组 · 请假", i: "⏱️", soon: true },
+  { k: "todo", g: "日常协同", t: "待办", d: "派活 · 归谁 · 每天汇报", d_en: "Assign · owner · daily report", i: "✅", tab: "todo" },
+  { k: "punch", g: "日常协同", t: "打卡", d: "每日出勤 · GPS 围栏 · 迟到早退", d_en: "Daily attendance · GPS fence · late/early", i: "⏱️", tab: "punch" },
   /* 业务 */
-  { k: "log", g: "业务现场", t: "生产", d: "班次产量 · 油耗 · 停机", i: "🏭", tab: "log" },
-  { k: "board", g: "业务现场", t: "看板", d: "本月产量 · 人天 · 支出", i: "📊", tab: "board" },
-  { k: "xrf", g: "业务现场", t: "生产统计", d: "洗选厂产量 · XRF", i: "🧪", u: "https://mine-sync.frankataix.workers.dev/mine_production.html" },
-  { k: "project", g: "业务现场", t: "项目管理", d: "靶区 · 探槽 · 钻孔 · 进度", i: "🗺️", soon: true },
-  { k: "export", g: "业务现场", t: "出口", d: "批次 · 过磅 · 发运 · 回款", i: "🚢", soon: true },
-  { k: "customer", g: "业务现场", t: "客户", d: "买方档案 · 报价 · 合同", i: "🤝", soon: true },
+  { k: "log", g: "业务现场", t: "生产", d: "每日产量 · 品位 · 照片", d_en: "Daily output · grade · photos", i: "🏭", tab: "log" },
+  { k: "project", g: "业务现场", t: "项目管理", d: "靶区 · 探槽 · 钻孔 · 进度", d_en: "Targets · trenches · drilling · progress", i: "🗺️", soon: true },
+  { k: "export", g: "业务现场", t: "出口", d: "批次 · MOSES · 化验 · 估价 · 清关 · 许可", d_en: "Batches · MOSES · assay · valuation · ZRA · permit", i: "🚢", tab: "export" },
+  { k: "customer", g: "业务现场", t: "客户", d: "买方档案 · 联系 · 收款账户", d_en: "Buyers · contacts · bank details", i: "🤝", tab: "customer" },
   /* 现场 */
-  { k: "sampling", g: "业务现场", t: "矿区考察记录本", d: "离线可用 · 免登录", i: "🧭", u: "https://frankataix-gif.github.io/ecobox-sampling/sampling_helper.html" },
-  { k: "album", g: "业务现场", t: "现场相册", d: "照片视频共享", i: "📸", u: "https://mine-sync.frankataix.workers.dev/field_album.html" },
-  /* 项目资料 */
-  { k: "lic", g: "项目资料", t: "矿山项目介绍", d: "项目 · 地质 · 取样要点", i: "📚", u: "https://frankataix-gif.github.io/ecobox-sampling/licences.html" },
+  { k: "sampling", g: "业务现场", t: "矿区考察记录本", d: "离线可用 · 免登录", d_en: "Works offline · no login", i: "🧭", u: "https://frankataix-gif.github.io/ecobox-sampling/sampling_helper.html" },
   /* 资产与合规 */
-  { k: "permit", g: "资产", t: "矿证", d: "台账 · 到期 · 申请材料", i: "📜", u: "https://mine-sync.frankataix.workers.dev/license_helper.html" },
-  { k: "company", g: "资产", t: "公司", d: "主体 · 证照 · 文档", i: "🏛️", u: "https://ecobox-docs.frankataix.workers.dev/" },
-  { k: "employer", g: "资产", t: "雇主", d: "合同 · 日薪标准 · 社保工伤", i: "🧾", soon: true },
+  { k: "lic", g: "资产", t: "矿山项目介绍", d: "项目 · 地质 · 取样要点", d_en: "Project · geology · sampling tips", i: "📚", u: "https://frankataix-gif.github.io/ecobox-sampling/licences.html" },
+  { k: "permit", g: "资产", t: "矿证", d: "台账 · 到期 · 申请材料", d_en: "Register · expiry · applications", i: "📜", u: "/licence.html" },
+  { k: "company", g: "资产", t: "公司", d: "十几家公司 · 股东 · 董事 · 证照", d_en: "Zambian entities · shareholders · directors", i: "🏢", tab: "company" },
+  { k: "employer", g: "资产", t: "雇主", d: "合同 · 日薪标准 · 社保工伤", d_en: "Contracts · day rates · NSSF", i: "🧾", soon: true },
   /* 财务 */
-  { k: "finance", g: "财务", t: "财务", d: "收支 · 备用金 · 成本汇总", i: "💰", tab: "fin" },
+  { k: "finance", g: "财务", t: "费用记录", d: "收支 · 备用金 · 成本汇总", d_en: "Income & spend · float · costs", i: "💰", tab: "fin" },
+  { k: "bank", g: "财务", t: "银行数字账单", d: "原件数字化 · 核对进账出账 · 逐笔核销", d_en: "Digitized statements · check in/out · tick off lines", i: "🏦", tab: "bank" },
+  { k: "bankdoc", g: "财务", t: "银行原始单据", d: "按月归档 PDF 原件 · 下载 · 数字化", d_en: "Monthly PDF archive · download · digitize", i: "📄", tab: "bankdoc", adminOnly: true },
   /* 系统 */
-  { k: "users", g: "系统", t: "其它设置", d: "账号 · 权限 · 参数", i: "⚙️", tab: "users", adminOnly: true },
-  { k: "mine", g: "系统", t: "设置", d: "账号 · 密码 · 退出登录", i: "👤", tab: "mine", always: true, },
+  { k: "lang", g: "系统", t: "语言", d: "中文 / English", d_en: "Chinese / English", i: "🌐", tab: "lang", always: true },
+  { k: "users", g: "系统", t: "会员设置", d: "会员 · 权限 · 参数", d_en: "Members · permissions · settings", i: "⚙️", tab: "users", adminOnly: true },
+  { k: "finacct", g: "系统", t: "财务账目设置", d: "期初 · 对账基准 · 建删改", d_en: "Opening balances · reconciliation base · add / edit / remove", i: "🧮", tab: "finacct", adminOnly: true },
+  { k: "mine", g: "系统", t: "设置", d: "账号 · 密码 · 退出登录", d_en: "Account · password · sign out", i: "👤", tab: "mine", always: true, },
 ];
 const MODULE_KEYS = MODULES.map((m) => m.k);
-const MOD_ALIAS = { production: "xrf", docs: "company" }; // 旧键 → 新键
+const MOD_ALIAS = { production: "log", xrf: "log", docs: "company" }; // 旧键 → 新键
 const modOf = (k) => MODULES.find((m) => m.k === k);
 
-/* 实际可用模块：管理员全给；其他人按 users.modules，空 = 默认全部（除管理员专属） */
-function modsOf(u) {
+/* 实际可用模块：管理员全给；其他人按 users.modules，空 = 默认全部（除管理员专属）；
+   财务负责人（FIN_OWNER）额外拿到「财务账目设置」，不管他是什么角色 */
+function modsOf(u, env) {
   if (!u) return [];
-  if (u.role === "admin") return MODULE_KEYS.slice();
-  const raw = String(u.modules || "").trim();
-  const own = raw
-    ? raw.split(",").map((s) => s.trim()).map((k) => MOD_ALIAS[k] || k).filter((k) => MODULE_KEYS.includes(k))
-    : null;
-  return MODULE_KEYS.filter((k) => {
-    const m = modOf(k);
-    if (m.always) return true;
-    if (m.adminOnly) return false;
-    return own ? own.includes(k) : true;
-  });
+  const owner = !!(env && env.FIN_OWNER && u.login === env.FIN_OWNER);
+  const list = (() => {
+    if (u.role === "admin") return MODULE_KEYS.slice();
+    const raw = String(u.modules || "").trim();
+    const own = raw
+      ? raw.split(",").map((s) => s.trim()).map((k) => MOD_ALIAS[k] || k).filter((k) => MODULE_KEYS.includes(k))
+      : null;
+    return MODULE_KEYS.filter((k) => {
+      const m = modOf(k);
+      if (m.always) return true;
+      if (m.adminOnly) return false;
+      return own ? own.includes(k) : true;
+    });
+  })();
+  if (owner && !list.includes("finacct")) list.push("finacct");
+  if ((owner || u.role === "finance") && !list.includes("bankdoc")) list.push("bankdoc");
+  return list;
 }
 /* 存库前清洗：去掉管理员专属与未知键 */
 function cleanModules(list) {
@@ -170,8 +688,39 @@ async function ensureSchema(env) {
   } catch {
     try { await env.DB.prepare("ALTER TABLE users ADD COLUMN modules TEXT NOT NULL DEFAULT ''").run(); } catch {}
   }
+  try {
+    await env.DB.prepare("SELECT deleted FROM users LIMIT 1").first();
+  } catch {
+    try { await env.DB.prepare("ALTER TABLE users ADD COLUMN deleted INTEGER NOT NULL DEFAULT 0").run(); } catch {}
+  }
+  try {
+    await env.DB.prepare("SELECT lang FROM users LIMIT 1").first();
+  } catch {
+    try { await env.DB.prepare("ALTER TABLE users ADD COLUMN lang TEXT NOT NULL DEFAULT 'zh'").run(); } catch {}
+  }
+  try {
+    await env.DB.prepare("SELECT shortcuts FROM users LIMIT 1").first();
+  } catch {
+    try { await env.DB.prepare("ALTER TABLE users ADD COLUMN shortcuts TEXT NOT NULL DEFAULT ''").run(); } catch {}
+  }
+  for (const sql of [
+    "ALTER TABLE logs ADD COLUMN note_en TEXT NOT NULL DEFAULT ''",
+    "ALTER TABLE logs ADD COLUMN note_zh TEXT NOT NULL DEFAULT ''",
+    "ALTER TABLE logs ADD COLUMN product TEXT NOT NULL DEFAULT ''",
+    "ALTER TABLE logs ADD COLUMN qty REAL NOT NULL DEFAULT 0",
+    "ALTER TABLE logs ADD COLUMN unit TEXT NOT NULL DEFAULT 'kg'",
+    "ALTER TABLE logs ADD COLUMN ta REAL NOT NULL DEFAULT 0",
+    "ALTER TABLE logs ADD COLUMN nb REAL NOT NULL DEFAULT 0",
+    "ALTER TABLE logs ADD COLUMN photos TEXT NOT NULL DEFAULT ''",
+  ]) { try { await env.DB.prepare(sql).run(); } catch {} }
   await finSchema(env);
   await feedSchema(env);
+  await todoSchema(env);
+  await coSchema(env);
+  await attSchema(env);
+  await custSchema(env);
+  await expSchema(env);
+  await loginGuardSchema(env);
   schemaOk = true;
 }
 
@@ -186,6 +735,7 @@ async function finSchema(env) {
        ft TEXT NOT NULL DEFAULT 'life', ch TEXT NOT NULL DEFAULT 'cash',
        amount REAL NOT NULL DEFAULT 0, note TEXT NOT NULL DEFAULT '',
        photos TEXT NOT NULL DEFAULT '', to_uid TEXT NOT NULL DEFAULT '',
+       to_ch TEXT NOT NULL DEFAULT '', inv INTEGER NOT NULL DEFAULT 0,
        created_by INTEGER, created_at TEXT NOT NULL, legacy_id TEXT)`,
     `CREATE INDEX IF NOT EXISTS fin_entries_date ON fin_entries(date)`,
     `CREATE INDEX IF NOT EXISTS fin_entries_uid ON fin_entries(uid)`,
@@ -193,10 +743,99 @@ async function finSchema(env) {
        uid TEXT PRIMARY KEY, name TEXT NOT NULL DEFAULT '', bank TEXT NOT NULL DEFAULT '',
        card_no TEXT NOT NULL DEFAULT '', cash REAL NOT NULL DEFAULT 0,
        card REAL NOT NULL DEFAULT 0, since TEXT NOT NULL DEFAULT '',
-       updated_at TEXT NOT NULL DEFAULT '')`,
+       banks TEXT NOT NULL DEFAULT '[]', updated_at TEXT NOT NULL DEFAULT '')`,
     `CREATE TABLE IF NOT EXISTS fin_cfg (k TEXT PRIMARY KEY, v TEXT NOT NULL)`,
+    `CREATE TABLE IF NOT EXISTS fin_bank_stmt (
+       id TEXT PRIMARY KEY, uid TEXT NOT NULL DEFAULT '__company',
+       bank TEXT NOT NULL DEFAULT '', acct_no TEXT NOT NULL DEFAULT '', ccy TEXT NOT NULL DEFAULT 'ZMW',
+       pf TEXT NOT NULL DEFAULT '', pt TEXT NOT NULL DEFAULT '',
+       open_bal REAL NOT NULL DEFAULT 0, close_bal REAL NOT NULL DEFAULT 0,
+       total_in REAL NOT NULL DEFAULT 0, total_out REAL NOT NULL DEFAULT 0,
+       file_key TEXT NOT NULL DEFAULT '', file_name TEXT NOT NULL DEFAULT '',
+       pages INTEGER NOT NULL DEFAULT 0, txn_n INTEGER NOT NULL DEFAULT 0,
+       status TEXT NOT NULL DEFAULT 'open', note TEXT NOT NULL DEFAULT '',
+       parse_by TEXT NOT NULL DEFAULT '', created_by TEXT NOT NULL DEFAULT '',
+       created_at TEXT NOT NULL DEFAULT '', checked_by TEXT NOT NULL DEFAULT '',
+       checked_at TEXT NOT NULL DEFAULT '', old INTEGER NOT NULL DEFAULT 0,
+       deleted INTEGER NOT NULL DEFAULT 0)`,
+    `CREATE INDEX IF NOT EXISTS fin_bank_stmt_uid ON fin_bank_stmt(uid)`,
+    `CREATE TABLE IF NOT EXISTS fin_bank_tx (
+       id TEXT PRIMARY KEY, stmt_id TEXT NOT NULL, d TEXT NOT NULL DEFAULT '',
+       descr TEXT NOT NULL DEFAULT '', ref TEXT NOT NULL DEFAULT '',
+       debit REAL NOT NULL DEFAULT 0, credit REAL NOT NULL DEFAULT 0, bal REAL NOT NULL DEFAULT 0,
+       cat TEXT NOT NULL DEFAULT '', entry_id TEXT NOT NULL DEFAULT '',
+       state TEXT NOT NULL DEFAULT 'new', note TEXT NOT NULL DEFAULT '',
+       ord INTEGER NOT NULL DEFAULT 0)`,
+    `CREATE INDEX IF NOT EXISTS fin_bank_tx_stmt ON fin_bank_tx(stmt_id)`,
+    /* 银行原始单据：银行给的 PDF 原件按月归档，是「底片」；fin_bank_stmt 是冲出来的数字。
+       一份原件可以数字化成多张账单（同一份 PDF 里有几个账号），所以指针放在账单侧 doc_id。 */
+    `CREATE TABLE IF NOT EXISTS fin_bank_doc (
+       id TEXT PRIMARY KEY, uid TEXT NOT NULL DEFAULT '__company',
+       bank TEXT NOT NULL DEFAULT '', acct_no TEXT NOT NULL DEFAULT '', ccy TEXT NOT NULL DEFAULT 'ZMW',
+       period TEXT NOT NULL DEFAULT '', pf TEXT NOT NULL DEFAULT '', pt TEXT NOT NULL DEFAULT '',
+       file_key TEXT NOT NULL DEFAULT '', file_name TEXT NOT NULL DEFAULT '',
+       mime TEXT NOT NULL DEFAULT '', size INTEGER NOT NULL DEFAULT 0, pages INTEGER NOT NULL DEFAULT 0,
+       hash TEXT NOT NULL DEFAULT '', note TEXT NOT NULL DEFAULT '', created_by TEXT NOT NULL DEFAULT '',
+       uploaded_at TEXT NOT NULL DEFAULT '', replaced_by TEXT NOT NULL DEFAULT '',
+       old INTEGER NOT NULL DEFAULT 0, deleted INTEGER NOT NULL DEFAULT 0)`,
+    `CREATE INDEX IF NOT EXISTS fin_bank_doc_uid ON fin_bank_doc(uid, period)`,
+    `CREATE INDEX IF NOT EXISTS fin_bank_doc_hash ON fin_bank_doc(hash)`,
   ];
   for (const q of ddl) await env.DB.prepare(q).run();
+  /* 费用记录分两本账：现金（人录，唯一来源是人）/ 银行（账单为准）。
+     acct 是口径；card_id 只在银行账上用；state 走 已录→已对上→已确认→已核销。 */
+  for (const q of [
+    "ALTER TABLE fin_entries ADD COLUMN acct TEXT NOT NULL DEFAULT ''",
+    "ALTER TABLE fin_entries ADD COLUMN card_id TEXT NOT NULL DEFAULT ''",
+    "ALTER TABLE fin_entries ADD COLUMN state TEXT NOT NULL DEFAULT 'recorded'",
+    "ALTER TABLE fin_entries ADD COLUMN payee TEXT NOT NULL DEFAULT ''",
+    "ALTER TABLE fin_entries ADD COLUMN ref TEXT NOT NULL DEFAULT ''",
+    "ALTER TABLE fin_entries ADD COLUMN stmt_tx_id TEXT NOT NULL DEFAULT ''",
+    "ALTER TABLE fin_entries ADD COLUMN src TEXT NOT NULL DEFAULT 'manual'",
+    "ALTER TABLE fin_entries ADD COLUMN confirmed_by TEXT NOT NULL DEFAULT ''",
+    "ALTER TABLE fin_entries ADD COLUMN confirmed_at TEXT NOT NULL DEFAULT ''",
+    "ALTER TABLE fin_entries ADD COLUMN reconciled_by TEXT NOT NULL DEFAULT ''",
+    "ALTER TABLE fin_entries ADD COLUMN reconciled_at TEXT NOT NULL DEFAULT ''",
+  ]) { try { await env.DB.prepare(q).run(); } catch {} }
+  /* 老记录按渠道补口径，之后新记录写入时自己带 */
+  try { await env.DB.prepare("UPDATE fin_entries SET acct=CASE WHEN ch='card' THEN 'bank' ELSE 'cash' END WHERE acct=''").run(); } catch {}
+  try { await env.DB.prepare("CREATE INDEX IF NOT EXISTS fin_entries_card ON fin_entries(card_id,date)").run(); } catch {}
+  try { await env.DB.prepare("ALTER TABLE fin_entries ADD COLUMN to_ch TEXT NOT NULL DEFAULT ''").run(); } catch {}
+  try { await env.DB.prepare("ALTER TABLE fin_entries ADD COLUMN note_en TEXT NOT NULL DEFAULT ''").run(); } catch {}
+  try { await env.DB.prepare("ALTER TABLE fin_entries ADD COLUMN note_zh TEXT NOT NULL DEFAULT ''").run(); } catch {}
+  try {
+    await env.DB.prepare("ALTER TABLE fin_entries ADD COLUMN inv INTEGER NOT NULL DEFAULT 0").run();
+    // 老记录：已经带单据照片的支出/收入，视为有发票
+    await env.DB.prepare("UPDATE fin_entries SET inv=1 WHERE kind IN ('out','in') AND photos NOT IN ('','[]')").run();
+  } catch {}
+  try { await env.DB.prepare("ALTER TABLE fin_accounts ADD COLUMN banks TEXT NOT NULL DEFAULT '[]'").run(); } catch {}
+  /* 银行卡统一口径：账单 / 原件只存 card_id，银行、账号、币种都从卡上取 */
+  try { await env.DB.prepare("ALTER TABLE fin_bank_stmt ADD COLUMN card_id TEXT NOT NULL DEFAULT ''").run(); } catch {}
+  try { await env.DB.prepare("ALTER TABLE fin_bank_doc ADD COLUMN card_id TEXT NOT NULL DEFAULT ''").run(); } catch {}
+  /* 原件也要「几月到几月」：只记了月份的按整月补齐，之后上传都按实际起止存 */
+  try { await env.DB.prepare("ALTER TABLE fin_bank_doc ADD COLUMN pf TEXT NOT NULL DEFAULT ''").run(); } catch {}
+  try { await env.DB.prepare("ALTER TABLE fin_bank_doc ADD COLUMN pt TEXT NOT NULL DEFAULT ''").run(); } catch {}
+  try {
+    await env.DB.prepare("UPDATE fin_bank_doc SET pf=period||'-01', pt=date(period||'-01','+1 month','-1 day') WHERE pf='' AND period<>''").run();
+  } catch {}
+  try { await finBankCardFix(env); } catch (e) {}
+  /* 老水单身上挂着的原件，搬进「银行原始单据」档案：同 key 不复制文件，账单回指 doc_id */
+  try {
+    await env.DB.prepare("ALTER TABLE fin_bank_stmt ADD COLUMN doc_id TEXT NOT NULL DEFAULT ''").run();
+    const legacy = (await env.DB.prepare(
+      "SELECT id,uid,bank,acct_no,ccy,pf,pt,file_key,file_name,pages,created_by,created_at,doc_id FROM fin_bank_stmt WHERE file_key<>'' AND doc_id=''"
+    ).all()).results || [];
+    for (const s of legacy) {
+      const did = "d" + String(s.id).slice(-12);
+      const period = String(s.pf || s.pt || "").slice(0, 7);
+      await env.DB.prepare(
+        `INSERT OR IGNORE INTO fin_bank_doc(id,uid,bank,acct_no,ccy,period,file_key,file_name,mime,size,pages,hash,created_by,uploaded_at)
+         VALUES(?,?,?,?,?,?,?,?,'application/pdf',0,?,'',?,?)`
+      ).bind(did, s.uid || "__company", s.bank || "", s.acct_no || "", s.ccy || "ZMW", period,
+        s.file_key, s.file_name || "", Number(s.pages) || 0, s.created_by || "", s.created_at || nowISO()).run();
+      await env.DB.prepare("UPDATE fin_bank_stmt SET doc_id=? WHERE id=?").bind(did, s.id).run();
+    }
+  } catch (e) {}
   finOk = true;
 }
 
@@ -227,23 +866,74 @@ async function audit(env, user, action, target = "", detail = "") {
     .bind(nowISO(), user ? user.id : null, action, target, detail).run();
 }
 
+/* ---------- 登录限速：同一账号 + 同一 IP，10 分钟内错 5 次锁 10 分钟 ---------- */
+let loginGuardOk = false;
+async function loginGuardSchema(env) {
+  if (loginGuardOk) return;
+  await env.DB.prepare(
+    `CREATE TABLE IF NOT EXISTS login_fail (
+       id INTEGER PRIMARY KEY AUTOINCREMENT, k TEXT NOT NULL, at TEXT NOT NULL)`
+  ).run();
+  await env.DB.prepare("CREATE INDEX IF NOT EXISTS login_fail_k_at ON login_fail(k, at)").run();
+  loginGuardOk = true;
+}
+
+const loginIp = (req) => (req.headers.get("cf-connecting-ip") || "").slice(0, 45);
+const loginKey = (login, req) => String(login).toLowerCase() + "|" + loginIp(req);
+
+/* 还要等多少秒才能再试；0 = 没锁 */
+async function loginWait(env, key) {
+  const since = new Date(Date.now() - LOGIN_WINDOW_MIN * 60000).toISOString();
+  const r = await env.DB.prepare("SELECT COUNT(*) c, MAX(at) last FROM login_fail WHERE k=? AND at>?")
+    .bind(key, since).first();
+  if (!r || r.c < LOGIN_MAX_FAIL) return 0;
+  const left = Date.parse(r.last) + LOGIN_WINDOW_MIN * 60000 - Date.now();
+  return left > 0 ? Math.ceil(left / 1000) : 0;
+}
+
+async function loginFailAdd(env, key) {
+  const now = nowISO();
+  await env.DB.prepare("INSERT INTO login_fail(k,at) VALUES(?,?)").bind(key, now).run();
+  // 顺手清掉一天前的记录，表不会无限长
+  await env.DB.prepare("DELETE FROM login_fail WHERE at<?").bind(new Date(Date.now() - 864e5).toISOString()).run();
+}
+
 /* ---------- 校验 ---------- */
 const LOGIN_RE = /^[^\s]{2,60}$/;                 // 账号：邮箱 / 手机号 / 姓名，只要非空、无空格
 const loginOf = (b) => String(b.login || b.name || "").trim().toLowerCase(); // 不填账号就用姓名
 const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
 const num = (v, d = 0) => (v === "" || v == null || isNaN(+v) ? d : Math.max(0, +v));
 
+const PROD_UNITS = ["kg", "t", "bag", "truck"];
+const photoKeys = (v) => {
+  const a = Array.isArray(v) ? v : (() => { try { const p = JSON.parse(String(v || "")); return Array.isArray(p) ? p : []; } catch { return []; } })();
+  return a.filter((x) => typeof x === "string" && x).slice(0, 6).map((x) => x.slice(0, 200));
+};
+
 function logBody(b) {
   const day = String(b.day || "").trim();
   if (!DAY_RE.test(day)) return { e: "日期要 YYYY-MM-DD" };
+  const unit = PROD_UNITS.includes(String(b.unit || "")) ? String(b.unit) : "kg";
+  const qty = num(b.qty);
+  /* 产量按 kg/t 折算进 ore_t，汇总口径不用改；袋、车是现场估数，不折算。
+     老记录没有 qty，仍按原来的 ore_t 走，改备注时不会把它清零 */
+  const oreT = qty > 0
+    ? (unit === "t" ? qty : unit === "kg" ? +(qty / 1000).toFixed(3) : num(b.ore_t))
+    : num(b.ore_t);
   const out = {
     day,
     site: String(b.site || "").trim().slice(0, 60),
     shift: String(b.shift || "白班").trim().slice(0, 10),
     crew: String(b.crew || "").trim().slice(0, 60),
     headcount: Math.round(num(b.headcount)),
-    ore_t: num(b.ore_t),
+    ore_t: oreT,
     waste_t: num(b.waste_t),
+    product: String(b.product || "").trim().slice(0, 60),
+    qty,
+    unit,
+    ta: num(b.ta),
+    nb: num(b.nb),
+    photos: JSON.stringify(photoKeys(b.photos)),
     grade: String(b.grade || "").trim().slice(0, 80),
     cost_usd: num(b.cost_usd),
     note: String(b.note || "").trim().slice(0, 1000),
@@ -252,6 +942,276 @@ function logBody(b) {
   return { v: out };
 }
 const canEdit = (user, row) => user.role === "admin" || user.role === "manager" || row.user_id === user.id;
+
+
+/* ---------- 公司资料库（赞比亚实体：PACRA · 股东 · 董事） ---------- */
+let coOk = false;
+async function coSchema(env) {
+  if (coOk) return;
+  await env.DB.prepare(
+    `CREATE TABLE IF NOT EXISTS companies (
+       id TEXT PRIMARY KEY,
+       name TEXT NOT NULL,
+       name_en TEXT NOT NULL DEFAULT '',
+       kind TEXT NOT NULL DEFAULT 'company',
+       reg_no TEXT NOT NULL DEFAULT '',
+       reg_date TEXT NOT NULL DEFAULT '',
+       tpin TEXT NOT NULL DEFAULT '',
+       address TEXT NOT NULL DEFAULT '',
+       phone TEXT NOT NULL DEFAULT '',
+       email TEXT NOT NULL DEFAULT '',
+       share_capital REAL NOT NULL DEFAULT 0,
+       currency TEXT NOT NULL DEFAULT 'ZMW',
+       shareholders TEXT NOT NULL DEFAULT '[]',
+       directors TEXT NOT NULL DEFAULT '[]',
+       notes TEXT NOT NULL DEFAULT '',
+       tags TEXT NOT NULL DEFAULT '',
+       docs TEXT NOT NULL DEFAULT '[]',
+       created_at TEXT NOT NULL DEFAULT '',
+       updated_at TEXT NOT NULL DEFAULT '',
+       created_by TEXT NOT NULL DEFAULT '',
+       updated_by TEXT NOT NULL DEFAULT ''
+     )`
+  ).run();
+  await env.DB.prepare("CREATE INDEX IF NOT EXISTS companies_name ON companies(name)").run();
+  /* 老库补 docs 列（CREATE TABLE IF NOT EXISTS 不会加列） */
+  try { await env.DB.prepare("ALTER TABLE companies ADD COLUMN docs TEXT NOT NULL DEFAULT '[]'").run(); } catch (e) {}
+  coOk = true;
+}
+
+const coNewId = () => "co" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const coParse = (v, d) => { try { const o = JSON.parse(v || ""); return o == null ? d : o; } catch (e) { return d; } };
+const coStr = (v, n = 200) => String(v == null ? "" : v).replace(/\s+/g, " ").trim().slice(0, n);
+const coZm = (nat) => /zambia|赞/i.test(String(nat || ""));
+const coMoney = (v) => Math.max(0, Number(v) || 0);
+
+/* 股东：比例按注册资本（或出资合计）折算，赞方合计另算 */
+function coHolders(list, cap) {
+  const rows = (Array.isArray(list) ? list.slice(0, 30) : []).map((p) => ({
+    name: coStr(p && p.name, 80),
+    nationality: coStr(p && (p.nationality || p.nat), 40),
+    id_no: coStr(p && (p.id_no || p.idNo), 60),
+    amount: coMoney(p && p.amount),
+  })).filter((p) => p.name);
+  const sum = rows.reduce((s, p) => s + p.amount, 0);
+  const total = Math.max(coMoney(cap), sum);
+  return rows.map((p) => ({ ...p, pct: total > 0 ? +(p.amount * 100 / total).toFixed(1) : 0 }));
+}
+
+function coDirectors(list) {
+  return (Array.isArray(list) ? list.slice(0, 30) : []).map((p) => ({
+    name: coStr(p && p.name, 80),
+    nationality: coStr(p && (p.nationality || p.nat), 40),
+    id_no: coStr(p && (p.id_no || p.idNo), 60),
+    role: coStr(p && p.role, 40),
+  })).filter((p) => p.name);
+}
+
+/* 资料条目：R2 对象 key + 展示名，最多 40 份 */
+function coDocs(list) {
+  return (Array.isArray(list) ? list.slice(0, 40) : []).map((d) => ({
+    k: coStr(d && (d.k || d.id), 40),
+    label: coStr(d && d.label, 40),
+    name: coStr(d && (d.name || d.fileName), 160),
+    key: coStr(d && d.key, 200),
+    mime: coStr(d && d.mime, 60),
+    size: coMoney(d && d.size),
+    at: coStr(d && d.at, 20),
+  })).filter((d) => d.k && d.key);
+}
+
+/* 入库前把 body 合到现有行上（PATCH 只改传上来的字段） */
+function coApply(row, b) {
+  const r = { ...row };
+  for (const [k, n] of [["name", 120], ["name_en", 160], ["kind", 20], ["reg_no", 60], ["reg_date", 20],
+    ["tpin", 40], ["address", 300], ["phone", 60], ["email", 120], ["notes", 2000], ["tags", 200], ["currency", 8]]) {
+    if (b[k] !== undefined) r[k] = coStr(b[k], n);
+  }
+  if (b.kind !== undefined && !["company", "person"].includes(r.kind)) r.kind = "company";
+  if (b.share_capital !== undefined) r.share_capital = coMoney(b.share_capital);
+  if (b.shareholders !== undefined) r.shareholders = JSON.stringify(coHolders(b.shareholders, r.share_capital));
+  else if (b.share_capital !== undefined) r.shareholders = JSON.stringify(coHolders(coParse(r.shareholders, []), r.share_capital));
+  if (b.directors !== undefined) r.directors = JSON.stringify(coDirectors(b.directors));
+  if (b.docs !== undefined) r.docs = JSON.stringify(coDocs(b.docs));
+  return r;
+}
+
+const coOut = (r) => {
+  const sh = coParse(r.shareholders, []);
+  return {
+    ...r,
+    shareholders: sh,
+    directors: coParse(r.directors, []),
+    docs: coParse(r.docs, []),
+    zm_pct: +sh.filter((s) => coZm(s.nationality)).reduce((s, x) => s + (Number(x.pct) || 0), 0).toFixed(1),
+  };
+};
+
+async function coSave(env, me, id, b) {
+  const now = nowISO();
+  if (!id) {
+    const base = {
+      id: coNewId(), name: "", name_en: "", kind: "company", reg_no: "", reg_date: "", tpin: "",
+      address: "", phone: "", email: "", share_capital: 0, currency: "ZMW",
+      shareholders: "[]", directors: "[]", notes: "", tags: "", docs: "[]",
+      created_at: now, updated_at: now, created_by: me.login, updated_by: me.login,
+    };
+    const row = coApply(base, b);
+    if (!row.name) return { e: "公司名必填", s: 400 };
+    await env.DB.prepare(
+      `INSERT INTO companies(id,name,name_en,kind,reg_no,reg_date,tpin,address,phone,email,share_capital,currency,shareholders,directors,notes,tags,docs,created_at,updated_at,created_by,updated_by)
+       VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+    ).bind(row.id, row.name, row.name_en, row.kind, row.reg_no, row.reg_date, row.tpin, row.address, row.phone,
+      row.email, row.share_capital, row.currency, row.shareholders, row.directors, row.notes, row.tags, row.docs,
+      row.created_at, row.updated_at, row.created_by, row.updated_by).run();
+    return { id: row.id };
+  }
+  const cur = await env.DB.prepare("SELECT * FROM companies WHERE id=?").bind(id).first();
+  if (!cur) return { e: "公司不存在", s: 404 };
+  const row = coApply(cur, b);
+  if (!row.name) return { e: "公司名必填", s: 400 };
+  await env.DB.prepare(
+    `UPDATE companies SET name=?,name_en=?,kind=?,reg_no=?,reg_date=?,tpin=?,address=?,phone=?,email=?,share_capital=?,currency=?,shareholders=?,directors=?,notes=?,tags=?,docs=?,updated_at=?,updated_by=? WHERE id=?`
+  ).bind(row.name, row.name_en, row.kind, row.reg_no, row.reg_date, row.tpin, row.address, row.phone, row.email,
+    row.share_capital, row.currency, row.shareholders, row.directors, row.notes, row.tags, row.docs, nowISO(), me.login, id).run();
+  return { id };
+}
+
+async function coApi(req, env, me, seg, url, body) {
+  await coSchema(env);
+  if (!modsOf(me).includes("company")) return err("没有公司资料的权限", 403);
+  const id = seg[1] || "";
+  const canWrite = me.role === "admin" || me.role === "manager";
+
+  if (!id && req.method === "GET") {
+    const q = String(url.searchParams.get("q") || "").trim();
+    if (q) {
+      const like = "%" + q + "%";
+      const r = await env.DB.prepare(
+        "SELECT * FROM companies WHERE name LIKE ? OR name_en LIKE ? OR reg_no LIKE ? OR tags LIKE ? OR address LIKE ? OR shareholders LIKE ? OR directors LIKE ? ORDER BY name LIMIT 300"
+      ).bind(like, like, like, like, like, like, like).all();
+      return json({ companies: r.results.map(coOut) });
+    }
+    const r = await env.DB.prepare("SELECT * FROM companies ORDER BY name LIMIT 300").all();
+    return json({ companies: r.results.map(coOut) });
+  }
+
+  if (id === "bulk" && req.method === "POST") {
+    if (!canWrite) return err("只有管理员和负责人能导入", 403);
+    const b = await body();
+    const list = Array.isArray(b.companies) ? b.companies.slice(0, 60) : [];
+    if (!list.length) return err("导入列表是空的");
+    let added = 0;
+    for (const item of list) {
+      const r = await coSave(env, me, "", item || {});
+      if (r.id) added++;
+    }
+    await audit(env, me, "company.bulk", String(added), "");
+    return json({ ok: true, added }, 201);
+  }
+
+  /* 资料：文件存 R2（company/<id>/<docKey>.<ext>），行里只留元数据 */
+  const sub = seg[2] || "";
+  if (id && sub === "doc" && seg[3] && req.method === "GET") {
+    const row = await env.DB.prepare("SELECT docs FROM companies WHERE id=?").bind(id).first();
+    if (!row) return err("公司不存在", 404);
+    const d = coParse(row.docs, []).find((x) => x.k === seg[3]);
+    if (!d) return err("资料不存在", 404);
+    if (!env.PHOTOS) return err("未配置文件存储", 500);
+    const obj = await env.PHOTOS.get(d.key);
+    if (!obj) return err("文件不存在", 404);
+    return new Response(obj.body, {
+      headers: {
+        "content-type": d.mime || (obj.httpMetadata && obj.httpMetadata.contentType) || "application/octet-stream",
+        "content-disposition": "inline; filename*=UTF-8''" + encodeURIComponent(d.name || d.k),
+        "cache-control": "private, max-age=86400",
+      },
+    });
+  }
+
+  if (id && sub === "doc" && req.method === "POST") {
+    if (!canWrite) return err("只有管理员和负责人能传资料", 403);
+    if (!env.PHOTOS) return err("未配置文件存储", 500);
+    const b = await body();
+    const m = /^data:([a-z0-9.+/-]+);base64,([A-Za-z0-9+/=]+)$/i.exec(String(b.data || ""));
+    if (!m) return err("文件格式不对");
+    const mime = m[1].toLowerCase();
+    if (!/^(application\/pdf|image\/(png|jpeg|jpg|webp))$/.test(mime)) return err("只支持 PDF / 图片");
+    const bytes = Uint8Array.from(atob(m[2]), (ch) => ch.charCodeAt(0));
+    if (bytes.length > 25 * 1024 * 1024) return err("文件超过 25MB，请线下提供（U 盘 / 网盘 / 邮件）");
+    const row = await env.DB.prepare("SELECT * FROM companies WHERE id=?").bind(id).first();
+    if (!row) return err("公司不存在", 404);
+    const docs = coParse(row.docs, []);
+    if (docs.length >= 40) return err("每家最多 40 份资料");
+    const k = "d" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    const ext = mime === "application/pdf" ? "pdf" : mime.split("/")[1].replace("jpeg", "jpg");
+    const key = "company/" + id + "/" + k + "." + ext;
+    await env.PHOTOS.put(key, bytes, { httpMetadata: { contentType: mime } });
+    const entry = {
+      k, label: coStr(b.label, 40), name: coStr(b.name, 160) || k + "." + ext,
+      key, mime, size: bytes.length, at: nowISO().slice(0, 10),
+    };
+    docs.push(entry);
+    await env.DB.prepare("UPDATE companies SET docs=?, updated_at=?, updated_by=? WHERE id=?")
+      .bind(JSON.stringify(docs), nowISO(), me.login, id).run();
+    await audit(env, me, "company.doc.add", id, entry.name);
+    return json({ doc: entry, docs }, 201);
+  }
+
+  if (id && sub === "doc" && req.method === "DELETE") {
+    if (!canWrite) return err("只有管理员和负责人能删资料", 403);
+    const k = String(url.searchParams.get("k") || "");
+    const row = await env.DB.prepare("SELECT * FROM companies WHERE id=?").bind(id).first();
+    if (!row) return err("公司不存在", 404);
+    const docs = coParse(row.docs, []);
+    const hit = docs.find((x) => x.k === k);
+    if (!hit) return err("资料不存在", 404);
+    const rest = docs.filter((x) => x.k !== k);
+    await env.DB.prepare("UPDATE companies SET docs=?, updated_at=?, updated_by=? WHERE id=?")
+      .bind(JSON.stringify(rest), nowISO(), me.login, id).run();
+    try { if (env.PHOTOS) await env.PHOTOS.delete(hit.key); } catch (e) {}
+    await audit(env, me, "company.doc.del", id, hit.name);
+    return json({ ok: true, docs: rest });
+  }
+
+  if (!id && req.method === "POST") {
+    if (!canWrite) return err("只有管理员和负责人能建公司", 403);
+    const r = await coSave(env, me, "", await body());
+    if (r.e) return err(r.e, r.s || 400);
+    const row = await env.DB.prepare("SELECT * FROM companies WHERE id=?").bind(r.id).first();
+    await audit(env, me, "company.create", r.id, row.name);
+    return json({ company: coOut(row) }, 201);
+  }
+
+  if (id && req.method === "GET") {
+    const row = await env.DB.prepare("SELECT * FROM companies WHERE id=?").bind(id).first();
+    if (!row) return err("公司不存在", 404);
+    return json({ company: coOut(row) });
+  }
+
+  if (id && req.method === "PATCH") {
+    if (!canWrite) return err("只有管理员和负责人能改公司", 403);
+    const r = await coSave(env, me, id, await body());
+    if (r.e) return err(r.e, r.s || 400);
+    const row = await env.DB.prepare("SELECT * FROM companies WHERE id=?").bind(id).first();
+    await audit(env, me, "company.update", id, row.name);
+    return json({ company: coOut(row) });
+  }
+
+  if (id && req.method === "DELETE") {
+    if (me.role !== "admin") return err("只有管理员能删公司", 403);
+    const row = await env.DB.prepare("SELECT name FROM companies WHERE id=?").bind(id).first();
+    if (!row) return err("公司不存在", 404);
+    const full = await env.DB.prepare("SELECT docs FROM companies WHERE id=?").bind(id).first();
+    await env.DB.prepare("DELETE FROM companies WHERE id=?").bind(id).run();
+    try {
+      if (env.PHOTOS) for (const d of coParse((full && full.docs) || "[]", [])) await env.PHOTOS.delete(d.key);
+    } catch (e) {}
+    await audit(env, me, "company.delete", id, row.name);
+    return json({ ok: true });
+  }
+  return err("不支持的操作", 405);
+}
 
 /* ---------- 路由 ---------- */
 
@@ -295,6 +1255,7 @@ function postOut(r) {
   const j = (v, d) => { try { const o = JSON.parse(v || ""); return o == null ? d : o; } catch (e) { return d; } };
   return {
     id: r.id, uid: r.uid, name: r.name, body: r.body,
+    body_en: r.body_en || "", body_zh: r.body_zh || "",
     photos: j(r.photos, []), kind: r.kind || "company",
     likes: j(r.likes, []), comments: j(r.comments, []),
     created_at: r.created_at,
@@ -328,6 +1289,8 @@ async function feedSchema(env) {
     "ALTER TABLE posts ADD COLUMN kind TEXT NOT NULL DEFAULT 'company'",
     "ALTER TABLE posts ADD COLUMN likes TEXT NOT NULL DEFAULT '[]'",
     "ALTER TABLE posts ADD COLUMN comments TEXT NOT NULL DEFAULT '[]'",
+    "ALTER TABLE posts ADD COLUMN body_en TEXT NOT NULL DEFAULT ''",
+    "ALTER TABLE posts ADD COLUMN body_zh TEXT NOT NULL DEFAULT ''",
   ]) { try { await env.DB.prepare(sql).run(); } catch (e) {} }
   await env.DB.prepare(`CREATE INDEX IF NOT EXISTS posts_time ON posts(created_at)`).run();
   await env.DB.prepare("DELETE FROM posts WHERE id LIKE 'legacy-%'").run();
@@ -361,6 +1324,108 @@ async function feedApi(req, env, me, seg, body) {
     return new Response(bytes, { headers: { "content-type": "image/jpeg", "cache-control": "private, max-age=31536000" } });
   }
 
+  /* 已经传上去哪几片：换设备、重开页面都能接着传 */
+  if (id === "v" && seg[2] === "status" && req.method === "GET") {
+    const q = feedVidQ(req);
+    const u = String(q.get("u") || "");
+    if (!/^[a-z0-9]{16,40}$/.test(u)) return err("上传号不对");
+    const objs = await feedVidParts(env, u);
+    const parts = objs.map((o) => Number(String(o.key).split("/").pop())).filter((x) => Number.isInteger(x)).sort((a, b) => a - b);
+    return json({ parts });
+  }
+
+  /* 分片上传（大视频走这条）：一片 4MB，断了只补那一片 */
+  if (id === "v" && seg[2] === "part" && req.method === "PUT") {
+    if (!env.PHOTOS) return err("未配置文件存储", 500);
+    const job = feedVidJob(feedVidQ(req));
+    if (job.bad) return job.bad;
+    const i = Number(feedVidQ(req).get("i"));
+    if (!(i >= 0 && i < job.n) || !Number.isInteger(i)) return err("分片号不对");
+    /* 不依赖 content-length：HTTP/2 或分块传输时它可能是空的 */
+    const buf = new Uint8Array(await req.arrayBuffer());
+    if (!buf.byteLength) return err("分片是空的");
+    if (buf.byteLength > FEED_VID_PART + 512 * 1024) return err("分片太大", 413);
+    try {
+      await env.PHOTOS.put(`feed/tmp/${job.u}/${i}`, buf, { httpMetadata: { contentType: "application/octet-stream" } });
+    } catch (e) {
+      return err(`第 ${i + 1} 片存不进 R2：` + ((e && e.message) || e), 500);
+    }
+    await feedVidGc(env);
+    return json({ ok: true, i }, 201);
+  }
+  if (id === "v" && seg[2] === "finish" && req.method === "POST") {
+    if (!env.PHOTOS) return err("未配置文件存储", 500);
+    const q = feedVidQ(req);
+    const job = feedVidJob(q);
+    if (job.bad) return job.bad;
+    /* 同一个上传号只拼一次：合并成功后写个标记，客户端重发直接拿回 key */
+    const markKey = `feed/done/${job.u}`;
+    try {
+      const prev = await env.PHOTOS.get(markKey);
+      if (prev) {
+        const j = JSON.parse(await (prev.text ? prev.text() : new Response(prev.body).text()));
+        if (j && j.key) return json({ key: j.key, again: true });
+      }
+    } catch (e) {}
+    const objs = await feedVidParts(env, job.u);
+    const have = new Map();
+    for (const o of objs) {
+      const m = /(\d+)$/.exec(String(o.key));
+      if (m) have.set(Number(m[1]), o);
+    }
+    const miss = [];
+    for (let i = 0; i < job.n; i++) if (!have.has(i)) miss.push(i + 1);
+    if (miss.length) return err(`还差第 ${miss.slice(0, 6).join("、")} 片，重试一下就能接着传`, 409);
+    let total = 0;
+    const keys = [];
+    for (let i = 0; i < job.n; i++) { total += Number(have.get(i).size) || 0; keys.push(have.get(i).key); }
+    if (total !== job.sz) return err(`分片加起来 ${total} 字节，和文件对不上，重试一下`, 409);
+    const key = `feed/${new Date().toISOString().slice(0, 7)}/${crypto.randomUUID()}.${job.ext}`;
+    try {
+      await feedVidAssemble(env, keys, total, key, job.type);
+    } catch (e) {
+      return err("合并分片失败：" + ((e && e.message) || e), 500);
+    }
+    try { await env.PHOTOS.delete(keys); } catch (e) {}
+    try { await env.PHOTOS.put(markKey, JSON.stringify({ key, at: Date.now() }), { httpMetadata: { contentType: "application/json" } }); } catch (e) {}
+    return json({ key }, 201);
+  }
+  if (id === "v" && seg[2] === "abort" && req.method === "POST") {
+    const u = String(feedVidQ(req).get("u") || "");
+    if (!/^[a-z0-9]{16,40}$/.test(u)) return err("上传号不对");
+    try {
+      const objs = await feedVidParts(env, u);
+      if (objs.length) await env.PHOTOS.delete(objs.map((o) => o.key));
+    } catch (e) {}
+    return json({ ok: true });
+  }
+
+  /* 小视频一次传完：请求体就是文件本身，落进 R2 再回 key */
+  if (id === "v" && !seg[2] && req.method === "POST") {
+    if (!env.PHOTOS) return err("未配置文件存储", 500);
+    const type = String(req.headers.get("content-type") || "").split(";")[0].trim().toLowerCase();
+    const ext = FEED_VID_TYPES[type];
+    if (!ext) return err("只收 MP4 / MOV / WEBM 视频", 415);
+    const lenH = req.headers.get("content-length");
+    const len = lenH === null ? -1 : Number(lenH);
+    if (len === 0) return err("视频是空的");
+    if (len > FEED_VID_MAX) return err("视频太大（限 90MB）", 413);
+    const key = `feed/${new Date().toISOString().slice(0, 7)}/${crypto.randomUUID()}.${ext}`;
+    try {
+      if (len >= 0 && len <= FEED_VID_BUF) {
+        const buf = await req.arrayBuffer();
+        if (!buf.byteLength) return err("视频是空的");
+        if (buf.byteLength > FEED_VID_BUF) return err("视频太大（限 90MB）", 413);
+        await env.PHOTOS.put(key, buf, { httpMetadata: { contentType: type } });
+      } else {
+        await env.PHOTOS.put(key, req.body, { httpMetadata: { contentType: type } });
+      }
+    } catch (e) {
+      return err("存不进 R2：" + ((e && e.message) || e), 500);
+    }
+    return json({ key }, 201);
+  }
+
   if (!id && req.method === "GET") {
     const rows = await env.DB.prepare("SELECT * FROM posts ORDER BY created_at DESC LIMIT 100").all();
     return json({ posts: rows.results.map(postOut) });
@@ -372,8 +1437,9 @@ async function feedApi(req, env, me, seg, body) {
     const photos = normMedia(b.photos);
     if (!text && !photos.length) return err("写点内容再发");
     const pid = crypto.randomUUID().replace(/-/g, "").slice(0, 20);
-    await env.DB.prepare("INSERT INTO posts(id,uid,name,body,photos,kind,likes,comments,created_at) VALUES(?,?,?,?,?,?,?,?,?)")
-      .bind(pid, meId, me.name || meId, text, JSON.stringify(photos), "company", "[]", "[]", nowISO()).run();
+    const tr = await trPair(env, text);
+    await env.DB.prepare("INSERT INTO posts(id,uid,name,body,body_en,body_zh,photos,kind,likes,comments,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?)")
+      .bind(pid, meId, me.name || meId, text, tr.en, tr.zh, JSON.stringify(photos), "company", "[]", "[]", nowISO()).run();
     return json({ ok: true, id: pid }, 201);
   }
 
@@ -393,7 +1459,8 @@ async function feedApi(req, env, me, seg, body) {
     const text = String(b.text || "").trim().slice(0, 300);
     if (!text) return err("写点留言");
     const p = postOut(row);
-    p.comments.push({ uid: meId, by: me.name || meId, text, at: nowISO() });
+    const tr = await trPair(env, text);
+    p.comments.push({ uid: meId, by: me.name || meId, text, text_en: tr.en, text_zh: tr.zh, at: nowISO() });
     await env.DB.prepare("UPDATE posts SET comments=? WHERE id=?").bind(JSON.stringify(p.comments), id).run();
     return json({ ok: true, comments: p.comments });
   }
@@ -413,17 +1480,45 @@ async function feedApi(req, env, me, seg, body) {
     const b = await body();
     const text = String(b.body || "").trim().slice(0, 2000);
     const photos = b.photos === undefined ? postOut(row).photos : normMedia(b.photos);
-    await env.DB.prepare("UPDATE posts SET body=?, photos=? WHERE id=?").bind(text, JSON.stringify(photos), id).run();
+    const tr = await trPair(env, text);
+    await env.DB.prepare("UPDATE posts SET body=?, body_en=?, body_zh=?, photos=? WHERE id=?")
+      .bind(text, tr.en, tr.zh, JSON.stringify(photos), id).run();
+    /* 编辑时把视频/照片删掉了，R2 里那份也别留着 */
+    const keep = new Set(photos.map((m) => String((m && m.u) || "")));
+    const gone = postOut(row).photos.map((m) => String((m && m.u) || "")).filter((k) => k && !keep.has(k));
+    if (gone.length && env.PHOTOS) await feedMediaPurge(env, gone);
     return json({ ok: true });
   }
 
   if (id && !sub && req.method === "DELETE") {
     if (!own) return err("只能删自己发的", 403);
     await env.DB.prepare("DELETE FROM posts WHERE id=?").bind(id).run();
+    /* 动态带的图/视频是自己的，删动态就顺手清掉；老动态的 feed/old 是包内资源，不动 */
+    if (env.PHOTOS) await feedMediaPurge(env, postOut(row).photos.map((m) => (m && m.u) || ""));
     return json({ ok: true });
   }
 
   return err("不支持的操作", 404);
+}
+
+/* 删文件前先查全库引用：同一张图可能被动态和账目同时引用，别人也可能猜到 key。
+   只删"谁都不用了"的，宁可留垃圾也不误删。 */
+async function feedMediaPurge(env, keys) {
+  const cands = [...new Set(keys.map((k) => String(k || "")))]
+    .filter((k) => /^(feed|fin|prod)\//.test(k) && !k.startsWith("feed/old/"));
+  if (!cands.length || !env.PHOTOS) return 0;
+  const used = new Set();
+  try {
+    for (const t of ["posts", "fin_entries"]) {
+      const r = await env.DB.prepare(`SELECT photos FROM ${t}`).all();
+      for (const row of r.results || []) for (const m of coParse(row.photos, [])) used.add(String((m && m.u) || ""));
+    }
+  } catch (e) {
+    return 0;
+  }
+  const drop = cands.filter((k) => !used.has(k));
+  for (const k of drop) { try { await env.PHOTOS.delete(k); } catch (e) {} }
+  return drop.length;
 }
 
 function normMedia(list) {
@@ -434,10 +1529,471 @@ function normMedia(list) {
     .filter((m) => m.u);
 }
 
+/* 动态视频：原文件直传 R2（不走 base64），播放要靠 Range，否则 iOS 上点开就是黑屏 */
+const FEED_VID_MAX = 90 * 1024 * 1024;
+/* 小视频先读进内存（稳），大的直接流进 R2（Worker 内存只有 128MB，别硬扛） */
+const FEED_VID_BUF = 8 * 1024 * 1024;
+/* 手机网络传几十兆：切成 4MB 片，断一片只重传一片 */
+const FEED_VID_PART = 4 * 1024 * 1024;
+const FEED_VID_PARTS = 24;
+const feedVidQ = (req) => new URL(req.url).searchParams;
+function feedVidJob(q) {
+  const u = String(q.get("u") || "");
+  const n = Number(q.get("n"));
+  const sz = Number(q.get("sz"));
+  const type = String(q.get("t") || "");
+  if (!/^[a-z0-9]{16,40}$/.test(u)) return { bad: err("上传号不对") };
+  if (!FEED_VID_TYPES[type]) return { bad: err("只收 MP4 / MOV / WEBM 视频", 415) };
+  if (!(n >= 1 && n <= FEED_VID_PARTS) || !Number.isInteger(n)) return { bad: err("分片数不对") };
+  if (!(sz > 0 && sz <= FEED_VID_MAX)) return { bad: err("视频太大（限 90MB）", 413) };
+  return { u, n, sz, type, ext: FEED_VID_TYPES[type] };
+}
+/* 列一个上传号下已经到位的分片：一次 list 就够，比逐个 head 省子请求 */
+async function feedVidParts(env, u) {
+  if (!env.PHOTOS || typeof env.PHOTOS.list !== "function") return [];
+  const r = await env.PHOTOS.list({ prefix: `feed/tmp/${u}/`, limit: 100 });
+  return r.objects || [];
+}
+let FEED_GC_AT = 0;
+/* 传一半放弃的分片会躺在 R2 里，每小时最多扫一次，3 天前的清掉 */
+async function feedVidGc(env) {
+  const now = Date.now();
+  if (now - FEED_GC_AT < 3600 * 1000) return;
+  FEED_GC_AT = now;
+  try {
+    const stale = [];
+    for (const prefix of ["feed/tmp/", "feed/done/"]) {
+      const r = await env.PHOTOS.list({ prefix, limit: 200 });
+      for (const o of r.objects || []) {
+        if (o.uploaded && now - new Date(o.uploaded).getTime() > 3 * 86400 * 1000) stale.push(o.key);
+      }
+    }
+    if (stale.length) await env.PHOTOS.delete(stale);
+  } catch (e) {}
+}
+/* R2 的 put 只收"已知长度"的流：用 FixedLengthStream 把总字节数告诉它，
+   否则线上直接 500（Provided readable stream must have a known length） */
+async function feedVidAssemble(env, keys, total, key, type) {
+  const opt = { httpMetadata: { contentType: type } };
+  if (typeof FixedLengthStream === "function") {
+    const fls = new FixedLengthStream(total);
+    const pump = feedVidJoin(env, keys).pipeTo(fls.writable).catch(() => {});
+    try {
+      await env.PHOTOS.put(key, fls.readable, opt);
+    } finally {
+      await pump;
+    }
+    return;
+  }
+  /* 老运行时没有 FixedLengthStream：整段读进内存，只放行 48MB 以内 */
+  if (total > 48 * 1024 * 1024) throw new Error("这个运行时不支持流式合并，请把视频压小一点");
+  const all = new Uint8Array(total);
+  let off = 0;
+  for (const k of keys) {
+    const o = await env.PHOTOS.get(k);
+    const b = new Uint8Array(await o.arrayBuffer());
+    all.set(b, off);
+    off += b.byteLength;
+  }
+  await env.PHOTOS.put(key, all, opt);
+}
+/* 分片顺序拼成一个流交给 R2：一次只读一片，内存里不留整段视频 */
+function feedVidJoin(env, keys) {
+  let i = 0, reader = null;
+  return new ReadableStream({
+    async pull(ctrl) {
+      for (;;) {
+        if (!reader) {
+          if (i >= keys.length) { ctrl.close(); return; }
+          const obj = await env.PHOTOS.get(keys[i++]);
+          if (!obj) { ctrl.error(new Error("缺分片")); return; }
+          reader = obj.body.getReader ? obj.body.getReader() : null;
+          if (!reader) { ctrl.enqueue(new Uint8Array(obj.body)); continue; }
+        }
+        const step = await reader.read();
+        if (step.done) { reader = null; continue; }
+        ctrl.enqueue(step.value);
+        return;
+      }
+    },
+  });
+}
+const FEED_VID_TYPES = {
+  "video/mp4": "mp4", "video/quicktime": "mov", "video/x-m4v": "m4v",
+  "video/webm": "webm", "video/3gpp": "3gp",
+};
+
 /* ---------- 财务：接口 ---------- */
-const FIN_KINDS = ["out", "in", "float", "move"];
-const finSeeAll = (u) => u.role === "admin" || u.role === "manager";
-const FIN_DEFAULT_CATS = { life: [], project: [], names: {} };
+const FIN_KINDS = ["out", "in", "float", "move", "transfer"];
+const finSeeAll = (u) => u.role === "admin" || u.role === "manager" || u.role === "finance";
+/* 账目可见范围：管理员 / 财务看全局（null）；负责人看负责人 + 员工；员工只看自己 */
+async function finVisible(env, me) {
+  if (me.role === "admin" || me.role === "finance" || me.login === (env.FIN_OWNER || "frank")) return null;
+  const set = new Set([me.login]);
+  if (me.role === "manager") {
+    const r = await env.DB.prepare("SELECT login FROM users WHERE role IN ('manager','staff')").all();
+    for (const x of r.results) set.add(x.login);
+  }
+  return set;
+}
+const FIN_DEFAULT_CATS = { life: [], project: [], licence: [], names: {} };
+/* 老分类并进新分类（接口写入时也自动纠正） */
+const FIN_CAT_MERGE = { daily: "misc", postage: "misc", other: "misc", lodging: "meal" };
+const finCatNorm = (k) => FIN_CAT_MERGE[String(k || "")] || String(k || "");
+
+/* ---------- 待办：自己记、派给别人、公司事项公开跟踪 ---------- */
+let todoOk = false;
+async function todoSchema(env) {
+  if (todoOk) return;
+  await env.DB.prepare(
+    `CREATE TABLE IF NOT EXISTS todos (
+       id TEXT PRIMARY KEY, title TEXT NOT NULL, note TEXT NOT NULL DEFAULT '',
+       scope TEXT NOT NULL DEFAULT 'self', owner TEXT NOT NULL DEFAULT '', owner_name TEXT NOT NULL DEFAULT '',
+       creator TEXT NOT NULL DEFAULT '', creator_name TEXT NOT NULL DEFAULT '',
+       due TEXT NOT NULL DEFAULT '', status TEXT NOT NULL DEFAULT 'todo', imp INTEGER NOT NULL DEFAULT 0,
+       done_at TEXT NOT NULL DEFAULT '', created_at TEXT NOT NULL, updated_at TEXT NOT NULL,
+       deleted INTEGER NOT NULL DEFAULT 0, files TEXT NOT NULL DEFAULT '[]')`
+  ).run();
+  await env.DB.prepare(
+    `CREATE TABLE IF NOT EXISTS todo_notes (
+       id TEXT PRIMARY KEY, todo_id TEXT NOT NULL, uid TEXT NOT NULL, name TEXT NOT NULL DEFAULT '',
+       kind TEXT NOT NULL DEFAULT 'cmt', body TEXT NOT NULL DEFAULT '', created_at TEXT NOT NULL)`
+  ).run();
+  for (const sql of [
+    "ALTER TABLE todo_notes ADD COLUMN flag TEXT NOT NULL DEFAULT ''",
+    "ALTER TABLE todo_notes ADD COLUMN reply_to TEXT NOT NULL DEFAULT ''",
+  ]) { try { await env.DB.prepare(sql).run(); } catch {} }
+  for (const sql of [
+    "ALTER TABLE todos ADD COLUMN imp INTEGER NOT NULL DEFAULT 0",
+    "ALTER TABLE todos ADD COLUMN done_at TEXT NOT NULL DEFAULT ''",
+    "ALTER TABLE todos ADD COLUMN started_at TEXT NOT NULL DEFAULT ''",
+    "ALTER TABLE todos ADD COLUMN deleted INTEGER NOT NULL DEFAULT 0",
+    "ALTER TABLE todos ADD COLUMN last_report_at TEXT NOT NULL DEFAULT ''",
+    "ALTER TABLE todos ADD COLUMN last_report_by TEXT NOT NULL DEFAULT ''",
+    "ALTER TABLE todos ADD COLUMN last_flag TEXT NOT NULL DEFAULT ''",
+    "ALTER TABLE todos ADD COLUMN assign_at TEXT NOT NULL DEFAULT ''",
+    "ALTER TABLE todos ADD COLUMN self_set INTEGER NOT NULL DEFAULT 0",
+    "ALTER TABLE todos ADD COLUMN files TEXT NOT NULL DEFAULT '[]'",
+    "ALTER TABLE todos ADD COLUMN submit_at TEXT NOT NULL DEFAULT ''",
+    "ALTER TABLE todos ADD COLUMN submit_by TEXT NOT NULL DEFAULT ''",
+    "ALTER TABLE todos ADD COLUMN submit_note TEXT NOT NULL DEFAULT ''",
+    "ALTER TABLE todos ADD COLUMN review_at TEXT NOT NULL DEFAULT ''",
+    "ALTER TABLE todos ADD COLUMN review_by TEXT NOT NULL DEFAULT ''",
+    "ALTER TABLE todos ADD COLUMN review_note TEXT NOT NULL DEFAULT ''",
+    "ALTER TABLE todos ADD COLUMN review_result TEXT NOT NULL DEFAULT ''",
+    "ALTER TABLE todos ADD COLUMN rounds INTEGER NOT NULL DEFAULT 0",
+  ]) { try { await env.DB.prepare(sql).run(); } catch {} }
+  /* 指派即开工：老数据里停在「待开始」的并进「进行中」，起点取创建时间 */
+  try {
+    await env.DB.prepare(
+      `UPDATE todos SET status='doing',
+         started_at=CASE WHEN started_at='' THEN created_at ELSE started_at END,
+         assign_at=CASE WHEN assign_at='' THEN created_at ELSE assign_at END
+       WHERE status='todo'`
+    ).run();
+  } catch {}
+  try { await env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_todo_notes ON todo_notes(todo_id)").run(); } catch {}
+  todoOk = true;
+}
+
+const TODO_SCOPES = ["self", "person", "company"];
+/* doing 进行中 → submitted 已提交待审核 → done 审核通过；驳回回到 doing */
+const TODO_STATUS = ["doing", "submitted", "done"];
+const newId = (p) => p + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const TODO_FILES = (r) => { try { const v = JSON.parse(r.files || "[]"); return Array.isArray(v) ? v : []; } catch { return []; } };
+const TODO_MIME = /^(application\/pdf|image\/(png|jpeg|jpg|webp|gif)|text\/plain|text\/csv|application\/zip|application\/msword|application\/vnd\.ms-excel|application\/vnd\.ms-powerpoint|application\/vnd\.openxmlformats-officedocument\.(wordprocessingml\.document|spreadsheetml\.sheet|presentationml\.presentation))$/;
+const TODO_EXT = { "application/pdf": "pdf", "image/png": "png", "image/jpeg": "jpg", "image/jpg": "jpg", "image/webp": "webp", "image/gif": "gif", "text/plain": "txt", "text/csv": "csv", "application/zip": "zip", "application/msword": "doc", "application/vnd.ms-excel": "xls", "application/vnd.ms-powerpoint": "ppt", "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "xlsx", "application/vnd.openxmlformats-officedocument.presentationml.presentation": "pptx" };
+const dayOk = (s) => !s || /^\d{4}-\d{2}-\d{2}$/.test(s);
+
+async function todoApi(req, env, me, seg, body) {
+  await todoSchema(env);
+  const id = seg[1] || "";
+  const sub = seg[2] || "";
+  const meId = me.login;
+  const isAdmin = me.role === "admin";
+
+  if (!id && req.method === "GET") {
+    const rows = await env.DB.prepare("SELECT * FROM todos WHERE deleted=0 ORDER BY created_at DESC").all();
+    const ns = await env.DB.prepare("SELECT * FROM todo_notes ORDER BY created_at").all();
+    const by = {};
+    for (const n of ns.results) (by[n.todo_id] = by[n.todo_id] || []).push(n);
+    return json({ me: meId, todos: rows.results.map((r) => ({ ...r, notes: by[r.id] || [], files: TODO_FILES(r) })) });
+  }
+
+  if (!id && req.method === "POST") {
+    const b = await body();
+    const title = String(b.title || "").trim();
+    if (!title) return err("请填标题");
+    if (title.length > 200) return err("标题最多 200 字");
+    const scope = TODO_SCOPES.includes(b.scope) ? b.scope : "self";
+    /* 派活是管理层的事，员工只能给自己排；前端已经收口，这里兜住直接打接口的 */
+    if (scope === "person" && !isAdmin && me.role !== "manager") return err("派活只给管理员或负责人", 403);
+    const due = String(b.due || "").trim();
+    if (!dayOk(due)) return err("截止日期格式不对");
+    let owner = String(b.owner || "").trim();
+    let ownerName = "";
+    if (scope === "self") { owner = meId; ownerName = me.name; }
+    else if (scope === "person") {
+      if (!owner) return err("请选执行人");
+      const u = await env.DB.prepare("SELECT * FROM users WHERE lower(login)=lower(?) AND deleted=0").bind(owner).first();
+      if (!u) return err("找不到这个执行人", 404);
+      owner = u.login; ownerName = u.name;
+    } else {
+      /* 公司事项：不指定人就是所有相关同事一起跟 */
+      if (owner) {
+        const u = await env.DB.prepare("SELECT * FROM users WHERE lower(login)=lower(?) AND deleted=0").bind(owner).first();
+        if (u) { owner = u.login; ownerName = u.name; }
+      }
+    }
+    const now = nowISO();
+    const tid = newId("t");
+    const selfSet = scope === "self" ? 1 : 0;
+    await env.DB.prepare(
+      `INSERT INTO todos(id,title,note,scope,owner,owner_name,creator,creator_name,due,status,imp,created_at,updated_at,started_at,assign_at,self_set)
+       VALUES(?,?,?,?,?,?,?,?,?, 'doing', ?,?,?,?,?,?)`
+    ).bind(tid, title, String(b.note || "").trim().slice(0, 2000), scope, owner, ownerName, meId, me.name, due,
+      b.imp ? 1 : 0, now, now, now, now, selfSet).run();
+    /* 归属从创建那一刻就定下来：谁派的、派给谁，时间线上写清楚 */
+    const line = selfSet ? "自己给自己排的任务" : owner ? `指派给 ${ownerName || owner}` : "公司事项，大家一起跟";
+    await env.DB.prepare("INSERT INTO todo_notes(id,todo_id,uid,name,kind,body,created_at) VALUES(?,?,?,?,?,?,?)")
+      .bind(newId("n"), tid, meId, me.name, "assign", line, now).run();
+    await audit(env, me, "todo.create", tid, title);
+    return json({ id: tid, status: "doing", owner }, 201);
+  }
+
+  const row = id ? await env.DB.prepare("SELECT * FROM todos WHERE id=?").bind(id).first() : null;
+  if (id && (!row || row.deleted)) return err("待办不存在", 404);
+  const mine = row && (row.creator === meId || row.owner === meId);
+
+  if (id && !sub && req.method === "PATCH") {
+    if (!mine && !isAdmin && me.role !== "manager") return err("只有发起人、执行人或负责人能改", 403);
+    const b = await body();
+    const title = b.title === undefined ? row.title : String(b.title || "").trim();
+    if (!title) return err("请填标题");
+    if (title.length > 200) return err("标题最多 200 字");
+    const due = b.due === undefined ? row.due : String(b.due || "").trim();
+    if (!dayOk(due)) return err("截止日期格式不对");
+    const scope = TODO_SCOPES.includes(b.scope) ? b.scope : row.scope;
+    let owner = b.owner === undefined ? row.owner : String(b.owner || "").trim();
+    let ownerName = b.owner === undefined ? row.owner_name : "";
+    if (b.owner !== undefined && owner) {
+      const u = await env.DB.prepare("SELECT * FROM users WHERE lower(login)=lower(?) AND deleted=0").bind(owner).first();
+      if (!u) return err("找不到这个执行人", 404);
+      owner = u.login; ownerName = u.name;
+    }
+    if (scope === "self") { owner = row.creator; ownerName = row.creator_name; }
+    /* 改派 = 换归属，同样只给管理层 */
+    if (owner !== row.owner && !isAdmin && me.role !== "manager") return err("只有管理员或负责人能改派", 403);
+    /* 状态归工作流管：执行人只能「提交完成申请」，派活的人审核通过才算完成。
+       直接改状态只留给发起人/管理员（确认完成、重开）。 */
+    let status = row.status;
+    if (b.status !== undefined) {
+      if (!mine && !isAdmin && me.role !== "manager") return err("只有发起人、执行人或负责人能改状态", 403);
+      const want = b.status === "done" ? "done" : b.status === "submitted" ? "submitted" : "doing";
+      /* 完成只能由派活的人确认（管理员可代审）；执行人即使已提交申请，也不能自己把状态改成完成 */
+      if (want === "done" && row.creator !== meId && !isAdmin)
+        return err("完成后要由派活的人审核确认；执行人请点「提交完成」", 403);
+      if (want === "submitted") return err("请用「提交完成申请」", 400);
+      status = want;
+    }
+    const doneAt = status === "done" ? (row.status === "done" ? row.done_at : nowISO()) : "";
+    const moved = owner !== row.owner;
+    const now = nowISO();
+    await env.DB.prepare(
+      `UPDATE todos SET title=?,note=?,scope=?,owner=?,owner_name=?,due=?,status=?,imp=?,done_at=?,updated_at=?,
+         last_report_at=?,last_report_by=?,last_flag=?,assign_at=? WHERE id=?`
+    ).bind(title, b.note === undefined ? row.note : String(b.note || "").trim().slice(0, 2000), scope, owner, ownerName,
+      due, status, b.imp === undefined ? row.imp : (b.imp ? 1 : 0), doneAt, now,
+      /* 换人接手就从零开始算汇报，别拿上一个人的记录充数 */
+      moved ? "" : row.last_report_at, moved ? "" : row.last_report_by, moved ? "" : row.last_flag,
+      moved ? now : (row.assign_at || row.created_at), row.id).run();
+    const say = (kind, body) => env.DB.prepare("INSERT INTO todo_notes(id,todo_id,uid,name,kind,body,created_at) VALUES(?,?,?,?,?,?,?)")
+      .bind(newId("n"), row.id, meId, me.name, kind, body, now);
+    if (moved) await say("assign", owner ? `改派给 ${ownerName || owner}，汇报重新开始` : "改回公司事项，大家一起跟").run();
+    else if (status !== row.status) await say("sys", status === "done" ? "确认完成" : "重新打开").run();
+    await audit(env, me, "todo.update", row.id, title);
+    return json({ ok: true, status, owner });
+  }
+
+  /* 每日汇报：派给谁就由谁报；公司事项没指派时，谁都能跟一句（但不算某人汇报，也不改归属） */
+  if (id && (sub === "start" || sub === "report") && req.method === "POST") {
+    if (row.status === "done") return err("已经完成了，不用再汇报", 400);
+    if (row.status === "submitted") return err("已提交完成申请，等审核；要补充就留言", 400);
+    const b = await body();
+    const flag = ["progress", "blocked", "idle"].includes(b.flag) ? b.flag : "progress";
+    let text = String(b.text || "").trim().slice(0, 1000);
+    if (!text) text = flag === "idle" ? "今天没动" : flag === "blocked" ? "卡住了，需要支持" : "有推进";
+    const assigned = !!row.owner;
+    /* 汇报只认归属人：管理员也不能替员工报，否则「日日汇报」就假了 */
+    if (assigned && row.owner !== meId) {
+      return err(`这条派给 ${row.owner_name || row.owner} 了，由他汇报，你可以留言`, 403);
+    }
+    const now = nowISO();
+    await env.DB.prepare("INSERT INTO todo_notes(id,todo_id,uid,name,kind,flag,body,created_at) VALUES(?,?,?,?,?,?,?,?)")
+      .bind(newId("n"), row.id, meId, me.name, assigned ? "report" : "cmt", flag, text, now).run();
+    if (assigned) {
+      await env.DB.prepare("UPDATE todos SET last_report_at=?,last_report_by=?,last_flag=?,updated_at=? WHERE id=?")
+        .bind(now, meId, flag, now, row.id).run();
+    } else {
+      await env.DB.prepare("UPDATE todos SET updated_at=? WHERE id=?").bind(now, row.id).run();
+    }
+    await audit(env, me, "todo.report", row.id, text.slice(0, 60));
+    return json({ ok: true, status: row.status, flag, reported: assigned });
+  }
+
+  /* 提交完成申请：只有干活的人能提交；派活的人审核通过才算完成 */
+  if (id && sub === "submit" && req.method === "POST") {
+    if (row.status === "done") return err("已经完成了", 400);
+    if (row.status === "submitted") return err("已经提交了，等发起人审核", 409);
+    const selfTask = row.creator === meId && (!row.owner || row.owner === meId);
+    const isOwner = !!row.owner && row.owner === meId;
+    const coOpen = row.scope === "company" && !row.owner && (isAdmin || me.role === "manager");
+    if (!isOwner && !selfTask && !coOpen) {
+      return err(row.owner ? `这条派给 ${row.owner_name || row.owner} 了，由他提交完成` : "只有负责人能提交完成", 403);
+    }
+    const b = await body();
+    const note = String(b.note || "").trim().slice(0, 1000);
+    const now = nowISO();
+    const rounds = (row.rounds || 0) + 1;
+    const say = (kind, body) => env.DB.prepare("INSERT INTO todo_notes(id,todo_id,uid,name,kind,body,created_at) VALUES(?,?,?,?,?,?,?)")
+      .bind(newId("n"), row.id, meId, me.name, kind, body, now);
+    if (selfTask) {
+      /* 自己给自己排的，提交即完成，不用自己审自己 */
+      await env.DB.prepare(
+        `UPDATE todos SET status='done', done_at=?, submit_at=?, submit_by=?, submit_note=?,
+           review_at=?, review_by=?, review_result='pass', review_note=?, rounds=?, updated_at=? WHERE id=?`
+      ).bind(now, now, meId, note, now, meId, "自己排的活，提交即完成", rounds, now, row.id).run();
+      await say("submit", note || "完成").run();
+      await audit(env, me, "todo.submit", row.id, row.title);
+      return json({ ok: true, status: "done", rounds, self: true });
+    }
+    await env.DB.prepare(
+      `UPDATE todos SET status='submitted', submit_at=?, submit_by=?, submit_note=?, review_at='',
+         review_by='', review_result='', review_note='', rounds=?, updated_at=? WHERE id=?`
+    ).bind(now, meId, note, rounds, now, row.id).run();
+    await say("submit", note || "提交完成申请，等审核").run();
+    await audit(env, me, "todo.submit", row.id, row.title);
+    return json({ ok: true, status: "submitted", rounds });
+  }
+
+  /* 审核：只有派活的人（管理员可代）能批；驳回必须写原因，任务回到进行中继续做 */
+  if (id && sub === "review" && req.method === "POST") {
+    if (row.creator !== meId && !isAdmin) return err("只有派活的人能审核", 403);
+    if (row.status !== "submitted") return err("这条还没有提交完成申请", 400);
+    const b = await body();
+    const pass = b.pass === true || b.pass === 1 || b.pass === "1" || b.pass === "true";
+    const note = String(b.note || "").trim().slice(0, 1000);
+    if (!pass && !note) return err("驳回要写清哪里还没做完", 400);
+    const now = nowISO();
+    const say = (kind, body, flag) => env.DB.prepare("INSERT INTO todo_notes(id,todo_id,uid,name,kind,flag,body,created_at) VALUES(?,?,?,?,?,?,?,?)")
+      .bind(newId("n"), row.id, meId, me.name, kind, flag || "", body, now);
+    if (pass) {
+      await env.DB.prepare(
+        "UPDATE todos SET status='done', done_at=?, review_at=?, review_by=?, review_result='pass', review_note=?, updated_at=? WHERE id=?"
+      ).bind(now, now, meId, note, now, row.id).run();
+      await say("review", note || "审核通过，任务完成", "pass").run();
+    } else {
+      await env.DB.prepare(
+        `UPDATE todos SET status='doing', done_at='', submit_at='', submit_by='',
+           review_at=?, review_by=?, review_result='reject', review_note=?, updated_at=? WHERE id=?`
+      ).bind(now, meId, note, now, row.id).run();
+      await say("review", note, "reject").run();
+    }
+    await audit(env, me, pass ? "todo.approve" : "todo.reject", row.id, row.title);
+    return json({ ok: true, status: pass ? "done" : "doing" });
+  }
+
+  if (id && !sub && req.method === "DELETE") {
+    if (row.creator !== meId && !isAdmin) return err("只有发起人或管理员能删", 403);
+    await env.DB.prepare("UPDATE todos SET deleted=1,updated_at=? WHERE id=?").bind(nowISO(), row.id).run();
+    await audit(env, me, "todo.delete", row.id, row.title);
+    return json({ ok: true });
+  }
+
+  if (id && sub === "notes" && req.method === "POST") {
+    const b = await body();
+    const text = String(b.text || "").trim().slice(0, 1000);
+    if (!text) return err("写点内容再发");
+    /* 回复某条留言：只认同一条待办下的留言 id，串了就当普通留言 */
+    let replyTo = String(b.reply_to || "").trim().slice(0, 40);
+    if (replyTo) {
+      const q = await env.DB.prepare("SELECT id FROM todo_notes WHERE id=? AND todo_id=?").bind(replyTo, row.id).first();
+      if (!q) replyTo = "";
+    }
+    await env.DB.prepare("INSERT INTO todo_notes(id,todo_id,uid,name,kind,body,created_at,reply_to) VALUES(?,?,?,?,'cmt',?,?,?)")
+      .bind(newId("n"), row.id, meId, me.name, text, nowISO(), replyTo).run();
+    await env.DB.prepare("UPDATE todos SET updated_at=? WHERE id=?").bind(nowISO(), row.id).run();
+    return json({ ok: true }, 201);
+  }
+
+  /* 附件：一项待办可以挂多个文件，实体在 R2 todo/<id>/<k>.<ext> */
+  if (id && sub === "file") {
+    const files = TODO_FILES(row);
+    const qs = new URL(req.url).searchParams;
+    const want = seg[3] || qs.get("k") || "";
+    /* 公司事项没指定人时，跟留言一样谁都能补附件 */
+    const canEdit = mine || isAdmin || me.role === "manager" || (row.scope === "company" && !row.owner);
+    if (req.method === "GET") {
+      const f = files.find((x) => x.k === want);
+      if (!f) return err("附件不存在", 404);
+      if (!env.PHOTOS) return err("未配置文件存储", 500);
+      const obj = await env.PHOTOS.get(f.key);
+      if (!obj) return err("附件不存在", 404);
+      /* 只有图片和 PDF 允许直接内嵌预览，其余一律走下载，避免 HTML/SVG 在本域执行 */
+      const inline = /^(image\/|application\/pdf)/.test(f.mime || "");
+      return new Response(obj.body, {
+        headers: {
+          "content-type": f.mime || "application/octet-stream",
+          "content-disposition": (inline ? "inline" : "attachment") + "; filename*=UTF-8''" + encodeURIComponent(f.name || want),
+          "cache-control": "private, max-age=86400",
+        },
+      });
+    }
+    if (!canEdit) return err("只有发起人、执行人或负责人能改附件", 403);
+    if (req.method === "POST") {
+      if (!env.PHOTOS) return err("未配置文件存储", 500);
+      const b = await body();
+      const m = /^data:([a-z0-9.+/-]+);base64,([A-Za-z0-9+/=]+)$/i.exec(String(b.data || ""));
+      if (!m) return err("文件格式不对");
+      const mime = m[1].toLowerCase();
+      if (!TODO_MIME.test(mime)) return err("不支持这种文件（PDF / 图片 / Office / 文本 / ZIP）");
+      const bytes = Uint8Array.from(atob(m[2]), (ch) => ch.charCodeAt(0));
+      if (bytes.length > 25 * 1024 * 1024) return err("文件超过 25MB，请线下提供（U 盘 / 网盘 / 邮件）");
+      if (files.length >= 20) return err("每项最多 20 个附件");
+      const k = "a" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+      const ext = (TODO_EXT[mime] || mime.split("/")[1] || "bin").replace(/[^a-z0-9]/g, "").slice(0, 8);
+      const key = "todo/" + id + "/" + k + "." + ext;
+      await env.PHOTOS.put(key, bytes, { httpMetadata: { contentType: mime } });
+      const entry = {
+        k, key, mime, size: bytes.length,
+        name: String(b.name || "").slice(0, 160) || k + "." + ext,
+        at: nowISO().slice(0, 10), by: me.name || me.login, by_login: meId,
+      };
+      files.push(entry);
+      await env.DB.prepare("UPDATE todos SET files=?, updated_at=? WHERE id=?").bind(JSON.stringify(files), nowISO(), id).run();
+      await audit(env, me, "todo.file.add", id, entry.name);
+      return json({ ok: true, file: entry, files }, 201);
+    }
+    if (req.method === "DELETE") {
+      const f = files.find((x) => x.k === want);
+      if (!f) return err("附件不存在", 404);
+      if (env.PHOTOS) { try { await env.PHOTOS.delete(f.key); } catch {} }
+      const left = files.filter((x) => x.k !== want);
+      await env.DB.prepare("UPDATE todos SET files=?, updated_at=? WHERE id=?").bind(JSON.stringify(left), nowISO(), id).run();
+      await audit(env, me, "todo.file.del", id, f.name || want);
+      return json({ ok: true, files: left });
+    }
+    return err("不支持的操作", 405);
+  }
+
+  return err("not found", 404);
+}
+
+/* 水单列表：带「已核笔数」和「逐笔合计与表头期末的差额」 */
+const FIN_BANK_SEL = "SELECT s.*,"
+  + " (SELECT COUNT(*) FROM fin_bank_tx t WHERE t.stmt_id=s.id AND t.state='matched') ok_n,"
+  + " ROUND(s.open_bal + (SELECT COALESCE(SUM(t.credit)-SUM(t.debit),0) FROM fin_bank_tx t WHERE t.stmt_id=s.id) - s.close_bal, 2) gap"
+  + " FROM fin_bank_stmt s WHERE s.deleted=0";
 
 async function finCfgGet(env, k, dflt) {
   const r = await env.DB.prepare("SELECT v FROM fin_cfg WHERE k=?").bind(k).first();
@@ -450,6 +2006,108 @@ const finCfgSet = (env, k, v) =>
 
 const finRow = (r) => ({ ...r, photos: r.photos ? JSON.parse(r.photos) : [] });
 
+/* 银行账户信息：一个人可以有多个（ZMW / USD …），记「卡名 · 银行 · 账号 · 币种 · 期初」。
+   每条卡有稳定 id：账单/原件只存 card_id 指过来，不再各自抄一份银行+账号。
+   期初只认每张卡自己的数；账户的 card 汇总仍由调用方维护（= 各卡期初之和），
+   没有 bal 的老数据保留 null，界面上显示「未分配」，不会被当成 0 冲掉。 */
+const FIN_CCY = ["ZMW", "USD", "CNY", "EUR", "ZAR", "OTHER"];
+/* 账从 2026-11-01 起算：报表期初和各账户对账基准日的默认值都落在这天 */
+const FIN_START = "2026-11-01";
+const newBankId = () => "c" + crypto.randomUUID().replace(/-/g, "").slice(0, 15);
+const finBanksClean = (v) => {
+  let arr = v;
+  if (typeof arr === "string") { try { arr = JSON.parse(arr); } catch (e) { arr = []; } }
+  if (!Array.isArray(arr)) return [];
+  const cut = (x, n) => String(x == null ? "" : x).trim().slice(0, n);
+  return arr.filter((x) => x && (x.bank || x.no)).slice(0, 6).map((x) => {
+    const ccy = cut(x.ccy, 6).toUpperCase();
+    const out = {
+      id: cut(x.id, 24).toLowerCase().replace(/[^a-z0-9]/g, ""),
+      name: cut(x.name, 30), holder: cut(x.holder, 60),
+      bank: cut(x.bank, 40), no: cut(x.no, 40), ccy: FIN_CCY.includes(ccy) ? ccy : (ccy || "ZMW"),
+    };
+    const bal = x.bal === null || x.bal === undefined || x.bal === "" ? NaN : Number(x.bal);
+    if (Number.isFinite(bal)) out.bal = Math.round(bal * 100) / 100;
+    return out;
+  });
+};
+/* 银行卡是唯一口径：卡号全局唯一，一张卡只能属于一个主体 */
+const finCardAny = async (env, id) => {
+  const want = String(id || "");
+  if (!want) return null;
+  const rows = (await env.DB.prepare("SELECT uid, name, banks FROM fin_accounts").all()).results || [];
+  for (const r of rows) {
+    const c = finBanks(r).find((x) => x.id && x.id === want);
+    if (c) return { ...c, uid: r.uid, name: r.name || r.uid };
+  }
+  return null;
+};
+const finCardOf = async (env, uid, id) => {
+  const row = await env.DB.prepare("SELECT * FROM fin_accounts WHERE uid=?").bind(String(uid || "")).first();
+  return finBanks(row).find((c) => c.id && c.id === String(id || "")) || null;
+};
+const finBankClash = async (env, uid, banks) => {
+  const want = new Set(banks.map((b) => b.no).filter(Boolean));
+  if (!want.size) return null;
+  const rows = (await env.DB.prepare("SELECT uid, name, banks FROM fin_accounts").all()).results || [];
+  for (const r of rows) {
+    if (r.uid === uid) continue;
+    for (const b of finBanks(r)) if (b.no && want.has(b.no)) return { no: b.no, uid: r.uid, name: r.name || r.uid };
+  }
+  return null;
+};
+/* 老数据补 id，并让没 card_id 的账单 / 原件按「同主体同账号」回指到卡 */
+async function finBankCardFix(env) {
+  const rows = (await env.DB.prepare("SELECT uid, banks FROM fin_accounts").all()).results || [];
+  const byUidNo = new Map(), used = new Set();
+  for (const r of rows) {
+    const arr = finBanksClean(r.banks);
+    if (!arr.length) continue;
+    let dirty = false;
+    const fixed = arr.map((b) => {
+      const out = { ...b };
+      if (!out.id || used.has(out.id)) { out.id = newBankId(); dirty = true; }
+      used.add(out.id);
+      if (out.no) byUidNo.set(r.uid + "|" + out.no, out.id);
+      return out;
+    });
+    if (dirty) await env.DB.prepare("UPDATE fin_accounts SET banks=? WHERE uid=?").bind(JSON.stringify(fixed), r.uid).run();
+  }
+  for (const t of ["fin_bank_stmt", "fin_bank_doc"]) {
+    const miss = (await env.DB.prepare(`SELECT id, uid, acct_no FROM ${t} WHERE card_id='' AND acct_no<>''`).all()).results || [];
+    for (const x of miss) {
+      const cid = byUidNo.get(x.uid + "|" + x.acct_no);
+      if (cid) await env.DB.prepare(`UPDATE ${t} SET card_id=? WHERE id=?`).bind(cid, x.id).run();
+    }
+  }
+}
+const finBanks = (row) => {
+  if (!row) return [];
+  const arr = finBanksClean(row.banks);
+  if (arr.length) return arr;
+  return row.bank || row.card_no ? finBanksClean([{ bank: row.bank, no: row.card_no, ccy: "ZMW" }]) : [];
+};
+
+/* 账号名（login）是账目、账户、待办的关联键：改名必须把这些一起搬过去，
+   否则旧记录全挂在旧名下，本人「我的」视图直接空白。 */
+async function renameLogin(env, from, to) {
+  const moved = { entries: 0, accounts: 0, todos: 0 };
+  if (!from || !to || from === to) return moved;
+  const ch = (r) => (r && r.meta && r.meta.changes) || 0;
+  moved.entries = ch(await env.DB.prepare("UPDATE fin_entries SET uid=? WHERE uid=?").bind(to, from).run());
+  await env.DB.prepare("UPDATE fin_entries SET to_uid=? WHERE to_uid=?").bind(to, from).run();
+  const has = await env.DB.prepare("SELECT uid FROM fin_accounts WHERE uid=?").bind(to).first();
+  if (has) moved.accounts = ch(await env.DB.prepare("DELETE FROM fin_accounts WHERE uid=?").bind(from).run());
+  else moved.accounts = ch(await env.DB.prepare("UPDATE fin_accounts SET uid=? WHERE uid=?").bind(to, from).run());
+  for (const sql of ["UPDATE todos SET owner=? WHERE owner=?", "UPDATE todos SET creator=? WHERE creator=?",
+    "UPDATE todo_notes SET uid=? WHERE uid=?", "UPDATE posts SET uid=? WHERE uid=?"]) {
+    try { moved.todos += ch(await env.DB.prepare(sql).bind(to, from).run()); } catch (e) {}
+  }
+  /* 银行水单也挂在账号名上，改名要跟着搬，否则「我的水单」会空 */
+  try { await env.DB.prepare("UPDATE fin_bank_stmt SET uid=? WHERE uid=?").bind(to, from).run(); } catch (e) {}
+  return moved;
+}
+
 async function finApi(req, env, me, seg, url, body) {
   await finSchema(env);
   const sub = seg[1] || "";
@@ -457,23 +2115,49 @@ async function finApi(req, env, me, seg, url, body) {
   const all = finSeeAll(me);
   const isAdmin = me.role === "admin";
   const isOwner = me.login === (env.FIN_OWNER || "frank");   // 财务负责人：唯一能改余额/对账/删记录的人
+  /* 银行水单是敏感资料：只有管理员 / 财务 / 负责人能看全部、能上传核对 */
+  const bankAll = me.role === "admin" || me.role === "finance" || isOwner;
+  /* 公司账户：只有财务 / 管理员 / 负责人能直接把费用记在公司账上 */
+  const canCo = isAdmin || isOwner || me.role === "finance";
+  const CO = "__company";
 
   /* 一次性拉全部 */
   if (sub === "bootstrap" && req.method === "GET") {
     const sql = "SELECT * FROM fin_entries ORDER BY date DESC, created_at DESC";
-    const rows = all ? await env.DB.prepare(sql).all() : await env.DB.prepare(sql).bind().all();
+    const rows = await env.DB.prepare(sql).all();
+    const vis = await finVisible(env, me);
     let entries = rows.results.map(finRow);
-    if (!all) entries = entries.filter((e) => e.uid === own || e.to_uid === own);
+    if (vis) entries = entries.filter((e) => vis.has(e.uid) || vis.has(e.to_uid));
     const acc = await env.DB.prepare("SELECT * FROM fin_accounts ORDER BY name").all();
-    const users = all
-      ? (await env.DB.prepare("SELECT login,name,role,active FROM users ORDER BY name").all()).results
-      : [{ login: own, name: me.name, role: me.role, active: 1 }];
+    const allUsers = (await env.DB.prepare("SELECT login,name,role,active FROM users ORDER BY name").all()).results;
+    const users = vis ? allUsers.filter((u) => vis.has(u.login)) : allUsers;
+    if (!users.length) users.push({ login: own, name: me.name, role: me.role, active: 1 });
+    /* 挂在「已不在通讯录里的账号名」下的记录：多半是改过账号名，界面上要给个合并入口 */
+    const orphans = [];
+    if (all) {
+      const known = new Set(users.map((u) => u.login));
+      const tally = {};
+      for (const e of entries) {
+        if (!e.uid || e.uid === "__company" || known.has(e.uid)) continue;
+        tally[e.uid] = (tally[e.uid] || 0) + 1;
+      }
+      for (const [uid, n] of Object.entries(tally)) {
+        const a = acc.results.find((x) => x.uid === uid) || {};
+        orphans.push({ uid, n, name: a.name || uid });
+      }
+    }
     return json({
       entries,
       users,
-      accounts: all ? acc.results : acc.results.filter((a) => a.uid === own),
+      orphans,
+      bank: (bankAll
+        ? await env.DB.prepare(FIN_BANK_SEL + " ORDER BY s.pt DESC, s.created_at DESC").all()
+        : await env.DB.prepare(FIN_BANK_SEL + " AND s.uid=? ORDER BY s.pt DESC, s.created_at DESC").bind(own).all()
+      ).results,
+      bankAll,
+      canCo,
+      accounts: (vis ? acc.results.filter((a) => vis.has(a.uid)) : acc.results).map((a) => ({ ...a, banks: finBanks(a) })),
       cats: await finCfgGet(env, "cats", FIN_DEFAULT_CATS),
-      opening: await finCfgGet(env, "opening", { date: "", cash: 0, card: 0 }),
       me: { uid: own, name: me.name, role: me.role },
       canAll: all,
       owner: isOwner,
@@ -488,32 +2172,75 @@ async function finApi(req, env, me, seg, url, body) {
     const amount = Math.round(num(b.amount) * 100) / 100;
     if (!(amount > 0)) return err("金额要大于 0");
     if (kind === "float" && !isOwner) return err("只有财务负责人能发备用金", 403);
-    let uid = all && b.uid ? String(b.uid) : own;
-    if (kind === "move") uid = own;   // 取现/存现只动自己账户
-    const toUid = kind === "float" ? String(b.to_uid || "") : "";
+    if (kind === "transfer" && !all && !isOwner) return err("只有财务负责人能登记人员转账", 403);
+    /* 记账只记自己：归属永远是本人；公司账户是共用的一级户，只有有记账权的人能往里记 */
+    const want = String(b.uid || "").slice(0, 64);
+    if (want && want !== own && !(canCo && want === CO)) return err("只能记自己的账", 403);
+    const uid = want === CO ? CO : own;
+    if (uid === CO && !canCo) return err("只有财务 / 管理员能记公司账户", 403);
+    const toUid = (kind === "float" || kind === "transfer") ? String(b.to_uid || "") : "";
     if (kind === "float" && !toUid) return err("备用金要选发给谁");
+    const toCh = kind === "transfer" ? (String(b.to_ch || "") === "card" ? "card" : "cash") : "";
+    if (kind === "transfer") {
+      if (!toUid) return err("转账要选转给谁");
+      if (toUid === uid) return err("转出人和转入人不能是同一个人");
+    }
+    const scope = await finVisible(env, me);
+    if (scope && toUid && !scope.has(toUid)) return err("只能转给负责人和员工", 403);
     const photos = Array.isArray(b.photos) ? b.photos.slice(0, 6).map(String) : [];
+    const note = String(b.note || "");
+    if (kind !== "move" && kind !== "transfer" && !note.trim()) return err("备注要填");
+    const inv = kind === "out" || kind === "in" ? (b.inv ? 1 : 0) : 0;
+    if (inv && !photos.length) return err("有发票就要上传发票照片");
+    /* 现金 / 银行两本账；银行账尽量落到具体的卡上：没给、而这户只有一张卡就自动带上 */
+    const ch = String(b.ch || "cash") === "card" ? "card" : "cash";
+    const acct = ch === "card" ? "bank" : "cash";
+    let cardId = "";
+    if (acct === "bank") {
+      const cards = finBanks(await env.DB.prepare("SELECT * FROM fin_accounts WHERE uid=?").bind(uid).first());
+      const want = String(b.card_id || "");
+      if (want) {
+        if (!cards.some((c) => c.id === want)) return err("这张卡不在这个账户名下", 400);
+        cardId = want;
+      } else if (cards.length === 1) cardId = cards[0].id;
+    }
     const id = crypto.randomUUID().replace(/-/g, "").slice(0, 20);
+    const tr = await trPair(env, note);
     await env.DB.prepare(
-      `INSERT INTO fin_entries(id,uid,by_name,date,kind,cat,ft,ch,amount,note,photos,to_uid,created_by,created_at)
-       VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
-    ).bind(id, uid, me.name || own, b.date, kind, String(b.cat || ""), String(b.ft || "life"),
-           String(b.ch || "cash"), amount, String(b.note || ""), JSON.stringify(photos),
-           toUid, me.id, nowISO()).run();
+      `INSERT INTO fin_entries(id,uid,by_name,date,kind,cat,ft,ch,acct,card_id,state,src,amount,note,note_en,note_zh,photos,to_uid,to_ch,inv,created_by,created_at)
+       VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+    ).bind(id, uid, me.name || own, b.date, kind, finCatNorm(b.cat), String(b.ft || "life"),
+           ch, acct, cardId, "recorded", "manual", amount, note, tr.en, tr.zh, JSON.stringify(photos),
+           toUid, toCh, inv, me.id, nowISO()).run();
     await audit(env, me, "fin.add", id, `${kind} ${amount}`);
     return json({ id }, 201);
   }
 
-  /* 老账号并入新账号（一次性迁移用） */
+  /* 老账号并入新账号（改过账号名后用这个把旧记录搬过来） */
   if (sub === "remap" && req.method === "POST") {
     if (!isAdmin) return err("只有管理员能改", 403);
     const b = await body();
     const from = String(b.from || ""), to = String(b.to || "");
     if (!from || !to) return err("要给出 from / to");
-    const r1 = await env.DB.prepare("UPDATE fin_entries SET uid=? WHERE uid=?").bind(to, from).run();
-    await env.DB.prepare("UPDATE fin_entries SET to_uid=? WHERE to_uid=?").bind(to, from).run();
-    await env.DB.prepare("UPDATE fin_accounts SET uid=? WHERE uid=?").bind(to, from).run();
-    return json({ ok: true, moved: r1.meta.changes });
+    if (from === to) return err("同一个账号不用合并");
+    const moved = await renameLogin(env, from, to);
+    await audit(env, me, "fin.remap", from, "→ " + to + " " + moved.entries);
+    return json({ ok: true, moved });
+  }
+
+  /* 补票：老记录人工标「有票 / 无票」，只改 inv（不校验备注 / 照片） */
+  if (sub === "entries" && seg[2] && seg[3] === "inv" && req.method === "PUT") {
+    const row = await env.DB.prepare("SELECT * FROM fin_entries WHERE id=?").bind(seg[2]).first();
+    if (!row) return err("记录不存在", 404);
+    if (!isOwner && !all && row.uid !== own) return err("只能标自己的记录", 403);
+    if (row.uid === CO && !canCo) return err("只有财务 / 管理员能改公司账户", 403);
+    const visRow = await finVisible(env, me);
+    if (visRow && !visRow.has(row.uid)) return err("看不到别人的账", 403);
+    if (row.kind !== "out" && row.kind !== "in") return err("只有支出/收入分有票无票", 400);
+    const b = await body();
+    const inv = b.inv ? 1 : 0;
+    await env.DB.prepare("UPDATE fin_entries SET inv=? WHERE id=?").bind(inv, seg[2]).run();
+    return json({ ok: true, inv });
   }
 
   /* 改照片（管理员或本人） */
@@ -523,7 +2250,11 @@ async function finApi(req, env, me, seg, url, body) {
     if (!isAdmin && row.uid !== own) return err("只能改自己的记录", 403);
     const b = await body();
     const photos = Array.isArray(b.photos) ? b.photos.slice(0, 6).map(String) : [];
+    if (Number(row.inv) && !photos.length) return err("有发票要保留至少一张发票照片");
     await env.DB.prepare("UPDATE fin_entries SET photos=? WHERE id=?").bind(JSON.stringify(photos), seg[2]).run();
+    const keepP = new Set(photos.map(String));
+    const goneP = coParse(row.photos, []).map(String).filter((k) => k && !keepP.has(k));
+    if (goneP.length) await feedMediaPurge(env, goneP);
     return json({ ok: true, photos: photos.length });
   }
 
@@ -532,18 +2263,58 @@ async function finApi(req, env, me, seg, url, body) {
     const row = await env.DB.prepare("SELECT * FROM fin_entries WHERE id=?").bind(seg[2]).first();
     if (!row) return err("记录不存在", 404);
     if (!isOwner && !all && row.uid !== own) return err("只能改自己的记录", 403);
+    if (row.uid === CO && !canCo) return err("只有财务 / 管理员能改公司账户", 403);
+    const visPatch = await finVisible(env, me);
+    if (visPatch && !visPatch.has(row.uid)) return err("看不到别人的账", 403);
     const b = await body();
     if (!DAY_RE.test(String(b.date || ""))) return err("日期要 YYYY-MM-DD");
     const amount = Math.round(num(b.amount) * 100) / 100;
     if (!(amount > 0)) return err("金额要大于 0");
     const photos = Array.isArray(b.photos) ? b.photos.slice(0, 6).map(String) : JSON.parse(row.photos || "[]");
-    const cat = row.kind === "float" ? "" : String(b.cat || "");
-    const ft = row.kind === "float" ? "life" : String(b.ft || "life");
+    const cat = row.kind === "float" || row.kind === "transfer" ? "" : finCatNorm(b.cat);
+    const ft = row.kind === "float" || row.kind === "transfer" ? "life" : String(b.ft || "life");
     const ch = String(b.ch || "cash") === "card" ? "card" : "cash";
-    const toUid = row.kind === "float" ? String(b.to_uid || "") : "";
+    const acct = ch === "card" ? "bank" : "cash";
+    let cardId = "";
+    if (acct === "bank") {
+      const cards = finBanks(await env.DB.prepare("SELECT * FROM fin_accounts WHERE uid=?").bind(row.uid).first());
+      const want = String(b.card_id === undefined ? (row.card_id || "") : b.card_id);
+      if (want) {
+        if (!cards.some((c) => c.id === want)) return err("这张卡不在这个账户名下", 400);
+        cardId = want;
+      } else if (cards.length === 1) cardId = cards[0].id;
+    }
+    let toUid = "";
+    if (row.kind === "float" || row.kind === "transfer") toUid = String(b.to_uid || "");
+    if (row.kind === "float" && !toUid) return err("备用金要选发给谁");
+    const toCh = row.kind === "transfer" ? (String(b.to_ch || "") === "card" ? "card" : "cash") : "";
+    if (row.kind === "transfer") {
+      if (!toUid) return err("转账要选转给谁");
+      if (toUid === row.uid) return err("转出人和转入人不能是同一个人");
+    }
+    /* 别人的账：金额 / 收支渠道 / 转入方不许动，只能改分类、备注、发票这些信息类字段 */
+    if (row.uid !== own && row.uid !== CO && !isOwner) {
+      const same = (a, b2) => Math.abs(Number(a) - Number(b2)) < 0.005;
+      if (!same(amount, row.amount)) return err("别人的金额不能改（只能改分类 / 备注）", 403);
+      if (ch !== row.ch) return err("别人的收支渠道不能改（只能改分类 / 备注）", 403);
+      if (cardId !== String(row.card_id || "")) return err("别人的银行卡不能改（只能改分类 / 备注）", 403);
+      if ((row.kind === "transfer" || row.kind === "float")
+        && (toUid !== String(row.to_uid || "") || String(toCh || "") !== String(row.to_ch || ""))) {
+        return err("别人的转入方不能改（只能改分类 / 备注）", 403);
+      }
+    }
+    const note = b.note === undefined ? String(row.note || "") : String(b.note);
+    if ((row.kind === "out" || row.kind === "in" || row.kind === "float") && !note.trim()) return err("备注要填");
+    const inv = row.kind === "out" || row.kind === "in"
+      ? (b.inv === undefined ? (Number(row.inv) ? 1 : 0) : (b.inv ? 1 : 0)) : 0;
+    if (inv && !photos.length) return err("有发票就要上传发票照片");
+    const tr = await trPair(env, note);
     await env.DB.prepare(
-      `UPDATE fin_entries SET date=?,cat=?,ft=?,ch=?,amount=?,note=?,photos=?,to_uid=? WHERE id=?`
-    ).bind(String(b.date), cat, ft, ch, amount, String(b.note || ""), JSON.stringify(photos), toUid, row.id).run();
+      `UPDATE fin_entries SET date=?,cat=?,ft=?,ch=?,acct=?,card_id=?,amount=?,note=?,note_en=?,note_zh=?,photos=?,to_uid=?,to_ch=?,inv=? WHERE id=?`
+    ).bind(String(b.date), cat, ft, ch, acct, cardId, amount, note, tr.en, tr.zh, JSON.stringify(photos), toUid, toCh, inv, row.id).run();
+    const keepE = new Set(photos.map(String));
+    const goneE = coParse(row.photos, []).map(String).filter((k) => k && !keepE.has(k));
+    if (goneE.length) await feedMediaPurge(env, goneE);
     await audit(env, me, "fin.edit", row.id, `${row.kind} ${amount}`);
     return json({ ok: true });
   }
@@ -552,8 +2323,14 @@ async function finApi(req, env, me, seg, url, body) {
   if (sub === "entries" && seg[2] && req.method === "DELETE") {
     const row = await env.DB.prepare("SELECT * FROM fin_entries WHERE id=?").bind(seg[2]).first();
     if (!row) return err("记录不存在", 404);
-    if (!isOwner && !all && row.uid !== own) return err("只能删自己的记录", 403);
+    /* 只能删自己的；公司账户的账要 canCo；负责人例外 */
+    if (row.uid !== own && row.uid !== CO && !isOwner) return err("只能删自己的记录", 403);
+    if (row.uid === CO && !canCo) return err("只有财务 / 管理员能删公司账户的记录", 403);
+    const visDel = await finVisible(env, me);
+    if (visDel && !visDel.has(row.uid)) return err("看不到别人的账", 403);
     await env.DB.prepare("DELETE FROM fin_entries WHERE id=?").bind(seg[2]).run();
+    const pics = coParse(row.photos, []).map(String).filter(Boolean);
+    if (pics.length) await feedMediaPurge(env, pics);
     await audit(env, me, "fin.del", seg[2], `${row.kind} ${row.amount}`);
     return json({ ok: true });
   }
@@ -564,20 +2341,65 @@ async function finApi(req, env, me, seg, url, body) {
     if (!isOwner) return err("只有财务负责人能改余额", 403);
     const b = await body();
     const cur = await env.DB.prepare("SELECT * FROM fin_accounts WHERE uid=?").bind(uid).first();
+    const banks = (b.banks !== undefined ? finBanksClean(b.banks) : (cur ? finBanks(cur) : []))
+      .map((x) => ({ ...x, id: x.id || newBankId() }));
+    const clash = await finBankClash(env, uid, banks);
+    if (clash) return err(`卡号 ${clash.no} 已登记在「${clash.name}」名下，一张卡只能属于一个账户`, 409);
     await env.DB.prepare(
-      `INSERT INTO fin_accounts(uid,name,bank,card_no,cash,card,since,updated_at) VALUES(?,?,?,?,?,?,?,?)
+      `INSERT INTO fin_accounts(uid,name,bank,card_no,cash,card,since,banks,updated_at) VALUES(?,?,?,?,?,?,?,?,?)
        ON CONFLICT(uid) DO UPDATE SET name=excluded.name,bank=excluded.bank,card_no=excluded.card_no,
-       cash=excluded.cash,card=excluded.card,since=excluded.since,updated_at=excluded.updated_at`
+       cash=excluded.cash,card=excluded.card,since=excluded.since,banks=excluded.banks,updated_at=excluded.updated_at`
     ).bind(uid,
            b.name !== undefined ? String(b.name) : (cur ? cur.name : uid),
-           b.bank !== undefined ? String(b.bank) : (cur ? cur.bank : ""),
-           b.card_no !== undefined ? String(b.card_no) : (cur ? cur.card_no : ""),
+           /* bank / card_no 是老列，留着给备份和外部脚本看：显式给了 banks 就跟着第一条走（删光就清空，免得读出来又活过来） */
+           b.banks !== undefined ? ((banks[0] && banks[0].bank) || "") : (b.bank !== undefined ? String(b.bank) : (cur ? cur.bank : "")),
+           b.banks !== undefined ? ((banks[0] && banks[0].no) || "") : (b.card_no !== undefined ? String(b.card_no) : (cur ? cur.card_no : "")),
            b.cash !== undefined ? num(b.cash) : (cur ? cur.cash : 0),
            b.card !== undefined ? num(b.card) : (cur ? cur.card : 0),
-           b.since !== undefined ? String(b.since) : (cur ? cur.since : ""),
+           b.since !== undefined ? String(b.since) : (cur ? cur.since : FIN_START),
+           JSON.stringify(banks),
            nowISO()).run();
     await audit(env, me, "fin.acct", uid, "");
+    return json({ ok: true, banks });
+  }
+
+  /* 删掉某人的账户设置（期初归零，账目记录不动）；只有财务负责人能删 */
+  if (sub === "accounts" && seg[2] && req.method === "DELETE") {
+    const uid = decodeURIComponent(seg[2]);
+    if (!isOwner) return err("只有财务负责人能删账户设置", 403);
+    await env.DB.prepare("DELETE FROM fin_accounts WHERE uid=?").bind(uid).run();
+    await audit(env, me, "fin.acct.del", uid, "");
     return json({ ok: true });
+  }
+
+  /* 合并老分类：日常/邮费/其它 → 杂费（?dry=1 只报数量） */
+  if (sub === "cats" && seg[2] === "merge" && req.method === "POST") {
+    if (!isOwner) return err("只有财务负责人能合并分类", 403);
+    const dry = new URL(req.url).searchParams.get("dry") === "1";
+    const out = {};
+    let total = 0;
+    for (const [from, to] of Object.entries(FIN_CAT_MERGE)) {
+      const r = await env.DB.prepare("SELECT COUNT(*) c FROM fin_entries WHERE cat=?").bind(from).first();
+      const n = (r && r.c) || 0;
+      out[from] = { to, n };
+      total += n;
+      if (!dry && n) await env.DB.prepare("UPDATE fin_entries SET cat=? WHERE cat=?").bind(to, from).run();
+    }
+    /* 往来科目统一落到 ft=ledger，免得归属显示成「生活」 */
+    const lr = await env.DB.prepare("SELECT COUNT(*) c FROM fin_entries WHERE cat IN ('loan','home') AND ft<>'ledger'").first();
+    const ftFixed = (lr && lr.c) || 0;
+    if (!dry && ftFixed) {
+      await env.DB.prepare("UPDATE fin_entries SET ft='ledger' WHERE cat IN ('loan','home') AND ft<>'ledger'").run();
+    }
+    if (!dry && (total || ftFixed)) {
+      const cfg = await finCfgGet(env, "cats", FIN_DEFAULT_CATS);
+      cfg.life = (cfg.life || []).filter((k) => !FIN_CAT_MERGE[k]);
+      cfg.project = (cfg.project || []).filter((k) => !FIN_CAT_MERGE[k]);
+      cfg.licence = (cfg.licence || []).filter((k) => !FIN_CAT_MERGE[k]);
+      await finCfgSet(env, "cats", cfg);
+      await audit(env, me, "fin.catmerge", "", `${total}/${ftFixed}`);
+    }
+    return json({ ok: true, dry, total, ftFixed, map: out });
   }
 
   /* 分类字典 / 期初 */
@@ -587,17 +2409,347 @@ async function finApi(req, env, me, seg, url, body) {
     await finCfgSet(env, "cats", {
       life: Array.isArray(b.life) ? b.life.map(String) : [],
       project: Array.isArray(b.project) ? b.project.map(String) : [],
+      licence: Array.isArray(b.licence) ? b.licence.map(String) : [],
       names: b.names && typeof b.names === "object" ? b.names : {},
     });
     return json({ ok: true });
   }
-  if (sub === "opening" && req.method === "PUT") {
-    if (!isOwner) return err("只有财务负责人能改期初", 403);
+
+  /* ---------- 银行账单（水单）：上传 → 核对金额 + 核对科目 ---------- */
+  const bankStmtOf = (id) =>
+    env.DB.prepare("SELECT * FROM fin_bank_stmt WHERE id=? AND deleted=0").bind(String(id)).first();
+  const bank2 = (v) => Math.round((Number(v) || 0) * 100) / 100;
+  const bankTxIns = (stmtId, t, i) => env.DB.prepare(
+    `INSERT INTO fin_bank_tx(id,stmt_id,d,descr,ref,debit,credit,bal,cat,entry_id,state,note,ord)
+     VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`
+  ).bind(crypto.randomUUID().replace(/-/g, "").slice(0, 20), stmtId,
+    DAY_RE.test(String(t.d || "")) ? t.d : "", String(t.descr || "").slice(0, 300),
+    String(t.ref || "").slice(0, 40), bank2(t.debit), bank2(t.credit), bank2(t.bal),
+    String(t.cat || "").slice(0, 60), String(t.entry_id || "").slice(0, 40),
+    ["new", "matched", "ignored"].includes(t.state) ? t.state : "new",
+    String(t.note || "").slice(0, 300), i);
+
+  /* ---------- 银行原始单据（档案层）：按月归档原件 → 可下载、可数字化成账单 ---------- */
+  const docOf = (id) =>
+    env.DB.prepare("SELECT * FROM fin_bank_doc WHERE id=? AND deleted=0").bind(String(id)).first();
+  const docSha = async (bytes) => {
+    const h = await crypto.subtle.digest("SHA-256", bytes);
+    return [...new Uint8Array(h)].map((b) => b.toString(16).padStart(2, "0")).join("");
+  };
+
+  if (sub === "bankdocs" && !seg[2] && req.method === "GET") {
+    if (!bankAll) return err("只有管理员 / 财务能看银行原始单据", 403);
+    const want = String(url.searchParams.get("period") || "");
+    const period = /^\d{4}-\d{2}$/.test(want) ? want : "";
+    const rows = (await env.DB.prepare(
+      "SELECT d.*, (SELECT COUNT(*) FROM fin_bank_stmt s WHERE s.doc_id=d.id AND s.deleted=0 AND s.old=0) stmt_n,"
+      + " (SELECT COUNT(*) FROM fin_bank_stmt s WHERE s.doc_id=d.id AND s.deleted=0) stmt_all_n"
+      + " FROM fin_bank_doc d WHERE d.deleted=0" + (period ? " AND d.period=?" : "")
+      + " ORDER BY d.period DESC, d.uploaded_at DESC"
+    ).bind(...(period ? [period] : [])).all()).results || [];
+    if (url.searchParams.get("csv")) {
+      const head = ["月份", "期间起", "期间止", "主体", "银行", "账号", "币种", "文件名", "页数", "大小KB", "数字化", "版本", "上传人", "上传时间"];
+      const line = (r) => r.map((x) => `"${String(x == null ? "" : x).replace(/"/g, '""')}"`).join(",");
+      const csv = "\ufeff" + [head].concat(rows.map((d) => [d.period, d.pf, d.pt, d.uid, d.bank, d.acct_no, d.ccy, d.file_name,
+        d.pages, Math.round((Number(d.size) || 0) / 1024), Number(d.stmt_n) ? "已数字化" : "未数字化",
+        Number(d.old) ? "旧版本" : "当前", d.created_by, String(d.uploaded_at).slice(0, 16)])).map(line).join("\r\n");
+      return new Response(csv, {
+        headers: {
+          "content-type": "text/csv; charset=utf-8",
+          "content-disposition": 'attachment; filename="bank-docs.csv"',
+        },
+      });
+    }
+    return json({ docs: rows });
+  }
+
+  if (sub === "bankdocs" && !seg[2] && req.method === "POST") {
+    if (!bankAll) return err("只有管理员 / 财务能传银行原始单据", 403);
+    if (!env.PHOTOS) return err("未配置文件存储", 500);
     const b = await body();
-    await finCfgSet(env, "opening", {
-      date: DAY_RE.test(String(b.date || "")) ? b.date : "",
-      cash: num(b.cash), card: num(b.card),
+    const m = /^data:(application\/pdf|image\/[a-z0-9.+-]+);base64,([A-Za-z0-9+/=]+)$/i.exec(String(b.data || ""));
+    if (!m) return err("只收 PDF 或图片");
+    const bytes = Uint8Array.from(atob(m[2]), (c) => c.charCodeAt(0));
+    if (bytes.length > 12 * 1024 * 1024) return err("文件太大（限 12MB）");
+    /* 银行 / 账号 / 币种只能来自「财务账目设置」里登记的卡 */
+    const card = await finCardAny(env, b.card_id);
+    if (!card) return err("先选银行卡：银行和账号只在「财务账目设置」里登记", 400);
+    const uid = card.uid;
+    let period = /^\d{4}-\d{2}$/.test(String(b.period || "")) ? String(b.period) : "";
+    let pf = DAY_RE.test(String(b.pf || "")) ? String(b.pf) : "";
+    let pt = DAY_RE.test(String(b.pt || "")) ? String(b.pt) : "";
+    if (!pf && !pt) {
+      period = period || new Date().toISOString().slice(0, 7);
+      pf = period + "-01";
+      pt = new Date(Date.UTC(Number(period.slice(0, 4)), Number(period.slice(5, 7)), 0)).toISOString().slice(0, 10);
+    } else if (!pf) pf = pt;
+    else if (!pt) pt = pf;
+    if (pf > pt) return err("期间开始不能晚于结束", 400);
+    period = period || pt.slice(0, 7);
+    const hash = await docSha(bytes);
+    /* 同一份文件（同一主体）再传一次 → 直接返回原来那条，别造重复档案 */
+    const dup = await env.DB.prepare("SELECT * FROM fin_bank_doc WHERE hash=? AND uid=? AND card_id=? AND deleted=0")
+      .bind(hash, uid, card.id).first();
+    if (dup) return json({ id: dup.id, dup: true, file_name: dup.file_name });
+    const bank = card.bank, acct_no = card.no;
+    const ext = m[1] === "application/pdf" ? "pdf" : (String(m[1].split("/")[1] || "jpg").replace(/[^a-z0-9]/g, "") || "jpg");
+    const key = `bankdoc/${period}/${hash}.${ext}`;
+    await env.PHOTOS.put(key, bytes, { httpMetadata: { contentType: m[1] } });
+    const id = crypto.randomUUID().replace(/-/g, "").slice(0, 20);
+    /* 同主体 + 同账号 + 同月份重传 = 新版本；旧的原件一个字都不删 */
+    await env.DB.prepare("UPDATE fin_bank_doc SET old=1, replaced_by=? WHERE uid=? AND period=? AND deleted=0"
+      + " AND (card_id=? OR (card_id='' AND bank=? AND acct_no=?))")
+      .bind(id, uid, period, card.id, bank, acct_no).run();
+    await env.DB.prepare(
+      `INSERT INTO fin_bank_doc(id,uid,card_id,bank,acct_no,ccy,period,pf,pt,file_key,file_name,mime,size,pages,hash,note,created_by,uploaded_at)
+       VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+    ).bind(id, uid, card.id, bank, acct_no, card.ccy, period, pf, pt, key,
+      String(b.name || "").slice(0, 160), m[1], bytes.length, Number(b.pages) || 0, hash,
+      String(b.note || "").slice(0, 500), own, nowISO()).run();
+    await audit(env, me, "fin.bankdoc.add", id, `${period} ${bank || ""} ${acct_no || ""}`.trim());
+    return json({ id, hash, dup: false }, 201);
+  }
+
+  if (sub === "bankdocs" && seg[2] && seg[3] === "file" && req.method === "GET") {
+    const d = await docOf(seg[2]);
+    if (!bankAll && (!d || d.uid !== own)) return err("只有管理员 / 财务能看原件", 403);
+    if (!d) return err("单据不存在", 404);
+    if (!env.PHOTOS || !d.file_key) return err("没有原始文件", 404);
+    const obj = await env.PHOTOS.get(d.file_key);
+    if (!obj) return err("文件不存在", 404);
+    const name = String(d.file_name || "statement.pdf").replace(/[^\w.\-]+/g, "_");
+    const dl = url.searchParams.get("dl") ? "attachment" : "inline";
+    return new Response(obj.body, {
+      headers: {
+        "content-type": d.mime || (obj.httpMetadata && obj.httpMetadata.contentType) || "application/pdf",
+        "content-disposition": `${dl}; filename="${name}"`,
+        "cache-control": "private, max-age=600",
+      },
     });
+  }
+
+  if (sub === "bankdocs" && seg[2] && !seg[3] && req.method === "PATCH") {
+    if (!bankAll) return err("只有管理员 / 财务能改档案", 403);
+    const d = await docOf(seg[2]);
+    if (!d) return err("单据不存在", 404);
+    const b = await body();
+    const sets = [], vals = [];
+    if (b.card_id !== undefined) {
+      const card = await finCardAny(env, b.card_id);
+      if (!card || card.uid !== d.uid) return err("这张卡不属于该主体", 400);
+      sets.push("card_id=?", "bank=?", "acct_no=?", "ccy=?");
+      vals.push(card.id, card.bank, card.no, card.ccy);
+    }
+    if (b.period !== undefined && /^\d{4}-\d{2}$/.test(String(b.period))) { sets.push("period=?"); vals.push(String(b.period)); }
+    if (b.pf !== undefined || b.pt !== undefined) {
+      const npf = b.pf !== undefined ? String(b.pf) : d.pf;
+      const npt = b.pt !== undefined ? String(b.pt) : d.pt;
+      if ((npf && !DAY_RE.test(npf)) || (npt && !DAY_RE.test(npt))) return err("期间要 YYYY-MM-DD", 400);
+      if (npf && npt && npf > npt) return err("期间开始不能晚于结束", 400);
+      sets.push("pf=?", "pt=?"); vals.push(npf, npt);
+    }
+    if (b.note !== undefined) { sets.push("note=?"); vals.push(String(b.note || "").slice(0, 500)); }
+    if (b.pages !== undefined) { sets.push("pages=?"); vals.push(Number(b.pages) || 0); }
+    if (!sets.length) return err("没有要改的字段");
+    await env.DB.prepare(`UPDATE fin_bank_doc SET ${sets.join(",")} WHERE id=?`).bind(...vals, d.id).run();
+    return json({ ok: true });
+  }
+
+  /* 软删：原件是证据，R2 里的字节不动，这里只是从档案里摘掉 */
+  if (sub === "bankdocs" && seg[2] && !seg[3] && req.method === "DELETE") {
+    if (!isAdmin) return err("只有管理员能删银行原始单据", 403);
+    const d = await docOf(seg[2]);
+    if (!d) return err("单据不存在", 404);
+    const used = await env.DB.prepare("SELECT COUNT(*) c FROM fin_bank_stmt WHERE doc_id=? AND deleted=0").bind(d.id).first();
+    const n = (used && used.c) || 0;
+    if (n) return err(`这份原件已经数字化出 ${n} 张账单，先把账单删掉再删原件`, 409);
+    await env.DB.prepare("UPDATE fin_bank_doc SET deleted=1 WHERE id=?").bind(d.id).run();
+    await audit(env, me, "fin.bankdoc.del", d.id, d.file_name || "");
+    return json({ ok: true });
+  }
+
+  /* 取水单原件（只有能看这份账的人才给） */
+  if (sub === "bank" && seg[2] === "file" && seg[3] && req.method === "GET") {
+    const st = await bankStmtOf(seg[3]);
+    if (!st) return err("水单不存在", 404);
+    if (!bankAll && st.uid !== own) return err("没有权限", 403);
+    if (!env.PHOTOS || !st.file_key) return err("没有原始文件", 404);
+    const obj = await env.PHOTOS.get(st.file_key);
+    if (!obj) return err("文件不存在", 404);
+    const name = String(st.file_name || "statement.pdf").replace(/[^\w.\-]+/g, "_");
+    return new Response(obj.body, {
+      headers: {
+        "content-type": (obj.httpMetadata && obj.httpMetadata.contentType) || "application/pdf",
+        "content-disposition": `inline; filename="${name}"`,
+        "cache-control": "private, max-age=600",
+      },
+    });
+  }
+
+  /* 列表 */
+  if (sub === "bank" && !seg[2] && req.method === "GET") {
+    const bankSel = FIN_BANK_SEL;
+    const rows = await (bankAll
+      ? env.DB.prepare(bankSel + " ORDER BY s.pt DESC, s.created_at DESC")
+      : env.DB.prepare(bankSel + " AND s.uid=? ORDER BY s.pt DESC, s.created_at DESC").bind(own)
+    ).all();
+    return json({ stmts: rows.results, bankAll });
+  }
+
+  /* 建档（同一主体同一期间再传 = 覆盖：旧记录标记 old=1，仍可回看） */
+  if (sub === "bank" && !seg[2] && req.method === "POST") {
+    const b = await body();
+    const wantUid = b.uid ? String(b.uid).slice(0, 64) : "";
+    if (!bankAll && wantUid && wantUid !== own) return err("只能传自己的水单", 403);
+    const pf = DAY_RE.test(String(b.pf || "")) ? b.pf : "";
+    const pt = DAY_RE.test(String(b.pt || "")) ? b.pt : "";
+    if (!pf || !pt) return err("水单期间要填（起止日期）");
+    if (pf > pt) return err("期间开始不能晚于结束");
+    /* 银行 / 账号 / 币种只能来自「财务账目设置」里登记的卡；主体也跟着卡走 */
+    const card = await finCardAny(env, b.card_id);
+    if (!card) return err("先选银行卡：银行和账号只在「财务账目设置」里登记", 400);
+    if (!bankAll && card.uid !== own) return err("只能传自己的水单", 403);
+    const uid = card.uid;
+    const txs = Array.isArray(b.txs) ? b.txs.slice(0, 2000) : [];
+    /* 原件先认下来：认不出来就直接退出，免得留一条挂不上原件的账单、还把当前版本顶成 old */
+    const docId = String(b.doc_id || "").slice(0, 40);
+    const doc = docId ? await docOf(docId) : null;
+    if (docId && !doc) return err("原始单据不存在", 404);
+    if (doc && doc.uid !== uid) return err("这份原件不属于该主体", 400);
+    if (doc && doc.card_id && doc.card_id !== card.id) return err("这份原件属于另一张卡", 400);
+    const id = crypto.randomUUID().replace(/-/g, "").slice(0, 20);
+    /* 覆盖只限同一张卡同一期间：不同卡同期间互不影响（否则两张卡会互相顶掉） */
+    await env.DB.prepare("UPDATE fin_bank_stmt SET old=1 WHERE uid=? AND card_id=? AND pf=? AND pt=? AND deleted=0")
+      .bind(uid, card.id, pf, pt).run();
+    await env.DB.prepare(
+      `INSERT INTO fin_bank_stmt(id,uid,card_id,bank,acct_no,ccy,pf,pt,open_bal,close_bal,total_in,total_out,
+         file_key,file_name,pages,txn_n,status,note,parse_by,doc_id,created_by,created_at,old)
+       VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0)`
+    ).bind(id, uid, card.id, card.bank, card.no,
+      card.ccy, pf, pt, bank2(b.open_bal), bank2(b.close_bal),
+      bank2(b.total_in), bank2(b.total_out), "", "", 0, txs.length,
+      ["open", "checked", "diff"].includes(b.status) ? b.status : "open",
+      String(b.note || "").slice(0, 500), String(b.parse_by || "").slice(0, 40), doc ? doc.id : "", own, nowISO()).run();
+    for (let i = 0; i < txs.length; i++) await bankTxIns(id, txs[i], i).run();
+    /* 从「银行原始单据」数字化出来的账单：原件上的期间跟着读出来的实际起止走，
+       归档月不动（用户选的目录），只补真实区间 */
+    if (doc) {
+      await env.DB.prepare(
+        "UPDATE fin_bank_doc SET pf=?, pt=? WHERE id=? AND (pf='' OR pt='' OR pf=period||'-01')"
+      ).bind(pf, pt, doc.id).run();
+    }
+    return json({ id, txn_n: txs.length }, 201);
+  }
+
+  /* 上传原件（PDF / 图片，data URL） */
+  if (sub === "bank" && seg[2] && seg[3] === "file" && req.method === "POST") {
+    if (!env.PHOTOS) return err("未配置文件存储", 500);
+    const st = await bankStmtOf(seg[2]);
+    if (!st) return err("水单不存在", 404);
+    if (!bankAll && st.uid !== own) return err("没有权限", 403);
+    const b = await body();
+    const m = /^data:(application\/pdf|image\/[a-z0-9.+-]+);base64,([A-Za-z0-9+/=]+)$/i.exec(String(b.data || ""));
+    if (!m) return err("只收 PDF 或图片");
+    const bytes = Uint8Array.from(atob(m[2]), (c) => c.charCodeAt(0));
+    if (bytes.length > 12 * 1024 * 1024) return err("文件太大（限 12MB）");
+    const ext = m[1] === "application/pdf" ? "pdf" : (String(m[1].split("/")[1] || "jpg").replace(/[^a-z0-9]/g, "") || "jpg");
+    const key = `bank/${st.id}/${Date.now()}.${ext}`;
+    await env.PHOTOS.put(key, bytes, { httpMetadata: { contentType: m[1] } });
+    await env.DB.prepare("UPDATE fin_bank_stmt SET file_key=?, file_name=?, pages=? WHERE id=?")
+      .bind(key, String(b.name || "").slice(0, 160), Number(b.pages) || 0, st.id).run();
+    return json({ key, size: bytes.length }, 201);
+  }
+
+  /* 重写逐笔（解析结果或手工补录） */
+  if (sub === "bank" && seg[2] && seg[3] === "tx" && req.method === "POST") {
+    if (!bankAll) return err("只有管理员/财务能改水单", 403);
+    const st = await bankStmtOf(seg[2]);
+    if (!st) return err("水单不存在", 404);
+    const b = await body();
+    if (!Array.isArray(b.txs)) return err("txs 要用数组");
+    const txs = b.txs.slice(0, 2000);
+    await env.DB.prepare("DELETE FROM fin_bank_tx WHERE stmt_id=?").bind(st.id).run();
+    for (let i = 0; i < txs.length; i++) await bankTxIns(st.id, txs[i], i).run();
+    await env.DB.prepare("UPDATE fin_bank_stmt SET txn_n=? WHERE id=?").bind(txs.length, st.id).run();
+    return json({ ok: true, txn_n: txs.length });
+  }
+
+  /* 单笔：改科目 / 配对 / 忽略 */
+  if (sub === "bank" && seg[2] === "tx" && seg[3] && req.method === "PATCH") {
+    if (!bankAll) return err("只有管理员/财务能改水单", 403);
+    const b = await body();
+    const row = await env.DB.prepare("SELECT * FROM fin_bank_tx WHERE id=?").bind(String(seg[3])).first();
+    if (!row) return err("这笔不存在", 404);
+    const sets = [];
+    const vals = [];
+    if (b.cat !== undefined) { sets.push("cat=?"); vals.push(String(b.cat || "").slice(0, 60)); }
+    if (b.entry_id !== undefined) { sets.push("entry_id=?"); vals.push(String(b.entry_id || "").slice(0, 40)); }
+    if (b.state !== undefined) {
+      sets.push("state=?");
+      vals.push(["new", "matched", "ignored"].includes(b.state) ? b.state : "new");
+    }
+    if (b.note !== undefined) { sets.push("note=?"); vals.push(String(b.note || "").slice(0, 300)); }
+    if (!sets.length) return err("没有要改的字段");
+    await env.DB.prepare(`UPDATE fin_bank_tx SET ${sets.join(",")} WHERE id=?`).bind(...vals, row.id).run();
+    return json({ ok: true });
+  }
+
+  /* 明细 */
+  if (sub === "bank" && seg[2] && seg[2] !== "file" && seg[2] !== "tx" && !seg[3] && req.method === "GET") {
+    const st = await bankStmtOf(seg[2]);
+    if (!st) return err("水单不存在", 404);
+    if (!bankAll && st.uid !== own) return err("没有权限", 403);
+    const txs = (await env.DB.prepare("SELECT * FROM fin_bank_tx WHERE stmt_id=? ORDER BY ord").bind(st.id).all()).results;
+    return json({ stmt: st, txs });
+  }
+
+  /* 改状态 / 备注 / 表头数字 */
+  if (sub === "bank" && seg[2] && seg[2] !== "file" && seg[2] !== "tx" && !seg[3] && req.method === "PATCH") {
+    if (!bankAll) return err("只有管理员/财务能改水单", 403);
+    const st = await bankStmtOf(seg[2]);
+    if (!st) return err("水单不存在", 404);
+    const b = await body();
+    const sets = [], vals = [];
+    const numFields = ["open_bal", "close_bal", "total_in", "total_out"];
+    for (const f of numFields) if (b[f] !== undefined) { sets.push(`${f}=?`); vals.push(bank2(b[f])); }
+    if (b.card_id !== undefined) {
+      const card = await finCardAny(env, b.card_id);
+      if (!card || card.uid !== st.uid) return err("这张卡不属于该水单的主体", 400);
+      sets.push("card_id=?", "bank=?", "acct_no=?", "ccy=?");
+      vals.push(card.id, card.bank, card.no, card.ccy);
+    }
+    for (const f of ["note", "parse_by"]) {
+      if (b[f] !== undefined) { sets.push(`${f}=?`); vals.push(String(b[f] || "").slice(0, f === "note" ? 500 : 80)); }
+    }
+    let npf = st.pf, npt = st.pt;
+    if (b.pf !== undefined) {
+      if (!DAY_RE.test(String(b.pf))) return err("期间起要 YYYY-MM-DD", 400);
+      npf = String(b.pf); sets.push("pf=?"); vals.push(npf);
+    }
+    if (b.pt !== undefined) {
+      if (!DAY_RE.test(String(b.pt))) return err("期间止要 YYYY-MM-DD", 400);
+      npt = String(b.pt); sets.push("pt=?"); vals.push(npt);
+    }
+    if (npf && npt && npf > npt) return err("期间开始不能晚于结束", 400);
+    if (b.status !== undefined) {
+      const stt = ["open", "checked", "diff"].includes(b.status) ? b.status : "open";
+      sets.push("status=?"); vals.push(stt);
+      sets.push("checked_by=?"); vals.push(stt === "checked" ? own : "");
+      sets.push("checked_at=?"); vals.push(stt === "checked" ? nowISO() : "");
+    }
+    if (!sets.length) return err("没有要改的字段");
+    await env.DB.prepare(`UPDATE fin_bank_stmt SET ${sets.join(",")} WHERE id=?`).bind(...vals, st.id).run();
+    return json({ ok: true });
+  }
+
+  /* 删除（软删；原件一起删） */
+  if (sub === "bank" && seg[2] && seg[2] !== "file" && seg[2] !== "tx" && !seg[3] && req.method === "DELETE") {
+    if (!bankAll) return err("只有管理员/财务能删水单", 403);
+    const st = await bankStmtOf(seg[2]);
+    if (!st) return err("水单不存在", 404);
+    await env.DB.prepare("UPDATE fin_bank_stmt SET deleted=1 WHERE id=?").bind(st.id).run();
+    await env.DB.prepare("DELETE FROM fin_bank_tx WHERE stmt_id=?").bind(st.id).run();
+    if (env.PHOTOS && st.file_key) { try { await env.PHOTOS.delete(st.file_key); } catch (e) {} }
     return json({ ok: true });
   }
 
@@ -610,7 +2762,7 @@ async function finApi(req, env, me, seg, url, body) {
     const bytes = Uint8Array.from(atob(m[2]), (c) => c.charCodeAt(0));
     if (bytes.length > 8 * 1024 * 1024) return err("图片太大（限 8MB）");
     const ext = m[1] === "image/png" ? "png" : m[1] === "image/webp" ? "webp" : "jpg";
-    const dir = String(b.dir || "") === "feed" ? "feed" : "fin";
+    const dir = ["feed", "prod"].includes(String(b.dir || "")) ? String(b.dir) : "fin";
     const key = `${dir}/${new Date().toISOString().slice(0, 7)}/${crypto.randomUUID()}.${ext}`;
     await env.PHOTOS.put(key, bytes, { httpMetadata: { contentType: m[1] } });
     return json({ key }, 201);
@@ -618,14 +2770,29 @@ async function finApi(req, env, me, seg, url, body) {
   if (sub === "photo" && seg[2] && req.method === "GET") {
     if (!env.PHOTOS) return err("未配置照片存储", 500);
     const key = seg.slice(2).join("/");
+    const meta = await env.PHOTOS.head(key);
+    if (!meta) return err("文件不存在", 404);
+    const size = Number(meta.size) || 0;
+    const type = (meta.httpMetadata && meta.httpMetadata.contentType) || "image/jpeg";
+    const headers = { "content-type": type, "accept-ranges": "bytes", "cache-control": "private, max-age=31536000" };
+    /* 视频要能拖进度、iOS 要 206，不认 Range 就只能整段下载，播不了 */
+    const rg = /^bytes=(\d*)-(\d*)$/.exec(String(req.headers.get("range") || "").trim());
+    if (rg && (rg[1] || rg[2]) && size) {
+      let start = rg[1] ? Number(rg[1]) : Math.max(0, size - Number(rg[2] || 0));
+      let end = rg[1] && rg[2] ? Number(rg[2]) : size - 1;
+      if (!Number.isFinite(start) || start < 0) start = 0;
+      if (!Number.isFinite(end) || end >= size) end = size - 1;
+      if (start > end) return new Response(null, { status: 416, headers: { "content-range": `bytes */${size}` } });
+      const part = await env.PHOTOS.get(key, { range: { offset: start, length: end - start + 1 } });
+      if (!part) return err("文件不存在", 404);
+      return new Response(part.body, {
+        status: 206,
+        headers: { ...headers, "content-range": `bytes ${start}-${end}/${size}`, "content-length": String(end - start + 1) },
+      });
+    }
     const obj = await env.PHOTOS.get(key);
-    if (!obj) return err("照片不存在", 404);
-    return new Response(obj.body, {
-      headers: {
-        "content-type": (obj.httpMetadata && obj.httpMetadata.contentType) || "image/jpeg",
-        "cache-control": "private, max-age=31536000",
-      },
-    });
+    if (!obj) return err("文件不存在", 404);
+    return new Response(obj.body, { headers: size ? { ...headers, "content-length": String(size) } : headers });
   }
 
   /* 迁移导入（仅管理员，按 legacy_id 幂等） */
@@ -639,13 +2806,13 @@ async function finApi(req, env, me, seg, url, body) {
       const dup = await env.DB.prepare("SELECT id FROM fin_entries WHERE legacy_id=?").bind(leg).first();
       if (dup) { skipped++; continue; }
       await env.DB.prepare(
-        `INSERT INTO fin_entries(id,uid,by_name,date,kind,cat,ft,ch,amount,note,photos,to_uid,created_by,created_at,legacy_id)
-         VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+        `INSERT INTO fin_entries(id,uid,by_name,date,kind,cat,ft,ch,amount,note,photos,to_uid,to_ch,created_by,created_at,legacy_id)
+         VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
       ).bind(crypto.randomUUID().replace(/-/g, "").slice(0, 20), String(e.uid || ""), String(e.by_name || e.by || ""),
              String(e.date || ""), FIN_KINDS.includes(e.kind) ? e.kind : "out", String(e.cat || ""),
              String(e.ft || "life"), String(e.ch || "cash"), num(e.amount), String(e.note || ""),
              JSON.stringify(Array.isArray(e.photos) ? e.photos : []), String(e.to_uid || ""),
-             me.id, String(e.created_at || nowISO()), leg).run();
+             String(e.to_ch || ""), me.id, String(e.created_at || nowISO()), leg).run();
       added++;
     }
     for (const [uid, a] of Object.entries(b.accounts || {})) {
@@ -657,7 +2824,6 @@ async function finApi(req, env, me, seg, url, body) {
              num(a.cash), num(a.card), String(a.since || ""), nowISO()).run();
     }
     if (b.cats) await finCfgSet(env, "cats", b.cats);
-    if (b.opening) await finCfgSet(env, "opening", b.opening);
     const chk = await env.DB.prepare("SELECT COUNT(*) AS n, SUM(amount) AS s FROM fin_entries").first();
     await audit(env, me, "fin.import", "", `added=${added} skipped=${skipped}`);
     return json({ added, skipped, count: chk.n, total: Math.round((chk.s || 0) * 100) / 100 });
@@ -691,16 +2857,133 @@ async function runBackup(env) {
   return { key: key, bytes: body.length, kept: keys.length - drop.length };
 }
 
+/* ---------- 矿证：矿权申请助手（licence.html 的数据面） ---------- */
+const LIC_MAX_JSON = 8 * 1024 * 1024;
+
+async function licEnsure(env) {
+  await env.DB.prepare(
+    "CREATE TABLE IF NOT EXISTS licence_state(id INTEGER PRIMARY KEY, json TEXT NOT NULL, updated_at TEXT)"
+  ).run();
+}
+
+/* 纯文本走 Gemini；没配 key 或出错返回空串，前端回退模板 */
+async function aiText(env, system, prompt, maxTokens = 4000, ms = 60000) {
+  const key = env.GEMINI_API_KEY;
+  if (!key || !prompt) return "";
+  try {
+    const r = await fetch(
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + encodeURIComponent(key),
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: system || "You write concise, professional documents." }] },
+          contents: [{ role: "user", parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.4, maxOutputTokens: maxTokens },
+        }),
+        signal: AbortSignal.timeout(ms),
+      }
+    );
+    if (!r.ok) return "";
+    const j = await r.json();
+    return (j.candidates?.[0]?.content?.parts || []).map((p) => p.text || "").join("").trim();
+  } catch (e) {
+    return "";
+  }
+}
+
+async function licRoute(req, env, url) {
+  const u = await currentUser(req, env);
+  if (!u) return err("请先登录", 401);
+  if (req.method !== "GET") {
+    const o = req.headers.get("origin");
+    if (o && new URL(o).host !== url.host) return err("跨站请求被拒绝", 403);
+  }
+  const path = url.pathname;
+
+  if (path === "/lic/media" && req.method === "GET") {
+    const key = url.searchParams.get("key") || "";
+    if (!/^(lic|company)\//.test(key)) return err("key 不合法", 400);
+    const obj = await env.PHOTOS.get(key);
+    if (!obj) return err("文件不存在", 404);
+    const h = new Headers();
+    h.set("content-type", (obj.httpMetadata && obj.httpMetadata.contentType) || "application/octet-stream");
+    h.set("cache-control", "private, max-age=120");
+    h.set("x-content-type-options", "nosniff");
+    return new Response(obj.body, { headers: h });
+  }
+
+  if (path === "/lic/upload" && req.method === "POST") {
+    const form = await req.formData();
+    const f = form.get("file");
+    if (!f || typeof f.arrayBuffer !== "function") return err("没有文件", 400);
+    if (f.size > 30 * 1024 * 1024) return err("文件太大（限 30MB）", 413);
+    const ext = (String(f.name || "").match(/\.[a-z0-9]{1,8}$/i) || [".bin"])[0].toLowerCase();
+    const key = "lic/" + Date.now() + "_" + Math.random().toString(36).slice(2, 8) + ext;
+    await env.PHOTOS.put(key, await f.arrayBuffer(), {
+      httpMetadata: { contentType: f.type || "application/octet-stream" },
+    });
+    return json({ ok: true, key });
+  }
+
+  if (path === "/lic/" && req.method === "POST") {
+    const b = await req.json().catch(() => ({}));
+    if (b.action === "read") {
+      await licEnsure(env);
+      const row = await env.DB.prepare("SELECT json FROM licence_state WHERE id=1").first();
+      return json({ ok: true, content: row ? row.json : "" });
+    }
+    if (b.action === "save") {
+      const content = String(b.content || "");
+      if (!content) return err("内容为空", 400);
+      if (content.length > LIC_MAX_JSON) return err("数据太大", 413);
+      try { JSON.parse(content); } catch (e) { return err("不是合法 JSON", 400); }
+      await licEnsure(env);
+      await env.DB.prepare(
+        "INSERT INTO licence_state(id,json,updated_at) VALUES(1,?,?) " +
+        "ON CONFLICT(id) DO UPDATE SET json=excluded.json, updated_at=excluded.updated_at"
+      ).bind(content, nowISO()).run();
+      return json({ ok: true });
+    }
+    if (b.action === "draft") {
+      const text = await aiText(env, String(b.system || ""), String(b.prompt || ""), 4096);
+      return text ? json({ ok: true, text }) : json({ ok: false, error: "AI 不可用" });
+    }
+    return err("未知操作", 400);
+  }
+
+  return err("not found", 404);
+}
+
 export default {
   async fetch(req, env) {
     const url = new URL(req.url);
     const path = url.pathname;
+
+    // 旧 workers.dev 入口统一跳到自定义域（只跳页面导航，API / 脚本调用不受影响）
+    if ((req.method === "GET" || req.method === "HEAD") && url.host.endsWith(".workers.dev")
+        && (req.headers.get("accept") || "").includes("text/html")) {
+      return new Response(null, { status: 301, headers: { location: "https://ops.ecoboxmine.com" + path + url.search } });
+    }
 
     if (req.method === "GET" && (path === "/" || path === "/index.html")) {
       let u = null;
       try { await ensureSchema(env); u = await currentUser(req, env); } catch (e) {}
       const html = u ? PAGE : LOGIN_PAGE;
       return new Response(html, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } });
+    }
+    if (path === "/licence.html" || path === "/licence") {
+      let u = null;
+      try { await ensureSchema(env); u = await currentUser(req, env); } catch (e) {}
+      if (!u) return new Response("", { status: 302, headers: { location: "/" } });
+      return new Response(LIC_PAGE, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } });
+    }
+    if (path.startsWith("/lic/")) return licRoute(req, env, url);
+    /* PWA：manifest / 图标 / service worker（不需要登录，浏览器装 App 时要抓） */
+    if (path === "/manifest.webmanifest") return new Response(PWA_MANIFEST, { headers: { "content-type": "application/manifest+json; charset=utf-8", "cache-control": "public, max-age=600" } });
+    if (path === "/sw.js") return new Response(PWA_SW, { headers: { "content-type": "text/javascript; charset=utf-8", "cache-control": "no-cache", "service-worker-allowed": "/" } });
+    if (path === "/icon-180.png" || path === "/icon-192.png" || path === "/icon-512.png") {
+      return new Response(pwaIcon(path.slice(1)), { headers: { "content-type": "image/png", "cache-control": "public, max-age=86400" } });
     }
     if (!path.startsWith("/api/")) return err("not found", 404);
 
@@ -736,7 +3019,7 @@ export default {
         const user = await env.DB.prepare("SELECT * FROM users WHERE id=?").bind(id).first();
         const token = await newSession(env, user, req);
         await audit(env, user, "setup", user.login);
-        return json({ user: publicUser(user) }, 200, { "set-cookie": sessCookie(token, SESSION_DAYS * 86400) });
+        return json({ user: publicUser(user, env) }, 200, { "set-cookie": sessCookie(token, SESSION_DAYS * 86400) });
       }
 
       /* 版本号：页面用它判断要不要提示“立即更新” */
@@ -750,17 +3033,48 @@ export default {
 
       if (seg[0] === "login" && req.method === "POST") {
         const b = await body();
-        const u = await env.DB.prepare("SELECT * FROM users WHERE lower(login)=lower(?)").bind(String(b.login || b.name || "").trim()).first();
-        if (!u || !u.active) return err("账号或密码不对", 401);
-        if (!(await pwdVerify(String(b.password || ""), u))) return err("账号或密码不对", 401);
+        const login = String(b.login || b.name || "").trim();
+        const key = loginKey(login, req);
+        const wait = await loginWait(env, key);
+        if (wait > 0) {
+          return err(`尝试次数过多，请 ${Math.ceil(wait / 60)} 分钟后再试`, 429, { "retry-after": String(wait) });
+        }
+        const u = await env.DB.prepare("SELECT * FROM users WHERE lower(login)=lower(?)").bind(login).first();
+        if (!u || !u.active || u.deleted) {
+          await loginFailAdd(env, key);
+          return err("账号或密码不对", 401);
+        }
+        if (!(await pwdVerify(String(b.password || ""), u))) {
+          await loginFailAdd(env, key);
+          return err("账号或密码不对", 401);
+        }
+        await env.DB.prepare("DELETE FROM login_fail WHERE k=?").bind(key).run();
         await env.DB.prepare("UPDATE users SET last_login=? WHERE id=?").bind(nowISO(), u.id).run();
         const token = await newSession(env, u, req);
-        return json({ user: publicUser(u) }, 200, { "set-cookie": sessCookie(token, SESSION_DAYS * 86400) });
+        return json({ user: publicUser(u, env) }, 200, { "set-cookie": sessCookie(token, SESSION_DAYS * 86400) });
       }
 
       const me = await currentUser(req, env);
 
-      if (seg[0] === "me" && req.method === "GET") return json({ user: me ? publicUser(me) : null });
+      if (seg[0] === "me" && req.method === "GET") return json({ user: me ? publicUser(me, env) : null });
+
+      if (seg[0] === "me" && req.method === "PATCH") {
+        if (!me) return err("请先登录", 401);
+        const b = await body();
+        if (b.lang !== undefined) {
+          const lang = String(b.lang || "").toLowerCase();
+          if (!LANGS.includes(lang)) return err("语言只能是 zh 或 en");
+          await env.DB.prepare("UPDATE users SET lang=? WHERE id=?").bind(lang, me.id).run();
+          me.lang = lang;
+        }
+        if (b.shortcuts !== undefined) {
+          if (!Array.isArray(b.shortcuts)) return err("快捷方式要用数组");
+          const keys = [...new Set(b.shortcuts.map(String))].filter((k) => MODULE_KEYS.includes(k)).slice(0, MAX_PINS);
+          await env.DB.prepare("UPDATE users SET shortcuts=? WHERE id=?").bind(JSON.stringify(keys), me.id).run();
+          me.shortcuts = JSON.stringify(keys);
+        }
+        return json({ user: publicUser(me, env) });
+      }
 
       if (seg[0] === "logout" && req.method === "POST") {
         const token = cookieOf(req, COOKIE);
@@ -799,6 +3113,23 @@ export default {
       /* ---------- 动态 ---------- */
       if (seg[0] === "feed") return await feedApi(req, env, me, seg, body);
 
+      /* ---------- 待办 ---------- */
+      if (seg[0] === "todos") return await todoApi(req, env, me, seg, body);
+
+      /* ---------- 公司资料库 ---------- */
+      if (seg[0] === "companies") return await coApi(req, env, me, seg, url, body);
+
+      /* ---------- 打卡 / 客户 / 出口 ---------- */
+      if (seg[0] === "att") return await attApi(req, env, me, seg, url, body);
+      if (seg[0] === "customers") return await custApi(req, env, me, seg, url, body);
+      if (seg[0] === "exports") return await expApi(req, env, me, seg, url, body);
+
+      /* 同事名单：派活儿要用，任何登录用户都能读（只有姓名/账号/岗位） */
+      if (seg[0] === "people" && req.method === "GET") {
+        const r = await env.DB.prepare("SELECT login,name,role FROM users WHERE deleted=0 AND active=1 ORDER BY name").all();
+        return json({ me: me.login, people: r.results });
+      }
+
       if (seg[0] === "password" && req.method === "POST") {
         const b = await body();
         if (!(await pwdVerify(String(b.old || ""), me))) return err("原密码不对", 403);
@@ -829,10 +3160,11 @@ export default {
       if (seg[0] === "logs" && !seg[1] && req.method === "POST") {
         const { v, e } = logBody(await body());
         if (e) return err(e);
+        const tr = await trPair(env, v.note);
         const r = await env.DB.prepare(
-          `INSERT INTO logs(day,site,shift,crew,headcount,ore_t,waste_t,grade,cost_usd,note,user_id,created_at,updated_at)
-           VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`
-        ).bind(v.day, v.site, v.shift, v.crew, v.headcount, v.ore_t, v.waste_t, v.grade, v.cost_usd, v.note, me.id, nowISO(), nowISO()).run();
+          `INSERT INTO logs(day,site,shift,crew,headcount,ore_t,waste_t,product,qty,unit,ta,nb,photos,grade,cost_usd,note,note_en,note_zh,user_id,created_at,updated_at)
+           VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+        ).bind(v.day, v.site, v.shift, v.crew, v.headcount, v.ore_t, v.waste_t, v.product, v.qty, v.unit, v.ta, v.nb, v.photos, v.grade, v.cost_usd, v.note, tr.en, tr.zh, me.id, nowISO(), nowISO()).run();
         await audit(env, me, "log.create", String(r.meta.last_row_id), v.site + " " + v.day);
         return json({ id: r.meta.last_row_id }, 201);
       }
@@ -843,9 +3175,10 @@ export default {
         if (!canEdit(me, row)) return err("只能改自己录的", 403);
         const { v, e } = logBody({ ...row, ...(await body()) });
         if (e) return err(e);
+        const tr = await trPair(env, v.note);
         await env.DB.prepare(
-          `UPDATE logs SET day=?,site=?,shift=?,crew=?,headcount=?,ore_t=?,waste_t=?,grade=?,cost_usd=?,note=?,updated_at=? WHERE id=?`
-        ).bind(v.day, v.site, v.shift, v.crew, v.headcount, v.ore_t, v.waste_t, v.grade, v.cost_usd, v.note, nowISO(), row.id).run();
+          `UPDATE logs SET day=?,site=?,shift=?,crew=?,headcount=?,ore_t=?,waste_t=?,product=?,qty=?,unit=?,ta=?,nb=?,photos=?,grade=?,cost_usd=?,note=?,note_en=?,note_zh=?,updated_at=? WHERE id=?`
+        ).bind(v.day, v.site, v.shift, v.crew, v.headcount, v.ore_t, v.waste_t, v.product, v.qty, v.unit, v.ta, v.nb, v.photos, v.grade, v.cost_usd, v.note, tr.en, tr.zh, nowISO(), row.id).run();
         await audit(env, me, "log.update", String(row.id), v.site + " " + v.day);
         return json({ ok: true });
       }
@@ -880,7 +3213,7 @@ export default {
         if (me.role !== "admin") return err("只有管理员能管理人员", 403);
 
         if (!seg[1] && req.method === "GET") {
-          const r = await env.DB.prepare("SELECT * FROM users ORDER BY active DESC, name").all();
+          const r = await env.DB.prepare("SELECT * FROM users WHERE deleted=0 ORDER BY active DESC, name").all();
           return json({ users: r.results.map(publicUser) });
         }
         if (!seg[1] && req.method === "POST") {
@@ -889,13 +3222,13 @@ export default {
           const login = loginOf(b);
           if (!LOGIN_RE.test(login)) return err("账号要 2-60 个字，不能带空格");
           if ((b.password || "").length < 8) return err("密码至少 8 位");
-          const exists = await env.DB.prepare("SELECT id FROM users WHERE lower(login)=lower(?)").bind(login).first();
+          const exists = await env.DB.prepare("SELECT id FROM users WHERE lower(login)=lower(?) AND deleted=0").bind(login).first();
           if (exists) return err("这个账号已经有人用了", 409);
           const salt = rndB64();
           const role = ROLES.includes(b.role) ? b.role : "staff";
           const r = await env.DB.prepare(
-            "INSERT INTO users(login,name,phone,role,site,pwd_hash,pwd_salt,active,created_at) VALUES(?,?,?,?,?,?,?,1,?)"
-          ).bind(login, b.name.trim(), String(b.phone || "").trim(), role, String(b.site || "").trim(), await pwdHash(b.password, salt), salt, nowISO()).run();
+            "INSERT INTO users(login,name,phone,role,pwd_hash,pwd_salt,active,created_at) VALUES(?,?,?,?,?,?,1,?)"
+          ).bind(login, b.name.trim(), String(b.phone || "").trim(), role, await pwdHash(b.password, salt), salt, nowISO()).run();
           if (b.modules !== undefined) {
             await env.DB.prepare("UPDATE users SET modules=? WHERE id=?").bind(cleanModules(b.modules), r.meta.last_row_id).run();
           }
@@ -904,22 +3237,53 @@ export default {
         }
         if (seg[1] && req.method === "PATCH") {
           const u = await env.DB.prepare("SELECT * FROM users WHERE id=?").bind(+seg[1]).first();
-          if (!u) return err("用户不存在", 404);
+          if (!u || u.deleted) return err("用户不存在", 404);
           const b = await body();
           const role = b.role && ROLES.includes(b.role) ? b.role : u.role;
           const active = b.active === undefined ? u.active : (b.active ? 1 : 0);
           if (u.id === me.id && (!active || role !== "admin")) return err("不能把自己降级或停用", 409);
+          let login = u.login;
+          if (b.login !== undefined && String(b.login).trim() && String(b.login).trim().toLowerCase() !== String(u.login).toLowerCase()) {
+            login = String(b.login).trim().toLowerCase();
+            if (!LOGIN_RE.test(login)) return err("账号要 2-60 个字，不能带空格");
+            const dup = await env.DB.prepare("SELECT id FROM users WHERE lower(login)=lower(?) AND deleted=0 AND id<>?").bind(login, u.id).first();
+            if (dup) return err("这个账号已经有人用了", 409);
+          }
           let hash = u.pwd_hash, salt = u.pwd_salt;
           if (b.password) {
             if (b.password.length < 8) return err("密码至少 8 位");
             salt = rndB64(); hash = await pwdHash(b.password, salt);
           }
           const modules = b.modules !== undefined ? cleanModules(b.modules) : u.modules;
-          await env.DB.prepare("UPDATE users SET name=?,phone=?,role=?,site=?,active=?,pwd_hash=?,pwd_salt=?,modules=? WHERE id=?")
-            .bind((b.name || u.name).trim(), b.phone !== undefined ? String(b.phone).trim() : u.phone, role,
-                  b.site !== undefined ? String(b.site).trim() : u.site, active, hash, salt, modules, u.id).run();
+          await env.DB.prepare("UPDATE users SET login=?,name=?,phone=?,role=?,active=?,pwd_hash=?,pwd_salt=?,modules=? WHERE id=?")
+            .bind(login, (b.name || u.name).trim(), b.phone !== undefined ? String(b.phone).trim() : u.phone, role,
+                  active, hash, salt, modules, u.id).run();
           if (!active || b.password) await env.DB.prepare("DELETE FROM sessions WHERE user_id=?").bind(u.id).run();
-          await audit(env, me, "user.update", String(u.id), JSON.stringify({ role, active, pwd: !!b.password, modules: b.modules !== undefined ? 1 : 0 }));
+          let moved = null;
+          if (login !== u.login) {
+            try { moved = await renameLogin(env, u.login, login); }
+            catch (e) {
+              await env.DB.prepare("UPDATE users SET login=? WHERE id=?").bind(u.login, u.id).run();
+              return err("账号名改了但历史记录搬不过去，已撤销：" + e.message, 500);
+            }
+          }
+          await audit(env, me, "user.update", String(u.id), JSON.stringify({ login, role, active, pwd: !!b.password, modules: b.modules !== undefined ? 1 : 0, moved }));
+          return json({ ok: true, moved });
+        }
+        /* 删除 = 标记删除并腾出账号名：他录过的日报/账目还挂在原 id 上，历史不丢 */
+        if (seg[1] && req.method === "DELETE") {
+          const u = await env.DB.prepare("SELECT * FROM users WHERE id=?").bind(+seg[1]).first();
+          if (!u || u.deleted) return err("用户不存在", 404);
+          if (u.id === me.id) return err("不能删除自己", 409);
+          if (u.role === "admin") {
+            const left = await env.DB.prepare("SELECT COUNT(*) c FROM users WHERE role='admin' AND deleted=0 AND active=1").first();
+            if (left.c <= 1) return err("至少要留一个能用的管理员", 409);
+          }
+          const gone = String(u.login).slice(0, 40) + "#del" + u.id;
+          await env.DB.prepare("UPDATE users SET deleted=1,active=0,login=?,phone='',pwd_hash=?,pwd_salt=? WHERE id=?")
+            .bind(gone, rndB64(), rndB64(), u.id).run();
+          await env.DB.prepare("DELETE FROM sessions WHERE user_id=?").bind(u.id).run();
+          await audit(env, me, "user.delete", String(u.id), u.login);
           return json({ ok: true });
         }
       }

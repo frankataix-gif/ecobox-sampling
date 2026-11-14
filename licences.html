@@ -440,7 +440,7 @@ const esc=s=>String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>
 let AREAS=[],LICS=[],BASE=[],SEL=null,PROJ=null,TAB="intro",PIMG="",VIEW="lic",MROWS=[],MAP_PICK="",MAP_PICK_AREA=null,SAMPLES=[],FACTORY={};
 let HOLDER_TOUCHED=false;
 const FS_KEY="lic_feed_v1",AU_KEY="lic_author",CACHE_KEY="lic_cache_v1",EDIT_KEY="lic_edit_v1",NOTE_KEY="lic_notes_v1",INFO_KEY="lic_info_v1",SET_KEY="lic_setok";
-const PAGE_VER="20261109-1133";  /* build_public.py 会替换成构建时间戳 */
+const PAGE_VER="__PAGE_VER__";  /* build_public.py 会替换成构建时间戳 */
 const MEDIA_URL="https://ecobox-media.frankataix.workers.dev",SP_KEY="samp_photos_v1",MT_KEY="m_token";
 let EDITS={},ADDED=[],DELETED=[],NOTES={};
 
@@ -1127,7 +1127,7 @@ function tabIntro(ls){
   try{const o=JSON.parse(localStorage.getItem("lic_intro_override")||"{}");if(o&&o[PROJ])intro=o[PROJ]}catch(e){}
   return `<div class="pane">
     <p class="lead">${esc(intro)}</p>
-    <p class="hint"><button class="primary" id="introUpd">更新</button> 汇总各板块（矿证/地质/野外取样/工厂）自动刷新本项目介绍；配置 Worker 后可用 AI 精炼。</p>
+    <p class="hint"><button class="primary" id="introUpd">更新</button> 汇总各板块（矿证/地质/取样/工厂）自动刷新本项目介绍；配置 Worker 后可用 AI 精炼。</p>
     <h4>地质背景（全项目综合）</h4>
     <dl>
       ${row("构造单元",esc(g.terrane))}
@@ -1137,9 +1137,9 @@ function tabIntro(ls){
       ${row("蚀变",esc(g.alteration))}
       ${row("备注",esc(g.notes))}
     </dl>
-    <h4>野外取样要点</h4>
+    <h4>取样要点</h4>
     <dl>
-      ${row("野外取样对象",esc(sm.target))}
+      ${row("取样对象",esc(sm.target))}
       ${row("点位间距",esc(sm.spacing))}
       ${row("提示",esc(sm.note))}
     </dl>
@@ -1285,7 +1285,7 @@ function mapMount(ls){
   if(window.ResizeObserver)new ResizeObserver(()=>mapDraw()).observe(el);
 }
 
-/* ---------------- 野外取样点地图 ---------------- */
+/* ---------------- 现场取样点地图 ---------------- */
 let SMAP=null;
 const SUB_COLORS={"岩石":"#0f766e","土壤":"#b45309","刻槽":"#7c3aed","其他":"#64748b",
   "桥":"#2563eb","路口":"#0891b2","电线":"#db2777","道路":"#7c3aed","土地/农户":"#ca8a04","其他标记":"#475569"};
@@ -1555,7 +1555,7 @@ function tabFeed(ls){
     <div class="composer">
       <div class="crow">
         <span class="av">${esc(author().slice(0,1).toUpperCase())}</span>
-        <textarea id="ptext" placeholder="发布这个项目的更新：野外取样照片、化验含量（Ta2O5/Nb2O5）、矿证状态变化…"></textarea>
+        <textarea id="ptext" placeholder="发布这个项目的更新：现场取样照片、化验含量（Ta2O5/Nb2O5）、矿证状态变化…"></textarea>
       </div>
       <div class="cbar">
         <select id="ptag"><option>现场</option><option>化验</option><option>进度</option><option>状态</option></select>
@@ -1568,7 +1568,7 @@ function tabFeed(ls){
   </div></div>`;
 }
 
-/* ---------- 野外取样结果 / 工厂信息 ---------- */
+/* ---------- 现场取样结果 / 工厂信息 ---------- */
 function gradeFmt(v,u){
   if(v==null||v==="") return "-";
   if(typeof v==="number") return String(v)+(u||"%");
@@ -1626,8 +1626,6 @@ function deleteSample(sid){
 }
 function clearSampDeleted(){try{localStorage.setItem(SD_KEY,"[]");_dRaw=null}catch(e){}}
 const SAMP_CATEGORIES=["取样","标记点"];
-const CAT_LABEL={"取样":"野外取样","标记点":"标记点"};
-const catLabel=c=>CAT_LABEL[c]||c;
 let SCAT="",SCAT_PROJ=null;
 function markerSubCat(d){
   d=d||"";
@@ -2220,7 +2218,7 @@ function exportDoc(){
     if(Object.keys(m).length)o.photo_ai=m;
     return o;
   });
-  return {note:"野外取样结果（全量）。网页端编辑后导出（devtools/classify_samples.py 可重算 category/subtype）。",deleted:del,samples:out};
+  return {note:"现场取样结果（全量）。网页端编辑后导出（devtools/classify_samples.py 可重算 category/subtype）。",deleted:del,samples:out};
 }
 async function exportSamples(){
   const doc=exportDoc(),out=doc.samples,del=doc.deleted;
@@ -2251,7 +2249,7 @@ function tabSamples(ls){
   const unRows=SCAT?un.filter(s=>sampCat(s).cat===SCAT):un;
   const unHtml=unRows.length?`<h3 class="scat">未归属（${unRows.length}）· 不在任何项目范围</h3>${unRows.map(sampleCard).join("")}`:"";
   if(!all.length){
-    return `<div class="pane"><div class="empty">本项目还没有野外取样记录。<br>野外取样在「矿区考察记录本」录入，这里按坐标自动归类（矿权内优先，其次图幅范围）。</div>${unHtml}</div>`;
+    return `<div class="pane"><div class="empty">本项目还没有取样记录。<br>取样在「矿区考察记录本」录入，这里按坐标自动归类（矿权内优先，其次图幅范围）。</div>${unHtml}</div>`;
   }
   const catCount={"取样":0,"标记点":0};
   all.forEach(s=>{const c=sampCat(s).cat;catCount[c]=(catCount[c]||0)+1;});
@@ -2264,7 +2262,7 @@ function tabSamples(ls){
   const box=smapBBox(rows,ls);
   const seg=`<div class="scatseg">
     <button data-scat="" class="${SCAT?"":"on"}">全部（${all.length}）</button>
-    <button data-scat="取样" class="${SCAT==="取样"?"on":""}">野外取样（${catCount["取样"]||0}）</button>
+    <button data-scat="取样" class="${SCAT==="取样"?"on":""}">取样（${catCount["取样"]||0}）</button>
     <button data-scat="标记点" class="${SCAT==="标记点"?"on":""}">标记点（${catCount["标记点"]||0}）</button>
     ${fsSupported()?`<button id="sampBind" style="margin-left:auto" title="选一次仓库目录，以后导出直接覆盖该目录下的 samples.json，不再走下载">📁 ${FS_DIR_NAME?"已绑定 "+esc(FS_DIR_NAME):"绑定保存目录"}</button>`:""}
     <button id="sampImport"${fsSupported()?"":" style=\"margin-left:auto\""} title="选手机原图，按照片里的 GPS 自动建点，再补信息">📷 从照片新建（自动定位）</button>
@@ -2274,8 +2272,8 @@ function tabSamples(ls){
     <div class="samplist">
       <div class="liccards">
         <div class="liccard">
-          <div class="lch"><b>野外取样统计</b><span class="pill">${all.length} 个点</span></div>
-          <dl>${row("矿权内",zoneCount.licence+" 个点")}${row("图幅内·矿权外",zoneCount.sheet+" 个点")}${SAMP_CATEGORIES.map(c=>row(catLabel(c),(catCount[c]||0)+" 个点")).join("")}</dl>
+          <div class="lch"><b>取样统计</b><span class="pill">${all.length} 个点</span></div>
+          <dl>${row("矿权内",zoneCount.licence+" 个点")}${row("图幅内·矿权外",zoneCount.sheet+" 个点")}${SAMP_CATEGORIES.map(c=>row(c,(catCount[c]||0)+" 个点")).join("")}</dl>
         </div>
       </div>
       ${seg}
@@ -2283,7 +2281,7 @@ function tabSamples(ls){
         const subs=byCat[cat]||{};const keys=Object.keys(subs);
         const total=keys.reduce((t,k)=>t+subs[k].length,0);
         if(!total)return "";
-        return `<h3 class="scat">${catLabel(cat)}（${total}）</h3>`+
+        return `<h3 class="scat">${cat}（${total}）</h3>`+
           keys.map(k=>`<h4>${esc(k)}（${subs[k].length}）</h4>${subs[k].map(sampleCard).join("")}`).join("");
       }).join("")}
       ${unHtml}
@@ -2296,12 +2294,12 @@ function tabSamples(ls){
         <div class="gctrl">
           <button data-sz="1" title="放大">+</button>
           <button data-sz="-1" title="缩小">−</button>
-          <button data-sfit="1" title="回到野外取样范围">⌖</button>
+          <button data-sfit="1" title="回到取样范围">⌖</button>
           <button data-sfull="1" title="全屏地图">⤢</button>
         </div>
         <span class="gzoomnow">z--</span><span class="gattr"></span>
       </div>
-      <div class="mapmeta">${SCAT?catLabel(SCAT)+" ":""}${rows.length} 个点${withCoord<rows.length?`（${withCoord} 个有坐标）`:""} · 圆点=野外取样 · 菱形=标记点 · 点卡片定位到地图 · 点标记跳到卡片${un.length?` · 另有 ${un.length} 个未归类点不在图上`:""}</div>`:`<div class="empty" style="font-size:12.5px">这些取样点还没有坐标，无法在地图上定位。</div>`}
+      <div class="mapmeta">${SCAT?SCAT+" ":""}${rows.length} 个点${withCoord<rows.length?`（${withCoord} 个有坐标）`:""} · 圆点=取样 · 菱形=标记点 · 点卡片定位到地图 · 点标记跳到卡片${un.length?` · 另有 ${un.length} 个未归类点不在图上`:""}</div>`:`<div class="empty" style="font-size:12.5px">这些取样点还没有坐标，无法在地图上定位。</div>`}
     </div>
   </div></div>`;
 }
@@ -2416,7 +2414,7 @@ function render(){
       <button data-tab="intro" class="${TAB==="intro"?"on":""}">项目介绍</button>
       <button data-tab="map" class="${TAB==="map"?"on":""}">项目地图</button>
       <button data-tab="report" class="${TAB==="report"?"on":""}">项目地质报告</button>
-      <button data-tab="samples" class="${TAB==="samples"?"on":""}">野外取样结果</button>
+      <button data-tab="samples" class="${TAB==="samples"?"on":""}">现场取样结果</button>
       <button data-tab="factory" class="${TAB==="factory"?"on":""}">工厂信息</button>`;
   $("#view").innerHTML=`<section class="detail"><div id="pane">${pane}</div></section>`;
 

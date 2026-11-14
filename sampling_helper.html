@@ -9,34 +9,19 @@
 <meta name="apple-mobile-web-app-title" content="ECOBOX矿区考察记录本">
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="apple-touch-icon.png">
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon.svg">
 <title>ECOBOX矿区考察记录本</title>
 <style>
 :root{--primary:#1668dc;--bg:#f4f6f9;--card:#fff;--text:#1e293b;--muted:#64748b;--border:#e2e8f0;--danger:#ef4444;--ok:#22c55e;--warn:#f59e0b}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);font-size:15px}
-#update_tip{position:fixed;left:0;right:0;bottom:calc(56px + env(safe-area-inset-bottom));z-index:300;background:var(--warn);color:#fff;padding:10px 14px;text-align:center;font-size:14px;display:none;gap:10px;justify-content:center;align-items:center;box-shadow:0 -2px 14px rgba(15,23,42,.3)}
-#update_tip.flash{animation:updpulse 1.1s ease-in-out 2}
-@keyframes updpulse{0%,100%{filter:none}50%{filter:brightness(1.25)}}
-#update_tip button{background:#fff;color:var(--warn);border:none;border-radius:6px;padding:8px 14px;font-size:13px;font-weight:600;min-height:34px}
-#update_tip button.ghost{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.75);font-weight:500}
-#off_tip{position:fixed;left:0;right:0;bottom:calc(56px + env(safe-area-inset-bottom));z-index:300;background:#b91c1c;color:#fff;padding:10px 14px;text-align:center;font-size:13px;display:none;gap:10px;justify-content:center;align-items:center;line-height:1.5}
-#off_tip button{background:#fff;color:#b91c1c;border:none;border-radius:6px;padding:8px 14px;font-size:13px;font-weight:600;min-height:34px;flex:0 0 auto}
-.prep{display:flex;flex-direction:column;gap:8px;margin:6px 0 10px}
-.prepitem{display:flex;align-items:center;gap:10px;border:1px solid var(--border);border-radius:10px;padding:9px 10px;background:#f8fafc}
-.prepitem.ok{background:#f0fdf4;border-color:#bbf7d0}
-.prepitem.bad{background:#fef2f2;border-color:#fecaca}
-.prepitem .pi{font-size:17px;flex:0 0 auto}
-.prepitem .pt{flex:1;min-width:0}
-.prepitem .pt b{display:block;font-size:14px;line-height:1.5}
-.prepitem .pt span{display:block;font-size:12px;color:var(--muted);line-height:1.5;word-break:break-word}
-.prepitem button{border:none;border-radius:8px;background:var(--primary);color:#fff;padding:10px 14px;font-size:13px;min-height:40px;flex:0 0 auto}
-.prepitem button:disabled{opacity:.6}
-header{position:sticky;top:0;z-index:50;background:#111;color:#fff;padding:6px 12px;display:flex;align-items:center;gap:10px}
+#update_tip{position:relative;z-index:100;background:var(--warn);color:#fff;padding:9px 14px;text-align:center;font-size:14px;display:none;gap:10px;justify-content:center;align-items:center}
+#update_tip button{background:#fff;color:var(--warn);border:none;border-radius:6px;padding:4px 10px;font-size:13px;font-weight:600}
+header{position:sticky;top:0;z-index:50;background:#111;color:#fff;padding:10px 14px;display:flex;align-items:center;gap:10px}
+header h1{font-size:17px;flex:1}
 .netdot{width:10px;height:10px;border-radius:50%;background:var(--ok)}
 .netdot.off{background:var(--danger)}
-.hbtn{background:rgba(255,255,255,.18);color:#fff;border:none;border-radius:8px;padding:6px 10px;font-size:13px;min-height:30px}
+.hbtn{background:rgba(255,255,255,.18);color:#fff;border:none;border-radius:8px;padding:7px 12px;font-size:14px}
 main{padding:12px;padding-bottom:96px;max-width:640px;margin:0 auto}
 .card{background:var(--card);border-radius:12px;padding:14px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
 .card h3{font-size:14px;color:var(--muted);margin-bottom:10px;font-weight:600}
@@ -51,25 +36,9 @@ textarea{min-height:64px;resize:vertical}
 .secondary{background:var(--border);color:var(--text)}
 .danger{background:var(--danger);color:#fff}
 .block{width:100%;margin-top:12px}
-.gpsbox{background:#f0f7ff;border:1px dashed var(--primary);border-radius:8px;padding:8px 10px;font-size:14px}
-.gpsbox .big{font-size:17px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.3}
-.gps-acc{color:var(--muted);font-size:12.5px;line-height:1.35}
-.gpsrow{display:flex;gap:6px;margin-top:8px}
-.gpsrow .btn{flex:1 1 0;min-width:0;padding:7px 4px;font-size:13px;min-height:36px;white-space:nowrap}
-.tabs{display:flex;gap:6px;margin-bottom:10px}
-.tabs button{flex:1;min-width:0;white-space:nowrap;overflow:hidden;border:1.5px solid #cbd5e1;background:#fff;color:#1e293b;border-radius:9px;padding:8px 0;font-size:14px;font-weight:600;min-height:38px}
-@media (max-width:359px){.tabs button{font-size:12px}}
-.tabs button.on{background:var(--primary);border-color:var(--primary);color:#fff}
-.tabs button{position:relative}
-.tabdot{position:absolute;top:4px;right:6px;width:8px;height:8px;border-radius:50%;background:var(--danger);box-shadow:0 0 0 2px #fff}
-.toolbar{display:flex;gap:8px;margin-bottom:8px}
-.toolbar input{flex:1;min-height:42px}
-.hint{font-size:12.5px;color:var(--muted);line-height:1.5}
-.stat{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.stat>div{background:#f8fafc;border:1px solid var(--border);border-radius:9px;padding:8px 10px;font-size:12.5px;color:var(--muted)}
-.stat b{display:block;font-size:17px;color:var(--text);font-variant-numeric:tabular-nums}
-.empty{text-align:center;color:var(--muted);font-size:14px;padding:18px 0}
-.livecard{border:1px solid var(--ok)!important;box-shadow:0 0 0 2px rgba(34,197,94,.2)!important}
+.gpsbox{background:#f0f7ff;border:1px dashed var(--primary);border-radius:8px;padding:10px;font-size:14px}
+.gpsbox .big{font-size:17px;font-weight:600;font-variant-numeric:tabular-nums}
+.gps-acc{color:var(--muted);font-size:13px}
 .elgrid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:10px}
 .elgrid button{border:1px solid #111;background:#111;color:#fff;border-radius:8px;padding:8px 0;font-size:15px;font-weight:600;font-family:ui-monospace,monospace;min-height:40px}
 .elgrid button.used{background:#e2e8f0;border-color:#cbd5e1;color:#1e293b}
@@ -99,11 +68,8 @@ textarea{min-height:64px;resize:vertical}
 .b-ok{background:#dcfce7;color:#166534}
 .b-fail{background:#fee2e2;color:#991b1b}
 nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--border);display:flex;z-index:50}
-nav button{position:relative;flex:1;min-width:0;border:none;background:none;padding:16px 0 15px;font-size:13.5px;color:var(--muted);line-height:1.3;white-space:nowrap;border-bottom:3px solid transparent}
-@media (max-width:360px){nav button{font-size:12px;padding:15px 0 14px}}
+nav button{flex:1;border:none;background:none;padding:18px 0 17px;font-size:14px;color:var(--muted);line-height:1.3;border-bottom:3px solid transparent}
 nav button.on{color:var(--primary);font-weight:600;background:rgba(22,104,220,.08);border-bottom-color:var(--primary)}
-#setdot{display:none;position:absolute;top:10px;left:calc(50% + 22px);width:9px;height:9px;border-radius:50%;background:#dc2626;box-shadow:0 0 0 2px #fff}
-#setdot.on{display:block}
 .hidden{display:none!important}
 #mapwrap{position:relative;height:calc(100vh - 130px);height:calc(100svh - 130px);border-radius:12px;overflow:hidden;background:#dbe4ee}
 #map{width:100%;height:100%;display:block;touch-action:none}
@@ -119,11 +85,11 @@ progress{width:100%;height:10px;margin-top:8px}
 </style>
 </head>
 <body>
-<div id="update_tip"><span id="update_ver">🔄 有新版本</span><button id="update_now">立即更新</button><button id="update_later" class="ghost">稍后</button></div>
-<div id="off_tip">⚠️ 离线副本未就绪，断网会打不开 <button id="off_fix">现在缓存</button></div>
+<div id="update_tip">🔄 发现新版本 <button id="update_now">立即更新</button></div>
 <header>
   <span class="netdot" id="netdot" title="网络状态"></span>
-  <button class="hbtn" id="syncbtn" style="margin-left:auto">同步 <span id="pendcnt">0</span></button>
+  <h1>ECOBOX矿区考察记录本</h1>
+  <button class="hbtn" id="syncbtn">同步 <span id="pendcnt">0</span></button>
 </header>
 <main>
   <div class="card hidden" id="pwa_banner" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
@@ -133,40 +99,22 @@ progress{width:100%;height:10px;margin-top:8px}
   </div>
   <!-- ===== 记录页 ===== -->
   <section id="pg-form">
-    <div class="tabs" id="formtabs">
-      <button type="button" data-tab="cur" class="on">✏️ 野外取样</button>
-      <button type="button" data-tab="trip">🧭 行程<span class="tabdot hidden" id="tab_trip_dot"></span></button>
-    </div>
-    <div id="tab_cur">
     <div class="card">
       <label>记录类型</label>
       <div class="chips" id="chips_kind"></div>
-      <div id="w_type"><label>位置状态</label>
-        <div class="chips" id="chips_loc"></div>
-        <select id="f_loc" class="hidden">
-          <option value="">— 不填 —</option>
-          <option>勘探开挖</option>
-          <option>自然露头</option>
-          <option>民采点</option>
-          <option>废弃开采坑</option>
-          <option>废石/尾矿堆</option>
-          <option>钻孔岩心</option>
-          <option>大型开采作业点</option>
-          <option>其他</option>
-        </select>
-      </div>
+      <div id="w_type"><label>取样类型</label><div class="chips" id="chips_type"></div></div>
       <div id="w_mark" class="hidden"><label>标记类型</label><div class="chips" id="chips_mark"></div></div>
       <select id="f_kind" class="hidden">
-        <option value="sample" selected>⛏ 野外取样</option><option value="marker">🚩 标记点</option>
+        <option value="sample" selected>⛏ 取样</option><option value="marker">🚩 标记点</option>
       </select>
       <select id="f_type" class="hidden">
-        <option value="" selected>—</option><option>岩石</option><option>土壤</option><option>刻槽</option><option>岩心</option><option>矿点/民采点</option><option>其他</option>
+        <option selected>岩石</option><option>土壤</option><option>刻槽</option><option>岩心</option><option>矿点/民采点</option><option>其他</option>
       </select>
       <select id="f_mark" class="hidden">
         <option selected>桥</option><option>路口</option><option>岔路</option><option>过河点</option><option>营地</option><option>水井</option><option>村庄</option><option>矿部/办公室</option><option>停车点</option><option>其他标记</option>
       </select>
       <input type="hidden" id="f_sid">
-      <label>野外取样时间（系统自动，精确到秒）</label><input type="datetime-local" id="f_time" step="1" readonly style="background:#f1f5f9;color:var(--muted)">
+      <label>取样时间（系统自动，精确到秒）</label><input type="datetime-local" id="f_time" step="1" readonly style="background:#f1f5f9;color:var(--muted)">
     </div>
     <div class="card">
       <h3>📍 坐标（GPS 无需网络）<span style="color:var(--danger)"> *</span></h3>
@@ -174,7 +122,7 @@ progress{width:100%;height:10px;margin-top:8px}
         <div class="big" id="gps_text">尚未定位</div>
         <div class="gps-acc" id="gps_acc" style="display:none"></div>
         <div class="gps-acc" id="gps_utm" style="display:none"></div>
-        <div style="margin-top:4px"><label style="margin:0 0 2px;font-size:12px">📍 定位地址（由 GPS 自动生成，不可修改）</label>
+        <div style="margin-top:6px"><label style="margin:0 0 3px">📍 定位地址（由 GPS 自动生成，不可修改）</label>
         <input id="f_area" readonly style="background:#f1f5f9;color:var(--muted)" placeholder="定位后自动填入：省 / 县 / 村镇"></div>
       </div>
       <div class="row hidden" style="margin-top:8px">
@@ -182,8 +130,8 @@ progress{width:100%;height:10px;margin-top:8px}
         <div><label>经度</label><input id="f_lon" inputmode="decimal" placeholder="28.xxx"></div>
         <div class="hidden"><input id="f_alt"></div>
       </div>
-      <div class="gpsrow">
-        <button class="btn primary" id="btn_gps">📍 获取定位</button>
+      <div class="row" style="margin-top:8px">
+        <button class="btn primary" id="btn_gps" style="font-size:17px">📍 获取定位</button>
         <button class="btn secondary" id="btn_pick">🗺 地图选点</button>
         <button class="btn secondary" id="btn_viewpos">👁 定位查看</button>
       </div>
@@ -194,9 +142,28 @@ progress{width:100%;height:10px;margin-top:8px}
       <div id="assays"></div>
       <button class="btn secondary block" id="btn_add_assay">＋ 添加其他元素</button>
     </div>
-    <textarea id="f_desc" class="hidden"></textarea>
-    <div class="card" id="card_photo">
-      <h3 id="h_photo">📷 照片（至少 1 张，最多 6 张）<span id="req_photo" style="color:var(--danger)">*</span></h3>
+    <div class="card" id="card_loc">
+      <h3>📍 取样位置 / 状态</h3>
+      <label>位置状态</label>
+      <select id="f_loc">
+        <option value="">— 请选择 —</option>
+        <option>勘探开挖</option>
+        <option>自然露头</option>
+        <option>民采点</option>
+        <option>废弃开采坑</option>
+        <option>废石/尾矿堆</option>
+        <option>钻孔岩心</option>
+        <option>大型开采作业点</option>
+        <option>其他</option>
+      </select>
+    </div>
+    <div class="card">
+      <h3>🪨 地质描述</h3>
+      <label>描述（岩性、矿化、蚀变、构造等）</label>
+      <textarea id="f_desc" placeholder="如：花岗岩，石英脉发育，可见黄铁矿化…"></textarea>
+    </div>
+    <div class="card">
+      <h3>📷 照片（至少 1 张，最多 6 张）<span style="color:var(--danger)">*</span></h3>
       <p style="font-size:12px;color:var(--muted);margin-bottom:6px">含量读数（XRF 屏幕照）请标记 🧪，可联网用 AI 自动识别填入上表。</p>
       <div class="row">
         <button class="btn secondary" id="btn_cam">📸 拍照</button>
@@ -209,57 +176,17 @@ progress{width:100%;height:10px;margin-top:8px}
     </div>
     <div class="card">
       <div class="row">
-        <div><label>记录人</label><input id="f_recorder" readonly placeholder="登录后自动填入" style="background:#f1f5f9;color:var(--muted)"></div>
+        <div><label>记录人 <span style="color:var(--danger)">*</span></label><input id="f_recorder" placeholder="姓名"></div>
       </div>
       <label>备注</label><textarea id="f_remark"></textarea>
       <button class="btn primary block" id="btn_save" style="font-size:17px">💾 保存记录</button>
-      <button class="btn secondary block" id="btn_clear" style="margin-top:8px;font-size:14px;min-height:40px">🧹 清空本次输入</button>
-    </div>
-    </div>
-    <div id="tab_trip" class="hidden">
-    <div class="card">
-      <h3>🧭 行程轨迹记录</h3>
-      <div class="gpsbox">
-        <div class="big" id="trk_state">未记录</div>
-        <div class="gps-acc" id="trk_info">点下方按钮开始记录行程轨迹</div>
-      </div>
-      <div class="row" style="margin-bottom:8px">
-        <button class="btn secondary" id="trk_mode_car" style="flex:1">🚗 行车 <span style="color:#7c3aed">━</span></button>
-        <button class="btn secondary" id="trk_mode_walk" style="flex:1">🚶 步行 <span style="color:#0ea5e9">━</span></button>
-      </div>
-      <button class="btn primary block" id="btn_trk" style="font-size:17px">▶ 开始新的行程</button>
-      <p style="font-size:13px;color:var(--muted);margin-top:8px">一次行程 = 一段独立旅行：开始→记录轨迹→结束存档。与样品无关。中途关掉页面会自动续录。</p>
-    </div>
-    <div id="triplive"></div>
-    <div class="card">
-      <h3>🗂 历史行程</h3>
-      <div id="triplist"></div>
-    </div>
     </div>
   </section>
 
-  <!-- ===== 历史数据页 ===== -->
+  <!-- ===== 列表页 ===== -->
   <section id="pg-list" class="hidden">
-    <div class="toolbar"><input id="q_list" placeholder="🔍 搜索 编号 / 备注 / 地区 / 元素" inputmode="search"></div>
-    <div class="chips" id="chips_rectype">
-      <button type="button" data-t="all" class="on">全部</button>
-      <button type="button" data-t="sample">野外取样</button>
-      <button type="button" data-t="marker">标记点</button>
-      <button type="button" data-t="trip">行程</button>
-    </div>
-    <div class="chips" id="chips_filter">
-      <button type="button" data-f="all" class="on">全部状态</button>
-      <button type="button" data-f="pend">待同步</button>
-      <button type="button" data-f="ok">已同步</button>
-      <button type="button" data-f="cloud">☁️ 仅云端</button>
-    </div>
-    <div class="hint" id="list_stat" style="margin:0 2px 10px"></div>
-    <div class="card" id="cloudbar" style="display:none;gap:8px;align-items:center">
-      <span id="cloudbar_txt" style="flex:1;font-size:13px;color:var(--muted)"></span>
-      <button class="btn secondary" id="btn_pull_all" style="padding:6px 10px;min-height:34px">存到本机</button>
-    </div>
     <div id="samlist"></div>
-    <div class="card" id="empty_tip" style="text-align:center;color:var(--muted)">暂无记录，在「野外取样」录入并保存后会出现在这里</div>
+    <div class="card" id="empty_tip" style="text-align:center;color:var(--muted)">暂无记录，切到「记录」页开始</div>
   </section>
 
   <!-- ===== 地图页 ===== -->
@@ -269,7 +196,7 @@ progress{width:100%;height:10px;margin-top:8px}
       <div class="mapctl">
         <button id="mzin">＋</button><button id="mzout">－</button>
         <button id="mloc" title="我的位置">◎</button>
-        <button id="msamp" title="跳到全部野外取样点">🪨</button>
+        <button id="msamp" title="跳到全部取样点">🪨</button>
         <button id="mlic" title="跳到矿证范围">📜</button>
         <button id="mzone" title="跳到潜在验证区">🎯</button>
         <button id="mgeo" title="地质图层开关">⛏</button>
@@ -287,96 +214,78 @@ progress{width:100%;height:10px;margin-top:8px}
     </div>
   </section>
 
+  <!-- ===== 行程页 ===== -->
+  <section id="pg-track" class="hidden">
+    <div class="card">
+      <h3>🧭 行程轨迹记录</h3>
+      <div class="gpsbox">
+        <div class="big" id="trk_state">未记录</div>
+        <div class="gps-acc" id="trk_info">点下方按钮开始记录行程轨迹</div>
+      </div>
+      <div class="row" style="margin-bottom:8px">
+        <button class="btn secondary" id="trk_mode_car" style="flex:1">🚗 行车 <span style="color:#7c3aed">━</span></button>
+        <button class="btn secondary" id="trk_mode_walk" style="flex:1">🚶 步行 <span style="color:#0ea5e9">━</span></button>
+      </div>
+      <button class="btn primary block" id="btn_trk" style="font-size:17px">▶ 开始新的行程</button>
+      <p style="font-size:13px;color:var(--muted);margin-top:8px">一次行程 = 一段独立旅行：开始→记录轨迹→结束存档。与样品无关。中途关掉页面会自动续录。</p>
+    </div>
+    <div class="card">
+      <h3>🗂 历史行程</h3>
+      <div id="triplist"></div>
+    </div>
+  </section>
+
   <!-- ===== 设置页 ===== -->
   <section id="pg-set" class="hidden">
     <div class="card">
-      <h3>🚦 出发前检查</h3>
-      <div class="prep" id="prep_list"></div>
-      <p id="prep_sum" style="font-size:13px;margin:0 0 10px"></p>
-      <button class="btn primary block" id="btn_prep_all">一键准备（缓存页面 + 下载地图）</button>
-      <p class="hint" style="margin-top:6px">四项全绿再出门：飞行模式也能打开，地图也还在。换手机或清过浏览器数据后要重做一次。</p>
-    </div>
-    <div class="card" id="install_card">
-      <h3>📲 添加到手机桌面</h3>
-      <div style="display:flex;gap:12px;align-items:center;margin:4px 0 10px">
-        <img src="icon-192.png" alt="" style="width:52px;height:52px;border-radius:13px;box-shadow:0 2px 8px rgba(15,23,42,.18)">
-        <div style="flex:1;min-width:0">
-          <div id="inst_state" style="font-size:15px;font-weight:600"></div>
-          <div id="inst_sub" class="hint" style="margin:2px 0 0"></div>
-        </div>
-      </div>
-      <button class="btn primary block hidden" id="btn_install">📲 添加到桌面</button>
-      <ol id="inst_steps" style="font-size:13px;color:var(--muted);line-height:1.75;margin:0 0 0 18px;padding:0"></ol>
-      <p class="hint" style="margin-top:8px">从桌面图标打开：全屏、没有地址栏、断网也能用。</p>
-    </div>
-    <div class="card">
-      <h3>☁️ 云端同步</h3>
-      <p id="cloud_state" style="font-size:13px;line-height:1.7;margin:0 0 10px"></p>
-      <button class="btn secondary block" id="btn_synctest">测试连接</button>
-      <details id="adv_box" style="margin-top:10px">
-        <summary style="font-size:12px;color:var(--muted);cursor:pointer">高级：手动填写服务器地址 / 令牌</summary>
-        <label>Worker 地址</label><input id="s_worker" value="https://fancy-heart-7a80.frankataix.workers.dev" style="background:#f1f5f9;color:var(--muted)">
-        <label>访问令牌</label><input id="s_token" placeholder="一般不用填">
-        <button class="btn secondary block" id="btn_saveset">保存地址与令牌</button>
-      </details>
-    </div>
-    <div class="card">
-      <h3>📊 本机数据</h3>
-      <p style="font-size:14px;margin:0 0 10px">记录人：<b id="set_user">—</b> <span class="hint">（登录后锁定）</span></p>
-      <div class="stat" id="set_stat"></div>
-    </div>
-    <div class="card">
-      <h3>📤 备份与恢复</h3>
-      <button class="btn primary block" id="btn_backup">📤 导出完整备份（记录 + 照片 + 轨迹）</button>
-      <p class="hint" style="margin:6px 0 10px">导出会弹手机分享面板，可直接存 Drive，或发邮件 / WhatsApp。</p>
-      <button class="btn secondary block" id="btn_pull">☁️ 从云端恢复记录</button>
-      <button class="btn secondary block" id="btn_import" style="margin-top:8px">📥 从备份文件恢复（JSON）</button>
-      <input type="file" id="file_import" accept=".json,application/json" class="hidden">
-      <p id="pull_info" class="hint" style="margin-top:6px"></p>
-      <details style="margin-top:10px">
-        <summary style="font-size:12px;color:var(--muted);cursor:pointer">更多格式：GPX / KML / CSV</summary>
-        <button class="btn secondary block" id="btn_gpx" style="margin-top:8px">GPX 轨迹（QGIS 用）</button>
-        <button class="btn secondary block" id="btn_kml" style="margin-top:8px">KML 轨迹（Google Earth 用）</button>
-        <button class="btn secondary block" id="btn_csv" style="margin-top:8px">CSV 表格（Excel 用）</button>
-        <button class="btn secondary block" id="btn_trk_clear" style="margin-top:8px;display:none">清空轨迹点</button>
-      </details>
-    </div>
-    <div class="card">
       <h3>🗂 矿证 / 地质资料</h3>
-      <p class="hint" style="margin:0 0 10px">记录不用选矿证：按 GPS 坐标自动归属矿区，范围外记「未归属」。</p>
+      <p style="font-size:13px;color:var(--muted);line-height:1.7">取样时<b>不需要选矿区</b>：记录会按 GPS 坐标自动标注所属矿区（依据 <code>areas.json</code> 的 bbox），落在范围外记为「未归属」。<br>
+      矿证与地质资料在单独页面查看：</p>
       <a class="btn secondary block" href="licences.html" style="display:block;text-decoration:none;text-align:center">📚 打开矿证与地质资料页</a>
     </div>
     <div class="card">
+      <h3>☁️ 云端同步（Cloudflare Worker + D1）</h3>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:8px">已开启<b>免配置模式</b>：联网即自动同步到云端，无需任何设置。下面的字段仅供高级用户改服务器用，一般不用动。</p>
+      <label>Worker 地址（已固定）</label><input id="s_worker" value="https://fancy-heart-7a80.frankataix.workers.dev" readonly style="background:#f1f5f9;color:var(--muted)">
+      <label>访问令牌</label><input id="s_token" placeholder="Worker 里配置的 APP_TOKEN">
+      <button class="btn primary block" id="btn_saveset">保存设置</button>
+      <button class="btn secondary block" id="btn_synctest">测试连接</button>
+    </div>
+    <div class="card">
+      <h3>📤 导出</h3>
+      <button class="btn primary block" id="btn_backup">📤 导出完整备份（样品+照片+轨迹，存 Drive / 发邮件 / WhatsApp）</button>
+      <button class="btn secondary block" id="btn_gpx">GPX 轨迹文件（QGIS 用）</button>
+      <button class="btn secondary block" id="btn_kml">KML 轨迹文件（Google Earth 用）</button>
+      <button class="btn secondary block" id="btn_csv">CSV 表格（Excel 用）</button>
+      <button class="btn secondary block" id="btn_trk_clear" style="display:none">清空轨迹点</button>
+      <p style="font-size:13px;color:var(--muted);margin-top:8px">点导出会弹手机分享面板，直接选 Drive 存云端、或选邮件/WhatsApp 发出去，无需先下载。</p>
+    </div>
+    <div class="card">
+      <h3>ℹ️ 说明</h3>
+      <p style="font-size:13px;color:var(--muted);line-height:1.7">
+        · 定位依靠 GPS 卫星，<b>无网络也能用</b>；首次定位请站开阔地等 30 秒–2 分钟。<br>
+        · 记录与照片保存在本机浏览器，未同步前勿清除浏览器数据。<br>
+        · 出发前在「地图」页按 ⬇ 下载矿区离线地图。
+      </p>
+    </div>
+    <div class="card">
       <h3>🔄 版本更新</h3>
-      <p style="font-size:13px;margin:0 0 10px">当前版本 <b id="set_ver">20261112-1003</b></p>
-      <button class="btn primary block hidden" id="btn_now" style="margin-bottom:8px">⬆️ 立即更新到 <span id="now_ver"></span></button>
-      <button class="btn secondary block" id="btn_update">🔄 检查更新</button>
-      <details style="margin-top:10px">
-        <summary style="font-size:12px;color:var(--muted);cursor:pointer">更新卡住了？强制重新下载</summary>
-        <button class="btn secondary block" id="btn_force_update" style="margin-top:8px;font-size:14px;min-height:40px">清缓存并重新下载最新版</button>
-      </details>
+      <button class="btn secondary block" id="btn_update">检查并强制更新到最新版</button>
+      <p style="font-size:12px;color:var(--muted)">感觉功能没变化时点这里：清缓存并重新加载。当前版本：b20261105-001</p>
     </div>
     <div class="card">
-      <details id="help_box">
-        <summary style="cursor:pointer;font-size:15px;font-weight:600">ℹ️ 使用说明</summary>
-        <p class="hint" style="margin-top:10px;line-height:1.75">
-          · 定位靠 GPS 卫星，<b>没有网络也能用</b>；首次定位站到开阔地等 30 秒 ~ 1 分钟。<br>
-          · 记录和照片存在本机浏览器里，同步之前别清除浏览器数据。<br>
-          · 想更省电更顺手：先「添加到手机桌面」，再从桌面图标打开。
-        </p>
-      </details>
-    </div>
-    <div class="card">
+      <p style="font-size:11px;color:var(--muted);text-align:center">b20261105-001</p>
       <h3>🗑 危险操作</h3>
       <button class="btn danger block" id="btn_wipe">🔒 清空本机全部数据（需密码）</button>
     </div>
   </section>
 </main>
 <nav>
-        <button data-pg="pg-form" class="on">✏️ 野外取样</button>
-  <button data-pg="pg-list">📋 历史数据</button>
+  <button data-pg="pg-form" class="on">✏️ 记录</button>
+  <button data-pg="pg-list">📋 取样</button>
+  <button data-pg="pg-track">🧭 行程</button>
   <button data-pg="pg-map">🗺 地图</button>
-  <button data-pg="pg-set">⚙️ 设置<span id="setdot"></span></button>
+  <button data-pg="pg-set">⚙️ 设置</button>
 </nav>
 <div class="toast" id="toast"></div>
 <div class="modal hidden" id="tripmodal"><div class="box">
@@ -404,7 +313,7 @@ progress{width:100%;height:10px;margin-top:8px}
 </div></div>
 <div class="modal hidden" id="wipemodal"><div class="box">
   <h3 style="color:var(--danger)">🗑 清空本机全部数据</h3>
-  <p style="font-size:14px;color:var(--muted)">将删除<b>全部野外取样、照片、行程轨迹、离线地图</b>，不可恢复！请输入授权密码：</p>
+  <p style="font-size:14px;color:var(--muted)">将删除<b>全部样品记录、照片、行程轨迹、离线地图</b>，不可恢复！请输入授权密码：</p>
   <input id="wipepwd" type="password" inputmode="numeric" placeholder="输入授权密码">
   <div class="row" style="margin-top:10px">
     <button class="btn secondary" id="wipecancel">取消</button>
@@ -435,14 +344,6 @@ progress{width:100%;height:10px;margin-top:8px}
     6️⃣ iPhone：设置 → 隐私与安全性 → 定位服务 → Safari/Chrome → 使用App期间
   </div>
   <button class="btn primary block" id="gpsmodal_close" style="margin-top:12px">知道了，重试定位</button>
-</div></div>
-<div class="modal hidden" id="loginmodal"><div class="box">
-  <h3>👤 选择记录人</h3>
-  <p style="font-size:13px;color:var(--muted);margin-bottom:10px">登录一次，之后打开自动带入「记录人」。登录后锁定为你本人，软件里不能改成别人。</p>
-  <div class="chips" id="login_users"></div>
-  <label>密码</label><input id="login_pwd" type="password" inputmode="numeric" autocomplete="current-password" placeholder="6 位密码">
-  <p id="login_err" style="color:var(--danger);font-size:13px;min-height:18px;margin-top:6px"></p>
-  <button class="btn primary block" id="login_ok">进入</button>
 </div></div>
 <div class="modal hidden" id="dlmodal"><div class="box">
   <h3>下载离线地图</h3>
@@ -493,17 +394,17 @@ function toUTM(lat,lon){
   return `${zone}${band} ${Math.round(E)}E ${Math.round(NN)}N`;
 }
 const b64=buf=>{let s="";const b=new Uint8Array(buf);for(let i=0;i<b.length;i+=8192)s+=String.fromCharCode.apply(null,b.subarray(i,i+8192));return btoa(s)};
-const unb64=str=>{const bin=atob(str),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return new Blob([u],{type:"image/jpeg"})};
 /* ============ 矿证数据（由 build_licenses.py 生成，勿手改） ============ */
 /*__LICENSES_BEGIN__*/const LICENSES=[{"no":"42123-HQ-LEL","holder":"ECOBOX MINING INVESTMENT ZAMBIA LIMITED","ring":[[-11.9182,28.88339],[-11.88821,28.88339],[-11.88821,28.86006],[-11.87487,28.86006],[-11.87487,28.84839],[-11.86654,28.84839],[-11.86654,28.93673],[-11.69156,28.93673],[-11.69156,29.00006],[-11.71322,29.00006],[-11.71322,28.96673],[-11.73489,28.96673],[-11.73489,29.00006],[-11.75155,29.00006],[-11.75155,28.96673],[-11.77322,28.96673],[-11.77322,29.00173],[-11.69156,29.00173],[-11.69156,29.11673],[-11.78988,29.11673],[-11.78988,29.00839],[-11.80655,29.00839],[-11.80655,29.05506],[-11.83821,29.05506],[-11.83821,29.05173],[-11.84321,29.05173],[-11.84321,29.03839],[-11.84821,29.03839],[-11.84821,29.02173],[-11.85488,29.02173],[-11.85488,29.01006],[-11.86154,29.01006],[-11.86154,28.99506],[-11.86987,28.99506],[-11.86987,28.97839],[-11.87654,28.97839],[-11.87654,28.96673],[-11.88154,28.96673],[-11.88154,28.95339],[-11.88987,28.95339],[-11.88987,28.94006],[-11.89654,28.94006],[-11.89654,28.92839],[-11.90321,28.92839],[-11.90321,28.91339],[-11.90987,28.91339],[-11.90987,28.89839],[-11.9182,28.89839]],"bb":[-11.9182,28.84839,-11.69156,29.11673]},{"no":"42181-HQ-LEL","holder":"ECOBOX MINING INVESTMENT ZAMBIA LIMITED","ring":[[-12.92145,32.27515],[-12.89312,32.27515],[-12.89312,32.31515],[-12.84479,32.31515],[-12.84479,32.32348],[-12.86312,32.32348],[-12.86312,32.32181],[-12.86979,32.32181],[-12.86979,32.32015],[-12.92145,32.32015]],"bb":[-12.92145,32.27515,-12.84479,32.32348]},{"no":"42204-HQ-LEL","holder":"ECOBOX MINING INVESTMENT ZAMBIA LIMITED","ring":[[-11.29826,28.50005],[-11.25993,28.50005],[-11.25993,28.54171],[-11.29826,28.54171]],"bb":[-11.29826,28.50005,-11.25993,28.54171]},{"no":"42208-HQ-LEL","holder":"ECOBOX MINING INVESTMENT ZAMBIA LIMITED","ring":[[-13.71139,29.31507],[-13.71139,29.49341],[-13.73638,29.49341],[-13.73638,29.45007],[-13.76972,29.45007],[-13.76972,29.49341],[-13.86804,29.49341],[-13.86804,29.31507]],"bb":[-13.86804,29.31507,-13.71139,29.49341]},{"no":"42410-HQ-LEL","holder":"MINERAL MATRIX TRADING LIMITED","ring":[[-14.56298,28.27504],[-14.56298,28.36338],[-14.59798,28.36338],[-14.59798,28.35671],[-14.62131,28.35671],[-14.62131,28.39004],[-14.65131,28.39004],[-14.65131,28.27504]],"bb":[-14.65131,28.27504,-14.56298,28.39004]},{"no":"42427-HQ-LEL","holder":"MINERAL MATRIX TRADING LIMITED","ring":[[-12.98311,27.43669],[-12.98311,27.52835],[-13.04478,27.52835],[-13.04478,27.43669]],"bb":[-13.04478,27.43669,-12.98311,27.52835]},{"no":"42494-HQ-LEL","holder":"MINERAL MATRIX TRADING LIMITED","ring":[[-16.55116,27.27001],[-16.55116,27.38668],[-16.55282,27.38668],[-16.55282,27.41002],[-16.59448,27.41002],[-16.59448,27.35502],[-16.79614,27.35502],[-16.79614,27.24168],[-16.59948,27.24168],[-16.59948,27.27168],[-16.57615,27.27168],[-16.57615,27.27001]],"bb":[-16.79614,27.24168,-16.55116,27.41002]},{"no":"42502-HQ-LEL","holder":"MINERAL MATRIX TRADING LIMITED","ring":[[-13.85138,28.89506],[-13.85138,28.72172],[-13.83304,28.72172],[-13.83304,28.80672],[-13.79805,28.80672],[-13.79805,28.89506]],"bb":[-13.85138,28.72172,-13.79805,28.89506]},{"no":"42513-HQ-LEL","holder":"MINERAL MATRIX TRADING LIMITED","ring":[[-10.64331,31.58513],[-10.64331,31.98347],[-10.70664,31.98347],[-10.70664,31.9168],[-10.71831,31.9168],[-10.71831,31.53346],[-10.71331,31.53346],[-10.71331,31.58513]],"bb":[-10.71831,31.53346,-10.64331,31.98347]},{"no":"42519-HQ-LEL","holder":"MINERAL MATRIX TRADING LIMITED","ring":[[-13.80638,27.48835],[-13.91637,27.48835],[-13.91637,27.35002],[-13.91137,27.35002],[-13.91137,27.14501],[-13.88471,27.14501],[-13.88471,27.11501],[-13.83804,27.11501],[-13.83804,27.13001],[-13.83471,27.13001],[-13.83471,27.12834],[-13.83638,27.12834],[-13.83638,27.11501],[-13.82971,27.11501],[-13.82971,27.35668],[-13.80638,27.35668]],"bb":[-13.91637,27.11501,-13.80638,27.48835]},{"no":"42545-HQ-LEL","holder":"ECOBOX MINING INVESTMENT ZAMBIA LIMITED","ring":[[-13.26809,28.1517],[-13.26976,28.1517],[-13.26976,28.14837],[-13.27142,28.14837],[-13.27142,28.1467],[-13.35475,28.1467],[-13.35475,28.15004],[-13.35642,28.15004],[-13.35642,28.15337],[-13.35808,28.15337],[-13.35808,28.15504],[-13.39475,28.15504],[-13.39475,28.1517],[-13.39308,28.1517],[-13.39308,28.15004],[-13.39141,28.15004],[-13.39141,28.14504],[-13.38975,28.14504],[-13.38975,28.13837],[-13.38808,28.13837],[-13.38808,28.13337],[-13.38641,28.13337],[-13.38641,28.12837],[-13.38475,28.12837],[-13.38475,28.12337],[-13.38308,28.12337],[-13.38308,28.11837],[-13.38141,28.11837],[-13.38141,28.11337],[-13.37975,28.11337],[-13.37975,28.10837],[-13.37808,28.10837],[-13.37808,28.1017],[-13.37642,28.1017],[-13.37642,28.0967],[-13.36975,28.0967],[-13.36975,28.09504],[-13.36475,28.09504],[-13.36475,28.09337],[-13.35808,28.09337],[-13.35808,28.0917],[-13.35308,28.0917],[-13.35308,28.09004],[-13.34642,28.09004],[-13.34642,28.08837],[-13.34142,28.08837],[-13.34142,28.0867],[-13.33475,28.0867],[-13.33475,28.08504],[-13.32975,28.08504],[-13.32975,28.08337],[-13.32309,28.08337],[-13.32309,28.0817],[-13.31809,28.0817],[-13.31809,28.08004],[-13.31142,28.08004],[-13.31142,28.07837],[-13.30642,28.07837],[-13.30642,28.0767],[-13.30142,28.0767],[-13.30142,28.07504],[-13.29476,28.07504],[-13.29476,28.07337],[-13.28809,28.07337],[-13.28809,28.0717],[-13.28309,28.0717],[-13.28309,28.07004],[-13.27142,28.07004],[-13.27142,28.14504],[-13.26976,28.14504],[-13.26976,28.1467],[-13.26809,28.1467]],"bb":[-13.39475,28.07004,-13.26809,28.15504]},{"no":"42653-HQ-LEL","holder":"FRANCOPAT MINING LIMITED","ring":[[-14.56965,28.36338],[-14.56298,28.36338],[-14.56298,28.27504],[-14.51132,28.27504],[-14.51132,28.32004],[-14.51465,28.32004],[-14.51465,28.36338],[-14.54298,28.36338],[-14.54298,28.41671],[-14.51465,28.41671],[-14.51465,28.36671],[-14.50965,28.36671],[-14.50965,28.45671],[-14.55965,28.45671],[-14.55965,28.39171],[-14.56965,28.39171]],"bb":[-14.56965,28.27504,-14.50965,28.45671]},{"no":"42660-HQ-LEL","holder":"MINERAL CREST MINING LIMITED","ring":[[-13.79138,31.26512],[-13.74638,31.26512],[-13.74638,31.32179],[-13.78471,31.32179],[-13.78471,31.37179],[-13.76638,31.37179],[-13.76638,31.40679],[-13.73972,31.40679],[-13.73972,31.42346],[-13.79305,31.42346],[-13.79305,31.40679],[-13.81471,31.40679],[-13.81471,31.38346],[-13.83138,31.38346],[-13.83138,31.35512],[-13.82971,31.35512],[-13.82971,31.30179],[-13.79138,31.30179]],"bb":[-13.83138,31.26512,-13.73972,31.42346]},{"no":"42672-HQ-LEL","holder":"FRANCOPAT MINING LIMITED","ring":[[-13.56307,30.33343],[-13.56307,30.35343],[-13.58973,30.35343],[-13.58973,30.45343],[-13.68139,30.45343],[-13.68139,30.35176],[-13.66639,30.35176],[-13.66639,30.3501],[-13.63806,30.3501],[-13.63806,30.34843],[-13.62639,30.34843],[-13.62639,30.3551],[-13.62473,30.3551],[-13.62473,30.33343]],"bb":[-13.68139,30.33343,-13.56307,30.45343]},{"no":"42794-HQ-LEL","holder":"MINERAL CREST MINING LIMITED","ring":[[-13.81471,25.15496],[-13.78305,25.15496],[-13.78305,25.12829],[-13.76138,25.12829],[-13.76138,25.10829],[-13.75972,25.10829],[-13.75972,25.10996],[-13.75805,25.10996],[-13.75805,25.11162],[-13.75638,25.11162],[-13.75638,25.11329],[-13.75472,25.11329],[-13.75472,25.11496],[-13.75305,25.11496],[-13.75305,25.11662],[-13.75138,25.11662],[-13.75138,25.11829],[-13.74972,25.11829],[-13.74972,25.11996],[-13.74805,25.11996],[-13.74805,25.12162],[-13.74638,25.12162],[-13.74638,25.12329],[-13.74472,25.12329],[-13.74472,25.12662],[-13.74305,25.12662],[-13.74305,25.12829],[-13.74138,25.12829],[-13.74138,25.12996],[-13.73639,25.12996],[-13.73639,25.13162],[-13.72472,25.13162],[-13.72472,25.15663],[-13.72639,25.15663],[-13.72639,25.19996],[-13.73305,25.19996],[-13.73305,25.19829],[-13.73972,25.19829],[-13.73972,25.19663],[-13.74638,25.19663],[-13.74638,25.19496],[-13.75305,25.19496],[-13.75305,25.19329],[-13.75972,25.19329],[-13.75972,25.19163],[-13.76638,25.19163],[-13.76638,25.18996],[-13.77305,25.18996],[-13.77305,25.18829],[-13.77971,25.18829],[-13.77971,25.18663],[-13.78638,25.18663],[-13.78638,25.18496],[-13.79305,25.18496],[-13.79305,25.18329],[-13.79805,25.18329],[-13.79805,25.18163],[-13.80471,25.18163],[-13.80471,25.17996],[-13.81138,25.17996],[-13.81138,25.17829],[-13.81471,25.17829]],"bb":[-13.81471,25.10829,-13.72472,25.19996]},{"no":"42795-HQ-LEL","holder":"MINERAL CREST MINING LIMITED","ring":[[-13.53807,25.4983],[-13.53688,25.43163],[-13.47974,25.43163],[-13.47974,25.45163],[-13.44308,25.45163],[-13.44308,25.4983]],"bb":[-13.53807,25.43163,-13.44308,25.4983]},{"no":"42826-HQ-LEL","holder":"MINERAL CREST MINING LIMITED","ring":[[-14.10302,29.1034],[-14.08636,29.1034],[-14.08636,29.0884],[-14.07469,29.0884],[-14.07469,29.1034],[-14.07302,29.1034],[-14.07302,28.95673],[-14.09469,28.95673],[-14.09469,28.85339],[-14.06302,28.85339],[-14.06302,28.85839],[-14.06136,28.85839],[-14.06136,28.86172],[-14.05969,28.86172],[-14.05969,28.86672],[-14.05802,28.86672],[-14.05802,28.87172],[-14.05636,28.87172],[-14.05636,28.87506],[-14.05469,28.87506],[-14.05469,28.88006],[-14.05303,28.88006],[-14.05303,28.88339],[-14.05136,28.88339],[-14.05136,28.88839],[-14.04969,28.88839],[-14.04969,28.89172],[-14.04803,28.89172],[-14.04803,28.89839],[-14.04636,28.89839],[-14.04636,28.91172],[-14.04469,28.91172],[-14.04469,28.97339],[-14.04303,28.97339],[-14.04303,29.0784],[-14.04136,29.0784],[-14.04136,29.13673],[-14.03969,29.13673],[-14.03969,29.18007],[-14.05636,29.18007],[-14.05636,29.13173],[-14.10302,29.13173]],"bb":[-14.10302,28.85339,-14.03969,29.18007]},{"no":"42855-HQ-LEL","holder":"MWAMFUSHI MINING LIMITED","ring":[[-11.09661,29.22673],[-11.08994,29.22673],[-11.08994,29.2284],[-11.08161,29.2284],[-11.08161,29.23007],[-11.07494,29.23007],[-11.07494,29.23173],[-11.06828,29.23173],[-11.06828,29.2334],[-11.05994,29.2334],[-11.05994,29.23507],[-11.05328,29.23507],[-11.05328,29.23673],[-11.04661,29.23673],[-11.04661,29.2384],[-11.03995,29.2384],[-11.03995,29.24007],[-11.03161,29.24007],[-11.03161,29.24173],[-11.02495,29.24173],[-11.02495,29.2434],[-11.01828,29.2434],[-11.01828,29.24507],[-11.00995,29.24507],[-11.00995,29.24673],[-11.00328,29.24673],[-11.00328,29.2484],[-10.99662,29.2484],[-10.99662,29.25007],[-10.98828,29.25007],[-10.98828,29.25173],[-10.98162,29.25173],[-10.98162,29.2534],[-10.97495,29.2534],[-10.97495,29.25507],[-10.96828,29.25507],[-10.96828,29.25673],[-10.95995,29.25673],[-10.95995,29.2584],[-10.95329,29.2584],[-10.95329,29.26007],[-10.94662,29.26007],[-10.94662,29.26173],[-10.94495,29.26173],[-10.94495,29.28673],[-10.89496,29.28673],[-10.89496,29.35007],[-10.82996,29.35007],[-10.82996,29.3034],[-10.87329,29.3034],[-10.87329,29.28673],[-10.8233,29.28673],[-10.8233,29.42007],[-10.85496,29.42007],[-10.85496,29.42174],[-10.8233,29.42174],[-10.8233,29.56341],[-10.88163,29.56341],[-10.88163,29.56174],[-10.88496,29.56174],[-10.88496,29.56007],[-10.88996,29.56007],[-10.88996,29.55841],[-10.89329,29.55841],[-10.89329,29.55674],[-10.89662,29.55674],[-10.89662,29.55507],[-10.89996,29.55507],[-10.89996,29.55341],[-10.90329,29.55341],[-10.90329,29.55174],[-10.90662,29.55174],[-10.90662,29.55007],[-10.90996,29.55007],[-10.90996,29.54841],[-10.91329,29.54841],[-10.91329,29.54674],[-10.91662,29.54674],[-10.91662,29.54507],[-10.91996,29.54507],[-10.91996,29.54341],[-10.92329,29.54341],[-10.92329,29.54174],[-10.92662,29.54174],[-10.92662,29.54007],[-10.93162,29.54007],[-10.93162,29.53841],[-10.93495,29.53841],[-10.93495,29.53674],[-10.93829,29.53674],[-10.93829,29.53507],[-10.94162,29.53507],[-10.94162,29.53341],[-10.94495,29.53341],[-10.94495,29.50341],[-10.95329,29.50341],[-10.95329,29.48174],[-10.94495,29.48174],[-10.94495,29.48507],[-10.91996,29.48507],[-10.91996,29.46841],[-10.94495,29.46841],[-10.94495,29.37174],[-10.92162,29.37174],[-10.92162,29.34507],[-10.94495,29.34507],[-10.94495,29.33507],[-11.04494,29.33507],[-11.04494,29.2734],[-11.09661,29.2734]],"bb":[-11.09661,29.22673,-10.8233,29.56341]},{"no":"42860-HQ-LEL","holder":"MINERAL CREST MINING LIMITED","ring":[[-13.31809,31.97681],[-13.11477,31.97681],[-13.11477,32.14348],[-13.20643,32.14348],[-13.20643,32.14181],[-13.20809,32.14181],[-13.20809,32.13848],[-13.20976,32.13848],[-13.20976,32.13681],[-13.21143,32.13681],[-13.21143,32.13514],[-13.21309,32.13514],[-13.21309,32.13348],[-13.21476,32.13348],[-13.21476,32.13014],[-13.21643,32.13014],[-13.21643,32.12848],[-13.21809,32.12848],[-13.21809,32.12681],[-13.21976,32.12681],[-13.21976,32.12348],[-13.22143,32.12348],[-13.22143,32.12181],[-13.22309,32.12181],[-13.22309,32.12014],[-13.22476,32.12014],[-13.22476,32.11848],[-13.22643,32.11848],[-13.22643,32.11514],[-13.22809,32.11514],[-13.22809,32.11348],[-13.22976,32.11348],[-13.22976,32.11181],[-13.23143,32.11181],[-13.23143,32.10848],[-13.23309,32.10848],[-13.23309,32.10681],[-13.23476,32.10681],[-13.23476,32.10514],[-13.23643,32.10514],[-13.23643,32.10348],[-13.23809,32.10348],[-13.23809,32.10014],[-13.23976,32.10014],[-13.23976,32.09848],[-13.24142,32.09848],[-13.24142,32.09681],[-13.24309,32.09681],[-13.24309,32.09348],[-13.24476,32.09348],[-13.24476,32.09181],[-13.24642,32.09181],[-13.24642,32.09014],[-13.24809,32.09014],[-13.24809,32.08848],[-13.24976,32.08848],[-13.24976,32.08514],[-13.25142,32.08514],[-13.25142,32.08348],[-13.25309,32.08348],[-13.25309,32.08181],[-13.25476,32.08181],[-13.25476,32.08014],[-13.25642,32.08014],[-13.25642,32.07681],[-13.25809,32.07681],[-13.25809,32.07514],[-13.25976,32.07514],[-13.25976,32.07347],[-13.26142,32.07347],[-13.26142,32.07014],[-13.26309,32.07014],[-13.26309,32.06847],[-13.26476,32.06847],[-13.26476,32.06681],[-13.26642,32.06681],[-13.26642,32.06514],[-13.26809,32.06514],[-13.26809,32.06181],[-13.26976,32.06181],[-13.26976,32.06014],[-13.27142,32.06014],[-13.27142,32.05847],[-13.27309,32.05847],[-13.27309,32.05514],[-13.27476,32.05514],[-13.27476,32.05347],[-13.27642,32.05347],[-13.27642,32.05181],[-13.27809,32.05181],[-13.27809,32.05014],[-13.27976,32.05014],[-13.27976,32.04681],[-13.28142,32.04681],[-13.28142,32.04514],[-13.28309,32.04514],[-13.28309,32.04347],[-13.28475,32.04347],[-13.28475,32.04014],[-13.28642,32.04014],[-13.28642,32.03847],[-13.28809,32.03847],[-13.28809,32.03681],[-13.28975,32.03681],[-13.28975,32.03514],[-13.29142,32.03514],[-13.29142,32.03181],[-13.29309,32.03181],[-13.29309,32.03014],[-13.29475,32.03014],[-13.29475,32.02847],[-13.29642,32.02847],[-13.29642,32.02681],[-13.29809,32.02681],[-13.29809,32.02347],[-13.29975,32.02347],[-13.29975,32.02181],[-13.30142,32.02181],[-13.30142,32.02014],[-13.30309,32.02014],[-13.30309,32.01681],[-13.30475,32.01681],[-13.30475,32.01514],[-13.30642,32.01514],[-13.30642,32.01347],[-13.30809,32.01347],[-13.30809,32.01181],[-13.30975,32.01181],[-13.30975,32.00847],[-13.31142,32.00847],[-13.31142,32.00681],[-13.31309,32.00681],[-13.31309,32.00514],[-13.31475,32.00514],[-13.31475,32.00181],[-13.31642,32.00181],[-13.31642,32.00014],[-13.31809,32.00014]],"bb":[-13.31809,31.97681,-13.11477,32.14348]},{"no":"42864-HQ-SEL","holder":"MWAMFUSHI MINING LIMITED","ring":[[-13.69306,26.68],[-13.69306,26.69833],[-13.71139,26.69833],[-13.71139,26.68]],"bb":[-13.71139,26.68,-13.69306,26.69833]},{"no":"42865-HQ-SEL","holder":"MWAMFUSHI MINING LIMITED","ring":[[-12.07486,31.30845],[-12.07486,31.31679],[-12.08986,31.31679],[-12.08986,31.30012],[-12.08152,31.30012],[-12.08152,31.30179],[-12.07986,31.30179],[-12.07986,31.30345],[-12.07819,31.30345],[-12.07819,31.30679],[-12.07652,31.30679],[-12.07652,31.30845]],"bb":[-12.08986,31.30012,-12.07486,31.31679]},{"no":"42872-HQ-LEL","holder":"FUMBO MINING LIMITED","ring":[[-14.38966,30.18843],[-14.39133,30.18843],[-14.39133,30.19009],[-14.393,30.19009],[-14.393,30.19176],[-14.39466,30.19176],[-14.39466,30.19343],[-14.39633,30.19343],[-14.39633,30.19509],[-14.398,30.19509],[-14.398,30.19676],[-14.39966,30.19676],[-14.39966,30.19843],[-14.403,30.19843],[-14.403,30.20009],[-14.40466,30.20009],[-14.40466,30.20176],[-14.40633,30.20176],[-14.40633,30.15009],[-14.38966,30.15009]],"bb":[-14.40633,30.15009,-14.38966,30.20176]},{"no":"42881-HQ-LEL","holder":"MAMANGA MINING LIMITED","ring":[[-13.1481,30.07176],[-13.10644,30.07176],[-13.10644,30.16509],[-13.1181,30.16509],[-13.1181,30.15509],[-13.11977,30.15509],[-13.11977,30.15342],[-13.1231,30.15342],[-13.1231,30.15509],[-13.13144,30.15509],[-13.13144,30.16676],[-13.10644,30.16676],[-13.10644,30.25009],[-13.1481,30.25009]],"bb":[-13.1481,30.07176,-13.10644,30.25009]},{"no":"42890-HQ-SEL","holder":"FUMBO MINING LIMITED","ring":[[-13.10644,28.20504],[-13.10477,28.20504],[-13.10477,28.20337],[-13.1031,28.20337],[-13.1031,28.20171],[-13.10144,28.20171],[-13.10144,28.19837],[-13.09977,28.19837],[-13.09977,28.19337],[-13.0981,28.19337],[-13.0981,28.19171],[-13.09644,28.19171],[-13.09644,28.19004],[-13.09477,28.19004],[-13.09477,28.18504],[-13.09644,28.18504],[-13.09644,28.18337],[-13.0981,28.18337],[-13.0981,28.18004],[-13.09977,28.18004],[-13.09977,28.17671],[-13.09477,28.17671],[-13.09477,28.18171],[-13.09311,28.18171],[-13.09311,28.18504],[-13.09144,28.18504],[-13.09144,28.18671],[-13.08977,28.18671],[-13.08977,28.18837],[-13.08811,28.18837],[-13.08811,28.19004],[-13.07977,28.19004],[-13.07977,28.18837],[-13.07644,28.18837],[-13.07644,28.18671],[-13.07477,28.18671],[-13.07477,28.18504],[-13.06811,28.18504],[-13.06811,28.19004],[-13.07311,28.19004],[-13.07311,28.19171],[-13.07477,28.19171],[-13.07477,28.19504],[-13.06144,28.19504],[-13.06144,28.20504],[-13.06644,28.20504],[-13.06644,28.20337],[-13.07644,28.20337],[-13.07644,28.20504],[-13.09477,28.20504],[-13.09477,28.22337],[-13.10644,28.22337]],"bb":[-13.10644,28.17671,-13.06144,28.22337]},{"no":"42906-HQ-LEL","holder":"FUMBO MINING LIMITED","ring":[[-12.23651,26.30832],[-12.23651,26.31999],[-12.25484,26.31999],[-12.25484,26.34166],[-12.29317,26.34166],[-12.29317,26.32832],[-12.30317,26.32832],[-12.30317,26.31999],[-12.3115,26.31999],[-12.3115,26.31499],[-12.32984,26.31499],[-12.32984,26.30832]],"bb":[-12.32984,26.30832,-12.23651,26.34166]},{"no":"42907-HQ-LEL","holder":"FRANCOPAT MINING LIMITED","ring":[[-12.18985,26.30666],[-12.20985,26.30666],[-12.20985,26.27999],[-12.24151,26.27999],[-12.24151,26.22499],[-12.20485,26.22499],[-12.20485,26.27499],[-12.18985,26.27499]],"bb":[-12.24151,26.22499,-12.18985,26.30666]},{"no":"42911-HQ-SEL","holder":"MWAMFUSHI MINING LIMITED","ring":[[-13.5564,29.55008],[-13.53973,29.55008],[-13.53973,29.56841],[-13.5564,29.56841]],"bb":[-13.5564,29.55008,-13.53973,29.56841]},{"no":"42950-HQ-SEL","holder":"MWAMFUSHI MINING LIMITED","ring":[[-13.2081,28.10337],[-13.20643,28.10337],[-13.20643,28.10004],[-13.2031,28.10004],[-13.2031,28.09837],[-13.1981,28.09837],[-13.1981,28.11504],[-13.19976,28.11504],[-13.19976,28.11337],[-13.20143,28.11337],[-13.20143,28.1117],[-13.2031,28.1117],[-13.2031,28.11004],[-13.20643,28.11004],[-13.2081,28.11004]],"bb":[-13.2081,28.09837,-13.1981,28.11504]},{"no":"43004-HQ-LEL","holder":"MUSOLA MINERAL RESOURCES ZAMBIA LIMITED","ring":[[-17.2961,26.83167],[-17.2961,26.63833],[-17.27776,26.63833],[-17.27776,26.60333],[-17.2961,26.60333],[-17.2961,26.31499],[-17.16111,26.31499],[-17.16111,26.42999],[-17.16111,26.83167]],"bb":[-17.2961,26.31499,-17.16111,26.83167]},{"no":"43084-HQ-LEL","holder":"MUSOLA MINERAL RESOURCES ZAMBIA LIMITED","ring":[[-14.69631,28.89006],[-14.67797,28.89006],[-14.67797,28.89339],[-14.67631,28.89339],[-14.67631,28.94839],[-14.67797,28.94839],[-14.67797,28.95006],[-14.69631,28.95006]],"bb":[-14.69631,28.89006,-14.67631,28.95006]},{"no":"43131-HQ-LEL","holder":"MUSOLA MINERAL RESOURCES ZAMBIA LIMITED","ring":[[-12.52315,30.6301],[-12.55815,30.6301],[-12.55815,30.64677],[-12.56148,30.64677],[-12.56148,30.64844],[-12.55815,30.64844],[-12.55815,30.65844],[-12.54982,30.65844],[-12.54982,30.66677],[-12.57315,30.66677],[-12.57315,30.6401],[-12.60815,30.6401],[-12.60815,30.66677],[-12.61481,30.66677],[-12.61481,30.59844],[-12.56315,30.59844],[-12.56315,30.61844],[-12.52315,30.61844]],"bb":[-12.61481,30.59844,-12.52315,30.66677]},{"no":"43146-HQ-SEL","holder":"MWAMFUSHI MINING LIMITED","ring":[[-12.87146,28.06337],[-12.87146,28.08337],[-12.89146,28.08337],[-12.89146,28.06337]],"bb":[-12.89146,28.06337,-12.87146,28.08337]},{"no":"43168-HQ-LEL","holder":"MUSOLA MINERAL RESOURCES ZAMBIA LIMITED","ring":[[-13.80305,26.47833],[-13.80305,26.50499],[-13.81138,26.50499],[-13.81138,26.52666],[-13.81638,26.52666],[-13.81638,26.59166],[-13.82971,26.59166],[-13.82971,26.61166],[-13.83304,26.61166],[-13.83304,26.66167],[-13.84804,26.66167],[-13.84804,26.74833],[-13.86971,26.74833],[-13.86971,26.70167],[-13.88137,26.70167],[-13.88137,26.66833],[-13.87137,26.66833],[-13.87137,26.62166],[-13.88471,26.62166],[-13.88471,26.47999],[-13.89304,26.47999],[-13.89304,26.45499],[-13.87471,26.45499],[-13.87471,26.47833]],"bb":[-13.89304,26.45499,-13.80305,26.74833]},{"no":"43262-HQ-LEL","holder":"FRANCOPAT MINING LIMITED","ring":[[-15.08794,29.98842],[-15.08794,30.03676],[-15.10294,30.03676],[-15.10294,30.03842],[-15.12127,30.03842],[-15.12127,30.01009],[-15.15293,30.01009],[-15.15293,29.98675],[-15.12794,29.98675],[-15.12794,29.98842]],"bb":[-15.15293,29.98675,-15.08794,30.03842]},{"no":"43809-HQ-SEL","holder":"SHILOVU MINING LIMITED","ring":[[-17.2311,25.96165],[-17.2311,26.00331],[-17.24943,26.00331],[-17.24943,25.96165]],"bb":[-17.24943,25.96165,-17.2311,26.00331]},{"no":"43818-HQ-LEL","holder":"SHILOVU MINING LIMITED","ring":[[-11.5899,33.16184],[-11.5899,33.1935],[-11.61989,33.1935],[-11.61989,33.16184],[-11.60823,33.16184],[-11.60823,33.1785],[-11.60656,33.1785],[-11.60656,33.16184]],"bb":[-11.61989,33.16184,-11.5899,33.1935]},{"no":"43878-HQ-LEL","holder":"SHILOVU MINING LIMITED","ring":[[-9.41008,31.98347],[-9.2751,31.98347],[-9.2751,32.04014],[-9.45341,32.04014],[-9.45341,31.8418],[-9.41008,31.8418],[-9.41008,31.98014],[-9.41342,31.98014],[-9.41342,31.9818],[-9.41008,31.9818]],"bb":[-9.45341,31.8418,-9.2751,32.04014]},{"no":"44263-HQ-SEL","holder":"SHILOVU MINING LIMITED","ring":[[-12.29817,26.34666],[-12.29817,26.36666],[-12.31484,26.36666],[-12.31484,26.34666]],"bb":[-12.31484,26.34666,-12.29817,26.36666]},{"no":"44353-HQ-LEL","holder":"SHILOVU MINING LIMITED","ring":[[-15.08461,27.9317],[-15.05794,27.9317],[-15.05794,27.9767],[-15.04128,27.9767],[-15.04128,27.99837],[-15.02128,27.99837],[-15.02128,27.98503],[-15.03961,27.98503],[-15.03961,27.9767],[-14.99795,27.9767],[-14.99795,27.96837],[-14.96795,27.96837],[-14.96795,28.01503],[-14.7313,28.01503],[-14.7313,28.03504],[-14.7813,28.03504],[-14.7813,28.06337],[-14.75797,28.06337],[-14.75797,28.0367],[-14.7313,28.0367],[-14.7313,28.0767],[-14.74963,28.0767],[-14.74963,28.09504],[-14.78963,28.09504],[-14.78963,28.05504],[-14.8063,28.05504],[-14.8063,28.07504],[-14.7913,28.07504],[-14.7913,28.09504],[-14.84796,28.09504],[-14.84796,28.0817],[-14.88962,28.0817],[-14.88962,28.09837],[-14.93295,28.09837],[-14.93295,28.1317],[-14.97128,28.1317],[-14.97128,28.18504],[-14.99795,28.18504],[-14.99795,28.20837],[-15.00961,28.20837],[-15.00961,28.22171],[-15.03128,28.22171],[-15.03128,28.25837],[-14.95128,28.25837],[-14.95128,28.38338],[-14.96795,28.38338],[-14.96795,28.47671],[-15.00795,28.47671],[-15.00795,28.35338],[-15.02295,28.35338],[-15.02295,28.34004],[-15.02961,28.34004],[-15.02961,28.29504],[-15.06128,28.29504],[-15.06128,28.21337],[-15.05128,28.21337],[-15.05128,28.14004],[-15.04294,28.14004],[-15.04294,28.09337],[-15.05961,28.09337],[-15.05961,28.1217],[-15.08461,28.1217]],"bb":[-15.08461,27.9317,-14.7313,28.47671]},{"no":"36045-HQ-SEL","holder":"Ushi Logistics Limited","ring":[[-12.75287,30.51865],[-12.7368,30.51865],[-12.7368,30.53993],[-12.75287,30.53993]],"bb":[-12.75287,30.51865,-12.7368,30.53993]}];/*__LICENSES_END__*/
 /* ============ 潜在验证区（h_blocks 提取：东北块+南舌头，勿手改） ============ */
 let ZONES=[];
 /* ============ 核心地质（03组：岩性/ABC分区/断层/实测脉/矿点，勿手改） ============ */
-const LITHO_COLOR={O:'#e1d5c0',N:'#cfb3a0',M2:'#cabdd7',M:'#b0a4bb',M1:'#998fa3',L:'#ae85a9',K1:'#bcc2b7',K:'#d8dfd2',J1:'#d2b87c',J:'#f2d48f',H:'#adc6c9',G:'#ebbd7f',G1:'#cca46e',F1:'#829498',F:'#96aaaf',E:'#f2d382',E1:'#d2b771',D:'#db90af',C:'#689d6f',B:'#dd769e',A:'#ffffff',Pegmatite:'#ffffff'};let GEO={litho:[],abc:[],faults:[],veins:[],occs:[]};
+const LITHO_COLOR={O:'#e1d5c0',N:'#cfb3a0',M2:'#cabdd7',M:'#b0a4bb',M1:'#998fa3',L:'#ae85a9',K1:'#bcc2b7',K:'#d8dfd2',J1:'#d2b87c',J:'#f2d48f',H:'#adc6c9',G:'#ebbd7f',G1:'#cca46e',G2:'#c39a63',G3:'#b58a55',G4:'#d9b183',F1:'#829498',F:'#96aaaf',E:'#f2d382',E1:'#d2b771',D:'#db90af',C:'#689d6f',B:'#dd769e',A:'#ffffff',Pegmatite:'#ffffff'};let GEO={litho:[],bounds:[],abc:[],faults:[],veins:[],occs:[]};
 /* ============ 地质图幅影像（KML GroundOverlay，随⛏开关） ============ */
 /* ============ 43131矿区周边农村道路（OSM，勿手改） ============ */
 let ROADS=[];
 let PARCELS=[];
+let RIGHTS=[];
 let GEOIMG=[];
 // 点在多边形内（射线法），先 bbox 粗筛
 function licAt(lat,lon){
@@ -530,7 +431,7 @@ const AREAS_FALLBACK={version:1,areas:[
 const AREA={doc:AREAS_FALLBACK,list:AREAS_FALLBACK.areas};
 const areaById=id=>AREA.list.find(a=>a.id===id)||null;
 const areaName=id=>{const a=areaById(id);return a?a.name:""};
-function areaAt(lat,lon){ // 按 GPS 坐标反推所在矿区：野外取样时自动标注，不需要用户先选
+function areaAt(lat,lon){ // 按 GPS 坐标反推所在矿区：取样时自动标注，不需要用户先选
   if(lat==null||lon==null)return null;
   for(const a of AREA.list){
     const b=a.bbox;if(!b||b.length<4)continue;
@@ -592,9 +493,7 @@ const store={ // kv helpers
 const getAllReq=st=>idb().then(d=>new Promise((res,rej)=>{const r=d.transaction(st).objectStore(st).getAll();r.onsuccess=()=>res(r.result||[]);r.onerror=()=>rej(r.error)}));
 const S={ // 全部样品同一个 store：矿区归属只是记录上的字段
   all:()=>getAllReq("samples"),
-  // 必须回写自增主键：否则上传后再次 put 同一条会插出重复记录
-  put:s=>idb().then(d=>new Promise(res=>{const t=d.transaction("samples","readwrite");const r=t.objectStore("samples").put(s);
-    t.oncomplete=()=>{if(s.id==null&&r.result!=null)s.id=r.result;res()}})),
+  put:s=>idb().then(d=>new Promise(res=>{const t=d.transaction("samples","readwrite");t.objectStore("samples").put(s);t.oncomplete=res})),
   del:id=>idb().then(d=>new Promise(res=>{const t=d.transaction("samples","readwrite");t.objectStore("samples").delete(id);t.oncomplete=res})),
   clear:()=>idb().then(d=>new Promise(res=>{const t=d.transaction(["samples","tiles"],"readwrite");t.objectStore("samples").clear();t.objectStore("tiles").clear();t.oncomplete=res})),
   wipeAll:async()=>{ // 兼容曾按矿区分 store 的试验版
@@ -648,22 +547,6 @@ const TRIPS={ // 行程记录：一次旅行=一条
   put:t=>idb().then(d=>new Promise(res=>{const tr=d.transaction("trips","readwrite");tr.objectStore("trips").put(t);tr.oncomplete=res})),
   del:id=>idb().then(d=>new Promise(res=>{const tr=d.transaction("trips","readwrite");tr.objectStore("trips").delete(id);tr.oncomplete=res})),
 };
-async function dedupeSamples(){ // 旧版本联网保存会插出重复记录：按 sample_id 留一条
-  if(await store.get("dedupe_v1"))return;
-  const byId=new Map(),drop=[];
-  for(const s of await S.all()){
-    const k=s.sample_id;if(!k)continue;
-    const prev=byId.get(k);
-    if(!prev){byId.set(k,s);continue}
-    const keep=prev.id>s.id?prev:s,gone=prev.id>s.id?s:prev;
-    if(gone.status==="synced"&&keep.status!=="synced")keep.status="synced";
-    if(!(keep.photos||[]).length&&(gone.photos||[]).length)keep.photos=gone.photos;
-    byId.set(k,keep);drop.push(gone);
-  }
-  for(const s of drop)await S.del(s.id);
-  await store.set("dedupe_v1",true);
-  if(drop.length){await refreshSampleCache();toast(`已清理 ${drop.length} 条重复记录`,4000)}
-}
 /* 内存缓存：地图每帧绘制用同步数据，避免每帧查 IndexedDB 造成覆盖层闪烁 */
 let sampleCache=[],trackCache=[],viewTrip=null;
 async function refreshSampleCache(){sampleCache=await S.all();if(map)map.draw()}
@@ -674,27 +557,15 @@ addEventListener("online",()=>{netStatus();toast("网络已恢复，可同步");
 addEventListener("offline",netStatus);netStatus();
 
 /* ============ 页面切换 ============ */
-// 记录页两个视图：野外取样（录入）/ 行程（轨迹）。历史数据是一级页面 pg-list
-function setFormTab(t,save){
-  if(t!=="cur")saveDraft();
-  document.querySelectorAll("#formtabs button").forEach(b=>b.classList.toggle("on",b.dataset.tab===t));
-  $("tab_cur").classList.toggle("hidden",t!=="cur");
-  $("tab_trip").classList.toggle("hidden",t!=="trip");
-  if(t==="trip"){updTrk();renderTrips()}
-  if(save!==false)store.set("form_tab",t);
-  window.scrollTo(0,0);
-}
-document.querySelectorAll("#formtabs button").forEach(b=>b.onclick=()=>setFormTab(b.dataset.tab));
 document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
   document.querySelectorAll("nav button").forEach(x=>x.classList.remove("on"));b.classList.add("on");
   document.querySelectorAll("main section").forEach(s=>s.classList.add("hidden"));
   $(b.dataset.pg).classList.remove("hidden");
   store.set("cur_page",b.dataset.pg); // 刷新后回到当前页
   if(b.dataset.pg!=="pg-map"){pickMode=false;pickPreview=null;if(map)map.draw();$("picktip").classList.add("hidden");$("pickbar").classList.add("hidden")}
-  if(b.dataset.pg==="pg-map"){viewTrip=null;initMap()}
-      if(b.dataset.pg==="pg-set"){renderSetStats();renderOffStat();}
-  if(b.dataset.pg==="pg-list"){saveDraft();renderList()}
-  window.scrollTo(0,0);
+  if(b.dataset.pg==="pg-list")renderList();
+  if(b.dataset.pg==="pg-track"){updTrk();renderTrips()}
+  if(b.dataset.pg==="pg-map")initMap();
 });
 
 /* ============ GPS ============ */
@@ -702,8 +573,7 @@ let watchId=null,lastPos=null;
 function showPos(p){
   lastPos=p;const c=p.coords;
   $("gps_text").textContent=`纬度：${c.latitude.toFixed(6)}  经度：${c.longitude.toFixed(6)}`;
-  const acc=c.accuracy?`精度 ±${Math.round(c.accuracy)} m · `:"";
-  $("gps_acc").textContent=acc+(c.altitude!=null?`海拔 ${c.altitude.toFixed(0)} m · `:"")+new Date(p.timestamp).toLocaleTimeString();
+  $("gps_acc").textContent=(c.altitude!=null?`海拔 ${c.altitude.toFixed(0)} m · `:"")+new Date(p.timestamp).toLocaleTimeString();
   $("gps_utm").textContent="UTM："+toUTM(c.latitude,c.longitude);
   $("f_lat").value=c.latitude.toFixed(6);$("f_lon").value=c.longitude.toFixed(6);
   if(c.altitude!=null)$("f_alt").value=c.altitude.toFixed(1);
@@ -713,9 +583,8 @@ function showPos(p){
 // 反向地理编码：省 → 县 → 村/镇，拼成详细地区名
 async function geoAddr(lat,lon){
   if(!navigator.onLine)return;
-  const ctrl=new AbortController(),tm=setTimeout(()=>ctrl.abort(),8000);
   try{
-    const r=await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`,{signal:ctrl.signal});
+    const r=await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`);
     const j=await r.json();
     const parts=[];
     const push=n=>{if(n&&!parts.includes(n))parts.push(n)};
@@ -728,7 +597,7 @@ async function geoAddr(lat,lon){
     if(!small.length)push(j.locality);       // 村/地名兜底
     const addr=parts.join(" / ");
     if(addr)$("f_area").value=addr;
-  }catch(e){}finally{clearTimeout(tm)}
+  }catch(e){}
 }
 function gpsErr(e){const m={1:"定位被拒绝——需要允许位置权限",2:"定位不可用（信号弱/室内）",3:"定位超时，请到开阔地重试"};toast(m[e.code]||"定位失败");showGpsDiag(e)}
 async function showGpsDiag(err){
@@ -750,15 +619,9 @@ $("btn_viewpos").onclick=()=>{
   document.querySelector('nav button[data-pg="pg-map"]').click();
   setTimeout(()=>{if(map&&map.centerOn)map.centerOn(la,lo)},80);
 };
-$("gpsmodal_close").onclick=()=>{$("gpsmodal").classList.add("hidden");if(!$("btn_gps").disabled)$("btn_gps").click()};
+$("gpsmodal_close").onclick=()=>{$("gpsmodal").classList.add("hidden");$("btn_gps").click()};
 $("gpsmodal").onclick=e=>{if(e.target.id==="gpsmodal")$("gpsmodal").classList.add("hidden")};
-$("btn_gps").onclick=()=>{
-  const b=$("btn_gps");if(b.disabled)return;
-  b.disabled=true;const old=b.textContent;b.textContent="⏳ 定位中…";
-  toast("定位中…（无网络也可用）");
-  const done=()=>{b.disabled=false;b.textContent=old};
-  navigator.geolocation.getCurrentPosition(p=>{done();showPos(p)},e=>{done();gpsErr(e)},{enableHighAccuracy:true,timeout:60000,maximumAge:0});
-};
+$("btn_gps").onclick=()=>{toast("定位中…（无网络也可用）");navigator.geolocation.getCurrentPosition(showPos,gpsErr,{enableHighAccuracy:true,timeout:60000,maximumAge:0})};
 // 手动填经纬度时同步显示
 ["f_lat","f_lon"].forEach(id=>$(id).onchange=()=>{
   const la=+$("f_lat").value,lo=+$("f_lon").value;
@@ -777,12 +640,10 @@ $("btn_pick").onclick=()=>{
 $("pickok").onclick=()=>{
   if(!pickPreview)return;
   $("f_lat").value=pickPreview.lat.toFixed(6);$("f_lon").value=pickPreview.lon.toFixed(6);
-  $("f_alt").value=""; // 地图选点没有海拔，清掉上一次 GPS 的值
   $("gps_text").textContent=`纬度：${pickPreview.lat.toFixed(6)}  经度：${pickPreview.lon.toFixed(6)}（地图选点）`;
   $("gps_utm").textContent="UTM："+toUTM(pickPreview.lat,pickPreview.lon);
-  $("gps_acc").textContent="地图选点 · "+new Date().toLocaleTimeString();
+  $("gps_acc").textContent="";
   licAt(pickPreview.lat,pickPreview.lon);
-  geoAddr(pickPreview.lat,pickPreview.lon); // 选点后同样补地区名
   pickMode=false;pickPreview=null;$("picktip").classList.add("hidden");$("pickbar").classList.add("hidden");if(map)map.draw();
   document.querySelector('nav button[data-pg="pg-form"]').click();
 };
@@ -837,7 +698,6 @@ async function addPhotos(files){
     }catch(e){ /* 单张失败跳过 */ }
   }
   renderThumbs();
-  if(added){saveDraftPhotos();queueDraftSave()}
   if(added<arr.length)toast(`已加 ${added} 张，${arr.length-added} 张读取失败（可能是 HEIC 格式，请在相册设置里改用 JPEG）`);
 }
 $("f_cam").onchange=e=>{addPhotos(e.target.files);e.target.value=""};
@@ -858,20 +718,19 @@ function renderThumbs(){
   $("btn_cam").disabled=full;$("btn_album").disabled=full;
   $("btn_cam").style.opacity=full?0.4:1;$("btn_album").style.opacity=full?0.4:1;
   $("thumbs").innerHTML=photos.map((p,i)=>`<div class="th">
-    <img src="${p.blob?URL.createObjectURL(p.blob):(p.url||"")}" data-v="${i}" style="cursor:pointer">
+    <img src="${URL.createObjectURL(p.blob)}" data-v="${i}" style="cursor:pointer">
     <button class="thtag ${p.kind==="assay"?"on":""}" data-i="${i}">${p.kind==="assay"?"🧪 含量读数":"标记为含量"}</button>
     ${p.kind==="assay"?`<button class="thai" data-i="${i}">🤖 AI识别</button>`:""}
     <button class="thdel" data-i="${i}">✕</button></div>`).join("");
-  document.querySelectorAll(".thtag").forEach(b=>b.onclick=()=>{const p=photos[+b.dataset.i];p.kind=p.kind==="assay"?"field":"assay";renderThumbs();saveDraftPhotos()});
-  document.querySelectorAll(".thdel").forEach(b=>b.onclick=()=>{if(confirm("删除这张照片？")){photos.splice(+b.dataset.i,1);renderThumbs();saveDraftPhotos();queueDraftSave()}});
+  document.querySelectorAll(".thtag").forEach(b=>b.onclick=()=>{const p=photos[+b.dataset.i];p.kind=p.kind==="assay"?"field":"assay";renderThumbs()});
+  document.querySelectorAll(".thdel").forEach(b=>b.onclick=()=>{if(confirm("删除这张照片？")){photos.splice(+b.dataset.i,1);renderThumbs()}});
   document.querySelectorAll(".thai").forEach(b=>b.onclick=()=>aiAssay(+b.dataset.i));
   document.querySelectorAll("#thumbs img").forEach(im=>im.onclick=()=>{ // 点缩略图全屏查看
     $("vimg").src=im.src;$("viewer").classList.remove("hidden")});
 }
 async function aiAssay(i){
   if(!navigator.onLine){toast("AI 识别需要联网");return}
-  if(!photos[i]||!photos[i].blob){toast("这张照片只有云端副本，AI 识别需要本机原图");return}
-  const wurl=(await store.get("worker_url"))||DEF_WORKER,tok=(await store.get("app_token"))||"";
+  const wurl=(await store.get("worker_url"))||"",tok=(await store.get("app_token"))||"";
   if(!wurl){toast("请先在设置页填 Worker 地址");return}
   toast("AI 识别中…");
   try{
@@ -887,64 +746,14 @@ async function aiAssay(i){
   }catch(e){toast("识别失败："+e.message)}
 }
 
-/* ============ 草稿：切页 / 锁屏 / 刷新不丢未保存的输入 ============ */
-let draftTimer=0,draftReady=false;
-function draftText(){
-  const assays=[...document.querySelectorAll(".assay-row")].map(r=>{
-    const i=r.querySelectorAll("input"),s=r.querySelector("select");
-    return{element:i[0].value,value:i[1].value,unit:s.value};
-  }).filter(a=>(a.element||"").trim()||(a.value||"").trim());
-  return{kind:$("f_kind").value,loc:$("f_loc").value,mark:$("f_mark").value,
-    lat:$("f_lat").value,lon:$("f_lon").value,alt:$("f_alt").value,area:$("f_area").value,
-    remark:$("f_remark").value.trim(),assays,t:Date.now()};
-}
-const draftEmpty=d=>!(d.remark||d.lat||(d.assays||[]).length||d.loc||d.mark||photos.length);
-function queueDraftSave(){clearTimeout(draftTimer);draftTimer=setTimeout(saveDraftText,600)}
-async function saveDraftText(){
-  if(!draftReady||editingSample)return; // 启动恢复完成前不写，避免把草稿清掉；编辑旧记录时不产生草稿
-  try{const d=draftText();await store.set("draft",draftEmpty(d)?null:d)}catch(e){}
-}
-async function saveDraftPhotos(){
-  if(!draftReady||editingSample)return;
-  try{await store.set("draft_photos",photos.length?photos.map(p=>({name:p.name,kind:p.kind,blob:p.blob})):null)}catch(e){}
-}
-async function saveDraft(){clearTimeout(draftTimer);await saveDraftText();await saveDraftPhotos()}
-async function clearDraft(){clearTimeout(draftTimer);try{await store.set("draft",null);await store.set("draft_photos",null)}catch(e){}}
-async function restoreDraft(){
-  try{
-    const d=await store.get("draft");if(!d)return;
-    if(Date.now()-(d.t||0)>12*3600e3){await clearDraft();return} // 超过半天视为过期
-    const ph=await store.get("draft_photos");
-    if(d.kind){$("f_kind").value=d.kind;applyKind()}
-    if(d.loc)$("f_loc").value=d.loc;
-    if(d.mark)$("f_mark").value=d.mark;
-    refreshChips();
-    if(d.lat&&d.lon){
-      $("f_lat").value=d.lat;$("f_lon").value=d.lon;$("f_alt").value=d.alt||"";
-      $("gps_text").textContent=`纬度：${(+d.lat).toFixed(6)}  经度：${(+d.lon).toFixed(6)}`;
-      $("gps_utm").textContent="UTM："+toUTM(+d.lat,+d.lon);
-      $("gps_acc").textContent="上次未保存的坐标";
-    }
-    if(d.area)$("f_area").value=d.area;
-    $("f_remark").value=d.remark||"";
-    (d.assays||[]).forEach(a=>addAssay(a.element||"",a.value||"",a.unit||"%"));
-    if(Array.isArray(ph)&&ph.length){photos=ph.map(p=>({name:p.name,kind:p.kind||"field",blob:p.blob}));renderThumbs()}
-    toast("已恢复上次未保存的输入（保存或清空后消失）",5000);
-  }finally{draftReady=true} // 无论有没有草稿，恢复结束后才允许写草稿
-}
-$("tab_cur").addEventListener("input",queueDraftSave);
-$("tab_cur").addEventListener("change",queueDraftSave);
-document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")saveDraft()});
-window.addEventListener("pagehide",()=>{saveDraft()});
-
 /* ============ 保存记录 ============ */
-/* 记录类型切换：野外取样 vs 标记点 */
+/* 记录类型切换：取样 vs 标记点 */
 function applyKind(){
   const isMark=$("f_kind").value==="marker";
   $("w_type").classList.toggle("hidden",isMark);
   $("w_mark").classList.toggle("hidden",!isMark);
   $("card_assay").classList.toggle("hidden",isMark);
-  $("h_photo").innerHTML=isMark?"📷 照片（最多 6 张，可后补）":'📷 照片（至少 1 张，最多 6 张）<span id="req_photo" style="color:var(--danger)">*</span>';
+  $("card_loc").classList.toggle("hidden",isMark);
   refreshChips();
 }
 $("f_kind").onchange=async()=>{applyKind();$("f_sid").value=await nextSid();await store.set("last_kind",$("f_kind").value)};
@@ -952,15 +761,15 @@ $("f_kind").onchange=async()=>{applyKind();$("f_sid").value=await nextSid();awai
 function buildChips(cid,sid){
   const sel=$(sid),box=$(cid);
   box.innerHTML=[...sel.options].map(o=>`<button type="button" data-v="${o.value}">${o.text}</button>`).join("");
-  box.querySelectorAll("button").forEach(b=>b.onclick=()=>{sel.value=b.dataset.v;sel.dispatchEvent(new Event("change"));refreshChips();queueDraftSave()});
+  box.querySelectorAll("button").forEach(b=>b.onclick=()=>{sel.value=b.dataset.v;sel.dispatchEvent(new Event("change"));refreshChips()});
 }
 function refreshChips(){
-  [["f_kind","chips_kind"],["f_loc","chips_loc"],["f_mark","chips_mark"]].forEach(([s,c])=>{
+  [["f_kind","chips_kind"],["f_type","chips_type"],["f_mark","chips_mark"]].forEach(([s,c])=>{
     const v=$(s).value;
     $(c).querySelectorAll("button").forEach(b=>b.classList.toggle("on",b.dataset.v===v));
   });
 }
-buildChips("chips_kind","f_kind");buildChips("chips_loc","f_loc");buildChips("chips_mark","f_mark");
+buildChips("chips_kind","f_kind");buildChips("chips_type","f_type");buildChips("chips_mark","f_mark");
 /* ============ 保存记录 ============ */
 async function nextSid(){
   const d=new Date(),pre=($("f_kind").value==="marker"?"M":"S")+d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate())+"-";
@@ -977,36 +786,36 @@ async function resetForm(){
   exitEdit();
   const lk=await store.get("last_kind");if(lk){$("f_kind").value=lk;applyKind()}
   $("f_sid").value=await nextSid();$("f_time").value=nowLocal();
-  $("f_recorder").value=(await store.get("user"))||(await store.get("recorder"))||"";
+  $("f_recorder").value=(await store.get("recorder"))||"";
   $("f_loc").value="";
+  const lt=await store.get("last_type");if(lt)$("f_type").value=lt; // 取样类型记住上次
   refreshChips();
 }
 $("btn_save").onclick=async()=>{
   if($("btn_save").disabled)return;
-  const isMark=$("f_kind").value==="marker";
-  // === 必填校验：坐标（野外取样）/ 记录人；照片对标记点放宽 ===
-  const lat=parseFloat($("f_lat").value),lon=parseFloat($("f_lon").value);
-  if(!isFinite(lat)||!isFinite(lon)){toast("缺少坐标：请先📍获取定位或🗺地图选点");return}
-  if(Math.abs(lat)>90||Math.abs(lon)>180){toast("坐标超出范围，请重新定位");return}
+  // === 保存前三项必填校验 ===
+  const lat=+$("f_lat").value||null,lon=+$("f_lon").value||null;
+  if(lat==null||lon==null){toast("缺少坐标：请先📍获取定位或🗺地图选点");return}
   const assays0=[...document.querySelectorAll(".assay-row")].map(r=>{
     const i=r.querySelectorAll("input"),s=r.querySelector("select");
     return{element:i[0].value.trim(),value:i[1].value.trim(),unit:s.value};
   }).filter(a=>a.element&&a.value);
   // 含量非必填：现场未知可后补
-  if(!isMark&&!photos.length){toast("缺少照片：至少拍 1 张（样品或读数）");return}
-  if(!$("f_recorder").value.trim()){toast("缺少记录人：请重新登录");openLogin();return}
+  if(!photos.length){toast("缺少照片：至少拍 1 张（样品或读数）");return}
+  if(!$("f_recorder").value.trim()){toast("缺少记录人：请填写姓名");$("f_recorder").focus();return}
   $("btn_save").disabled=true;$("btn_save").textContent="保存中…";
   try{
   $("f_time").value=nowLocal(); // 保存瞬间打时间戳
   const sid=$("f_sid").value.trim();
   if(!sid){toast("请填写样品编号");$("f_sid").focus();return}
   const lic=licAt(lat,lon);
+  const isMark=$("f_kind").value==="marker";
   const assays=isMark?[]:assays0;
   const rec={
     sample_id:sid,sample_type:isMark?$("f_mark").value:$("f_type").value,sample_time:$("f_time").value,
     kind:isMark?"marker":"sample",
     latitude:lat,longitude:lon,altitude:+$("f_alt").value||null,
-    utm:toUTM(lat,lon),
+    utm:lat!=null?toUTM(lat,lon):"",
     gps_accuracy:lastPos&&lastPos.coords.accuracy||null,
     assays,lithology:"",description:$("f_desc").value.trim(),
     loc_status:isMark?"":$("f_loc").value,
@@ -1018,230 +827,59 @@ $("btn_save").onclick=async()=>{
     photos:photos.map(p=>({name:p.name,kind:p.kind,blob:p.blob})),
     status:"pending",created_at:new Date().toISOString(),
   };
-  if(editingSample){ // 编辑模式：编号/时间/记录人保持原值，坐标以表单为准（可修正）
+  if(editingSample){ // 编辑模式：保留原编号/时间；坐标以表单里的经纬度为准（可手动修正）
     rec.id=editingSample.id;rec.sample_id=editingSample.sample_id;
     rec.sample_time=editingSample.sample_time;
-    rec.recorder=editingSample.recorder||rec.recorder;
     rec.latitude=lat;rec.longitude=lon;rec.altitude=+$("f_alt").value||editingSample.altitude;
     rec.utm=toUTM(lat,lon);rec.gps_accuracy=null;
-    rec.captured_licence=lic?lic.no:rec.captured_licence||"";
+    rec.captured_licence=licAt(lat,lon)?.no||rec.captured_licence||"";
     rec.area_id=editingSample.area_id||(areaAt(lat,lon)||UNASSIGNED_AREA).id;
     rec.created_at=editingSample.created_at||rec.created_at;
   }
   await S.put(rec);await refreshSampleCache();
   autoSync(rec); // 联网且已配置 Worker/Token 时自动上传到云端
   await store.set("recorder",rec.recorder);
-  await clearDraft();
+  await store.set("last_type",rec.sample_type);
   toast(editingSample?`✅ 已更新 ${sid}`:`✅ 已保存记录 ${sid}`,4000);exitEdit();refreshPend();
+  // 清空（地区名保留——同一区域连续取样不用重填）
   photos=[];renderThumbs();$("assays").innerHTML="";updateElGrid();
   $("f_desc").value="";$("f_remark").value="";$("f_loc").value="";
-  $("f_lat").value="";$("f_lon").value="";$("f_alt").value="";$("f_area").value="";lastPos=null;
+  $("f_lat").value="";$("f_lon").value="";$("f_alt").value="";lastPos=null;
   $("gps_text").textContent="尚未定位";$("gps_acc").textContent="";$("gps_utm").textContent="";
   await resetForm();
-  window.scrollTo(0,0);
   }finally{$("btn_save").disabled=false;$("btn_save").textContent="💾 保存记录"}
-};
-$("btn_clear").onclick=async()=>{
-  if(!confirm("清空本次输入？已保存的记录不受影响"))return;
-  if(editingSample){exitEdit();await resetForm()} // 退出编辑，避免清空后仍覆盖旧记录
-  photos=[];renderThumbs();$("assays").innerHTML="";updateElGrid();
-  $("f_remark").value="";$("f_loc").value="";$("f_lat").value="";$("f_lon").value="";$("f_alt").value="";$("f_area").value="";
-  $("gps_text").textContent="尚未定位";$("gps_acc").textContent="";$("gps_utm").textContent="";lastPos=null;
-  await clearDraft();refreshChips();toast("已清空本次输入");
 };
 
 /* ============ 列表 ============ */
-let listQ="",listFilter="all",listType="all",listRows=[];
-/* ---------- 云端全量历史（D1，本地 36 条之外还包含其它手机/旧记录）---------- */
-const CLOUD_KEY="cloud_samples_v1";
-let cloudCache={ts:0,items:null,err:"",loading:false};
-async function fetchCloud(){
-  const w=((await store.get("worker_url"))||DEF_WORKER||"").replace(/\/$/,"");
-  const tok=(await store.get("app_token"))||"";
-  if(!w)throw new Error("还没有配置 Worker 地址");
-  const r=await fetch(w+"/samples",{headers:tok?{"X-App-Token":tok}:{}});
-  if(r.status===401)throw new Error("访问令牌不对");
-  const j=await r.json().catch(()=>({}));
-  if(!r.ok||!j.ok)throw new Error(j.error||("HTTP "+r.status));
-  const items=Array.isArray(j.samples)?j.samples:[];
-  cloudCache={ts:Date.now(),items,err:"",loading:false};
-  try{await store.set(CLOUD_KEY,{ts:cloudCache.ts,samples:items})}catch(e){}
-  return items;
-}
-async function hydrateCloud(){
-  if(cloudCache.items==null){
-    const c=await store.get(CLOUD_KEY);
-    if(c&&Array.isArray(c.samples))cloudCache={ts:c.ts||0,items:c.samples,err:"",loading:false};
-  }
-  const stale=!cloudCache.ts||Date.now()-cloudCache.ts>60000;
-  if(!stale||!navigator.onLine||cloudCache.loading)return false;
-  cloudCache.loading=true;
-  try{await fetchCloud()}
-  catch(e){cloudCache.err=e.message||String(e)}
-  finally{cloudCache.loading=false}
-  return true;
-}
-async function ensureLocal(s){
-  if(s.id!=null)return s;
-  const rec={...s,status:"synced"};delete rec.id;delete rec._src;
-  await S.put(rec);
-  await refreshSampleCache();refreshPend();
-  return rec;
-}
-/* 先用缓存画一遍，云端刷新完再重画，弱网时列表不卡住 */
 async function renderList(){
-  const local=await S.all();
-  const extra={
-    trips:await TRIPS.all(),
-    draft:await store.get("draft"),
-    draftPhotos:((await store.get("draft_photos"))||[]).length,
-  };
-  drawList(local,cloudCache.items||[],extra);
-  if(await hydrateCloud()&&!$("pg-list").classList.contains("hidden"))drawList(await S.all(),cloudCache.items||[],extra);
-}
-/* 排序时间戳：样品用 created_at/sample_time，行程用 t0（都是本机时区） */
-const rowTs=s=>{
-  if(s._type==="trip")return +s.t0||0;
-  const t=Date.parse(String(s.created_at||s.sample_time||"").replace(" ","T"));
-  return isNaN(t)?0:t;
-};
-/* 草稿卡摘要：draft 是个对象，直接 String() 会变成 [object Object] */
-function draftSummary(d){
-  if(!d)return "未填内容";
-  if(typeof d==="string")return d.replace(/\s+/g," ").slice(0,70)||"未填内容";
-  const bits=[];
-  if(d.kind==="marker")bits.push("标记"+(d.mark?"："+d.mark:""));
-  if(d.loc)bits.push(String(d.loc));
-  if(d.lat&&d.lon)bits.push("GPS "+(+d.lat).toFixed(5)+","+(+d.lon).toFixed(5));
-  const n=(d.assays||[]).length;if(n)bits.push(n+" 项含量");
-  if(d.remark)bits.push(String(d.remark).replace(/\s+/g," "));
-  return bits.join(" · ").slice(0,70)||"未填内容";
-}
-function drawList(local,cloud,extra={}){
-  if(!cloud&&cloudCache.items)cloud=cloudCache.items;
-  const bySid=new Map();local.forEach(s=>{if(s.sample_id)bySid.set(s.sample_id,s)});
-  const rows=[];
-  local.forEach(s=>rows.push({...s,_src:"local",_type:s.kind==="marker"?"marker":"sample"}));
-  cloud.forEach(c=>{if(c&&c.sample_id&&!bySid.has(c.sample_id))rows.push({...c,status:"synced",id:null,_src:"cloud",_type:c.kind==="marker"?"marker":"sample"})});
-  (extra.trips||[]).forEach(t=>rows.push({_type:"trip",_src:"trip",id:t.id,name:t.name||"未命名行程",t0:t.t0||0,t1:t.t1||0,pts:t.pts||[]}));
-  rows.sort((a,b)=>rowTs(b)-rowTs(a));
-  listRows=rows;
-  const nS=rows.filter(r=>r._type==="sample").length;
-  const nM=rows.filter(r=>r._type==="marker").length;
-  const nT=rows.filter(r=>r._type==="trip").length;
-  const pend=local.filter(s=>s.status!=="synced").length;
-  const cloudOnly=rows.filter(r=>r._src==="cloud").length;
-  const q=listQ.trim().toLowerCase();
-  const rows2=rows.filter(s=>{
-    if(listType!=="all"&&s._type!==listType)return false;
-    if(s._type==="trip"){ // 行程没有同步状态，状态筛选下不显示
-      if(listFilter!=="all")return false;
-      return !q||String(s.name).toLowerCase().includes(q)||new Date(s.t0).toLocaleDateString().includes(q);
-    }
-    if(listFilter==="pend"&&(s._src==="cloud"||s.status==="synced"))return false;
-    if(listFilter==="ok"&&(s._src==="cloud"||s.status!=="synced"))return false;
-    if(listFilter==="cloud"&&s._src!=="cloud")return false;
-    if(!q)return true;
-    const hay=[s.sample_id,s.remark,s.area_name,s.loc_status,s.recorder,s.sample_time,s.description,
-      (s.assays||[]).map(a=>a.element+" "+a.value).join(" ")].filter(Boolean).join(" ").toLowerCase();
-    return hay.includes(q);
-  });
-  $("list_stat").textContent=`共 ${rows.length} 条 · 野外取样 ${nS} · 标记点 ${nM} · 行程 ${nT}`
-    +(cloudOnly?` · 云端 ${cloudOnly}`:"")+` · 待同步 ${pend} 条`
-    +(cloudCache.err?` · 云端暂不可用`:"")+(q?` · 匹配 ${rows2.length} 条`:"");
-  $("chips_rectype").querySelectorAll("button").forEach(b=>b.classList.toggle("on",b.dataset.t===listType));
-  $("chips_filter").querySelectorAll("button").forEach(b=>b.classList.toggle("on",b.dataset.f===listFilter));
-  $("chips_filter").style.display=listType==="trip"?"none":"";
-  const cb=$("cloudbar");
-  if(cb){
-    cb.style.display=cloudOnly?"flex":"none";
-    if(cloudOnly)$("cloudbar_txt").textContent=`云端另有 ${cloudOnly} 条不在本机（只读，可先存下来再改）`;
-  }
-  const draftCard=(extra.draft&&listType!=="trip")?`<div class="card draftcard" id="draftcard" style="border-color:#fcd34d;background:#fffbeb">
-      <div class="info"><div><span class="sid">📝 未保存的输入</span><span class="badge b-pend">草稿</span></div>
-      <div class="meta">${xesc(draftSummary(extra.draft))}${extra.draftPhotos?` · 📷 ${extra.draftPhotos} 张`:""}</div>
-      <div class="meta">点这里回到表单继续，保存后这条自动消失</div></div></div>`:"";
-  const empty=$("empty_tip");
-  empty.style.display=rows2.length?"none":"";
-  if(rows2.length){}else if(!rows.length){
-    empty.innerHTML='暂无记录。换手机或清过浏览器数据？<br><button class="btn secondary" id="btn_pull2" style="margin-top:10px">☁️ 从云端恢复记录</button>';
-    const b=$("btn_pull2");if(b)b.onclick=pullSamples;
-  }else{
-    empty.textContent="没有匹配的记录，换个关键词或点「全部」";
-  }
-  $("samlist").innerHTML=draftCard+rows2.map(s=>{
-    if(s._type==="trip"){
-      const pts=s.pts||[],t1=s.t1||(pts.length?pts[pts.length-1].t:s.t0);
-      return`<div class="card samcard" data-tid="${s.id}">
-        <div class="info"><div><span class="sid">🧭 ${xesc(s.name)}</span><span class="badge" style="background:#ede9fe;color:#5b21b6">行程</span></div>
-        <div class="meta">${new Date(s.t0).toLocaleString()}${t1>s.t0?" → "+new Date(t1).toLocaleTimeString():""}</div>
-        <div class="meta">⏱ ${fmtDur(Math.max(0,t1-s.t0))} · 📏 ${(trkDist(pts)/1000).toFixed(2)} km · ${pts.length} 个点</div>
-        <div class="row" style="margin-top:8px">
-          <button class="btn secondary act-replay" style="padding:6px 12px;min-height:36px">🗺 回放轨迹</button>
-          <button class="btn secondary act-tedit" style="padding:6px 12px;min-height:36px">⋯ 编辑</button>
-        </div></div></div>`;
-    }
-    const b=s._src==="cloud"?'<span class="badge" style="background:#e0f2fe;color:#075985">☁️ 云端</span>'
-      :s.status==="synced"?'<span class="badge b-ok">已同步</span>':s.status==="failed"?'<span class="badge b-fail">同步失败</span>':'<span class="badge b-pend">待同步</span>';
+  const all=(await S.all()).sort((a,b)=>(b.created_at||"").localeCompare(a.created_at||""));
+  $("empty_tip").style.display=all.length?"none":"";
+  $("samlist").innerHTML=all.map(s=>{
+    const b=s.status==="synced"?'<span class="badge b-ok">已同步</span>':s.status==="failed"?'<span class="badge b-fail">同步失败</span>':'<span class="badge b-pend">待同步</span>';
     const as=(s.assays||[]).map(a=>`${a.element} ${a.value}${a.unit}`).join(" · ");
-    const gps=(s.latitude!=null&&s.longitude!=null)?`<div class="meta">🧭 ${(+s.latitude).toFixed(5)}, ${(+s.longitude).toFixed(5)}</div>`:"";
-    return`<div class="card samcard" data-sid="${xesc(s.sample_id)}">
+    return`<div class="card samcard" data-id="${s.id}">
       <div class="info"><div><span class="sid">${xesc(s.sample_id)}</span>${b}${s.kind==="marker"?"<span class=\"badge\" style=\"background:#dbeafe;color:#1e40af\">标记点</span>":""}</div>
-      <div class="meta">${s.kind==="marker"?"🚩 ":""}${xesc(s.sample_time||"")}${s.sample_type?" · "+xesc(s.sample_type):""}${s.loc_status?" · ⛏"+xesc(s.loc_status):""}${s.area_name?" · 📍"+xesc(s.area_name):""}</div>
-      ${gps}
+      <div class="meta">${s.kind==="marker"?"🚩 ":""}${xesc(s.sample_time||"")} · ${xesc(s.sample_type||"")}${s.loc_status?" · ⛏"+xesc(s.loc_status):""}${s.area_name?" · 📍"+xesc(s.area_name):""}</div>
       ${as?`<div class="meta">🧪 ${xesc(as)}</div>`:""}
       ${s.description?`<div class="meta">🪨 ${xesc(s.description)}</div>`:""}
-      <div class="meta">📷 ${(s.photos||[]).length} 张${s.erp_name?" · ERP:"+xesc(s.erp_name):""}${s.recorder?" · 👤"+xesc(s.recorder):""}</div>
+      <div class="meta">📷 ${(s.photos||[]).length} 张${s.erp_name?" · ERP:"+xesc(s.erp_name):""}</div>
       <div class="row" style="margin-top:8px">
         <button class="btn secondary act-view" style="padding:6px 12px;min-height:36px">详情/照片</button>
-        <button class="btn secondary act-edit" style="padding:6px 12px;min-height:36px">⋯ 更多</button>
-      </div></div></div>`}).join("");
-  const rowOf=el=>{const sid=el.closest(".samcard").dataset.sid;return sid?listRows.find(x=>x.sample_id===sid):null};
-  const dc=$("draftcard");
-  if(dc)dc.onclick=()=>{document.querySelector('nav button[data-pg="pg-form"]').click();setFormTab("cur")};
-  document.querySelectorAll("#samlist .samcard").forEach(c=>c.onclick=e=>{
-    if(e.target.closest("button"))return;
-    if(c.dataset.tid)return; // 行程卡用下面的专用按钮
-    const s=rowOf(c);if(s)viewDetail(s);
+        <button class="btn secondary act-edit" style="padding:6px 12px;min-height:36px">⋯ 编辑</button>
+      </div></div></div>`;
+  }).join("");
+  document.querySelectorAll(".act-edit").forEach(b=>b.onclick=e=>{
+    const s=all.find(x=>x.id===+e.target.closest(".samcard").dataset.id);if(!s)return;
+    editingSample=s;
+    $("samedit_title").textContent=s.sample_id;
+    $("samedit").classList.remove("hidden");
   });
-  document.querySelectorAll("#samlist .act-replay").forEach(b=>b.onclick=()=>{
-    const t=listRows.find(x=>x._type==="trip"&&x.id===+b.closest(".samcard").dataset.tid);if(!t)return;
-    document.querySelector('nav button[data-pg="pg-map"]').click(); // 先切页（切页会清掉上一次回放）
-    viewTrip=t.pts||[];
-    setTimeout(()=>{if(map&&viewTrip.length){map.cx=lon2x(viewTrip[0].lon,12);map.cy=lat2y(viewTrip[0].lat,12);map.draw()}toast("回放："+t.name)},150);
-  });
-  document.querySelectorAll("#samlist .act-tedit").forEach(b=>b.onclick=()=>{
-    const t=listRows.find(x=>x._type==="trip"&&x.id===+b.closest(".samcard").dataset.tid);if(!t)return;
-    $("tripedit_title").textContent=t.name;
-    $("tripedit").dataset.tid=t.id;
-    $("tripedit").classList.remove("hidden");
-  });
-  document.querySelectorAll("#samlist .act-view").forEach(b=>b.onclick=e=>{
-    const s=rowOf(e.target);if(s)viewDetail(s);
-  });
-  document.querySelectorAll("#samlist .act-edit").forEach(b=>b.onclick=async e=>{
-    let s=rowOf(e.target);if(!s)return;
-    if(s._src==="cloud"){
-      b.disabled=true;b.textContent="存到本机…";
-      s=await ensureLocal(s);toast("已存到本机，可以直接编辑",4000);
-    }
-    openSamEdit(s);
-  });
+  document.querySelectorAll(".act-view").forEach(b=>b.onclick=e=>viewDetail(+e.target.closest(".samcard").dataset.id,all));
 }
-function openSamEdit(s){
-  editingSample=s;
-  $("samedit_title").textContent=s.sample_id;
-  $("samedit").classList.remove("hidden");
-}
-$("q_list").addEventListener("input",()=>{listQ=$("q_list").value;renderList()});
-$("chips_rectype").querySelectorAll("button").forEach(b=>b.onclick=()=>{listType=b.dataset.t;renderList()});
-$("chips_filter").querySelectorAll("button").forEach(b=>b.onclick=()=>{listFilter=b.dataset.f;renderList()});
-$("btn_pull_all").onclick=pullSamples;
 /* ---- 记录编辑/删除 ---- */
 let editingSample=null;
-const closeSamEdit=()=>{editingSample=null;$("samedit").classList.add("hidden")}; // 取消时务必清掉，否则下一条保存会覆盖旧记录
-$("samedit").onclick=e=>{if(e.target.id==="samedit")closeSamEdit()};
-$("samedit_no").onclick=closeSamEdit;
+$("samedit").onclick=e=>{if(e.target.id==="samedit")$("samedit").classList.add("hidden")};
+$("samedit_no").onclick=()=>$("samedit").classList.add("hidden");
 $("samedit_del").onclick=async()=>{
   if(!editingSample)return;
   if(!confirm("确认删除这条记录？不可恢复"))return;
@@ -1252,7 +890,6 @@ $("samedit_del").onclick=async()=>{
 $("samedit_edit").onclick=async()=>{
   const s=editingSample;if(!s)return;
   $("samedit").classList.add("hidden");
-  await clearDraft(); // 编辑不沿用草稿
   $("f_sid").value=s.sample_id;$("f_time").value=s.sample_time||"";
   $("f_kind").value=s.kind==="marker"?"marker":"sample";applyKind();
   if(s.kind==="marker")$("f_mark").value=s.sample_type||"";else $("f_type").value=s.sample_type||"";
@@ -1262,7 +899,7 @@ $("samedit_edit").onclick=async()=>{
   $("gps_acc").textContent="";
   $("f_area").value=s.area_name||"";$("f_loc").value=s.loc_status||"";$("f_desc").value=s.description||"";
   $("f_recorder").value=s.recorder||"";$("f_remark").value=s.remark||"";
-  photos=(s.photos||[]).map(p=>({name:p.name,kind:p.kind,blob:p.blob,key:p.key,url:p.url,size:p.size}));renderThumbs();
+  photos=(s.photos||[]).map(p=>({name:p.name,kind:p.kind,blob:p.blob}));renderThumbs();
   $("assays").innerHTML="";(s.assays||[]).forEach(a=>addAssay(a.element,a.value,a.unit));updateElGrid();
   $("btn_gps").disabled=true;$("btn_pick").disabled=false;$("btn_viewpos").disabled=false; // 编辑时：GPS禁用，地图选点可修正，定位查看可用
   $("btn_save").textContent="💾 更新记录（覆盖原记录）";
@@ -1274,21 +911,15 @@ function exitEdit(){
   $("btn_gps").disabled=$("btn_pick").disabled=$("btn_viewpos").disabled=false;
   $("btn_save").textContent="💾 保存记录";
 }
-function viewDetail(s){
-  if(!s)return;
+function viewDetail(id,all){
+  const s=all.find(x=>x.id===id);if(!s)return;
   const m=document.createElement("div");m.className="modal";
-  const urls=[];
   const row=(k,v)=>v?`<div style="display:flex;gap:8px;font-size:14px;margin-bottom:5px"><span style="color:var(--muted);min-width:64px">${k}</span><span>${v}</span></div>`:"";
-  const coord=s.latitude!=null?`${(+s.latitude).toFixed(6)}, ${(+s.longitude).toFixed(6)}`:"";
-  const fromCloud=s._src==="cloud";
-  m.innerHTML=`<div class="box"><h3>${xesc(s.sample_id)}${fromCloud?' <span class="badge" style="background:#e0f2fe;color:#075985">☁️ 云端</span>':""}</h3>
-    <div class="thumbs">${(s.photos||[]).map(p=>{
-      const u=p.blob?URL.createObjectURL(p.blob):(p.url||"");if(p.blob&&u)urls.push(u);
-      return u?`<img src="${u}" style="max-width:100px;border-radius:8px;cursor:pointer">`:"";
-    }).join("")||"<span style='color:var(--muted)'>无照片</span>"}</div>
-    ${row("野外取样时间",xesc(s.sample_time))}
+  m.innerHTML=`<div class="box"><h3>${xesc(s.sample_id)}</h3>
+    <div class="thumbs">${(s.photos||[]).map((p,i)=>p.blob?`<img src="${URL.createObjectURL(p.blob)}" data-i="${i}" style="max-width:100px;border-radius:8px;cursor:pointer">`:(p.url?`<img src="${xesc(p.url)}" data-i="${i}" style="max-width:100px;border-radius:8px;cursor:pointer">`:"")).join("")||"<span style='color:var(--muted)'>无照片</span>"}</div>
+    ${row("取样时间",xesc(s.sample_time))}
     ${row("类型",xesc(s.sample_type))}
-    ${row("坐标",coord)}
+    ${row("坐标",s.latitude!=null?`${(+s.latitude).toFixed(6)}, ${(+s.longitude).toFixed(6)}`:"")}
     ${row("UTM",xesc(s.utm))}
     ${row("海拔",s.altitude!=null?`${s.altitude} m`:"")}
     ${row("地区",xesc(s.area_name))}
@@ -1300,33 +931,9 @@ function viewDetail(s){
     ${row("记录人",xesc(s.recorder))}
     ${row("备注",xesc(s.remark))}
     ${row("同步错误",xesc(s.sync_err))}
-    ${coord?`<button class="btn secondary block" data-copy style="margin-top:10px">📋 复制坐标</button>`:""}
-    ${fromCloud?`<button class="btn primary block" data-save style="margin-top:8px">📥 存到本机（可编辑）</button>`:""}
-    ${s.status!=="synced"&&!fromCloud?`<button class="btn primary block" data-sync style="margin-top:8px">🔄 立即同步这条</button>`:""}
-    <button class="btn secondary block" data-close style="margin-top:8px">关闭</button></div>`;
-  const close=()=>{urls.forEach(u=>URL.revokeObjectURL(u));$("viewer").classList.add("hidden");m.remove()};
-  m.querySelectorAll("[data-close]").forEach(b=>b.onclick=close);
-  m.onclick=e=>{if(e.target===m)close()};
-  const cp=m.querySelector("[data-copy]");
-  if(cp)cp.onclick=async()=>{
-    try{await navigator.clipboard.writeText(coord);toast("坐标已复制")}
-    catch(e){toast("复制失败：请长按坐标手动复制",3500)}
-  };
-  const dv=m.querySelector("[data-save]");
-  if(dv)dv.onclick=async()=>{
-    dv.disabled=true;dv.textContent="保存中…";
-    await ensureLocal(s);toast("已存到本机，可以编辑了",3000);
-    close();await renderList();
-  };
-  const sb=m.querySelector("[data-sync]");
-  if(sb)sb.onclick=async()=>{
-    sb.disabled=true;sb.textContent="上传中…";
-    try{
-      await uploadSample(s);
-      toast(s.status==="synced"?`✅ 已同步 ${s.sample_id}`:`同步失败：${(s.sync_err||"未知错误").slice(0,120)}`,5000);
-    }catch(e){toast("同步失败："+(e.message||e),6000)}
-    close();await renderList();refreshPend();
-  };
+    <button class="btn secondary block" style="margin-top:10px">关闭</button></div>`;
+  m.querySelector("button").onclick=()=>m.remove();
+  m.onclick=e=>{if(e.target===m)m.remove()};
   m.querySelectorAll("img").forEach(im=>im.onclick=()=>{ // 点照片全屏查看
     $("vimg").src=im.src;$("viewer").classList.remove("hidden");
   });
@@ -1343,9 +950,6 @@ const DEF_MEDIA="https://ecobox-media.frankataix.workers.dev";
 const DEF_MEDIA_TOKEN="BNs1CoMILEsITqt3rUtD5mqh4c467Ihe";
 /* 照片直传 R2，D1 只留 key/url（否则单条记录几十 MB，列表拉不动） */
 async function uploadPhoto(sid,i,p){
-  // 已传过就复用：重试/再次保存/从云端恢复的记录，不必把几 MB 照片重发一遍
-  if(p.key&&p.url)return{name:p.name,kind:p.kind,key:p.key,url:p.url,size:p.size};
-  if(!p.blob)throw new Error("照片「"+(p.name||i+1)+"」本机没有原图，请重新选择");
   const ab=await p.blob.arrayBuffer();
   const key="photos/"+sid+"/"+String(i+1).padStart(2,"0")+".jpg";
   const mtok=(await store.get("media_token"))||DEF_MEDIA_TOKEN;
@@ -1360,21 +964,12 @@ async function uploadSample(s){
   const wurl=(await store.get("worker_url"))||DEF_WORKER,tok=(await store.get("app_token"))||"";
   if(!navigator.onLine)throw new Error("当前无网络");
   const photos=[];
-  for(let i=0;i<(s.photos||[]).length;i++){
-    const up=await uploadPhoto(s.sample_id,i,s.photos[i]);
-    const local=s.photos[i];local.key=up.key;local.url=up.url;local.idx=i; // 回写：下次重试直接复用
-    photos.push(up);
-  }
+  for(let i=0;i<(s.photos||[]).length;i++)photos.push(await uploadPhoto(s.sample_id,i,s.photos[i]));
   const headers={"Content-Type":"application/json"};if(tok)headers["X-App-Token"]=tok;
-  // captured_licence 是采集快照，必须原样上云；status 以本次上传结果为准
-  const payload={...s,area_id:s.area_id||"",captured_licence:s.captured_licence||"",
-    licence:undefined,license_no:undefined,license_holder:undefined,photos,id:undefined,status:"synced"};
+  const payload={...s,area_id:s.area_id||"",captured_licence:s.licence||s.license_no||"",
+    licence:undefined,license_no:undefined,license_holder:undefined,photos,id:undefined};
   const r=await fetch(wurl.replace(/\/$/,"")+"/sample",{method:"POST",headers,body:JSON.stringify(payload)});
-  if(r.status===401){ // 云端开了鉴权：提示怎么补令牌，别只留一个 JSON 错误
-    s.status="failed";s.sync_err="401 未授权：缺少访问令牌";await S.put(s);
-    throw new Error("需要访问令牌：用带 ?t= 的链接打开一次即可，或在「设置 → 高级」里填入");
-  }
-  const j=await r.json().catch(()=>({}));
+  const j=await r.json();
   if(r.ok&&j.ok){s.status="synced";s.erp_name=j.name;}
   else{s.status="failed";s.sync_err=JSON.stringify(j).slice(0,300)}
   await S.put(s);
@@ -1406,16 +1001,13 @@ $("btn_backup").onclick=async()=>{
   const data=[];
   for(const s of all){
     const ps=[];
-    for(const p of s.photos||[]){
-      if(p.blob)ps.push({name:p.name,kind:p.kind,data:b64(await p.blob.arrayBuffer()),key:p.key,url:p.url,size:p.size});
-      else if(p.key||p.url)ps.push({name:p.name,kind:p.kind,key:p.key,url:p.url,size:p.size}); // 云端恢复的记录只有 R2 地址
-    }
+    for(const p of s.photos||[]){if(p.blob)ps.push({name:p.name,kind:p.kind,data:b64(await p.blob.arrayBuffer())})}
     data.push({...s,photos:ps});
   }
   const payload={app:"ecobox-sampling",exported_at:new Date().toISOString(),areas:AREA.doc.areas,samples:data,trips};
   const f=new File([JSON.stringify(payload)],`ecobox_backup_${new Date().toISOString().slice(0,10)}.json`,{type:"application/json"});
   if(navigator.canShare&&navigator.canShare({files:[f]})){
-    try{await navigator.share({files:[f],title:"ECOBOX 野外取样备份"});return}catch(e){if(e.name==="AbortError")return}
+    try{await navigator.share({files:[f],title:"ECOBOX 取样备份"});return}catch(e){if(e.name==="AbortError")return}
   }
   // 不支持分享的浏览器（如 iOS Safari 旧版）：退化为下载
   const a=document.createElement("a");a.href=URL.createObjectURL(f);a.download=f.name;a.click();
@@ -1428,161 +1020,22 @@ async function loadSet(){
   if(!w&&location.host.endsWith(".workers.dev")){w=location.origin;await store.set("worker_url",w)} // 同源托管时自动用本域名
   $("s_worker").value=w||$("s_worker").value; // 默认已填 Worker 地址
   $("s_token").value=(await store.get("app_token"))||"";
-  renderCloudState();
 }
-async function renderCloudState(){
-  const el=$("cloud_state");if(!el)return;
-  const tok=(await store.get("app_token"))||"";
-  el.innerHTML=tok
-    ?'✅ 已连接云端：联网即自动同步，<b>无需任何设置</b>。'
-    :'⚠️ 还没连上云端：用带 <code>?t=</code> 的链接打开一次就会自动配置好；也可以在下面「高级」里手动填。没连上时记录只存本机。';
-}
-$("btn_saveset").onclick=async()=>{
-  const tok=$("s_token").value.trim()||((await store.get("app_token"))||"");
-  await store.set("worker_url",$("s_worker").value.trim());await store.set("app_token",tok);
-  renderCloudState();toast(tok?"已保存":"已保存（未填令牌，只存本机）");
-};
-/* 本机数据统计（设置页） */
-async function renderSetStats(){
-  const el=$("set_stat");if(!el)return;
-  const user=(await store.get("user"))||($("f_recorder").value||"").trim();
-  const su=$("set_user");if(su)su.textContent=user||"未登录";
-  el.innerHTML='<div style="grid-column:1/-1;color:var(--muted);font-size:13px">统计中…</div>';
-  try{
-    const [all,trips,tiles]=await Promise.all([S.all(),TRIPS.all(),T.count()]);
-    const photos=all.reduce((n,s)=>n+((s.photos||[]).length),0);
-    const pend=all.filter(s=>s.status!=="synced").length;
-    const failed=all.filter(s=>s.status==="failed").length;
-    const km=trips.reduce((n,t)=>n+trkDist(t.pts||[]),0)/1000;
-    el.innerHTML=`
-      <div><b>${all.length}</b>野外取样 / 标记点</div>
-      <div><b>${pend}</b>待同步${failed?`（失败 ${failed}）`:""}</div>
-      <div><b>${photos}</b>张照片</div>
-      <div><b>${trips.length}</b>条行程</div>
-      <div><b>${km.toFixed(1)}</b>公里轨迹合计</div>
-      <div><b>${tiles}</b>张离线地图瓦片</div>`;
-  }catch(e){el.innerHTML='<div style="grid-column:1/-1;color:var(--danger)">统计失败：'+xesc(e.message||e)+'</div>'}
-}
-/* 从云端（D1）拉回记录：补齐本机没有的，不删除本机记录 */
-async function pullSamples(){
-  const btns=[$("btn_pull"),$("btn_pull2"),$("btn_pull_all")].filter(Boolean);
-  const info=$("pull_info");
-  btns.forEach(b=>{b.disabled=true;b.textContent="⏳ 拉取中…"});
-  try{
-    if(!navigator.onLine)throw new Error("当前无网络");
-    let remote;
-    try{remote=await fetchCloud()}
-    catch(e){
-      if(e.message==="访问令牌不对")throw new Error("访问令牌不对：用带 ?t= 的链接打开一次即可，或在「设置 → 高级」里填入");
-      throw e;
-    }
-    const local=await S.all();
-    const byId=new Map();local.forEach(s=>{if(s.sample_id)byId.set(s.sample_id,s)});
-    let add=0,upd=0,keep=0;
-    for(const rs of remote){
-      if(!rs||!rs.sample_id)continue;
-      const rec={...rs,status:"synced"};delete rec._synced_at;
-      const l=byId.get(rs.sample_id);
-      if(!l){delete rec.id;await S.put(rec);byId.set(rs.sample_id,rec);add++}
-      else if(l.status==="synced"){rec.id=l.id;await S.put(rec);upd++}
-      else keep++; // 本机有未同步修改，保留本机
-    }
-    const msg=`云端 ${remote.length} 条：新增 ${add}，更新 ${upd}`+(keep?`，保留本机未同步 ${keep}`:"");
-    if(info)info.textContent=msg;
-    toast(msg,7000);
-    await refreshSampleCache();await refreshPend();await renderList();
-    if($("set_stat")&&!$("pg-set").classList.contains("hidden"))renderSetStats();
-  }catch(e){
-    const m="恢复失败："+(e&&e.message||e);
-    if(info)info.textContent=m;toast(m,8000);
-  }finally{
-    if($("btn_pull")){$("btn_pull").disabled=false;$("btn_pull").textContent="☁️ 从云端恢复记录"}
-    if($("btn_pull2")){$("btn_pull2").disabled=false;$("btn_pull2").textContent="☁️ 从云端恢复记录"}
-    if($("btn_pull_all")){$("btn_pull_all").disabled=false;$("btn_pull_all").textContent="存到本机"}
-  }
-}
-$("btn_pull").onclick=pullSamples;
-/* 从备份 JSON 恢复：本机没有的新增，本机未同步的修改保留 */
-$("btn_import").onclick=()=>$("file_import").click();
-/* 兼容别家软件（ecobox / QGIS 导出的 samples.json）的字段：lat/lon、URL 照片、中文状态、datetime、化验列 */
-function normImported(rs){
-  const o={...rs};
-  if(o.latitude==null&&o.lat!=null&&o.lat!=="")o.latitude=+o.lat;
-  if(o.longitude==null&&o.lon!=null&&o.lon!=="")o.longitude=+o.lon;
-  if(o.kind!=="marker"&&o.category==="标记点")o.kind="marker";
-  if(!o.sample_time){
-    const t=o.datetime||o.created_at||"";
-    if(t)o.sample_time=String(t).replace("T"," ").slice(0,19);
-    else{
-      const m=/^[A-Za-z]{1,3}(\d{4})(\d{2})(\d{2})-/.exec(o.sample_id||"");
-      if(m)o.sample_time=`${m[1]}-${m[2]}-${m[3]} 00:00:00`;
-    }
-  }
-  if(!o.created_at&&o.sample_time)o.created_at=String(o.sample_time).replace(" ","T");
-  if(!o.area_name&&o.area_id)o.area_name=areaName(o.area_id)||"";
-  o.photos=(o.photos||[]).map((p,i)=>{
-    if(typeof p==="string"){const url=p.trim(),key=url.split("/m/")[1]||"";
-      return{name:key.split("/").pop()||`photo-${i+1}`,kind:"field",key,url,external:true}}
-    if(p&&p.blob)return p;
-    if(p&&p.data)return{name:p.name,kind:p.kind||"field",blob:unb64(p.data),key:p.key,url:p.url,size:p.size};
-    return{name:p.name||`photo-${i+1}`,kind:p.kind||"field",key:p.key||((p.url||"").split("/m/")[1]||""),url:p.url,size:p.size};
-  }).filter(Boolean);
-  if(!Array.isArray(o.assays))o.assays=[];
-  [["ta2o5_pct","Ta2O5","%"],["nb2o5_pct","Nb2O5","%"],["li2o_pct","Li2O","%"],
-   ["cs_ppm","Cs","ppm"],["be_ppm","Be","ppm"],["sn_ppm","Sn","ppm"]].forEach(([col,el,unit])=>{
-    const v=o[col];
-    if(v==null||v===""||o.assays.some(a=>a.element===el))return;
-    const n=Number(v);if(isFinite(n))o.assays.push({element:el,value:n,unit});
-  });
-  const s0=String(o.status||"");
-  o.status=(s0==="synced"||s0==="已同步"||s0==="已上传")?"synced":((s0==="failed"||s0==="失败")?"failed":"pending");
-  return o;
-}
-$("file_import").onchange=async e=>{
-  const f=e.target.files&&e.target.files[0];e.target.value="";
-  if(!f)return;
-  if(!confirm("从备份文件恢复记录？\n· 本机没有的记录会新增\n· 本机已同步的记录会被文件里的版本覆盖\n· 本机未同步的修改保留\n· 不会删除本机任何记录"))return;
-  const info=$("pull_info");
-  try{
-    const j=JSON.parse(await f.text());
-    const arr=Array.isArray(j)?j:(j.samples||[]);
-    if(!arr.length)throw new Error("这个文件里没有记录");
-    const local=await S.all();const byId=new Map();local.forEach(s=>{if(s.sample_id)byId.set(s.sample_id,s)});
-    let add=0,upd=0,keep=0,skip=0;
-    for(const raw of arr){
-      if(!raw||!raw.sample_id){skip++;continue}
-      const rs=normImported(raw);
-      const rec={...rs};
-      const l=byId.get(rs.sample_id);
-      if(!l){delete rec.id;if(!rec.status)rec.status="pending";await S.put(rec);byId.set(rs.sample_id,rec);add++}
-      else if(l.status==="synced"||!l.status){rec.id=l.id;await S.put(rec);upd++}
-      else keep++;
-    }
-    const msg=`备份 ${arr.length} 条：新增 ${add}，更新 ${upd}`+(keep?`，保留本机未同步 ${keep}`:"")+(skip?`，跳过无编号 ${skip}`:"");
-    if(info)info.textContent=msg;toast(msg,8000);
-    await refreshSampleCache();await refreshPend();await renderList();
-    if($("set_stat")&&!$("pg-set").classList.contains("hidden"))renderSetStats();
-  }catch(err){
-    const m="导入失败："+(err&&err.message||err);
-    if(info)info.textContent=m;toast(m,8000);
-  }
-};
+$("btn_saveset").onclick=async()=>{await store.set("worker_url",$("s_worker").value.trim());await store.set("app_token",$("s_token").value.trim());toast("已保存")};
 $("btn_synctest").onclick=async()=>{
   const w=$("s_worker").value.trim();if(!w){toast("先填 Worker 地址");return}
-  const tok=$("s_token").value.trim()||((await store.get("app_token"))||"");
+  const tok=$("s_token").value.trim();
   try{const r=await fetch(w.replace(/\/$/,"")+"/ping",{headers:{"X-App-Token":tok}});
-    if(r.ok){await store.set("worker_url",w);await store.set("app_token",tok);renderCloudState();toast("连接成功 ✔ 已自动保存")}
-    else if(r.status===401)toast("🔑 令牌不对（401）：用带 ?t= 的链接重新打开一次",5000);
+    if(r.ok){await store.set("worker_url",w);await store.set("app_token",tok);toast("连接成功 ✔ 已自动保存")}
     else toast("连接失败 "+r.status)}catch(e){toast("连接失败："+e.message)}
 };
 async function forceAppUpdate(){
-  if(!navigator.onLine){toast("现在没网：清完缓存就打不开了，请连网再点",7000);return}
   toast("正在清理缓存并更新…");
   try{const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)));
     const rs=await navigator.serviceWorker.getRegistrations();await Promise.all(rs.map(r=>r.unregister()));}catch(e){}
   setTimeout(()=>location.replace("./sampling_helper.html?r="+Date.now()),700);
 }
-$("btn_force_update").onclick=forceAppUpdate;
+$("btn_update").onclick=forceAppUpdate;
 const WIPE_PWD="987963";
 $("btn_wipe").onclick=()=>{$("wipepwd").value="";$("wipemodal").classList.remove("hidden");setTimeout(()=>$("wipepwd").focus(),100)};
 $("wipecancel").onclick=()=>$("wipemodal").classList.add("hidden");
@@ -1747,6 +1200,10 @@ function initMap(){
         ctx.strokeStyle=P.s==='Pegmatite'?'#d946ef':'rgba(60,60,60,.45)';ctx.lineWidth=P.s==='Pegmatite'?1.6:.6;ctx.stroke();
         if(P.b[2]-P.b[0]>0.03){let lcx=0,lcy=0;P.r.forEach(pt=>{const[qx,qy]=map.toPx(pt[0],pt[1]);lcx+=qx;lcy+=qy});
           ctx.fillStyle='rgba(51,51,51,.85)';ctx.font='10px sans-serif';ctx.fillText(P.s==='Pegmatite'?'Peg':P.s,lcx/P.r.length,lcy/P.r.length)}}
+      // 地质界线：细灰实线，仅在地质图开启时绘制
+      ctx.strokeStyle='rgba(70,70,70,.5)';ctx.lineWidth=.8;
+      for(const L of GEO.bounds){if(!inView(L.b))continue;ctx.beginPath();
+        L.p.forEach((pt,i)=>{const[qx,qy]=map.toPx(pt[0],pt[1]);i?ctx.lineTo(qx,qy):ctx.moveTo(qx,qy)});ctx.stroke()}
       // A/B/C 联合分区：B=最优(橙色填充+粗边)，A=第二目标(红色浅填充)，C=灰虚线
       for(const P of GEO.abc){if(!inView(P.b))continue;
         plot(P.r);const c=P.no==='A'?'#e41a1c':P.no==='B'?'#ff7f00':'#999999';
@@ -1803,7 +1260,19 @@ function initMap(){
       ctx.closePath();ctx.save();ctx.fillStyle="rgba(250,204,21,.3)";ctx.fill();ctx.restore();ctx.stroke();
       ctx.fillText(Z.no,lcx/Z.ring.length+4,lcy/Z.ring.length);
     }
-    // 野外取样点（内存缓存，同步画）；标记点画蓝色三角
+    // 矿权边界（pack.rights，图层自带证号标签）
+    ctx.strokeStyle="rgba(120,53,15,.85)";ctx.lineWidth=1.6;ctx.setLineDash([5,3]);
+    ctx.fillStyle="rgba(120,53,15,.95)";ctx.font="bold 11px sans-serif";
+    for(const R of RIGHTS){
+      const[a1,o1,a2,o2]=R.b;
+      if(a2<Math.min(vLa,vLb)||a1>Math.max(vLa,vLb)||o2<Math.min(vLo,vLo2)||o1>Math.max(vLo,vLo2))continue;
+      ctx.beginPath();let lcx=0,lcy=0;
+      R.r.forEach((p,i)=>{const[qx,qy]=map.toPx(p[0],p[1]);lcx+=qx;lcy+=qy;i?ctx.lineTo(qx,qy):ctx.moveTo(qx,qy)});
+      ctx.closePath();ctx.stroke();
+      ctx.fillText(R.no,lcx/R.r.length+4,lcy/R.r.length);
+    }
+    ctx.setLineDash([]);
+    // 取样点（内存缓存，同步画）；标记点画蓝色三角
     for(const s of sampleCache){if(s.latitude==null)continue;const[px,py]=map.toPx(s.latitude,s.longitude);
       if(px<-20||py<-20||px>w+20||py>h+20)continue;
       if(s.kind==="marker"){
@@ -1848,18 +1317,12 @@ function initMap(){
   }catch(err){ // iOS 等环境出错时显示原因而不是白屏
     $("mapinfo").textContent="地图绘制出错："+String(err&&err.message||err).slice(0,80);
   }};
-  // 瓦片位图缓存上限：长距离平移后不无限占内存（瓦片本体仍在 IndexedDB）
-  const tileCache={},tilePending={},tileOrder=[],TILE_CACHE_MAX=240;
-  function cacheTile(k,im){
-    if(!tileCache[k]){tileOrder.push(k);
-      while(tileOrder.length>TILE_CACHE_MAX)delete tileCache[tileOrder.shift()]}
-    tileCache[k]=im;
-  }
+  const tileCache={},tilePending={};
   async function drawTile(z,x,y,px,py,sz){
     const k=z+"/"+x+"/"+y;
     if(tileCache[k]){ctx.drawImage(tileCache[k],px,py,sz,sz);return}
     const blob=await T.get(k);
-    if(blob){const im=await mkBitmap(blob);cacheTile(k,im);ctx.drawImage(im,px,py,sz,sz);return}
+    if(blob){const im=await mkBitmap(blob);tileCache[k]=im;ctx.drawImage(im,px,py,sz,sz);return}
     if(tilePending[k]){ // 已在下载中，画占位
       ctx.strokeStyle="rgba(100,116,139,.15)";ctx.strokeRect(px,py,sz,sz);return}
     // 父级补位：逐级向上找已缓存瓦片，放大裁切显示（保证离线有底图）
@@ -1879,7 +1342,7 @@ function initMap(){
     tilePending[k]=1;
     const ctrl=new AbortController();const tm=setTimeout(()=>ctrl.abort(),8000);
     fetch(`${OSM}/${k}.png`,{signal:ctrl.signal}).then(r=>r.ok?r.blob():null).then(async b=>{
-      if(b){await T.put(k,b);cacheTile(k,await mkBitmap(b))}
+      if(b){await T.put(k,b);tileCache[k]=await mkBitmap(b)}
       tilePending[k]=0;scheduleDraw();
     }).catch(()=>{tilePending[k]=0}).finally(()=>clearTimeout(tm));
     ctx.strokeStyle="rgba(100,116,139,.2)";ctx.strokeRect(px,py,sz,sz);
@@ -1933,16 +1396,16 @@ function initMap(){
     map.z=z;map.cx=lon2x(lo,12);map.cy=lat2y(la,12);map.draw();
     toast(`已定位到 ${LICENSES.length} 个矿证范围`);
   };
-  $("msamp").onclick=()=>{ // 视野移到全部野外取样点
+  $("msamp").onclick=()=>{ // 视野移到全部取样点
     const pts=sampleCache.filter(s=>s.latitude!=null&&s.longitude!=null);
-    if(!pts.length){toast("暂无野外取样点");return}
+    if(!pts.length){toast("暂无取样点");return}
     let a1=90,o1=180,a2=-90,o2=-180;
     for(const s of pts){a1=Math.min(a1,s.latitude);o1=Math.min(o1,s.longitude);a2=Math.max(a2,s.latitude);o2=Math.max(o2,s.longitude)}
     const la=(a1+a2)/2,lo=(o1+o2)/2;
     const span=Math.max(a2-a1,o2-o1);
     let z=15;if(span>2)z=11;else if(span>1)z=12;else if(span>.2)z=13;else if(span>.05)z=14;
     map.z=z;map.cx=lon2x(lo,12);map.cy=lat2y(la,12);map.draw();
-    toast(`已定位到 ${pts.length} 个野外取样点`);
+    toast(`已定位到 ${pts.length} 个取样点`);
   };
   $("mzone").onclick=()=>{ // 视野移到全部潜在验证区
     if(!ZONES.length){toast("未嵌入靶区数据");return}
@@ -1977,8 +1440,8 @@ async function selectRegion(id,quiet){
   const p=await regPack(id);
   if(!p){if(!quiet)toast("该区域数据未下载，联网后点选自动获取");return false}
   REG.cur=id;
-  GEO=p.geo||{litho:[],abc:[],faults:[],veins:[],occs:[]};
-  ZONES=p.zones||[];ROADS=p.roads||[];PARCELS=p.parcels||[];
+  GEO={litho:[],bounds:[],abc:[],faults:[],veins:[],occs:[],...(p.geo||{})};
+  ZONES=p.zones||[];ROADS=p.roads||[];PARCELS=p.parcels||[];RIGHTS=p.rights||[];
   GEOIMG=(p.geoimg||[]).map(g=>({...g}));
   await store.set("region",id);
   renderRegChips();map.draw();
@@ -2028,16 +1491,15 @@ function trkDist(pts){let d=0;const p=(pts||[]).slice().sort((a,b)=>a.t-b.t);for
 async function updTrk(){
   if(!$("trk_state"))return;
   const on=trackWatch!=null||await store.get("track_on");
-  const dot=$("tab_trip_dot");if(dot)dot.classList.toggle("hidden",!on);
   if(on){
     const t0=await store.get("trip_t0"),name=await store.get("trip_name");
     $("trk_state").textContent="● 记录中 — "+(name||"行程")+(trackMode==="walk"?"（步行）":"（行车）");
     $("trk_state").style.color="#166534";
-    $("trk_info").textContent=`开始 ${t0?new Date(t0).toLocaleTimeString():"--"} · 已走 ${(trkDist(trackCache)/1000).toFixed(2)} km · 用时 ${fmtDur(Date.now()-(t0||Date.now()))} · ${trackCache.length} 个点`;
+    $("trk_info").textContent=`开始 ${t0?new Date(t0).toLocaleTimeString():"--"} · 已走 ${(trkDist(trackCache)/1000).toFixed(2)} km · 用时 ${fmtDur(Date.now()-(t0||Date.now()))}`;
     $("btn_trk").textContent="■ 结束本次行程";$("btn_trk").className="btn danger block";
   }else{
     $("trk_state").textContent="未记录";$("trk_state").style.color="";
-    $("trk_info").textContent=trackCache.length?`点下方按钮开始记录新行程`:"点下方按钮开始记录行程轨迹";
+    $("trk_info").textContent="点开始，记录本次行程轨迹";
     $("btn_trk").textContent="▶ 开始新的行程";$("btn_trk").className="btn primary block";
   }
 }
@@ -2139,7 +1601,7 @@ async function toggleTrack(){
     $("tripstop_info").innerHTML=`「${xesc(name||"行程")}」<br>开始 ${t0?new Date(t0).toLocaleTimeString():"--"} · 已走 ${(trkDist(trackCache)/1000).toFixed(2)} km · 用时 ${fmtDur(Date.now()-(t0||Date.now()))}`;
     $("tripstop").classList.remove("hidden");return}
   // 未记录 → 弹出取名框
-  $("tripname").value="行程 "+new Date().toLocaleString("zh",{month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"});
+  $("tripname").value="行程 "+new Date().toLocaleString("zh",{year:"numeric",month:"2-digit",day:"2-digit"});
   $("tripmodal").classList.remove("hidden");setTimeout(()=>$("tripname").select(),100);
 }
 async function stopTrip(){ // 确认后真正结束并存档
@@ -2162,7 +1624,7 @@ $("tripstop_yes").onclick=stopTrip;
 $("tripstop_no").onclick=()=>$("tripstop").classList.add("hidden");
 $("tripstop").onclick=e=>{if(e.target.id==="tripstop")$("tripstop").classList.add("hidden")};
 async function startTrip(){
-  const name=$("tripname").value.trim()||("行程 "+new Date().toLocaleString("zh",{month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"}));
+  const name=$("tripname").value.trim()||("行程 "+new Date().toLocaleString("zh",{year:"numeric",month:"2-digit",day:"2-digit"}));
   if("getBattery" in navigator){
     const bat=await navigator.getBattery();
     if(!bat.charging && bat.level<=0.25){
@@ -2173,8 +1635,8 @@ async function startTrip(){
   await store.set("trip_name",name);
   await store.set("trip_t0",Date.now());
   await TR.clear();lastTP=null;gpsWatchStartT=0;lastFixT=0;gpsLostWarned=false;
-  startWatch();await store.set("track_on",true);updTrk();renderTrips();
-  toast(trackMode==="walk"?"行程记录中（步行：每 2 米 / 3 秒打一点）":"行程记录中（行车：每 10 米 / 5 秒打一点）",4000);
+  startWatch();await store.set("track_on",true);updTrk();
+  toast("行程记录中（15s/10m 打点）");
 }
 $("tripok").onclick=startTrip;
 $("tripcancel").onclick=()=>$("tripmodal").classList.add("hidden");
@@ -2183,49 +1645,25 @@ async function resumeTrack(){ // 页面重开后自动续录同一次行程
   if(await store.get("track_on"))startWatch();
 }
 $("btn_trk").onclick=toggleTrack;
-setInterval(()=>{
-  if(document.hidden)return;
-  if(trackWatch!=null)updTrk();
-  if(!$("tab_trip").classList.contains("hidden"))renderTripsLive();
-},1000);
+setInterval(()=>{if((trackWatch!=null)&&!$("pg-track").classList.contains("hidden"))updTrk()},1000);
 /* ---- 历史行程列表 ---- */
-async function renderTripsLive(){ // 记录中卡片每秒刷新（只改文字，不重建按钮）
-  const box=$("triplive");if(!box)return;
-  const on=(trackWatch!=null)||await store.get("track_on");
-  if(!on){if(box.innerHTML)box.innerHTML="";return}
-  if(!box.firstElementChild){
-    box.innerHTML=`<div class="card livecard">
-      <div style="display:flex;align-items:center;gap:8px"><span class="sid" id="live_name"></span><span class="badge" style="background:#dcfce7;color:#166534">● 记录中</span></div>
-      <div class="meta" id="live_meta"></div>
-      <div class="row" style="margin-top:8px"><button class="btn danger" id="btn_live_stop" style="padding:6px 12px;min-height:36px">■ 结束本次行程</button></div></div>`;
-    $("btn_live_stop").onclick=toggleTrack;
-  }
-  const t0=+(await store.get("trip_t0"))||Date.now(),name=(await store.get("trip_name"))||"行程";
-  $("live_name").textContent=name;
-  $("live_meta").textContent=`开始 ${new Date(t0).toLocaleTimeString()} · ⏱ ${fmtDur(Date.now()-t0)} · 📏 ${(trkDist(trackCache)/1000).toFixed(2)} km · ${trackCache.length} 个点`;
-}
 async function renderTrips(){
   const el=$("triplist");if(!el)return;
   const all=(await TRIPS.all()).sort((a,b)=>b.t0-a.t0);
-  const on=(trackWatch!=null)||await store.get("track_on");
-  const activeId=on?await store.get("trip_active_id"):null;
-  el.innerHTML=all.map(t=>{
-    const live=activeId&&t.id===activeId;
-    const pts=t.pts||[];
-    const t1=t.t1||(pts.length?pts[pts.length-1].t:t.t0);
-    return`<div class="card samcard" data-tid="${t.id}">
+  const activeId=(await store.get("track_on"))?await store.get("trip_active_id"):null;
+  el.innerHTML=all.map(t=>{const live=activeId&&t.id===activeId;
+    return`<div class="samcard" data-tid="${t.id}"${live?' style="border-color:var(--ok);box-shadow:0 0 0 2px rgba(34,197,94,.25)"':""}>
     <div class="info"><div><span class="sid">${xesc(t.name)}</span>${live?'<span class="badge" style="background:#dcfce7;color:#166534">● 记录中</span>':""}</div>
-    <div class="meta">${new Date(t.t0).toLocaleString()} → ${new Date(t1).toLocaleTimeString()}</div>
-    <div class="meta">⏱ ${fmtDur(t1-t.t0)} · 📏 ${(trkDist(pts)/1000).toFixed(2)} km · ${pts.length} 个点</div>
+    <div class="meta">${new Date(t.t0).toLocaleString()} → ${new Date(t.t1).toLocaleTimeString()}</div>
+    <div class="meta">⏱ ${fmtDur(t.t1-t.t0)} · 📏 ${(trkDist(t.pts)/1000).toFixed(2)} km</div>
     <div class="row" style="margin-top:8px">
       <button class="btn secondary act-replay" style="padding:6px 12px;min-height:36px">🗺 回放轨迹</button>
       <button class="btn secondary act-edit" style="padding:6px 12px;min-height:36px">⋯ 编辑</button>
-    </div></div></div>`}).join("")||'<p class="empty">还没有行程记录，点上面的按钮开始第一次行程</p>';
+    </div></div></div>`}).join("")||'<p style="color:var(--muted);font-size:14px">还没有行程记录</p>';
   el.querySelectorAll(".act-replay").forEach(b=>b.onclick=()=>{
     const t=all.find(x=>x.id===+b.closest(".samcard").dataset.tid);if(!t)return;
-    const pts=t.pts||[];
-    document.querySelector('nav button[data-pg="pg-map"]').click(); // 先切页（切页会清掉上一次回放）
-    viewTrip=pts;
+    viewTrip=t.pts||[];
+    document.querySelector('nav button[data-pg="pg-map"]').click();
     setTimeout(()=>{if(map&&viewTrip.length){map.cx=lon2x(viewTrip[0].lon,12);map.cy=lat2y(viewTrip[0].lat,12);map.draw()}toast("回放："+t.name)},150);
   });
   el.querySelectorAll(".act-edit").forEach(b=>b.onclick=()=>{
@@ -2234,7 +1672,6 @@ async function renderTrips(){
     $("tripedit").dataset.tid=t.id;
     $("tripedit").classList.remove("hidden");
   });
-  renderTripsLive();
 }
 $("tripedit").onclick=e=>{if(e.target.id==="tripedit")$("tripedit").classList.add("hidden")};
 $("tripedit_no").onclick=()=>$("tripedit").classList.add("hidden");
@@ -2251,8 +1688,7 @@ $("tripedit_resume").onclick=async()=>{ // 把新轨迹续接到这条行程
   await store.set("trip_name",t.name);
   await store.set("trip_t0",t.t0); // 保留原开始时间
   await TR.clear();trackCache=t.pts||[];
-  const pts=trackCache; // 一次事务写回，长行程也快
-  if(pts.length)await idb().then(d=>new Promise(res=>{const tr=d.transaction("track","readwrite");const os=tr.objectStore("track");pts.forEach(p=>os.add(p));tr.oncomplete=res}));
+  for(const p of trackCache)await idb().then(d=>new Promise(res=>{const tr=d.transaction("track","readwrite");tr.objectStore("track").add(p);tr.oncomplete=res}));
   lastTP=trackCache.length?{t:trackCache[trackCache.length-1].t,lat:trackCache[trackCache.length-1].lat,lon:trackCache[trackCache.length-1].lon}:null;
   startWatch();await store.set("track_on",true);updTrk();renderTrips();
   toast(`继续记录「${t.name}」，新轨迹将接到后面`);
@@ -2360,321 +1796,47 @@ $("dlmine").onclick=()=>{ // 矿区范围：42881+43131 两矿权及周边 z6–
   runDl(bboxJobs(29.9,-13.5,30.9,-12.3,6,13),"矿区底图");
 };
 
-/* ============ PWA 安装提示：设置页「添加到手机桌面」按机型给步骤 ============ */
+/* ============ PWA 安装提示 ============ */
 let deferredPrompt=null;
-const UA=navigator.userAgent||"";
-const isIOS=/iPad|iPhone|iPod/.test(UA)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
-const isAndroid=/Android/i.test(UA);
-const isWeChat=/MicroMessenger/i.test(UA);
-const isQQ=/QQBrowser|MQQBrowser/i.test(UA);
-const isHuawei=/HuaweiBrowser|HUAWEI|HarmonyOS|Honor/i.test(UA);
-const isSamsung=/SamsungBrowser/i.test(UA);
-const isUC=/UCBrowser|Quark/i.test(UA);
-const isMi=/MiuiBrowser|XiaoMi|MIBrowser/i.test(UA);
+const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent||"");
 const isStandalone=window.matchMedia("(display-mode: standalone)").matches||navigator.standalone===true;
-// 各家手机「加图标」的入口差别很大，按 UA 给对应步骤，别让人自己找
-function installGuide(){
-  if(isWeChat)return{t:"微信里加不了桌面图标",s:"先点右上角 ⋯ → 在浏览器打开，再添加",st:["点右上角 ⋯（三个点）","选「在浏览器打开」","在浏览器里再按下面的步骤添加"]};
+if(!isStandalone){
+  const banner=$("pwa_banner"),installBtn=$("pwa_install"),txt=$("pwa_txt");
   if(isIOS){
-    if(/CriOS|FxiOS|EdgiOS|OPiOS|UCBrowser|Quark/.test(UA))return{t:"iPhone 要用 Safari 添加",s:"当前不是 Safari，先复制网址到 Safari 打开",st:["复制本页网址","用 Safari 打开这个网址","点底部「分享」图标","选「添加到主屏幕」→ 添加"]};
-    return{t:"iPhone / iPad（Safari）",s:"两步就好",st:["点底部中间的「分享」图标","下滑点「添加到主屏幕」","右上角「添加」"]};
+    banner.classList.remove("hidden");txt.textContent="Safari：点底部 分享 → 添加到主屏幕，即可像 App 一样使用";installBtn.classList.add("hidden");
   }
-  if(isHuawei)return{t:"华为手机（华为浏览器）",s:"在底部菜单里加",st:["点右下角「≡ 菜单」","选「添加到桌面」","确认后桌面出现图标"]};
-  if(isSamsung)return{t:"三星手机（三星浏览器）",s:"在菜单里加",st:["点右下角三横线菜单","「添加页面到」→「主屏幕」","确认添加"]};
-  if(isMi)return{t:"小米 / 红米（自带浏览器）",s:"在菜单里加",st:["点底部「≡」菜单","选「添加到桌面」","确认添加"]};
-  if(isUC)return{t:"UC / 夸克浏览器",s:"在菜单里加",st:["点底部中间「≡」","选「添加到桌面」","确认添加"]};
-  if(isQQ)return{t:"QQ 浏览器",s:"在菜单里加",st:["点底部「≡」","选「添加到桌面」","确认添加"]};
-  if(isAndroid)return{t:"安卓手机（Chrome / Edge）",s:"能一键装就直接装，否则用菜单",st:["弹出「安装应用」时直接点安装","或点右上角 ⋮ 菜单","选「添加到主屏幕」/「安装应用」"]};
-  return{t:"电脑浏览器",s:"手机上打开本页再添加",st:["手机浏览器打开本页","Chrome：⋮ → 安装应用","Safari：分享 → 添加到程序坞"]};
-}
-function renderInstall(){
-  const st=$("inst_state"),sub=$("inst_sub"),steps=$("inst_steps"),btn=$("btn_install");
-  if(!st)return;
-  if(isStandalone){
-    st.textContent="✅ 已添加到桌面";
-    sub.textContent="现在就是从桌面图标打开的：全屏、可离线";
-    steps.innerHTML="";btn.classList.add("hidden");return;
-  }
-  const g=installGuide();
-  st.textContent=g.t;sub.textContent=g.s;
-  steps.innerHTML=g.st.map(x=>`<li>${x}</li>`).join("");
-  btn.classList.toggle("hidden",!deferredPrompt);
-  if(deferredPrompt)btn.textContent="📲 一键添加到桌面";
-}
-const pwaBanner=$("pwa_banner"),pwaBtn=$("pwa_install"),pwaTxt=$("pwa_txt");
-function hideBanner(){if(pwaBanner)pwaBanner.classList.add("hidden")}
-function doInstall(){
-  if(!deferredPrompt){toast("照下面 3 步手动添加即可",3000);$("install_card").scrollIntoView({block:"center",behavior:"smooth"});return}
-  const p=deferredPrompt;
-  p.prompt();
-  p.userChoice.then(c=>{
-    if(c.outcome==="accepted"){toast("✅ 已添加到桌面",4000);hideBanner()}
-    deferredPrompt=null;renderInstall();
+  addEventListener("beforeinstallprompt",e=>{
+    e.preventDefault();deferredPrompt=e;
+    banner.classList.remove("hidden");installBtn.classList.remove("hidden");
+    installBtn.onclick=()=>{deferredPrompt.prompt();deferredPrompt.userChoice.then(c=>{if(c.outcome==="accepted")banner.classList.add("hidden");deferredPrompt=null;});};
   });
+  $("pwa_dismiss").onclick=()=>banner.classList.add("hidden");
+  setTimeout(()=>{if(!deferredPrompt&&!isIOS)banner.classList.add("hidden")},12000);
 }
-addEventListener("beforeinstallprompt",e=>{
-  e.preventDefault();deferredPrompt=e;
-  if(pwaBanner&&!isStandalone){pwaBanner.classList.remove("hidden");pwaBtn.classList.remove("hidden");pwaTxt.textContent="可以像 App 一样装到桌面，断网也能用"}
-  renderInstall();
-});
-addEventListener("appinstalled",()=>{toast("✅ 已添加到桌面",4000);hideBanner();renderInstall()});
-if(!isStandalone&&pwaBanner){
-  if(isIOS){
-    pwaBanner.classList.remove("hidden");
-    pwaTxt.textContent=isWeChat?"微信里加不了：右上角 ⋯ → 在浏览器打开，再到「设置 → 添加到手机桌面」":"Safari：点底部「分享」→「添加到主屏幕」，即可像 App 一样使用";
-    pwaBtn.classList.add("hidden");
-  }
-  $("pwa_dismiss").onclick=hideBanner;
-  setTimeout(()=>{if(!deferredPrompt&&!isIOS)hideBanner()},12000);
-}
-$("btn_install").onclick=doInstall;
-if(pwaBtn)pwaBtn.onclick=doInstall;
-renderInstall();
 
-/* ============ 版本检查：发布新版本后自动弹「更新」条 ============ */
-const APP_VER="20261112-1003";
-const UPD_SNOOZE=30*60*1000; // 点「稍后」只压半小时；版本号一变立刻再提醒
-let updVer="",updSnoozedVer="",updSnoozedAt=0;
-function hideUpdateTip(){const t=$("update_tip");if(!t)return;t.style.display="none";t.classList.remove("flash")}
-function markUpdateBtn(ver){ // 设置页也给一个确定的入口，别只靠底部条
-  const b=$("btn_now"),d=$("setdot");
-  if(d)d.classList.toggle("on",!!ver);
-  if(!b)return;
-  if(ver){$("now_ver").textContent=ver;b.classList.remove("hidden")}else b.classList.add("hidden");
-}
-function showUpdateTip(ver){
-  if(ver)updVer=ver;
-  markUpdateBtn(updVer);
-  if(updVer&&updVer===updSnoozedVer&&Date.now()-updSnoozedAt<UPD_SNOOZE)return;
-  const t=$("update_tip");if(!t)return;
-  $("update_ver").textContent="🔄 有新版本"+(updVer?" "+updVer:"");
-  if(t.style.display==="flex")return;
-  t.style.display="flex";t.classList.remove("flash");void t.offsetWidth;t.classList.add("flash");
-  toast("🔄 有新版本，点下面「立即更新」",5000);
-}
-// 返回 "new"（有新版）/ "latest"（已最新）/ "err"（连不上）
-async function checkUpdate(){
-  let v="";
-  try{
-    const r=await fetch("version.txt?_="+Date.now(),{cache:"no-store"});
-    if(!r.ok)return "err";
-    v=(await r.text()).trim();
-  }catch(e){return "err"}
-  if(!v)return "err";
-  if(v>APP_VER){showUpdateTip(v);return "new"}
-  updVer="";markUpdateBtn("");hideUpdateTip();return "latest";
-}
-// 一律走「清缓存 + 注销 SW + 带参数重载」：结果确定，不会出现点了没反应
-async function applyUpdate(){
-  const b=$("update_now"),b2=$("btn_now");
-  if(b){b.disabled=true;b.textContent="更新中…"}
-  if(b2)b2.disabled=true;
-  const restore=()=>{if(b){b.disabled=false;b.textContent="立即更新"}if(b2)b2.disabled=false};
-  if(!navigator.onLine){toast("现在没网：连上网络再更新",6000);restore();return}
-  await forceAppUpdate();
-  setTimeout(restore,6000); // 没能重载（被拦/超时）时把按钮还回去，别让用户卡在「更新中」
-}
-$("update_now").onclick=applyUpdate;
-$("btn_now").onclick=applyUpdate;
-$("update_later").onclick=()=>{updSnoozedVer=updVer;updSnoozedAt=Date.now();hideUpdateTip()};
-$("btn_update").onclick=async e=>{
-  const b=e.currentTarget;b.disabled=true;b.textContent="检查中…";
-  const st=await checkUpdate();
-  b.disabled=false;b.textContent="🔄 检查更新";
-  toast(st==="new"?"发现新版本 "+updVer+"，点下方「立即更新」":st==="latest"?"已是最新版本 "+APP_VER:"检查失败：确认联网后再试",4000);
-};
-setTimeout(checkUpdate,1500);
-setInterval(checkUpdate,5*60*1000);
-document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")checkUpdate()});
-addEventListener("focus",checkUpdate);
-addEventListener("online",checkUpdate);
-// SW 发现页面变新时也会喊一声（version.txt 被 CDN 拖住时靠它兜底）
-if("serviceWorker" in navigator)navigator.serviceWorker.addEventListener("message",e=>{
-  const d=e.data||{};if(d.type==="NEW_VER"&&d.ver&&d.ver>APP_VER)showUpdateTip(d.ver);
-});
-
-/* ============ Service Worker：页面本体缓存到本机，断网必开 ============ */
-const SW_OK="serviceWorker" in navigator&&(location.protocol==="https:"||["localhost","127.0.0.1"].includes(location.hostname));
-async function offState(){
-  const st={supported:SW_OK,active:false,ctrl:false,bytes:0,at:0};
-  if(!SW_OK)return st;
-  try{
-    const reg=await navigator.serviceWorker.getRegistration();
-    st.active=!!(reg&&reg.active);st.ctrl=!!navigator.serviceWorker.controller;
-  }catch(e){}
-  try{
-    for(const name of await caches.keys()){
-      const c=await caches.open(name);
-      const hit=await c.match("sampling_helper.html",{ignoreSearch:true});
-      if(!hit)continue;
-      const at=+(hit.headers.get("X-Cached-At")||0)||0;
-      const size=(await hit.clone().text()).length;
-      if(size>st.bytes&&at>=st.at){st.bytes=size;st.at=at}
-    }
-  }catch(e){}
-  return st;
-}
-/* 出发前检查：页面 / 地图 / 定位 / 待同步 */
-async function renderPrep(){
-  const st=await offState();
-  let tiles=0,zm={},gps="unknown",pend=0;
-  try{[tiles,zm]=await Promise.all([T.count(),T.byZoom()])}catch(e){}
-  try{const p=await navigator.permissions.query({name:"geolocation"});gps=p.state}catch(e){}
-  try{pend=(await S.all()).filter(s=>s.status!=="synced").length}catch(e){}
-  const kb=Math.round(st.bytes/1024);
-  const when=st.at?new Date(st.at).toLocaleString("zh-CN",{month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"}):"";
-  const pageOk=st.bytes>20000,mapOk=tiles>=100,gpsOk=gps==="granted",syncOk=pend===0;
-  const rows=[
-    {act:"page",ok:pageOk,icon:"📱",t:"离线页面",
-     s:pageOk?`离线已就绪：${kb} KB 存在本机${when?`（更新于 ${when}）`:""}（断网可直接打开）`
-             :(st.supported?"还没有页面副本，断网会打不开":"这个浏览器不支持离线缓存，需 https 打开"),
-     b:pageOk?"重存":"缓存"},
-    {act:"map",ok:mapOk,icon:"🗺",t:"离线地图",
-     s:tiles>=100?`${tiles} 张瓦片 · ${zoomSummary(zm)}`
-                 :(tiles?`只有 ${tiles} 张瓦片 · ${zoomSummary(zm)}，可能不够看`:"还没下载，野外地图页会空白"),
-     b:tiles?"补下载":"下载"},
-    {act:"gps",ok:gpsOk,icon:"📍",t:"定位权限",
-     s:gpsOk?"已允许，可以正常取坐标":(gps==="denied"?"已被拒绝：到手机设置里允许本页定位":"还没授权，出发前先点一次"),
-     b:"试定位"},
-    {act:"sync",ok:syncOk,icon:"☁️",t:"待同步记录",
-     s:syncOk?"没有待同步记录":`${pend} 条还没传到云端（不影响离线记录）`,
-     b:syncOk?"":"同步"},
-  ];
-  const bad=rows.filter(r=>!r.ok).length;
-  const el=$("prep_list");
-  if(el)el.innerHTML=rows.map(r=>`
-    <div class="prepitem ${r.ok?"ok":"bad"}">
-      <span class="pi">${r.ok?"✅":"⚠️"}</span>
-      <div class="pt"><b>${r.icon} ${r.t}</b><span>${xesc(r.s)}</span></div>
-      ${r.b?`<button data-prep="${r.act}">${xesc(r.b)}</button>`:""}
-    </div>`).join("");
-  const sum=$("prep_sum");
-  if(sum)sum.innerHTML=bad
-    ?`<span style="color:var(--danger)">还有 ${bad} 项没准备好，建议处理后再出发</span>`
-    :`<span style="color:var(--ok)">全部就绪，可以出发 ✅</span>`;
-  const tip=$("off_tip");
-  if(tip&&pageOk)tip.style.display="none";
-  return {page:st,rows,bad};
-}
-async function renderOffStat(){const r=await renderPrep();return r.page}
-async function cacheAllNow(quiet){
-  const b=$("prep_list")&&$("prep_list").querySelector('button[data-prep="page"]');
-  if(!SW_OK){if(!quiet)toast("这个浏览器不支持离线缓存（需 https 打开）",6000);return false}
-  if(!navigator.onLine){if(!quiet)toast("现在没网：先联网再点一次",6000);return false}
-  if(b){b.disabled=true;b.textContent="缓存中…"}
-  try{
-    try{if(navigator.storage&&navigator.storage.persist)await navigator.storage.persist()}catch(e){}
-    const reg=await navigator.serviceWorker.ready;
-    const sw=reg.active||navigator.serviceWorker.controller;
-    if(!sw)throw new Error("后台服务未就绪");
-    const done=new Promise(res=>{
-      const t=setTimeout(()=>res(false),30000);
-      navigator.serviceWorker.addEventListener("message",ev=>{
-        if(ev.data&&ev.data.type==="CACHE_ALL_DONE"){clearTimeout(t);res(!!ev.data.ok)}
-      },{once:true});
-    });
-    sw.postMessage("CACHE_ALL");
-    await done;
-    const st=await renderOffStat();
-    const ok=st.bytes>20000;
-    if(!quiet)toast(ok?`✅ 离线已就绪（${Math.round(st.bytes/1024)} KB）：现在断网也能打开`:"⚠️ 还没缓存好，请保持联网再等一会儿",6000);
-    return ok;
-  }catch(e){
-    if(!quiet)toast("缓存失败："+(e&&e.message||e),7000);
-    return false;
-  }finally{if(b){b.disabled=false;b.textContent="缓存"}}
-}
-if(SW_OK){
-  const hadSWController=!!navigator.serviceWorker.controller; // 首次安装不算「有新版本」
+/* ============ Service Worker：缓存页面本体，离线可打开 ============ */
+if("serviceWorker" in navigator&&location.protocol==="https:"){
   navigator.serviceWorker.register("sampling_sw.js",{updateViaCache:"none"}).then(reg=>{
     reg.addEventListener('updatefound',()=>{
       const w=reg.installing;
       if(!w)return;
       w.addEventListener('statechange',()=>{
-        if(w.state==='installed'&&hadSWController)showUpdateTip();
+        if(w.state==='installed'&&navigator.serviceWorker.controller){
+          const t=$('update_tip');
+          if(t){t.style.display='flex';$('update_now').onclick=forceAppUpdate;}
+        }
       });
     });
+    // 进入页面后主动检查一次更新
     setTimeout(()=>reg.update(),2000);
-    setInterval(()=>reg.update(),5*60*1000);
   }).catch(()=>{});
-  // 启动自检：没缓存就自动补一次；补不上就亮红条，别让人到野外才发现打不开
-  const offCheck=async()=>{
-    const st=await renderOffStat();
-    if(st.bytes>20000)return;
-    if(navigator.onLine&&await cacheAllNow(true))return;
-    const tip=$("off_tip"),up=$("update_tip");
-    if(tip&&(!up||up.style.display!=="flex"))tip.style.display="flex";
-  };
-  setTimeout(offCheck,5000);
-  setTimeout(offCheck,25000);
-  addEventListener("online",()=>{renderOffStat();offCheck()});
-  addEventListener("offline",renderOffStat);
+  // 离线就绪自检：6 秒后 SW 还没激活，说明离线缓存没装上（离线打不开）
+  setTimeout(()=>{
+    navigator.serviceWorker.getRegistration().then(r=>{
+      if(!r||!r.active)toast("⚠️ 离线缓存还没装好：请联网保持本页打开约30秒，之后没网也能打开",9000);
+    }).catch(()=>{});
+  },6000);
 }
-$("off_fix").onclick=()=>cacheAllNow(false);
-/* 检查表的四个动作 */
-$("prep_list").onclick=async e=>{
-  const b=e.target.closest("button[data-prep]");if(!b)return;
-  const act=b.dataset.prep;
-  if(act==="page"){await cacheAllNow(false);await renderPrep();return}
-  if(act==="map"){
-    document.querySelector('nav button[data-pg="pg-map"]').click();
-    setTimeout(()=>{try{openDl()}catch(err){}},400);
-    return;
-  }
-  if(act==="gps"){
-    b.disabled=true;b.textContent="定位中…";
-    const back=()=>{b.disabled=false;b.textContent="试定位";renderPrep()};
-    navigator.geolocation.getCurrentPosition(
-      ()=>{toast("定位成功 ✔ 卫星信号正常",4000);back()},
-      err=>{toast(err&&err.code===1?"定位被拒绝：到手机设置里允许本页定位":"定位失败："+((err&&err.message)||"超时，找开阔地重试"),7000);back()},
-      {enableHighAccuracy:true,timeout:20000,maximumAge:30000});
-    setTimeout(back,22000);
-    return;
-  }
-  if(act==="sync"){b.disabled=true;b.textContent="同步中…";$("syncbtn").click();setTimeout(()=>renderPrep(),3000)}
-};
-$("btn_prep_all").onclick=async()=>{
-  const btn=$("btn_prep_all");btn.disabled=true;btn.textContent="准备中…";
-  try{
-    const r=await renderPrep();
-    if(r.page.bytes<=20000&&!await cacheAllNow(true)){toast("页面还没缓存好：保持联网再试一次",7000);return}
-    if(r.rows.find(x=>x.act==="map"&&!x.ok)){
-      document.querySelector('nav button[data-pg="pg-map"]').click();
-      setTimeout(()=>{try{openDl()}catch(err){}},400);
-    }else{
-      toast("页面和地图都齐了：断网也能打开",5000);
-    }
-  }finally{btn.disabled=false;btn.textContent="一键准备（缓存页面 + 下载地图）";renderPrep()}
-};
-
-/* ============ 记录人（一次登录，之后自动带入） ============ */
-const ACCOUNTS={frank:"123456",supeichang:"123456"};
-let loginPick="";
-function openLogin(){
-  const cur=$("f_recorder").value.trim();
-  loginPick=ACCOUNTS[cur]?cur:"";  // 只在改密码重登时预选，登录后无法在软件里换人
-  $("login_users").innerHTML=Object.keys(ACCOUNTS).map(n=>`<button type="button" data-n="${n}" class="${n===loginPick?"on":""}">${n}</button>`).join("");
-  $("login_users").querySelectorAll("button").forEach(b=>b.onclick=()=>{
-    loginPick=b.dataset.n;
-    $("login_users").querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));
-    $("login_pwd").focus();
-  });
-  $("login_pwd").value="";$("login_err").textContent="";
-  $("loginmodal").classList.remove("hidden");
-  setTimeout(()=>$("login_pwd").focus(),100);
-}
-async function submitLogin(){
-  const pwd=$("login_pwd").value.trim();
-  if(!loginPick){$("login_err").textContent="请先选择记录人";return}
-  if(pwd!==ACCOUNTS[loginPick]){$("login_err").textContent="密码不对，请重试";return}
-  await store.set("user",loginPick);await store.set("recorder",loginPick);
-  $("f_recorder").value=loginPick;
-  if($("set_user"))$("set_user").textContent=loginPick;
-  $("loginmodal").classList.add("hidden");
-  toast(`✅ 记录人：${loginPick}`);
-}
-$("login_ok").onclick=submitLogin;
-$("login_pwd").onkeydown=e=>{if(e.key==="Enter")submitLogin()};
 
 /* ============ 启动 ============ */
 (async()=>{
@@ -2685,22 +1847,15 @@ $("login_pwd").onkeydown=e=>{if(e.key==="Enter")submitLogin()};
       u.searchParams.delete("t");u.searchParams.delete("token");history.replaceState(null,"",u.toString());
       toast("✅ 同步已自动配置好，以后保存记录会自动上传",5000);}
   }catch(e){}
-  try{await loadAreas();await mergeLegacyStores();await dedupeSamples()}catch(e){toast("矿区配置读取失败："+String(e&&e.message||e).slice(0,60),6000)}
-  await loadSet();await resetForm();await restoreDraft();await refreshPend();await refreshSampleCache();await TR.load();setTimeout(resumeTrack,800);
-  // 记录人只认登录态：没登录就弹窗，登录后锁定，软件内不给换人
-  const name=(await store.get("user"))||"";
-  if(ACCOUNTS[name])$("f_recorder").value=name;else{$("f_recorder").value="";openLogin()}
+  try{await loadAreas();await mergeLegacyStores()}catch(e){toast("矿区配置读取失败："+String(e&&e.message||e).slice(0,60),6000)}
+  await loadSet();resetForm();refreshPend();refreshSampleCache();TR.load();setTimeout(resumeTrack,800);
 })();
 store.get("track_mode").then(m=>setTrackMode(m==="walk"?"walk":"car"));
 // 本机存储可用性检测（iOS 无痕/隐私模式会禁 IndexedDB）
 idb().then(()=>{}).catch(()=>toast("⚠️ 本机存储不可用：请关闭无痕/隐私模式，用普通浏览器打开，否则记录无法保存",6000));
 // 刷新后回到上次停留的页面
-store.get("cur_page").then(async pg=>{
-          if(pg==="pg-list"){document.querySelector('nav button[data-pg="pg-list"]').click();return}
-  if(pg==="pg-track"){document.querySelector('nav button[data-pg="pg-form"]').click();setFormTab("trip");return}
-  if(pg&&pg!=="pg-form"){const b=document.querySelector(`nav button[data-pg="${pg}"]`);if(b)b.click();return}
-  const t=await store.get("form_tab");
-  if(t&&t!=="cur")setFormTab(t,false);
+store.get("cur_page").then(pg=>{
+  if(pg&&pg!=="pg-form"){const b=document.querySelector(`nav button[data-pg="${pg}"]`);if(b)b.click()}
 });
 </script>
 </body>
