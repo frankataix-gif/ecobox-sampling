@@ -211,6 +211,44 @@ const book = await w.eval(`(async () => {
 console.log((book === "ok" ? "  ok   " : "  FAIL ") + "finbook".padEnd(12) + (book === "ok" ? "" : book));
 if (book !== "ok") problems.push("finbook " + book);
 
+/* 资金保管链：每层「期初 + 流入 − 流出 = 手上」都要成立；给员工入口已经收掉 */
+const chain = await w.eval(`(async () => {
+  let out = "ok";
+  try {
+    S.tab = "fin"; FINWHO = ""; FINANA = true; await render(); await new Promise((r) => setTimeout(r, 250));
+    if (document.querySelector("#fin_give") || document.querySelector("[data-give]")) out = "还有给员工入口";
+    if (out === "ok") {
+      const rows = [...document.querySelectorAll(".chain-row")];
+      if (!rows.length) out = "没有资金保管链";
+      else if (!document.querySelector('[data-chain="__company"]')) out = "链里没有公司账户";
+      else {
+        const num = (s) => Number(String(s).replace(/,/g, ""));
+        for (const r of rows) {
+          const uid = r.dataset.chain;
+          const a = finAcct(uid);
+          const hand = a.cash + a.card;
+          const shown = num(r.querySelector(".chain-h span").textContent.replace(/[^\\d.-]/g, ""));
+          if (Math.abs(shown - hand) > 0.005) { out = uid + " 手上对不上"; break; }
+          const m = r.textContent.replace(/\\s+/g, " ")
+            .match(/期初 ([\\d,.-]+) \\+ 流入 ([\\d,.-]+) − 流出 ([\\d,.-]+) = 手上 ([\\d,.-]+)/);
+          if (!m) { out = uid + " 等式没渲染"; break; }
+          if (Math.abs(num(m[1]) + num(m[2]) - num(m[3]) - num(m[4])) > 0.02) { out = uid + " 等式不成立"; break; }
+        }
+      }
+    }
+    if (out === "ok") {
+      finSheet();
+      if ([...document.querySelectorAll("#ff_kind option")].some((o) => o.value === "float")) out = "记账表单还有发备用金";
+      document.querySelectorAll(".fin-dim").forEach((x) => x.remove());
+    }
+  } catch (e) { out = "THROW " + e.message; }
+  FINANA = false; FINWHO = "";
+  try { await render(); await new Promise((r) => setTimeout(r, 150)); } catch (e) {}
+  return out;
+})()`);
+console.log((chain === "ok" ? "  ok   " : "  FAIL ") + "chain".padEnd(12) + (chain === "ok" ? "" : chain));
+if (chain !== "ok") problems.push("chain " + chain);
+
 /* 记账表单：选「银行」必须出现卡下拉，且能选到已登记的卡 */
 const fcard = await w.eval(`(async () => {
   try {

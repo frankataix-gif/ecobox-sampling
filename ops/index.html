@@ -272,6 +272,13 @@ td.n{text-align:right;font-variant-numeric:tabular-nums}
 .fin-acct small{display:block;font-size:11px;color:var(--mut);margin-top:2px}
 .fin-acct .acts{display:flex;gap:8px;margin-top:8px}
 .fin-acct .acts button{flex:1;min-height:40px}
+.chain-row{padding:8px 0;border-top:1px dashed var(--line)}
+.chain-row:first-child{border-top:0;padding-top:2px}
+.chain-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.chain-h b{font-size:15px;margin:0}
+.chain-h span{font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.chain-e,.chain-d{font-size:11.5px;color:var(--mut);font-variant-numeric:tabular-nums;margin-top:2px}
+.chain-d{margin-top:1px}
 .fin-seg{display:flex;background:var(--chip);border-radius:12px;padding:3px;margin:0 0 12px}
 .fin-seg button{flex:1;border:0;background:transparent;padding:10px;font-size:15px;font-weight:600;color:var(--mut);border-radius:9px}
 .fin-seg button.on{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08)}
@@ -1210,6 +1217,10 @@ const EN = {
   "今日": "Today", "本周": "This week", "本月": "This month", "本年": "This year",
   "备用金流转": "Float flow", "银行余额": "Bank balance", "核对与报表": "Reconciliation & reports",
   "公司调款": "Company transfer", "给员工": "To staff", "调拨": "Transfer",
+  "资金保管链": "Fund custody chain", "· 期初 + 流入 − 流出 = 手上": "· opening + in − out = on hand",
+  "手上": "On hand", "流入": "In", "流出": "Out", "公司拨入": "From company",
+  "同事转入": "From colleague", "转给": "To", "其它收入": "Other in", "其它支出": "Other out",
+  "（卡 ↔ 现金）": " (card ↔ cash)",
   "来源": "In", "花费": "Out", "原密码": "Current password",
   "改完其它设备上的登录会失效，需要用新密码重登。": "Sign-ins on other devices are revoked; sign in again with the new password.",
   "填「这天公司账户实际有多少钱」，之后的调拨、消费自动累加；对账日之前的记录不计入。": "Enter how much the company account actually holds on this day; later transfers and spending add up from it. Records before this date are excluded.",
@@ -3833,6 +3844,67 @@ function finFloatOf(uid) {
   };
 }
 
+/* 资金保管链：公司 → 个人 → 个人，每层都满足「期初 + 流入 − 流出 = 手上」 */
+function finChainRowsHtml() {
+  const nodes = [{ uid: FINCO, name: tr("公司账户"), co: true }]
+    .concat(finPeople().map((p) => ({ uid: p.login, name: p.name || p.login })));
+  const out = [];
+  for (const n of nodes) {
+    const acc = (FIN.accounts || []).find((x) => x.uid === n.uid) || {};
+    const since = acc.since || "";
+    const ini = (Number(acc.cash) || 0) + (Number(acc.card) || 0);
+    const a = finAcct(n.uid);
+    const hand = a.cash + a.card;
+    const inTotal = a.src.cash + a.src.card - ini;
+    const outTotal = a.out.cash + a.out.card;
+    let fromCo = 0, fromPeer = 0, spent = 0, move = 0;
+    const toWhom = new Map(), fromWhom = new Map();
+    for (const e of FIN.entries || []) {
+      if (since && String(e.date) <= since) continue;
+      const amt = Number(e.amount) || 0;
+      if (!amt) continue;
+      if (e.kind === "transfer" || e.kind === "float") {
+        if (e.to_uid === n.uid) {
+          const from = e.uid || "";
+          if (from === FINCO) fromCo += amt;
+          else { fromPeer += amt; fromWhom.set(from, (fromWhom.get(from) || 0) + amt); }
+        }
+        if (e.uid === n.uid) {
+          const to = e.to_uid || "";
+          toWhom.set(to, (toWhom.get(to) || 0) + amt);
+        }
+      } else if (e.kind === "move" && e.uid === n.uid) {
+        move += amt;
+      } else if (e.kind === "out" && e.uid === n.uid) {
+        spent += amt;
+      }
+    }
+    if (!n.co && !ini && !inTotal && !outTotal && !hand) continue;
+    const inOther = inTotal - fromCo - fromPeer - move;
+    const outOther = outTotal - spent - move - [...toWhom.values()].reduce((s, v) => s + v, 0);
+    const detail = [];
+    if (fromCo) detail.push(tr("公司拨入") + " " + finMoney(fromCo));
+    if (fromPeer) {
+      const who = [...fromWhom].filter(([, v]) => v > 0.005)
+        .map(([k, v]) => finNameOf(k) + " " + finMoney(v)).join("、");
+      detail.push(tr("同事转入") + " " + finMoney(fromPeer) + (who ? "（" + who + "）" : ""));
+    }
+    if (inOther > 0.005) detail.push(tr("其它收入") + " " + finMoney(inOther));
+    if (spent) detail.push(tr("支出") + " " + finMoney(spent));
+    const toParts = [...toWhom].filter(([, v]) => v > 0.005)
+      .map(([k, v]) => tr("转给") + " " + finNameOf(k) + " " + finMoney(v));
+    if (toParts.length) detail.push(toParts.join("、"));
+    if (move) detail.push(tr("取现/存现") + " " + finMoney(move) + tr("（卡 ↔ 现金）"));
+    if (outOther > 0.005) detail.push(tr("其它支出") + " " + finMoney(outOther));
+    out.push(`<div class="chain-row" data-chain="${esc(n.uid)}">
+      <div class="chain-h"><b>${esc(n.name)}</b><span>${esc(tr("手上"))} ${finMoney(hand)}</span></div>
+      <div class="chain-e">${esc(tr("期初"))} ${finMoney(ini)} + ${esc(tr("流入"))} ${finMoney(inTotal)} − ${esc(tr("流出"))} ${finMoney(outTotal)} = ${esc(tr("手上"))} ${finMoney(hand)}</div>
+      ${detail.length ? `<div class="chain-d">${esc(detail.join(" · "))}</div>` : ""}
+    </div>`);
+  }
+  return out.join("");
+}
+
 /* ---------- 银行水单：解析 + 与系统账对账 ---------- */
 const BANK_MON = { JAN: 1, FEB: 2, MAR: 3, APR: 4, MAY: 5, JUN: 6, JUL: 7, AUG: 8, SEP: 9, OCT: 10, NOV: 11, DEC: 12 };
 const BANK_DATE_LINE = /^(\d{2}-(?:[A-Z]{3}|\d{2})-\d{4})\s+(\d{2}-(?:[A-Z]{3}|\d{2})-\d{4})\b/;
@@ -4133,8 +4205,6 @@ function finHtml() {
   const acctCard = (p) => {
     const a = finAcct(p.login);
     const row = (FIN.accounts || []).find((x) => x.uid === p.login) || {};
-    const acts = [];
-    if (FIN.owner) acts.push(`<button class="ghost" data-give="${esc(p.login)}">${esc(tr(`给员工`))}</button>`);
     const banks = row.banks || [];
     const bankLine = banks.length
       ? `<div class="mut" style="margin-top:6px">🏦 ${banks.map((b) => `${esc(b.bank || "—")} · <b>${esc(b.ccy || "ZMW")}</b> · ${esc(b.no || "—")}`).join(" ｜ ")}</div>`
@@ -4146,7 +4216,6 @@ function finHtml() {
         <div><label>${esc(tr(`银行`))}</label><b>${finMoney(a.card)}</b><small>${esc(tr(`来源 ${finMoney(a.src.card)} − 花费 ${finMoney(a.out.card)}`))}</small></div>
       </div>
       ${bankLine}
-      ${acts.length ? `<div class="acts">${acts.join("")}</div>` : ""}
     </div>`;
   };
   const people = finPeople();
@@ -4184,11 +4253,15 @@ function finHtml() {
     </div>
   </div>`;
 
+  const chainHtml = !canAll ? "" : `<div class="fin-acct">
+    <div class="n">🏦 ${esc(tr(`资金保管链`))} <span class="mut" style="font-weight:400;font-size:12px">${esc(tr(`· 期初 + 流入 − 流出 = 手上`))}</span></div>
+    ${finChainRowsHtml()}
+  </div>`;
+
   const actions = !ro ? `<div class="fin-acts">
     ${!isAll && !coView && (FIN.canAll || FIN.owner) ? `<button id="fin_transfer">${esc(tr(`🔀 调拨`))}</button>` : ""}
     ${FIN.canCo ? `<button id="fin_cosend">${esc(tr(`🏦 公司调款`))}</button>` : ""}
     ${!coView ? `<button id="fin_move">${esc(tr(`🔁 取现`))}</button>` : ""}
-    ${FIN.owner && !coView ? `<button id="fin_give">${esc(tr(`🤝 给员工`))}</button>` : ""}
     <button id="fin_mark"${FINMARK ? ` class="pri"` : ""}>${FINMARK ? "✅ 标完了" : "🧾 补票"}</button>
   </div>` : "";
 
@@ -4262,7 +4335,7 @@ function finHtml() {
     ${orphanHtml}
     ${acctHtml}
     ${anaBar}
-    ${FINANA ? coHtml + floatHtml + trHtml + catHtml : ""}
+    ${FINANA ? coHtml + chainHtml + floatHtml + trHtml + catHtml : ""}
     ${actions}
     ${coView ? "" : `<div class="fin-seg" style="margin-bottom:6px">${[["cash", `💵 ${tr("现金")}`], ["bank", `🏦 ${tr("银行")}`]].map(([k, t]) => `<button data-finch="${k}" class="${FINCH === k ? "on" : ""}">${esc(t)}</button>`).join("")}</div>`}
     <div class="fin-seg">${["day", "week", "month", "year"].map((k) => `<button data-finrange="${k}" class="${FINR === k ? "on" : ""}">${FINR_ZH[k]}</button>`).join("")}</div>
@@ -4271,7 +4344,7 @@ function finHtml() {
     <div class="fin-kpi">
       <div><span>${esc(tr(`${isAll ? "全部" : esc(finNameOf(who))} · ${FINR_ZH[FINR]}支出`))}</span><b>${finMoney(sum.out)}</b></div>
       <div><span>${esc(tr(`收入`))}</span><b>${finMoney(sum.in)}</b></div>
-      <div><span>${esc(tr(`备用金流转`))}</span><b>${finMoney(sum.float)}</b></div>
+      <div><span>${esc(tr(`调拨`))}</span><b>${finMoney(sum.transfer || 0)}</b></div>
       <div><span>${esc(tr(`笔数`))}</span><b>${list.length}</b></div>
     </div>
     ${offNote ? `<div class="mut" style="margin:-4px 0 10px">${esc(tr(`${offNote}（不计入公司费用）`))}</div>` : ""}
@@ -5338,7 +5411,7 @@ function finSheet(presetTo, presetKind, editEntry) {
   box.innerHTML = `<div class="fin-sheet">
     <h3>${edit ? "修改记录" : "记一笔"}</h3>
     <label>${esc(tr(`类型`))}</label>
-    <select id="ff_kind"${edit ? " disabled" : ""}><option value="out">${esc(tr(`支出`))}</option><option value="in">${esc(tr(`收入`))}</option>${FIN.owner ? `<option value="float">${esc(tr(`发备用金`))}</option>` : ""}</select>
+    <select id="ff_kind"${edit ? " disabled" : ""}><option value="out">${esc(tr(`支出`))}</option><option value="in">${esc(tr(`收入`))}</option></select>
     <div class="r" style="margin-top:8px">
       <div><label>${esc(tr(`金额 ZMW`))} <i class="req">*</i></label><input id="ff_amt" type="text" inputmode="decimal" data-money="1" value="${edit ? finMoney(d.amount) : ""}"></div>
       <div><label>${esc(tr(`日期`))}</label><input id="ff_date" type="date" value="${esc(edit ? d.date : new Date().toISOString().slice(0, 10))}"></div>
@@ -6313,10 +6386,7 @@ function bindFin() {
   if (mv) mv.onclick = () => finMoveSheet();
   const tv = $("#fin_transfer");
   if (tv) tv.onclick = () => finTransferSheet();
-  const gv = $("#fin_give");
-  if (gv) gv.onclick = () => finSheet(undefined, "float");
   pane.querySelectorAll("[data-finview]").forEach((img) => img.onclick = () => finView(img.dataset.finview));
-  pane.querySelectorAll("[data-give]").forEach((b) => b.onclick = () => finSheet(b.dataset.give));
   pane.querySelectorAll("[data-finmore]").forEach((b) => (b.onclick = (ev) => { ev.stopPropagation(); openFinMenu(b.dataset.finmore, b); }));
   pane.querySelectorAll("[data-go]").forEach((b) => (b.onclick = () => enterApp(b.dataset.go)));
 }
